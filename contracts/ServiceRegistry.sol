@@ -4,9 +4,9 @@ pragma solidity ^0.8.14;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./AgentRegistry.sol";
-import "../interfaces/IErrors.sol";
-import "../interfaces/IMultisig.sol";
-import "../interfaces/IRegistry.sol";
+import "./interfaces/IErrors.sol";
+import "./interfaces/IMultisig.sol";
+import "./interfaces/IRegistry.sol";
 
 /// @title Service Registry - Smart contract for registering services
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>

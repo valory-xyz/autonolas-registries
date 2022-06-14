@@ -2,7 +2,7 @@
 pragma solidity ^0.8.14;
 
 import "@gnosis.pm/safe-contracts/contracts/GnosisSafeL2.sol";
-import "../registries/ServiceRegistry.sol";
+import "../ServiceRegistry.sol";
 import "../interfaces/IMultisig.sol";
 
 contract TestServiceRegistry is ServiceRegistry {

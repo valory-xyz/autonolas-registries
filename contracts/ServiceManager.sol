@@ -3,10 +3,17 @@ pragma solidity ^0.8.14;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "../interfaces/IErrors.sol";
-import "../interfaces/IStructs.sol";
-import "../interfaces/IService.sol";
-import "../interfaces/ITreasury.sol";
+import "./interfaces/IErrors.sol";
+import "./interfaces/IStructs.sol";
+import "./interfaces/IService.sol";
+
+// Treasury related interface
+interface ITreasury {
+    /// @dev Deposits ETH from protocol-owned service.
+    /// @param serviceIds Set of service Ids.
+    /// @param amounts Correspondent set of amounts.
+    function depositETHFromServices(uint256[] memory serviceIds, uint256[] memory amounts) external payable;
+}
 
 /// @title Service Manager - Periphery smart contract for managing services
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
