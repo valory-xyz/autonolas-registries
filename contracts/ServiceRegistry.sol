@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.14;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./AgentRegistry.sol";
-import "./interfaces/IErrors.sol";
-import "./interfaces/IMultisig.sol";
-import "./interfaces/IRegistry.sol";
+import "../interfaces/IErrors.sol";
+import "../interfaces/IMultisig.sol";
+import "../interfaces/IRegistry.sol";
 
 /// @title Service Registry - Smart contract for registering services
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -71,7 +71,7 @@ contract ServiceRegistry is IErrors, IStructs, Ownable, ERC721Enumerable, Reentr
         mapping(address => AgentInstance[]) mapOperatorsAgentInstances;
         // Map of operator address => agent instance bonding / escrow balance
         // TODO Consider merging with another operator-related data structure
-        mapping (address => uint256) mapOperatorsBalances;
+        mapping(address => uint256) mapOperatorsBalances;
         // Config hash per agent
 //        mapping(uint256 => Multihash) mapAgentHash;
         // Service state
@@ -90,15 +90,11 @@ contract ServiceRegistry is IErrors, IStructs, Ownable, ERC721Enumerable, Reentr
     mapping (uint256 => Service) private _mapServices;
     // Map of agent instance address => service id it is registered with and operator address that supplied the instance
     mapping (address => address) private _mapAgentInstanceOperators;
-    // Map of canonical agent Id => set of service Ids that incorporate this canonical agent Id
+    // Map of service Id => set of unique component Ids
     // Updated during the service deployment via deploy() function
-    mapping (uint256 => uint256[]) private _mapAgentIdSetServices;
-    // Map of component Id => set of service Ids that incorporate canonical agents built on top of that component Id
-    mapping (uint256 => uint256[]) private _mapComponentIdSetServices;
+    mapping (uint256 => uint256[]) private _mapServiceIdSetComponents;
     // Map of service Id => set of unique agent Ids
     mapping (uint256 => uint256[]) private _mapServiceIdSetAgents;
-    // Map of service Id => set of unique component Ids
-    mapping (uint256 => uint256[]) private _mapServiceIdSetComponents;
     // Map of policy for multisig implementations
     mapping (address => bool) public mapMultisigs;
 
@@ -488,9 +484,6 @@ contract ServiceRegistry is IErrors, IStructs, Ownable, ERC721Enumerable, Reentr
 
         emit CreateMultisigWithAgents(serviceId, multisig, agentInstances, service.threshold);
 
-        // Update component and agent maps of services
-        // TODO this function might be not needed anymore, since we use the data in tokenomics from the one below
-        _updateComponentAgentServiceConnection(serviceId);
         // Update maps of service Id to component and agent Ids
         _updateServiceComponentAgentConnection(serviceId);
 
@@ -676,40 +669,6 @@ contract ServiceRegistry is IErrors, IStructs, Ownable, ERC721Enumerable, Reentr
         }
     }
 
-    /// @dev Update the map of components / canonical agent Id => service id.
-    /// @param serviceId Service Id.
-    function _updateComponentAgentServiceConnection(uint256 serviceId) private {
-        Service storage service = _mapServices[serviceId];
-        // Loop over canonical agent Ids of the service
-        for (uint256 i = 0; i < service.agentIds.length; i++) {
-            uint256 agentId = service.agentIds[i];
-            // Add serviceId to the corresponding set. No need to check for duplicates since servieId is unique
-            // and agentIds are unique for each serviceId
-            _mapAgentIdSetServices[agentId].push(serviceId);
-
-            // Get component dependencies of a current agent Id
-            (, uint256[] memory dependencies) = IRegistry(agentRegistry).getDependencies(agentId);
-            // Loop over component Ids
-            for (uint256 j = 0; j < dependencies.length; j++) {
-                uint256 componentId = dependencies[j];
-                // Get the set of service Ids correspondent to the current component Id
-                uint256[] memory idServicesInComponents = _mapComponentIdSetServices[componentId];
-                uint256 k;
-                // Loop over all the service Ids
-                for (k = 0; k < idServicesInComponents.length; k++) {
-                    // Skip if this serviceId is already in the set (for example, from another agentId extraction)
-                    if (idServicesInComponents[k] == serviceId) {
-                        break;
-                    }
-                }
-                // Add service Id if not in the set of services for components yet
-                if (k == idServicesInComponents.length) {
-                    _mapComponentIdSetServices[componentId].push(serviceId);
-                }
-            }
-        }
-    }
-
     /// @dev Update the map of service Id => set of components / canonical agent Ids.
     /// @param serviceId Service Id.
     function _updateServiceComponentAgentConnection(uint256 serviceId) private {
@@ -848,28 +807,6 @@ contract ServiceRegistry is IErrors, IStructs, Ownable, ERC721Enumerable, Reentr
     {
         Service storage service = _mapServices[serviceId];
         return (service.configHashes.length, service.configHashes);
-    }
-
-    /// @dev Gets the set of service Ids that contain specified agent Id.
-    /// @param agentId Agent Id.
-    /// @return numServiceIds Number of service Ids.
-    /// @return serviceIds Set of service Ids.
-    function getServiceIdsCreatedWithAgentId(uint256 agentId) external view
-        returns (uint256 numServiceIds, uint256[] memory serviceIds)
-    {
-        serviceIds = _mapAgentIdSetServices[agentId];
-        numServiceIds = serviceIds.length;
-    }
-
-    /// @dev Gets the set of service Ids that contain specified component Id (through the agent Id).
-    /// @param componentId Component Id.
-    /// @return numServiceIds Number of service Ids.
-    /// @return serviceIds Set of service Ids.
-    function getServiceIdsCreatedWithComponentId(uint256 componentId) external view
-        returns (uint256 numServiceIds, uint256[] memory serviceIds)
-    {
-        serviceIds = _mapComponentIdSetServices[componentId];
-        numServiceIds = serviceIds.length;
     }
 
     /// @dev Gets the set of canonical agent Ids that contain specified service Id.

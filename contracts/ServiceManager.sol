@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.14;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "./interfaces/IErrors.sol";
-import "./interfaces/IStructs.sol";
-import "./interfaces/IService.sol";
-import "./interfaces/ITreasury.sol";
+import "../interfaces/IErrors.sol";
+import "../interfaces/IStructs.sol";
+import "../interfaces/IService.sol";
+import "../interfaces/ITreasury.sol";
 
 /// @title Service Manager - Periphery smart contract for managing services
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -36,10 +36,10 @@ contract ServiceManager is IErrors, IStructs, Ownable, Pausable {
     }
 
     /// @dev Changes the treasury address.
-    /// @param newTreasury Address of a new treasury.
-    function changeTreasury(address newTreasury) external onlyOwner {
-        treasury = newTreasury;
-        emit TreasuryUpdated(newTreasury);
+    /// @param _treasury Address of a new treasury.
+    function changeTreasury(address _treasury) external onlyOwner {
+        treasury = _treasury;
+        emit TreasuryUpdated(_treasury);
     }
 
     /// @dev Creates a new service.

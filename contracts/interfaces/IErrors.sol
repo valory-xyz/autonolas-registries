@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.14;
 
 /// @dev Errors.
 interface IErrors {
@@ -88,9 +88,13 @@ interface IErrors {
     /// @param max Maximum possible value.
     error Overflow(uint256 provided, uint256 max);
 
-    /// @dev Token is non-transferrable.
+    /// @dev Token is non-transferable.
     /// @param account Token address.
-    error NonTransferrable(address account);
+    error NonTransferable(address account);
+
+    /// @dev Token is non-delegatable.
+    /// @param account Token address.
+    error NonDelegatable(address account);
 
     /// @dev Service must be active.
     /// @param serviceId Service Id.
@@ -161,6 +165,10 @@ interface IErrors {
     /// @param actual Actual supply left.
     error ProductSupplyLow(address tokenAddress, uint256 productId, uint256 requested, uint256 actual);
 
+    /// @dev Minting is rejected due to the requested amount bigger than the current inflation policy cap.
+    /// @param amount Amount of tokens to mint.
+    error MintRejectedByInflationPolicy(uint256 amount);
+
     /// @dev Incorrect amount received / provided.
     /// @param provided Provided amount is lower.
     /// @param expected Expected amount.
@@ -202,7 +210,7 @@ interface IErrors {
     /// @dev Locked value is not zero.
     /// @param account Address that is checked for the locked value.
     /// @param amount Locked amount.
-    error LockedValueNotZero(address account, int128 amount);
+    error LockedValueNotZero(address account, uint256 amount);
 
     /// @dev Value lock is expired.
     /// @param account Address that is checked for the locked value.
@@ -232,4 +240,7 @@ interface IErrors {
     /// @param providedBlockNumber Provided block number.
     /// @param actualBlockNumber Actual block number.
     error WrongBlockNumber(uint256 providedBlockNumber, uint256 actualBlockNumber);
+
+    /// @dev Caught reentrancy violation.
+    error ReentrancyGuard();
 }

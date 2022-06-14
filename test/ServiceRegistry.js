@@ -670,15 +670,6 @@ describe("ServiceRegistry", function () {
             expect(state).to.equal(4);
 
             // Check the service info
-            const serviceIdFromAgentId = await serviceRegistry.getServiceIdsCreatedWithAgentId(agentId);
-            expect(serviceIdFromAgentId.numServiceIds).to.equal(1);
-            expect(serviceIdFromAgentId.serviceIds[0]).to.equal(serviceId);
-            for (let i = 1; i < 2; i++) {
-                const serviceIdFromComponentId = await serviceRegistry.getServiceIdsCreatedWithComponentId(i);
-                expect(serviceIdFromComponentId.numServiceIds).to.equal(1);
-                expect(serviceIdFromComponentId.serviceIds[0]).to.equal(serviceId);
-            }
-
             const componentIdsFromServiceId = await serviceRegistry.getComponentIdsOfServiceId(serviceId);
             expect(componentIdsFromServiceId.numComponentIds).to.equal(2);
             for (let i = 0; i < componentIdsFromServiceId.numComponentIds; i++) {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.14;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "./IStructs.sol";
