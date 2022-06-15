@@ -3,12 +3,12 @@ pragma solidity ^0.8.14;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "./interfaces/IErrors.sol";
+import "./interfaces/IErrorsRegistries.sol";
 import "./interfaces/IStructs.sol";
 import "./interfaces/IService.sol";
 
 // Treasury related interface
-interface ITreasury {
+interface IReward {
     /// @dev Deposits ETH from protocol-owned service.
     /// @param serviceIds Set of service Ids.
     /// @param amounts Correspondent set of amounts.
@@ -17,7 +17,7 @@ interface ITreasury {
 
 /// @title Service Manager - Periphery smart contract for managing services
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-contract ServiceManager is IErrors, IStructs, Ownable, Pausable {
+contract ServiceManager is IErrorsRegistries, IStructs, Ownable, Pausable {
     event TreasuryUpdated(address treasury);
     event MultisigCreate(address multisig);
     event RewardService(uint256 serviceId, uint256 amount);
@@ -159,7 +159,7 @@ contract ServiceManager is IErrors, IStructs, Ownable, Pausable {
         serviceIds[0] = serviceId;
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = msg.value;
-        ITreasury(treasury).depositETHFromServices{value: msg.value}(serviceIds, amounts);
+        IReward(treasury).depositETHFromServices{value: msg.value}(serviceIds, amounts);
         emit RewardService(serviceId, msg.value);
     }
 

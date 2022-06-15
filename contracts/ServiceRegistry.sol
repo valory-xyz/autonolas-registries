@@ -4,13 +4,13 @@ pragma solidity ^0.8.14;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./AgentRegistry.sol";
-import "./interfaces/IErrors.sol";
+import "./interfaces/IErrorsRegistries.sol";
 import "./interfaces/IMultisig.sol";
 import "./interfaces/IRegistry.sol";
 
 /// @title Service Registry - Smart contract for registering services
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-contract ServiceRegistry is IErrors, IStructs, Ownable, ERC721Enumerable, ReentrancyGuard {
+contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721Enumerable, ReentrancyGuard {
     event Deposit(address sender, uint256 amount);
     event Refund(address sendee, uint256 amount);
     event ServiceRegistryManagerUpdated(address manager);

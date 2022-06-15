@@ -4,12 +4,12 @@ pragma solidity ^0.8.14;
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "./interfaces/IErrors.sol";
+import "./interfaces/IErrorsRegistries.sol";
 import "./interfaces/IRegistry.sol";
 
 /// @title Component Registry - Smart contract for registering components
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-contract ComponentRegistry is IErrors, IStructs, ERC721Enumerable, Ownable, ReentrancyGuard {
+contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721Enumerable, Ownable, ReentrancyGuard {
     // Component parameters
     struct Component {
         // Developer of the component
