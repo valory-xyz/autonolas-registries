@@ -1,0 +1,4 @@
+[submodule "lib/solmate"]
+	path = lib/solmate
+	url = https://github.com/Rari-Capital/solmate.git
+	branch = v7

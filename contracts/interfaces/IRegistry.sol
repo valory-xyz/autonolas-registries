@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.14;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "./IStructs.sol";
 
 /// @dev Required interface for the component / agent manipulation.
-interface IRegistry is IStructs, IERC721Enumerable {
+interface IRegistry is IStructs {
     /// @dev Creates component / agent.
     /// @param owner Owner of the component / agent.
     /// @param developer Developer of the component / agent.

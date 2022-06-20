@@ -1,20 +1,29 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.15;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../lib/solmate/src/tokens/ERC721.sol";
+import "../lib/solmate/src/utils/LibString.sol";
 import "./interfaces/IErrorsRegistries.sol";
 import "./interfaces/IRegistry.sol";
+import "hardhat/console.sol";
 
 /// @title Component Registry - Smart contract for registering components
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721Enumerable, Ownable, ReentrancyGuard {
+contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
+    using LibString for uint256;
+
+    event OwnerUpdated(address indexed owner);
+    event ManagerUpdated(address indexed manager);
+    event baseURIChanged(string baseURI);
+    event CreateComponent(address indexed componentOwner, Multihash componentHash, uint256 componentId);
+    event UpdateHash(address indexed componentOwner, Multihash componentHash, uint256 componentId);
+
     // Component parameters
     struct Component {
         // Developer of the component
         address developer;
         // IPFS hashes of the component
+        // TODO This can be stored outside of component in its separate (componentId <=> set of hashes) map
         Multihash[] componentHashes;
         // Description of the component
         string description;
@@ -24,36 +33,73 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721Enumerable, Own
         bool active;
     }
 
-    // Base URI
-    string public _BASEURI;
-    // Component counter
-    uint256 private _tokenIds;
+    // Owner address
+    address public owner;
     // Component manager
-    address private _manager;
+    address public manager;
+    // Base URI
+    string public baseURI;
+    // Component counter. Component with Id = 0 is left empty not to do additional checks for the index zero
+    uint256 public totalSupply = 1;
+    // Reentrancy lock
+    uint256 private _locked = 1;
     // Map of token Id => component
+    // TODO This can be made public, and getInfo function would become obsolete
     mapping(uint256 => Component) private _mapTokenIdComponent;
     // Map of IPFS hash => token Id
+    // TODO There is no point of having this private as well
     mapping(bytes32 => uint256) private _mapHashTokenId;
 
-    // name = "agent components", symbol = "MECHCOMP"
-    constructor(string memory _name, string memory _symbol, string memory _bURI) ERC721(_name, _symbol) {
-        _BASEURI = _bURI;
+    /// @dev Component constructor.
+    /// @param name Component contract name.
+    /// @param symbol Component contract symbol.
+    /// @param bURI Component token base URI.
+    constructor(string memory name, string memory symbol, string memory bURI) ERC721(name, symbol) {
+        baseURI = bURI;
+        owner = msg.sender;
     }
 
-    // Only the manager has a privilege to manipulate an agent
-    modifier onlyManager {
-        if (_manager != msg.sender) {
-            revert ManagerOnly(msg.sender, _manager);
+    /// @dev Changes the owner address.
+    /// @param newOwner Address of a new owner.
+    function changeOwner(address newOwner) external {
+        // Check for the ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
         }
-        _;
+
+        // Check for the zero address
+        if (newOwner == address(0)) {
+            revert ZeroAddress();
+        }
+
+        owner = newOwner;
+        emit OwnerUpdated(newOwner);
+    }
+
+    /// @dev Changes the component manager.
+    /// @param newManager Address of a new component manager.
+    function changeManager(address newManager) external {
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for the zero address
+        if (newManager == address(0)) {
+            revert ZeroAddress();
+        }
+
+        manager = newManager;
+        emit ManagerUpdated(newManager);
     }
 
     // Checks for supplied IPFS hash
+    // TODO This should go away, to be embedded in the code itself
     modifier checkHash(Multihash memory hashStruct) {
         // Check hash IPFS current standard validity
         if (hashStruct.hashFunction != 0x12 || hashStruct.size != 0x20) {
             revert WrongHash(hashStruct.hashFunction, 0x12, hashStruct.size, 0x20);
         }
+
         // Check for the existent IPFS hashes
         if (_mapHashTokenId[hashStruct.hash] > 0) {
             revert HashExists();
@@ -61,48 +107,53 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721Enumerable, Own
         _;
     }
 
-    /// @dev Changes the component manager.
-    /// @param newManager Address of a new component manager.
-    function changeManager(address newManager) public onlyOwner {
-        _manager = newManager;
-    }
-
     /// @dev Sets the component data.
-    /// @param tokenId Token / component Id.
+    /// @param componentId Component Id.
     /// @param developer Developer of the component.
     /// @param componentHash IPFS hash of the component.
     /// @param description Description of the component.
     /// @param dependencies Set of component dependencies.
-    function _setComponentInfo(uint256 tokenId, address developer, Multihash memory componentHash,
+    function _setComponentInfo(uint256 componentId, address developer, Multihash memory componentHash,
         string memory description, uint256[] memory dependencies)
         private
     {
-        Component storage component = _mapTokenIdComponent[tokenId];
+        Component storage component = _mapTokenIdComponent[componentId];
         component.developer = developer;
+        // TODO when componentHashes is out in its own map, the component is then taken as a memory instance
         component.componentHashes.push(componentHash);
         component.description = description;
         component.dependencies = dependencies;
         component.active = true;
-        _mapHashTokenId[componentHash.hash] = tokenId;
+//        _mapTokenIdComponent[componentId] = component;
+        _mapHashTokenId[componentHash.hash] = componentId;
     }
 
     /// @dev Creates component.
-    /// @param owner Owner of the component.
+    /// @param componentOwner Owner of the component.
     /// @param developer Developer of the component.
     /// @param componentHash IPFS hash of the component.
     /// @param description Description of the component.
     /// @param dependencies Set of component dependencies in a sorted ascending order.
-    /// @return The id of a minted component.
-    function create(address owner, address developer, Multihash memory componentHash, string memory description,
+    /// @return componentId The id of a minted component.
+    function create(address componentOwner, address developer, Multihash memory componentHash, string memory description,
         uint256[] memory dependencies)
         external
-        onlyManager
         checkHash(componentHash)
-        nonReentrant
-        returns (uint256)
+        returns (uint256 componentId)
     {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
+        // Check for the manager privilege for a component creation
+        if (manager != msg.sender) {
+            revert ManagerOnly(msg.sender, manager);
+        }
+
         // Checks for owner and developer being not zero addresses
-        if(owner == address(0) || developer == address(0)) {
+        if(componentOwner == address(0) || developer == address(0)) {
             revert ZeroAddress();
         }
 
@@ -112,109 +163,135 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721Enumerable, Own
         }
         
         // Check for dependencies validity: must be already allocated, must not repeat
-        uint256 lastId = 0;
-        for (uint256 iDep = 0; iDep < dependencies.length; iDep++) {
-            if (dependencies[iDep] <= lastId || dependencies[iDep] > _tokenIds) {
+        componentId = totalSupply;
+        uint256 lastId;
+        for (uint256 iDep = 0; iDep < dependencies.length; ++iDep) {
+            if (dependencies[iDep] < (lastId + 1) || (dependencies[iDep] + 1) > componentId) {
                 revert WrongComponentId(dependencies[iDep]);
             }
             lastId = dependencies[iDep];
         }
 
-        // Mint token and initialize the component
-        _tokenIds++;
-        uint256 newTokenId = _tokenIds;
-        _setComponentInfo(newTokenId, developer, componentHash, description, dependencies);
-        _safeMint(owner, newTokenId);
+        // Initialize the component and mint its token
+        _setComponentInfo(componentId, developer, componentHash, description, dependencies);
 
-        return newTokenId;
+        // Safe mint is needed since contracts can create components as well
+        _safeMint(componentOwner, componentId);
+        totalSupply = componentId + 1;
+
+        emit CreateComponent(componentOwner, componentHash, componentId);
+        _locked = 1;
     }
 
     /// @dev Updates the component hash.
-    /// @param owner Owner of the component.
-    /// @param tokenId Token Id.
+    /// @param componentOwner Owner of the component.
+    /// @param componentId Component Id.
     /// @param componentHash New IPFS hash of the component.
     /// @return success True, if function executed successfully.
-    function updateHash(address owner, uint256 tokenId, Multihash memory componentHash) external onlyManager
+    function updateHash(address componentOwner, uint256 componentId, Multihash memory componentHash) external
         checkHash(componentHash)
         returns (bool success)
     {
-        if (ownerOf(tokenId) != owner) {
-            revert ComponentNotFound(tokenId);
+        // Check for the manager privilege for a component modification
+        if (manager != msg.sender) {
+            revert ManagerOnly(msg.sender, manager);
         }
-        Component storage component = _mapTokenIdComponent[tokenId];
+
+        // Checking the agent ownership
+        if (ownerOf(componentId) != componentOwner) {
+            revert ComponentNotFound(componentId);
+        }
+        Component storage component = _mapTokenIdComponent[componentId];
         component.componentHashes.push(componentHash);
         success = true;
+
+        emit UpdateHash(componentOwner, componentHash, componentId);
     }
 
-    /// @dev Check for the token / component existence.
-    /// @param tokenId Token Id.
+    /// @dev Check for the component existence.
+    /// @param componentId Component Id.
     /// @return true if the component exists, false otherwise.
-    function exists(uint256 tokenId) public view returns (bool) {
-        return _exists(tokenId);
+    function exists(uint256 componentId) external view returns (bool) {
+        return componentId > 0 && componentId < totalSupply;
     }
 
+    // TODO As mentioned earlier, this can go away with the component owner, dependencies and set of hashes returned separately,
+    // TODO and the rest is just the component struct publicly available
     /// @dev Gets the component info.
-    /// @param tokenId Token Id.
-    /// @return owner Owner of the component.
+    /// @param componentId Component Id.
+    /// @return componentOwner Owner of the component.
     /// @return developer The component developer.
     /// @return componentHash The primary component IPFS hash.
     /// @return description The component description.
     /// @return numDependencies The number of components in the dependency list.
     /// @return dependencies The list of component dependencies.
-    function getInfo(uint256 tokenId) public view
-        returns (address owner, address developer, Multihash memory componentHash, string memory description,
+    function getInfo(uint256 componentId) external view
+        returns (address componentOwner, address developer, Multihash memory componentHash, string memory description,
             uint256 numDependencies, uint256[] memory dependencies)
     {
-        if (!_exists(tokenId)) {
-            revert ComponentNotFound(tokenId);
+        // Check for the component existence
+        // TODO These checks can be removed and return empty values instead
+        if ((componentId + 1) > totalSupply) {
+            revert ComponentNotFound(componentId);
         }
-        Component storage component = _mapTokenIdComponent[tokenId];
-        return (ownerOf(tokenId), component.developer, component.componentHashes[0], component.description,
+        Component memory component = _mapTokenIdComponent[componentId];
+        return (ownerOf(componentId), component.developer, component.componentHashes[0], component.description,
             component.dependencies.length, component.dependencies);
     }
 
     /// @dev Gets component dependencies.
+    /// @param componentId Component Id.
     /// @return numDependencies The number of components in the dependency list.
     /// @return dependencies The list of component dependencies.
-    function getDependencies(uint256 tokenId) public view
+    function getDependencies(uint256 componentId) external view
         returns (uint256 numDependencies, uint256[] memory dependencies)
     {
-        if (!_exists(tokenId)) {
-            revert ComponentNotFound(tokenId);
+        // Check for the component existence
+        // TODO These checks can be removed and return empty values instead
+        if ((componentId + 1) > totalSupply) {
+            revert ComponentNotFound(componentId);
         }
-        Component storage component = _mapTokenIdComponent[tokenId];
+        Component memory component = _mapTokenIdComponent[componentId];
         return (component.dependencies.length, component.dependencies);
     }
 
     /// @dev Gets component hashes.
-    /// @param tokenId Token Id.
+    /// @param componentId Component Id.
     /// @return numHashes Number of hashes.
     /// @return componentHashes The list of component hashes.
-    function getHashes(uint256 tokenId) public view
+    function getHashes(uint256 componentId) external view
         returns (uint256 numHashes, Multihash[] memory componentHashes)
     {
-        if (!_exists(tokenId)) {
-            revert ComponentNotFound(tokenId);
+        // Check for the component existence
+        // TODO These checks can be removed and return empty values instead
+        if ((componentId + 1) > totalSupply) {
+            revert ComponentNotFound(componentId);
         }
-        Component storage component = _mapTokenIdComponent[tokenId];
+        Component memory component = _mapTokenIdComponent[componentId];
         return (component.componentHashes.length, component.componentHashes);
     }
 
-    /// @dev Returns component base URI.
-    /// @return base URI string.
-    function _baseURI() internal view override returns (string memory) {
-        return _BASEURI;
-    }
-
-    /// @dev Returns component base URI.
-    /// @return base URI string.
-    function getBaseURI() public view returns (string memory) {
-        return _baseURI();
+    /// @dev Returns component token URI.
+    /// @param componentId Component Id.
+    /// @return Component token URI string.
+    function tokenURI(uint256 componentId) public view override returns (string memory) {
+        return string.concat(baseURI, componentId.toString());
     }
 
     /// @dev Sets component base URI.
-    /// @param bURI base URI string.
-    function setBaseURI(string memory bURI) public onlyOwner {
-        _BASEURI = bURI;
+    /// @param bURI Base URI string.
+    function setBaseURI(string memory bURI) external {
+        // Check for the ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for the zero value
+        if (bytes(bURI).length == 0) {
+            revert ZeroValue();
+        }
+
+        baseURI = bURI;
+        emit baseURIChanged(bURI);
     }
 }

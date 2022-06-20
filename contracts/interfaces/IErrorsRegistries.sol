@@ -8,6 +8,11 @@ interface IErrorsRegistries {
     /// @param manager Required sender address as a manager.
     error ManagerOnly(address sender, address manager);
 
+    /// @dev Only `owner` has a privilege, but the `sender` was provided.
+    /// @param sender Sender address.
+    /// @param owner Required sender address as an owner.
+    error OwnerOnly(address sender, address owner);
+
     /// @dev Wrong hash format.
     /// @param hashFunctionProvided Hash function classification provided.
     /// @param hashFunctionNeeded Hash function classification needed.

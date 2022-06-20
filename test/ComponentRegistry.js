@@ -12,6 +12,7 @@ describe("ComponentRegistry", function () {
     const componentHash2 = {hash: "0x" + "2".repeat(64), hashFunction: "0x12", size: "0x20"};
     const dependencies = [];
     const AddressZero = "0x" + "0".repeat(40);
+
     beforeEach(async function () {
         const ComponentRegistry = await ethers.getContractFactory("ComponentRegistry");
         componentRegistry = await ComponentRegistry.deploy("agent components", "MECHCOMP",
@@ -24,7 +25,7 @@ describe("ComponentRegistry", function () {
         it("Checking for arguments passed to the constructor", async function () {
             expect(await componentRegistry.name()).to.equal("agent components");
             expect(await componentRegistry.symbol()).to.equal("MECHCOMP");
-            expect(await componentRegistry.getBaseURI()).to.equal("https://localhost/component/");
+            expect(await componentRegistry.baseURI()).to.equal("https://localhost/component/");
         });
 
         it("Should fail when checking for the token id existence", async function () {
@@ -35,12 +36,12 @@ describe("ComponentRegistry", function () {
         it("Should fail when trying to change the mechManager from a different address", async function () {
             await expect(
                 componentRegistry.connect(signers[1]).changeManager(signers[1].address)
-            ).to.be.revertedWith("Ownable: caller is not the owner");
+            ).to.be.revertedWith("OwnerOnly");
         });
 
         it("Setting the base URI", async function () {
             await componentRegistry.setBaseURI("https://localhost2/component/");
-            expect(await componentRegistry.getBaseURI()).to.equal("https://localhost2/component/");
+            expect(await componentRegistry.baseURI()).to.equal("https://localhost2/component/");
         });
     });
 
@@ -126,17 +127,14 @@ describe("ComponentRegistry", function () {
             const mechManager = signers[1];
             const user = signers[2];
             await componentRegistry.changeManager(mechManager.address);
-            let compHash = componentHash;
-            await componentRegistry.connect(mechManager).create(user.address, user.address, compHash, description, []);
-            compHash.hash = "0x" + "0".repeat(63) + "1";
-            await componentRegistry.connect(mechManager).create(user.address, user.address, compHash, description, [1]);
-            compHash.hash = "0x" + "0".repeat(63) + "2";
+            await componentRegistry.connect(mechManager).create(user.address, user.address, componentHash, description, []);
+            await componentRegistry.connect(mechManager).create(user.address, user.address, componentHash1, description, [1]);
             await expect(
-                componentRegistry.connect(mechManager).create(user.address, user.address, compHash,
+                componentRegistry.connect(mechManager).create(user.address, user.address, componentHash2,
                     description, [1, 1, 1])
             ).to.be.revertedWith("WrongComponentId");
             await expect(
-                componentRegistry.connect(mechManager).create(user.address, user.address, compHash,
+                componentRegistry.connect(mechManager).create(user.address, user.address, componentHash2,
                     description, [2, 1, 2, 1, 1, 1, 2])
             ).to.be.revertedWith("WrongComponentId");
         });
@@ -176,7 +174,7 @@ describe("ComponentRegistry", function () {
                 componentHash2, description + "2", lastDependencies);
 
             const compInfo = await componentRegistry.getInfo(tokenId);
-            expect(compInfo.owner).to.equal(user.address);
+            expect(compInfo.componentOwner).to.equal(user.address);
             expect(compInfo.developer).to.equal(user.address);
             expect(compInfo.componentHash.hash).to.equal(componentHash2.hash);
             expect(compInfo.description).to.equal(description + "2");
