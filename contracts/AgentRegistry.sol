@@ -254,7 +254,7 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
     /// @param agentId Agent Id.
     /// @return numHashes Number of hashes.
     /// @return agentHashes The list of agent hashes.
-    function getHashes(uint256 agentId) public view
+    function getHashes(uint256 agentId) external view
         returns (uint256 numHashes, Multihash[] memory agentHashes)
     {
         if (agentId == 0 || agentId > totalSupply) {

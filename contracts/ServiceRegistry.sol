@@ -140,7 +140,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721, Reentr
 
     /// @dev Changes the service manager.
     /// @param newManager Address of a new service manager.
-    function changeManager(address newManager) public onlyOwner {
+    function changeManager(address newManager) external onlyOwner {
         _manager = newManager;
         emit ServiceRegistryManagerUpdated(_manager);
     }
@@ -501,7 +501,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721, Reentr
     /// @param amounts Correspondent amounts to slash.
     /// @param serviceId Service Id.
     /// @return success True, if function executed successfully.
-    function slash(address[] memory agentInstances, uint256[] memory amounts, uint256 serviceId) public
+    function slash(address[] memory agentInstances, uint256[] memory amounts, uint256 serviceId) external
         serviceExists(serviceId) returns (bool success)
     {
         // Check for the array size
@@ -748,7 +748,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721, Reentr
     /// @dev Checks if the service Id exists.
     /// @param serviceId Service Id.
     /// @return true if the service exists, false otherwise.
-    function exists(uint256 serviceId) public view returns (bool) {
+    function exists(uint256 serviceId) external view returns (bool) {
         return serviceId > 0 && serviceId < (totalSupply + 1);
     }
 
@@ -765,7 +765,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721, Reentr
     /// @return numAgentInstances Number of registered agent instances.
     /// @return agentInstances Set of agent instances currently registered for the service.
     /// @return multisig Agent instances multisig address.
-    function getServiceInfo(uint256 serviceId) public view serviceExists(serviceId)
+    function getServiceInfo(uint256 serviceId) external view serviceExists(serviceId)
         returns (address owner, string memory name, string memory description, Multihash memory configHash,
             uint256 threshold, uint256 numAgentIds, uint256[] memory agentIds, AgentParams[] memory agentParams,
             uint256 numAgentInstances, address[] memory agentInstances, address multisig)
@@ -793,7 +793,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721, Reentr
     /// @param agentId Canonical agent Id.
     /// @return numAgentInstances Number of agent instances.
     /// @return agentInstances Set of agent instances for a specified canonical agent Id.
-    function getInstancesForAgentId(uint256 serviceId, uint256 agentId) public view serviceExists(serviceId)
+    function getInstancesForAgentId(uint256 serviceId, uint256 agentId) external view serviceExists(serviceId)
         returns (uint256 numAgentInstances, address[] memory agentInstances)
     {
         Service storage service = _mapServices[serviceId];
@@ -808,7 +808,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721, Reentr
     /// @param serviceId Service Id.
     /// @return numHashes Number of hashes.
     /// @return configHashes The list of component hashes.
-    function getConfigHashes(uint256 serviceId) public view serviceExists(serviceId)
+    function getConfigHashes(uint256 serviceId) external view serviceExists(serviceId)
         returns (uint256 numHashes, Multihash[] memory configHashes)
     {
         Service storage service = _mapServices[serviceId];
@@ -840,7 +840,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721, Reentr
     /// @dev Gets the service state.
     /// @param serviceId Service Id.
     /// @return state State of the service.
-    function getServiceState(uint256 serviceId) public view returns (ServiceState state) {
+    function getServiceState(uint256 serviceId) external view returns (ServiceState state) {
         state = _mapServices[serviceId].state;
     }
 
@@ -848,7 +848,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721, Reentr
     /// @param operator Operator address.
     /// @param serviceId Service Id.
     /// @return balance The balance of the operator.
-    function getOperatorBalance(address operator, uint256 serviceId) public view serviceExists(serviceId)
+    function getOperatorBalance(address operator, uint256 serviceId) external view serviceExists(serviceId)
         returns (uint256 balance)
     {
         balance = _mapServices[serviceId].mapOperatorsBalances[operator];
@@ -858,7 +858,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721, Reentr
     /// @param multisig Address of a multisig implementation.
     /// @param permission Grant or revoke permission.
     /// @return success True, if function executed successfully.
-    function changeMultisigPermission(address multisig, bool permission) public onlyOwner returns (bool success) {
+    function changeMultisigPermission(address multisig, bool permission) external onlyOwner returns (bool success) {
         if (multisig == address(0)) {
             revert ZeroAddress();
         }
