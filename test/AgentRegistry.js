@@ -30,7 +30,7 @@ describe("AgentRegistry", function () {
         it("Checking for arguments passed to the constructor", async function () {
             expect(await agentRegistry.name()).to.equal("agent");
             expect(await agentRegistry.symbol()).to.equal("MECH");
-            expect(await agentRegistry.getBaseURI()).to.equal("https://localhost/agent/");
+            expect(await agentRegistry.baseURI()).to.equal("https://localhost/agent/");
         });
 
         it("Should fail when checking for the token id existence", async function () {
@@ -41,12 +41,12 @@ describe("AgentRegistry", function () {
         it("Should fail when trying to change the mechManager from a different address", async function () {
             await expect(
                 agentRegistry.connect(signers[1]).changeManager(signers[1].address)
-            ).to.be.revertedWith("Ownable: caller is not the owner");
+            ).to.be.revertedWith("OwnerOnly");
         });
 
         it("Setting the base URI", async function () {
             await agentRegistry.setBaseURI("https://localhost2/agent/");
-            expect(await agentRegistry.getBaseURI()).to.equal("https://localhost2/agent/");
+            expect(await agentRegistry.baseURI()).to.equal("https://localhost2/agent/");
         });
     });
 
@@ -170,7 +170,7 @@ describe("AgentRegistry", function () {
                 agentHash2, description + "2", lastDependencies);
 
             const agentInfo = await agentRegistry.getInfo(tokenId);
-            expect(agentInfo.owner).to.equal(user.address);
+            expect(agentInfo.agentOwner).to.equal(user.address);
             expect(agentInfo.developer).to.equal(user.address);
             expect(agentInfo.agentHash.hash).to.equal(agentHash2.hash);
             expect(agentInfo.description).to.equal(description + "2");

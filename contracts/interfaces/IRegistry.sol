@@ -62,11 +62,20 @@ interface IRegistry is IStructs {
     /// @return mHashes The list of component / agent hashes.
     function getHashes(uint256 tokenId) external view returns (uint256 numHashes, Multihash[] memory mHashes);
 
-    /// @dev Returns component / agent base URI.
-    /// @return base URI string.
-    function getBaseURI() external view returns (string memory);
+    /// @dev Gets component / agent base URI.
+    /// @return baseURI Base URI string.
+    function baseURI() external returns (string memory baseURI);
 
     /// @dev Sets component / agent base URI.
-    /// @param bURI base URI string.
-    function setBaseURI(string memory bURI) external;
+    /// @param baseURI Base URI string.
+    function setBaseURI(string memory baseURI) external;
+
+    /// @dev Gets the total supply of components / agents.
+    /// @return Total supply.
+    function totalSupply() external view returns (uint256);
+
+    /// @dev Gets the valid component Id from the provided index.
+    /// @param id Component counter.
+    /// @return componentId Component Id.
+    function tokenByIndex(uint256 id) external view returns (uint256 componentId);
 }

@@ -41,21 +41,21 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
     address public manager;
     // Base URI
     string public baseURI;
-    // Component counter. Component with Id = 0 is left empty not to do additional checks for the index zero
-    uint256 public totalSupply = 1;
+    // Component counter
+    uint256 public totalSupply;
     // Reentrancy lock
     uint256 private _locked = 1;
-    // Map of token Id => component
+    // Map of component Id => component
     mapping(uint256 => Component) public mapTokenIdComponent;
-    // Map of IPFS hash => token Id
+    // Map of IPFS hash => component Id
     mapping(bytes32 => uint256) public mapHashTokenId;
 
     /// @dev Component constructor.
-    /// @param name Component contract name.
-    /// @param symbol Component contract symbol.
-    /// @param bURI Component token base URI.
-    constructor(string memory name, string memory symbol, string memory bURI) ERC721(name, symbol) {
-        baseURI = bURI;
+    /// @param _name Component contract name.
+    /// @param _symbol Component contract symbol.
+    /// @param _baseURI Component token base URI.
+    constructor(string memory _name, string memory _symbol, string memory _baseURI) ERC721(_name, _symbol) {
+        baseURI = _baseURI;
         owner = msg.sender;
     }
 
@@ -168,18 +168,20 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         componentId = totalSupply;
         uint256 lastId;
         for (uint256 iDep = 0; iDep < dependencies.length; ++iDep) {
-            if (dependencies[iDep] < (lastId + 1) || (dependencies[iDep] + 1) > componentId) {
+            if (dependencies[iDep] < (lastId + 1) || dependencies[iDep] > componentId) {
                 revert WrongComponentId(dependencies[iDep]);
             }
             lastId = dependencies[iDep];
         }
 
+        // Component with Id = 0 is left empty not to do additional checks for the index zero
+        componentId++;
         // Initialize the component and mint its token
         _setComponentInfo(componentId, developer, componentHash, description, dependencies);
 
         // Safe mint is needed since contracts can create components as well
         _safeMint(componentOwner, componentId);
-        totalSupply = componentId + 1;
+        totalSupply = componentId;
 
         emit CreateComponent(componentOwner, componentHash, componentId);
         _locked = 1;
@@ -210,11 +212,11 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         emit UpdateHash(componentOwner, componentHash, componentId);
     }
 
-    /// @dev Check for the component existence.
+    /// @dev Checks for the component existence.
     /// @param componentId Component Id.
     /// @return true if the component exists, false otherwise.
     function exists(uint256 componentId) external view returns (bool) {
-        return componentId > 0 && componentId < totalSupply;
+        return componentId > 0 && componentId < (totalSupply + 1);
     }
 
     // TODO As mentioned earlier, this can go away with the component owner, dependencies and set of hashes returned separately,
@@ -233,7 +235,7 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
     {
         // Check for the component existence
         // TODO These checks can be removed and return empty values instead
-        if ((componentId + 1) > totalSupply) {
+        if (componentId == 0 || componentId > totalSupply) {
             revert ComponentNotFound(componentId);
         }
         Component memory component = mapTokenIdComponent[componentId];
@@ -252,7 +254,7 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
     {
         // Check for the component existence
         // TODO These checks can be removed and return empty values instead
-        if ((componentId + 1) > totalSupply) {
+        if (componentId == 0 || componentId > totalSupply) {
             revert ComponentNotFound(componentId);
         }
         Component memory component = mapTokenIdComponent[componentId];
@@ -268,7 +270,7 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
     {
         // Check for the component existence
         // TODO These checks can be removed and return empty values instead
-        if ((componentId + 1) > totalSupply) {
+        if (componentId == 0 || componentId > totalSupply) {
             revert ComponentNotFound(componentId);
         }
         Component memory component = mapTokenIdComponent[componentId];
@@ -298,5 +300,15 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
 
         baseURI = bURI;
         emit baseURIChanged(bURI);
+    }
+
+    /// @dev Gets the valid component Id from the provided index.
+    /// @param id Component counter.
+    /// @return componentId Component Id.
+    function tokenByIndex(uint256 id) external view returns (uint256 componentId) {
+        componentId = id + 1;
+        if (componentId > totalSupply) {
+            revert Overflow(componentId, totalSupply);
+        }
     }
 }

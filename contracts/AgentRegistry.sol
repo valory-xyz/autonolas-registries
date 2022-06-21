@@ -1,15 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../lib/solmate/src/tokens/ERC721.sol";
+import "../lib/solmate/src/utils/LibString.sol";
 import "./interfaces/IErrorsRegistries.sol";
 import "./interfaces/IRegistry.sol";
 
 /// @title Agent Registry - Smart contract for registering agents
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-contract AgentRegistry is IErrorsRegistries, IStructs, ERC721Enumerable, Ownable, ReentrancyGuard {
+contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
+    using LibString for uint256;
+
+    event OwnerUpdated(address indexed owner);
+    event ManagerUpdated(address indexed manager);
+    event baseURIChanged(string baseURI);
+    event CreateAgent(address indexed agentOwner, Multihash agentHash, uint256 agentId);
+    event UpdateHash(address indexed agentOwner, Multihash agentHash, uint256 agentId);
+
     // Agent parameters
     struct Agent {
         // Developer of the agent
@@ -26,30 +33,64 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721Enumerable, Ownable
 
     // Component registry
     address public immutable componentRegistry;
-    // Base URI
-    string public _BASEURI;
-    // Agent counter
-    uint256 private _tokenIds;
+    // Owner address
+    address public owner;
     // Agent manager
-    address private _manager;
-    // Map of token Id => component
-    mapping(uint256 => Agent) private _mapTokenIdAgent;
-    // Map of IPFS hash => token Id
-    mapping(bytes32 => uint256) private _mapHashTokenId;
+    address public manager;
+    // Base URI
+    string public baseURI;
+    // Agent counter
+    uint256 public totalSupply;
+    // Reentrancy lock
+    uint256 private _locked = 1;
+    // Map of agent Id => agent
+    mapping(uint256 => Agent) public mapTokenIdAgent;
+    // Map of IPFS hash => agent Id
+    mapping(bytes32 => uint256) public mapHashTokenId;
 
-    // name = "agent", symbol = "MECH"
-    constructor(string memory _name, string memory _symbol, string memory _bURI, address _componentRegistry)
+    /// @dev Agent constructor.
+    /// @param _name Agent contract name.
+    /// @param _symbol Agent contract symbol.
+    /// @param _baseURI Agent token base URI.
+    /// @param _componentRegistry Component registry address.
+    constructor(string memory _name, string memory _symbol, string memory _baseURI, address _componentRegistry)
         ERC721(_name, _symbol) {
-        _BASEURI = _bURI;
+        baseURI = _baseURI;
         componentRegistry = _componentRegistry;
+        owner = msg.sender;
     }
 
-    // Only the manager has a privilege to manipulate an agent
-    modifier onlyManager {
-        if (_manager != msg.sender) {
-            revert ManagerOnly(msg.sender, _manager);
+    /// @dev Changes the owner address.
+    /// @param newOwner Address of a new owner.
+    function changeOwner(address newOwner) external {
+        // Check for the ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
         }
-        _;
+
+        // Check for the zero address
+        if (newOwner == address(0)) {
+            revert ZeroAddress();
+        }
+
+        owner = newOwner;
+        emit OwnerUpdated(newOwner);
+    }
+
+    /// @dev Changes the agent manager.
+    /// @param newManager Address of a new agent manager.
+    function changeManager(address newManager) external {
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for the zero address
+        if (newManager == address(0)) {
+            revert ZeroAddress();
+        }
+
+        manager = newManager;
+        emit ManagerUpdated(newManager);
     }
 
     // Checks for supplied IPFS hash
@@ -59,54 +100,58 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721Enumerable, Ownable
             revert WrongHash(hashStruct.hashFunction, 0x12, hashStruct.size, 0x20);
         }
         // Check for the existent IPFS hashes
-        if (_mapHashTokenId[hashStruct.hash] > 0) {
+        if (mapHashTokenId[hashStruct.hash] > 0) {
             revert HashExists();
         }
         _;
     }
 
-    /// @dev Changes the agent manager.
-    /// @param newManager Address of a new agent manager.
-    function changeManager(address newManager) public onlyOwner {
-        _manager = newManager;
-    }
-
-    /// @dev Set the agent data.
-    /// @param tokenId Token / agent Id.
+    /// @dev Sets the agent data.
+    /// @param agentId Agent Id.
     /// @param developer Developer of the agent.
     /// @param agentHash IPFS hash of the agent.
     /// @param description Description of the agent.
     /// @param dependencies Set of component dependencies.
-    function _setAgentInfo(uint256 tokenId, address developer, Multihash memory agentHash,
+    function _setAgentInfo(uint256 agentId, address developer, Multihash memory agentHash,
         string memory description, uint256[] memory dependencies)
         private
     {
-        Agent storage agent = _mapTokenIdAgent[tokenId];
+        Agent storage agent = mapTokenIdAgent[agentId];
         agent.developer = developer;
         agent.agentHashes.push(agentHash);
         agent.description = description;
         agent.dependencies = dependencies;
         agent.active = true;
-        _mapHashTokenId[agentHash.hash] = tokenId;
+//        mapTokenIdComponent[agentId] = agent;
+        mapHashTokenId[agentHash.hash] = agentId;
     }
 
     /// @dev Creates agent.
-    /// @param owner Owner of the agent.
+    /// @param agentOwner Owner of the agent.
     /// @param developer Developer of the agent.
     /// @param agentHash IPFS hash of the agent.
     /// @param description Description of the agent.
     /// @param dependencies Set of component dependencies in a sorted ascending order.
-    /// @return The id of a minted agent.
-    function create(address owner, address developer, Multihash memory agentHash, string memory description,
+    /// @return agentId The id of a minted agent.
+    function create(address agentOwner, address developer, Multihash memory agentHash, string memory description,
         uint256[] memory dependencies)
         external
-        onlyManager
         checkHash(agentHash)
-        nonReentrant
-        returns (uint256)
+        returns (uint256 agentId)
     {
-        // Checks for owner and developer being not zero addresses
-        if(owner == address(0) || developer == address(0)) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
+        // Check for the manager privilege for an agent creation
+        if (manager != msg.sender) {
+            revert ManagerOnly(msg.sender, manager);
+        }
+
+        // Checks for agentOwner and developer being not zero addresses
+        if(agentOwner == address(0) || developer == address(0)) {
             revert ZeroAddress();
         }
 
@@ -117,108 +162,139 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721Enumerable, Ownable
 //        require(dependencies.length > 0, "Agent must have at least one component dependency");
 
         // Check for dependencies validity: must be already allocated, must not repeat
-        uint256 lastId = 0;
-        for (uint256 iDep = 0; iDep < dependencies.length; iDep++) {
-            if (dependencies[iDep] <= lastId || !IRegistry(componentRegistry).exists(dependencies[iDep])) {
+        agentId = totalSupply;
+        uint256 componentTotalSupply = IRegistry(componentRegistry).totalSupply();
+        uint256 lastId;
+        for (uint256 iDep = 0; iDep < dependencies.length; ++iDep) {
+            if (dependencies[iDep] < (lastId + 1) || dependencies[iDep] > componentTotalSupply) {
                 revert WrongComponentId(dependencies[iDep]);
             }
             lastId = dependencies[iDep];
         }
 
-        // Mint token and initialize the component
-        _tokenIds++;
-        uint256 newTokenId = _tokenIds;
-        _setAgentInfo(newTokenId, developer, agentHash, description, dependencies);
-        _safeMint(owner, newTokenId);
+        // Mint token and initialize the agent
+        agentId++;
+        // Initialize the agent and mint its token
+        _setAgentInfo(agentId, developer, agentHash, description, dependencies);
 
-        return newTokenId;
+        // Safe mint is needed since contracts can create agents as well
+        _safeMint(agentOwner, agentId);
+        totalSupply = agentId;
+
+        emit CreateAgent(agentOwner, agentHash, agentId);
+        _locked = 1;
     }
 
     /// @dev Updates the agent hash.
-    /// @param owner Owner of the agent.
-    /// @param tokenId Token Id.
+    /// @param agentOwner Owner of the agent.
+    /// @param agentId Agent Id.
     /// @param agentHash New IPFS hash of the agent.
     /// @return success True, if function executed successfully.
-    function updateHash(address owner, uint256 tokenId, Multihash memory agentHash) external onlyManager
+    function updateHash(address agentOwner, uint256 agentId, Multihash memory agentHash) external
         checkHash(agentHash) returns (bool success)
     {
-        if (ownerOf(tokenId) != owner) {
-            revert AgentNotFound(tokenId);
+        // Check for the manager privilege for an agent modification
+        if (manager != msg.sender) {
+            revert ManagerOnly(msg.sender, manager);
         }
-        Agent storage agent = _mapTokenIdAgent[tokenId];
+
+        // Checking the agent ownership
+        if (ownerOf(agentId) != agentOwner) {
+            revert AgentNotFound(agentId);
+        }
+        Agent storage agent = mapTokenIdAgent[agentId];
         agent.agentHashes.push(agentHash);
         success = true;
+
+        emit UpdateHash(agentOwner, agentHash, agentId);
     }
 
-    /// @dev Check for the token / agent existence.
-    /// @param tokenId Token Id.
+    /// @dev Checks for the agent existence.
+    /// @param agentId Agent Id.
     /// @return true if the agent exists, false otherwise.
-    function exists (uint256 tokenId) public view returns (bool) {
-        return _exists(tokenId);
+    function exists(uint256 agentId) external view returns (bool) {
+        return agentId > 0 && agentId < (totalSupply + 1);
     }
 
     /// @dev Gets the agent info.
-    /// @param tokenId Token Id.
-    /// @return owner Owner of the agent.
+    /// @param agentId Agent Id.
+    /// @return agentOwner Owner of the agent.
     /// @return developer The agent developer.
     /// @return agentHash The primary agent IPFS hash.
     /// @return description The agent description.
     /// @return numDependencies The number of components in the dependency list.
     /// @return dependencies The list of component dependencies.
-    function getInfo(uint256 tokenId) public view
-        returns (address owner, address developer, Multihash memory agentHash, string memory description,
+    function getInfo(uint256 agentId) external view
+        returns (address agentOwner, address developer, Multihash memory agentHash, string memory description,
             uint256 numDependencies, uint256[] memory dependencies)
     {
-        if (!_exists(tokenId)) {
-            revert AgentNotFound(tokenId);
+        if (agentId == 0 || agentId > totalSupply) {
+            revert AgentNotFound(agentId);
         }
-        Agent storage agent = _mapTokenIdAgent[tokenId];
-        return (ownerOf(tokenId), agent.developer, agent.agentHashes[0], agent.description, agent.dependencies.length,
+        Agent storage agent = mapTokenIdAgent[agentId];
+        return (ownerOf(agentId), agent.developer, agent.agentHashes[0], agent.description, agent.dependencies.length,
             agent.dependencies);
     }
 
-    /// @dev Gets component / agent dependencies.
+    /// @dev Gets agent component dependencies.
+    /// @param agentId Agent Id.
     /// @return numDependencies The number of components in the dependency list.
     /// @return dependencies The list of component dependencies.
-    function getDependencies(uint256 tokenId) public view
+    function getDependencies(uint256 agentId) external view
         returns (uint256 numDependencies, uint256[] memory dependencies)
     {
-        if (!_exists(tokenId)) {
-            revert AgentNotFound(tokenId);
+        if (agentId == 0 || agentId > totalSupply) {
+            revert AgentNotFound(agentId);
         }
-        Agent storage agent = _mapTokenIdAgent[tokenId];
+        Agent storage agent = mapTokenIdAgent[agentId];
         return (agent.dependencies.length, agent.dependencies);
     }
 
     /// @dev Gets agent hashes.
-    /// @param tokenId Token Id.
+    /// @param agentId Agent Id.
     /// @return numHashes Number of hashes.
     /// @return agentHashes The list of agent hashes.
-    function getHashes(uint256 tokenId) public view
+    function getHashes(uint256 agentId) public view
         returns (uint256 numHashes, Multihash[] memory agentHashes)
     {
-        if (!_exists(tokenId)) {
-            revert AgentNotFound(tokenId);
+        if (agentId == 0 || agentId > totalSupply) {
+            revert AgentNotFound(agentId);
         }
-        Agent storage agent = _mapTokenIdAgent[tokenId];
+        Agent storage agent = mapTokenIdAgent[agentId];
         return (agent.agentHashes.length, agent.agentHashes);
     }
 
-    /// @dev Returns agent base URI.
-    /// @return base URI string.
-    function _baseURI() internal view override returns (string memory) {
-        return _BASEURI;
+    /// @dev Returns agent token URI.
+    /// @param agentId Agent Id.
+    /// @return Agent token URI string.
+    function tokenURI(uint256 agentId) public view override returns (string memory) {
+        return string.concat(baseURI, agentId.toString());
     }
-
-    /// @dev Returns agent base URI.
-    /// @return base URI string.
-    function getBaseURI() public view returns (string memory) {
-        return _baseURI();
-    }
-
+    
     /// @dev Sets agent base URI.
-    /// @param bURI base URI string.
-    function setBaseURI(string memory bURI) public onlyOwner {
-        _BASEURI = bURI;
+    /// @param bURI Base URI string.
+    function setBaseURI(string memory bURI) external {
+        // Check for the ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for the zero value
+        if (bytes(bURI).length == 0) {
+            revert ZeroValue();
+        }
+
+        baseURI = bURI;
+        emit baseURIChanged(bURI);
+    }
+
+    /// @dev Gets the valid agent Id from the provided index.
+    /// @param id Agent counter.
+    /// @return agentId Agent Id.
+    function tokenByIndex(uint256 id) external view returns (uint256 agentId) {
+        agentId = id + 1;
+        if (agentId > totalSupply) {
+            revert Overflow(agentId, totalSupply);
+        }
     }
 }

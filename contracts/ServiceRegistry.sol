@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
+import "../lib/solmate/src/tokens/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./AgentRegistry.sol";
@@ -10,7 +11,7 @@ import "./interfaces/IRegistry.sol";
 
 /// @title Service Registry - Smart contract for registering services
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721Enumerable, ReentrancyGuard {
+contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721, ReentrancyGuard {
     event Deposit(address sender, uint256 amount);
     event Refund(address sendee, uint256 amount);
     event ServiceRegistryManagerUpdated(address manager);
@@ -81,7 +82,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721Enumerab
     // Agent Registry
     address public immutable agentRegistry;
     // Service counter
-    uint256 private _serviceIds;
+    uint256 public totalSupply;
     // The amount of funds slashed
     uint256 public slashedFunds;
     // Service Manager
@@ -113,7 +114,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721Enumerab
 
     // Only the owner of the service is authorized to manipulate it
     modifier onlyServiceOwner(address owner, uint256 serviceId) {
-        if (owner == address(0) || !_exists(serviceId) || ownerOf(serviceId) != owner) {
+        if (owner == address(0) || serviceId == 0 || serviceId > totalSupply || ownerOf(serviceId) != owner) {
             revert ServiceNotFound(serviceId);
         }
         _;
@@ -121,7 +122,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721Enumerab
 
     // Check for the service existence
     modifier serviceExists(uint256 serviceId) {
-        if (!_exists(serviceId)) {
+        if (serviceId == 0 || serviceId > totalSupply) {
             revert ServiceDoesNotExist(serviceId);
         }
         _;
@@ -174,9 +175,10 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721Enumerab
         }
 
         // Check for canonical agent Ids existence and for duplicate Ids
-        uint256 lastId = 0;
+        uint256 agentTotalSupply = IRegistry(agentRegistry).totalSupply();
+        uint256 lastId;
         for (uint256 i = 0; i < agentIds.length; i++) {
-            if (agentIds[i] <= lastId || !IRegistry(agentRegistry).exists(agentIds[i])) {
+            if (agentIds[i] < (lastId + 1) || agentIds[i] > agentTotalSupply) {
                 revert WrongAgentId(agentIds[i]);
             }
             lastId = agentIds[i];
@@ -242,7 +244,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721Enumerab
     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
     /// @param threshold Signers threshold for a multisig composed by agent instances.
     /// @return serviceId Created service Id.
-    function createService(
+    function create(
         address owner,
         string memory name,
         string memory description,
@@ -268,8 +270,8 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721Enumerab
         }
 
         // Create a new service Id
-        _serviceIds++;
-        serviceId = _serviceIds;
+        serviceId = totalSupply;
+        serviceId++;
 
         // Set high-level data components of the service instance
         Service storage service = _mapServices[serviceId];
@@ -284,6 +286,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721Enumerab
 
         service.state = ServiceState.PreRegistration;
 
+        totalSupply = serviceId;
         emit CreateService(owner, name, threshold, serviceId);
     }
 
@@ -634,6 +637,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721Enumerab
         success = true;
     }
 
+    // TODO Since we don't burn, this function can be obsolete
     /// @dev Destroys the service instance.
     /// @param owner Individual that creates and controls a service.
     /// @param serviceId Correspondent service Id.
@@ -646,6 +650,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721Enumerab
             revert WrongServiceState(uint256(service.state), serviceId);
         }
 
+        // TODO Need to take care of, services are not explicitly burnt, just permanently deactivated
         _burn(serviceId);
 
         emit DestroyService(owner, serviceId);
@@ -743,7 +748,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721Enumerab
     /// @param serviceId Service Id.
     /// @return true if the service exists, false otherwise.
     function exists(uint256 serviceId) public view returns (bool) {
-        return _exists(serviceId);
+        return serviceId > 0 && serviceId < (totalSupply + 1);
     }
 
     /// @dev Gets the high-level service information.
@@ -858,5 +863,24 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721Enumerab
         }
         mapMultisigs[multisig] = permission;
         success = true;
+    }
+
+    // TODO Need to be defined as in component / agent registry, or different
+    /// @dev Returns service token URI.
+    /// @param serviceId Service Id.
+    /// @return Service token URI string.
+    function tokenURI(uint256 serviceId) public view override returns (string memory) {
+        serviceId = totalSupply;
+        return string("https://localhost2/service/");
+    }
+
+    /// @dev Gets the valid service Id from the provided index.
+    /// @param id Service counter.
+    /// @return serviceId Service Id.
+    function tokenByIndex(uint256 id) external view returns (uint256 serviceId) {
+        serviceId = id + 1;
+        if (serviceId > totalSupply) {
+            revert Overflow(serviceId, totalSupply);
+        }
     }
 }

@@ -67,7 +67,7 @@ contract ServiceManager is IErrorsRegistries, IStructs, Ownable, Pausable {
         uint256 threshold
     ) external whenNotPaused returns (uint256)
     {
-        return IService(serviceRegistry).createService(owner, name, description, configHash, agentIds, agentParams,
+        return IService(serviceRegistry).create(owner, name, description, configHash, agentIds, agentParams,
             threshold);
     }
 
