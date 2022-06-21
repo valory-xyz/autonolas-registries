@@ -637,7 +637,8 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, Ownable, ERC721, Reentr
         success = true;
     }
 
-    // TODO Since we don't burn, this function can be obsolete
+    // TODO Since we don't burn, this function can be obsolete. The service can either be activated later for registration
+    // TODO or rest for good in TerminatedUnbonded state
     /// @dev Destroys the service instance.
     /// @param owner Individual that creates and controls a service.
     /// @param serviceId Correspondent service Id.
