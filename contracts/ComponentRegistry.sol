@@ -26,6 +26,7 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         // TODO Or (initial hash <=> set of hashes) map. Here we could store only the initial hash
         Multihash[] componentHashes;
         // Description of the component
+        // TODO string in struct is very expensive. One solution is bytes32
         string description;
         // Set of component dependencies
         // TODO Think of smaller values than uint256 to save storage
