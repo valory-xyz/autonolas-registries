@@ -5,7 +5,6 @@ import "../lib/solmate/src/tokens/ERC721.sol";
 import "../lib/solmate/src/utils/LibString.sol";
 import "./interfaces/IErrorsRegistries.sol";
 import "./interfaces/IRegistry.sol";
-import "hardhat/console.sol";
 
 /// @title Component Registry - Smart contract for registering components
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -24,12 +23,15 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         address developer;
         // IPFS hashes of the component
         // TODO This can be stored outside of component in its separate (componentId <=> set of hashes) map
+        // TODO Or (initial hash <=> set of hashes) map. Here we could store only the initial hash
         Multihash[] componentHashes;
         // Description of the component
         string description;
         // Set of component dependencies
+        // TODO Think of smaller values than uint256 to save storage
         uint256[] dependencies;
         // Component activity
+        // TODO Seems like this variable is not needed, there will be no inactive component, otherwise it could break other dependent ones
         bool active;
     }
 
@@ -44,11 +46,9 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
     // Reentrancy lock
     uint256 private _locked = 1;
     // Map of token Id => component
-    // TODO This can be made public, and getInfo function would become obsolete
-    mapping(uint256 => Component) private _mapTokenIdComponent;
+    mapping(uint256 => Component) public mapTokenIdComponent;
     // Map of IPFS hash => token Id
-    // TODO There is no point of having this private as well
-    mapping(bytes32 => uint256) private _mapHashTokenId;
+    mapping(bytes32 => uint256) public mapHashTokenId;
 
     /// @dev Component constructor.
     /// @param name Component contract name.
@@ -101,12 +101,13 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         }
 
         // Check for the existent IPFS hashes
-        if (_mapHashTokenId[hashStruct.hash] > 0) {
+        if (mapHashTokenId[hashStruct.hash] > 0) {
             revert HashExists();
         }
         _;
     }
 
+    // TODO This needs to be embedded into the create() function itself to save on gas
     /// @dev Sets the component data.
     /// @param componentId Component Id.
     /// @param developer Developer of the component.
@@ -117,15 +118,16 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         string memory description, uint256[] memory dependencies)
         private
     {
-        Component storage component = _mapTokenIdComponent[componentId];
+        Component storage component = mapTokenIdComponent[componentId];
         component.developer = developer;
-        // TODO when componentHashes is out in its own map, the component is then taken as a memory instance
+        // TODO when componentHashes is stored in its own map, or when it becomes just the set of bytes32[3] arrays (v1 Multihash representation),
+        // TODO the component is then taken as a memory instance, filled and assigned in a single storage operation
         component.componentHashes.push(componentHash);
         component.description = description;
         component.dependencies = dependencies;
         component.active = true;
-//        _mapTokenIdComponent[componentId] = component;
-        _mapHashTokenId[componentHash.hash] = componentId;
+//        mapTokenIdComponent[componentId] = component;
+        mapHashTokenId[componentHash.hash] = componentId;
     }
 
     /// @dev Creates component.
@@ -201,7 +203,7 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         if (ownerOf(componentId) != componentOwner) {
             revert ComponentNotFound(componentId);
         }
-        Component storage component = _mapTokenIdComponent[componentId];
+        Component storage component = mapTokenIdComponent[componentId];
         component.componentHashes.push(componentHash);
         success = true;
 
@@ -234,7 +236,9 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         if ((componentId + 1) > totalSupply) {
             revert ComponentNotFound(componentId);
         }
-        Component memory component = _mapTokenIdComponent[componentId];
+        Component memory component = mapTokenIdComponent[componentId];
+        // TODO Here we return the initial hash (componentHashes[0]). With hashes outside of the Component struct,
+        // TODO we could just return the component itself
         return (ownerOf(componentId), component.developer, component.componentHashes[0], component.description,
             component.dependencies.length, component.dependencies);
     }
@@ -251,7 +255,7 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         if ((componentId + 1) > totalSupply) {
             revert ComponentNotFound(componentId);
         }
-        Component memory component = _mapTokenIdComponent[componentId];
+        Component memory component = mapTokenIdComponent[componentId];
         return (component.dependencies.length, component.dependencies);
     }
 
@@ -267,10 +271,11 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         if ((componentId + 1) > totalSupply) {
             revert ComponentNotFound(componentId);
         }
-        Component memory component = _mapTokenIdComponent[componentId];
+        Component memory component = mapTokenIdComponent[componentId];
         return (component.componentHashes.length, component.componentHashes);
     }
 
+    // TODO Alternativly, the component hash can be taken as an URI: string(abi.encodePacked(bytes32));
     /// @dev Returns component token URI.
     /// @param componentId Component Id.
     /// @return Component token URI string.
