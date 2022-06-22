@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import "./interfaces/IErrorsRegistries.sol";
 import "./interfaces/IStructs.sol";
 import "./interfaces/IService.sol";
@@ -17,19 +15,27 @@ interface IReward {
 
 /// @title Service Manager - Periphery smart contract for managing services
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-contract ServiceManager is IErrorsRegistries, IStructs, Ownable, Pausable {
-    event TreasuryUpdated(address treasury);
-    event MultisigCreate(address multisig);
+contract ServiceManager is IErrorsRegistries, IStructs {
+    event OwnerUpdated(address indexed owner);
+    event Pause(address indexed owner);
+    event Unpause(address indexed owner);
+    event TreasuryUpdated(address indexed treasury);
+    event CreateMultisig(address indexed multisig);
     event RewardService(uint256 serviceId, uint256 amount);
 
     // Service registry address
     address public immutable serviceRegistry;
     // Treasury address
     address public treasury;
+    // Owner address
+    address public owner;
+    // Pause switch
+    bool public paused;
 
     constructor(address _serviceRegistry, address _treasury) {
         serviceRegistry = _serviceRegistry;
         treasury = _treasury;
+        owner = msg.sender;
     }
 
     /// @dev Fallback function
@@ -42,15 +48,37 @@ contract ServiceManager is IErrorsRegistries, IStructs, Ownable, Pausable {
         revert WrongFunction();
     }
 
+    /// @dev Changes the owner address.
+    /// @param newOwner Address of a new owner.
+    function changeOwner(address newOwner) external {
+        // Check for the ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for the zero address
+        if (newOwner == address(0)) {
+            revert ZeroAddress();
+        }
+
+        owner = newOwner;
+        emit OwnerUpdated(newOwner);
+    }
+
     /// @dev Changes the treasury address.
     /// @param _treasury Address of a new treasury.
-    function changeTreasury(address _treasury) external onlyOwner {
+    function changeTreasury(address _treasury) external {
+        // Check for the ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
     }
 
     /// @dev Creates a new service.
-    /// @param owner Individual that creates and controls a service.
+    /// @param serviceOwner Individual that creates and controls a service.
     /// @param name Name of the service.
     /// @param description Description of the service.
     /// @param configHash IPFS hash pointing to the config metadata.
@@ -58,16 +86,20 @@ contract ServiceManager is IErrorsRegistries, IStructs, Ownable, Pausable {
     /// @param agentParams Number of agent instances and required bond to register an instance in the service.
     /// @param threshold Threshold for a multisig composed by agents.
     function serviceCreate(
-        address owner,
+        address serviceOwner,
         string memory name,
         string memory description,
         Multihash memory configHash,
         uint256[] memory agentIds,
         AgentParams[] memory agentParams,
         uint256 threshold
-    ) external whenNotPaused returns (uint256)
+    ) external returns (uint256)
     {
-        return IService(serviceRegistry).createService(owner, name, description, configHash, agentIds, agentParams,
+        // Check if the minting is paused
+        if (paused) {
+            revert Paused();
+        }
+        return IService(serviceRegistry).create(serviceOwner, name, description, configHash, agentIds, agentParams,
             threshold);
     }
 
@@ -125,13 +157,13 @@ contract ServiceManager is IErrorsRegistries, IStructs, Ownable, Pausable {
     ) external returns (address multisig)
     {
         multisig = IService(serviceRegistry).deploy(msg.sender, serviceId, multisigImplementation, data);
-        emit MultisigCreate(multisig);
+        emit CreateMultisig(multisig);
     }
 
     /// @dev Terminates the service.
     /// @param serviceId Service Id.
     /// @return success True, if function executed successfully.
-    /// @return refund Refund to return to the owner.
+    /// @return refund Refund for the service owner.
     function serviceTerminate(uint256 serviceId) external returns (bool success, uint256 refund) {
         (success, refund) = IService(serviceRegistry).terminate(msg.sender, serviceId);
     }
@@ -164,12 +196,24 @@ contract ServiceManager is IErrorsRegistries, IStructs, Ownable, Pausable {
     }
 
     /// @dev Pauses the contract.
-    function pause() external onlyOwner {
-        _pause();
+    function pause() external {
+        // Check for the ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        paused = true;
+        emit Pause(msg.sender);
     }
 
     /// @dev Unpauses the contract.
-    function unpause() external onlyOwner {
-        _unpause();
+    function unpause() external {
+        // Check for the ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        paused = false;
+        emit Unpause(msg.sender);
     }
 }

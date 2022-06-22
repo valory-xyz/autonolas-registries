@@ -41,27 +41,17 @@ describe("RegistriesManager", function () {
         it("Pausing and unpausing", async function () {
             const user = signers[3];
 
-            // Can't unpause unpaused contract
-            await expect(
-                registriesManager.unpause()
-            ).to.be.revertedWith("Pausable: not paused");
-
             // Pause the contract
             await registriesManager.pause();
 
             // Try minting when paused
             await expect(
                 registriesManager.mintComponent(user.address, user.address, componentHashes[0], description, dependencies)
-            ).to.be.revertedWith("Pausable: paused");
+            ).to.be.revertedWith("Paused");
 
             await expect(
                 registriesManager.mintAgent(user.address, user.address, componentHashes[0], description, dependencies)
-            ).to.be.revertedWith("Pausable: paused");
-
-            // Try to pause again
-            await expect(
-                registriesManager.pause()
-            ).to.be.revertedWith("Pausable: paused");
+            ).to.be.revertedWith("Paused");
 
             // Unpause the contract
             await registriesManager.unpause();

@@ -1,6 +1,6 @@
 # On-Chain Protocol State Machine
 Let's first describe the list of possible states:
-- Service is non-existent; -> No service has been registered with a specified Id yet or the service is non-recoverable
+- Service is non-existent; -> No service has been registered with a specified Id yet
 - Service is pre-registration; -> Agent instance registration is not active yet
 - Service is active-registration; -> Agent instance registration is ongoing
 - Service is finished-registration; -> All the agent instances slots are registered
@@ -27,10 +27,6 @@ would throw an error.
 ### activateRegistration()
 - **Current state:** pre-registration
 - **Next state:** active-registration
-
-### destroy()
-- **Current state:** pre-registration or termination-unbonded
-- **Next state:** non-existent
 
 ### terminate()
 - **Current state:** active-registration or finished-registration or deployed
@@ -68,15 +64,10 @@ List of next possible states:
 Functions to call from this state:
   - **activateRegistration()**
   - **update()**
-  - **destroy()**
 
 List of next possible states:
 1. **Service is active-registration**
    - Function call for this state: **activateRegistration()**
-
-
-2. **Service is non-existent**
-    - Function call for this state: **destroy()**
 
 ### Service is active-registration
 Functions to call from this state:
@@ -129,9 +120,5 @@ Condition for this state: Service termination block has passed and all agent ins
 their stake or have never registered for the service.
 
 Functions to call from this state:
-- **destroy()**
-
-List of next possible states:
-1. **Service is non-existent**
-    - Function call for this state: **destroy()**
+- None
 

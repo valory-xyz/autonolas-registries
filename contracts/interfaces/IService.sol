@@ -14,7 +14,7 @@ interface IService is IStructs {
     /// @param agentParams Number of agent instances and required bond to register an instance in the service.
     /// @param threshold Signers threshold for a multisig composed by agent instances.
     /// @return serviceId Created service Id.
-    function createService(
+    function create(
         address owner,
         string memory name,
         string memory description,
