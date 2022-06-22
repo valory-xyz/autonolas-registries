@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.14;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "./IStructs.sol";
 
 /// @dev Required interface for the component / agent manipulation.
-interface IRegistry is IStructs, IERC721Enumerable {
+interface IRegistry is IStructs {
     /// @dev Creates component / agent.
     /// @param owner Owner of the component / agent.
     /// @param developer Developer of the component / agent.
@@ -63,11 +62,12 @@ interface IRegistry is IStructs, IERC721Enumerable {
     /// @return mHashes The list of component / agent hashes.
     function getHashes(uint256 tokenId) external view returns (uint256 numHashes, Multihash[] memory mHashes);
 
-    /// @dev Returns component / agent base URI.
-    /// @return base URI string.
-    function getBaseURI() external view returns (string memory);
+    /// @dev Gets the total supply of components / agents.
+    /// @return Total supply.
+    function totalSupply() external view returns (uint256);
 
-    /// @dev Sets component / agent base URI.
-    /// @param bURI base URI string.
-    function setBaseURI(string memory bURI) external;
+    /// @dev Gets the valid component Id from the provided index.
+    /// @param id Component counter.
+    /// @return componentId Component Id.
+    function tokenByIndex(uint256 id) external view returns (uint256 componentId);
 }

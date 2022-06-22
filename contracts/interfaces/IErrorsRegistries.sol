@@ -8,6 +8,11 @@ interface IErrorsRegistries {
     /// @param manager Required sender address as a manager.
     error ManagerOnly(address sender, address manager);
 
+    /// @dev Only `owner` has a privilege, but the `sender` was provided.
+    /// @param sender Sender address.
+    /// @param owner Required sender address as an owner.
+    error OwnerOnly(address sender, address owner);
+
     /// @dev Wrong hash format.
     /// @param hashFunctionProvided Hash function classification provided.
     /// @param hashFunctionNeeded Hash function classification needed.
@@ -76,6 +81,9 @@ interface IErrorsRegistries {
     /// @param agentId Canonical agent Id.
     /// @param serviceId Service Id.
     error AgentNotInService(uint256 agentId, uint256 serviceId);
+
+    /// @dev The contract is paused.
+    error Paused();
 
     /// @dev Zero value when it has to be different from zero.
     error ZeroValue();
