@@ -228,12 +228,11 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
         returns (address agentOwner, address developer, Multihash memory agentHash, string memory description,
             uint256 numDependencies, uint256[] memory dependencies)
     {
-        if (agentId == 0 || agentId > totalSupply) {
-            revert AgentNotFound(agentId);
+        if (agentId > 0 && agentId < (totalSupply + 1)) {
+            Agent memory agent = mapTokenIdAgent[agentId];
+            return (ownerOf(agentId), agent.developer, agent.agentHashes[0], agent.description, agent.dependencies.length,
+                agent.dependencies);
         }
-        Agent storage agent = mapTokenIdAgent[agentId];
-        return (ownerOf(agentId), agent.developer, agent.agentHashes[0], agent.description, agent.dependencies.length,
-            agent.dependencies);
     }
 
     /// @dev Gets agent component dependencies.
@@ -243,11 +242,10 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
     function getDependencies(uint256 agentId) external view
         returns (uint256 numDependencies, uint256[] memory dependencies)
     {
-        if (agentId == 0 || agentId > totalSupply) {
-            revert AgentNotFound(agentId);
+        if (agentId > 0 && agentId < (totalSupply + 1)) {
+            Agent memory agent = mapTokenIdAgent[agentId];
+            return (agent.dependencies.length, agent.dependencies);
         }
-        Agent storage agent = mapTokenIdAgent[agentId];
-        return (agent.dependencies.length, agent.dependencies);
     }
 
     /// @dev Gets agent hashes.
@@ -257,11 +255,10 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
     function getHashes(uint256 agentId) external view
         returns (uint256 numHashes, Multihash[] memory agentHashes)
     {
-        if (agentId == 0 || agentId > totalSupply) {
-            revert AgentNotFound(agentId);
+        if (agentId > 0 && agentId < (totalSupply + 1)) {
+            Agent memory agent = mapTokenIdAgent[agentId];
+            return (agent.agentHashes.length, agent.agentHashes);
         }
-        Agent storage agent = mapTokenIdAgent[agentId];
-        return (agent.agentHashes.length, agent.agentHashes);
     }
 
     /// @dev Returns agent token URI.

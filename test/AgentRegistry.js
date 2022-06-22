@@ -169,7 +169,7 @@ describe("AgentRegistry", function () {
             await agentRegistry.connect(mechManager).create(user.address, user.address,
                 agentHash2, description + "2", lastDependencies);
 
-            const agentInfo = await agentRegistry.getInfo(tokenId);
+            let agentInfo = await agentRegistry.getInfo(tokenId);
             expect(agentInfo.agentOwner).to.equal(user.address);
             expect(agentInfo.developer).to.equal(user.address);
             expect(agentInfo.agentHash.hash).to.equal(agentHash2.hash);
@@ -178,18 +178,17 @@ describe("AgentRegistry", function () {
             for (let i = 0; i < lastDependencies.length; i++) {
                 expect(agentInfo.dependencies[i]).to.equal(lastDependencies[i]);
             }
-            await expect(
-                agentRegistry.getInfo(tokenId + 1)
-            ).to.be.revertedWith("AgentNotFound");
+            // Getting info about non-existent agent Id
+            agentInfo = await agentRegistry.getInfo(tokenId + 1);
+            expect(agentInfo.agentOwner).to.equal(AddressZero);
 
-            const agentDependencies = await agentRegistry.getDependencies(tokenId);
+            let agentDependencies = await agentRegistry.getDependencies(tokenId);
             expect(agentDependencies.numDependencies).to.equal(lastDependencies.length);
             for (let i = 0; i < lastDependencies.length; i++) {
                 expect(agentDependencies.dependencies[i]).to.equal(lastDependencies[i]);
             }
-            await expect(
-                agentRegistry.getDependencies(tokenId + 1)
-            ).to.be.revertedWith("AgentNotFound");
+            agentDependencies = await agentRegistry.getDependencies(tokenId + 1);
+            expect(agentDependencies.numDependencies).to.equal(0);
         });
 
         //        it("Should fail when creating an agent without a single component dependency", async function () {
@@ -237,16 +236,15 @@ describe("AgentRegistry", function () {
             await agentRegistry.connect(mechManager).updateHash(user.address, 1, agentHash2);
         });
 
-        it("Should fail when getting hashes of non-existent agent", async function () {
+        it("Should return zeros when getting hashes of non-existent agent", async function () {
             const mechManager = signers[1];
             const user = signers[2];
             await agentRegistry.changeManager(mechManager.address);
             await agentRegistry.connect(mechManager).create(user.address, user.address,
                 agentHash, description, dependencies);
 
-            await expect(
-                agentRegistry.getHashes(2)
-            ).to.be.revertedWith("AgentNotFound");
+            const hashes = await agentRegistry.getHashes(2);
+            expect(hashes.numHashes).to.equal(0);
         });
 
         it("Update hash, get component hashes", async function () {

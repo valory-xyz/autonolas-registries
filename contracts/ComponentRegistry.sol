@@ -235,15 +235,13 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
             uint256 numDependencies, uint256[] memory dependencies)
     {
         // Check for the component existence
-        // TODO These checks can be removed and return empty values instead
-        if (componentId == 0 || componentId > totalSupply) {
-            revert ComponentNotFound(componentId);
+        if (componentId > 0 && componentId < (totalSupply + 1)) {
+            Component memory component = mapTokenIdComponent[componentId];
+            // TODO Here we return the initial hash (componentHashes[0]). With hashes outside of the Component struct,
+            // TODO we could just return the component itself
+            return (ownerOf(componentId), component.developer, component.componentHashes[0], component.description,
+                component.dependencies.length, component.dependencies);
         }
-        Component memory component = mapTokenIdComponent[componentId];
-        // TODO Here we return the initial hash (componentHashes[0]). With hashes outside of the Component struct,
-        // TODO we could just return the component itself
-        return (ownerOf(componentId), component.developer, component.componentHashes[0], component.description,
-            component.dependencies.length, component.dependencies);
     }
 
     /// @dev Gets component dependencies.
@@ -254,12 +252,10 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         returns (uint256 numDependencies, uint256[] memory dependencies)
     {
         // Check for the component existence
-        // TODO These checks can be removed and return empty values instead
-        if (componentId == 0 || componentId > totalSupply) {
-            revert ComponentNotFound(componentId);
+        if (componentId > 0 && componentId < (totalSupply + 1)) {
+            Component memory component = mapTokenIdComponent[componentId];
+            return (component.dependencies.length, component.dependencies);
         }
-        Component memory component = mapTokenIdComponent[componentId];
-        return (component.dependencies.length, component.dependencies);
     }
 
     /// @dev Gets component hashes.
@@ -270,12 +266,10 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         returns (uint256 numHashes, Multihash[] memory componentHashes)
     {
         // Check for the component existence
-        // TODO These checks can be removed and return empty values instead
-        if (componentId == 0 || componentId > totalSupply) {
-            revert ComponentNotFound(componentId);
+        if (componentId > 0 && componentId < (totalSupply + 1)) {
+            Component memory component = mapTokenIdComponent[componentId];
+            return (component.componentHashes.length, component.componentHashes);
         }
-        Component memory component = mapTokenIdComponent[componentId];
-        return (component.componentHashes.length, component.componentHashes);
     }
 
     // TODO Alternativly, the component hash can be taken as an URI: string(abi.encodePacked(bytes32));
