@@ -231,7 +231,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, ERC721 {
         uint256 threshold,
         uint256[] memory agentIds,
         AgentParams[] memory agentParams,
-        uint size
+        uint256 size
     ) private
     {
         // Updating high-level data components of the service

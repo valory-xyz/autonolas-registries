@@ -203,7 +203,7 @@ contract ServiceManager is IErrorsRegistries, IStructs {
         }
 
         paused = true;
-        emit Pause(owner);
+        emit Pause(msg.sender);
     }
 
     /// @dev Unpauses the contract.
@@ -214,6 +214,6 @@ contract ServiceManager is IErrorsRegistries, IStructs {
         }
 
         paused = false;
-        emit Unpause(owner);
+        emit Unpause(msg.sender);
     }
 }
