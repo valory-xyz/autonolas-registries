@@ -13,7 +13,7 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
 
     event OwnerUpdated(address indexed owner);
     event ManagerUpdated(address indexed manager);
-    event baseURIChanged(string baseURI);
+    event BaseURIChanged(string baseURI);
     event CreateComponent(address indexed componentOwner, Multihash componentHash, uint256 componentId);
     event UpdateHash(address indexed componentOwner, Multihash componentHash, uint256 componentId);
 
@@ -51,10 +51,10 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
     // Map of IPFS hash => component Id
     mapping(bytes32 => uint256) public mapHashTokenId;
 
-    /// @dev Component constructor.
-    /// @param _name Component contract name.
-    /// @param _symbol Component contract symbol.
-    /// @param _baseURI Component token base URI.
+    /// @dev Component registry constructor.
+    /// @param _name Component registry contract name.
+    /// @param _symbol Component registry contract symbol.
+    /// @param _baseURI Component registry token base URI.
     constructor(string memory _name, string memory _symbol, string memory _baseURI) ERC721(_name, _symbol) {
         baseURI = _baseURI;
         owner = msg.sender;
@@ -136,7 +136,7 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
     /// @param developer Developer of the component.
     /// @param componentHash IPFS hash of the component.
     /// @param description Description of the component.
-    /// @param dependencies Set of component dependencies in a sorted ascending order.
+    /// @param dependencies Set of component dependencies in a sorted ascending order (component Ids).
     /// @return componentId The id of a minted component.
     function create(address componentOwner, address developer, Multihash memory componentHash, string memory description,
         uint256[] memory dependencies)
@@ -300,7 +300,7 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         }
 
         baseURI = bURI;
-        emit baseURIChanged(bURI);
+        emit BaseURIChanged(bURI);
     }
 
     /// @dev Gets the valid component Id from the provided index.

@@ -92,4 +92,5 @@ several steps in order to be verified. Those include:
 
 ## Acknowledgements
 The registries contracts were inspired and based on the following sources:
+- [Rari-Capital](https://github.com/Rari-Capital/solmate). Last known audited version: `a9e3ea26a2dc73bfa87f0cb189687d029028e0c5`;
 - [OpenZeppelin](https://github.com/OpenZeppelin/openzeppelin-contracts).

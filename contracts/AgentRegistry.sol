@@ -13,7 +13,7 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
 
     event OwnerUpdated(address indexed owner);
     event ManagerUpdated(address indexed manager);
-    event baseURIChanged(string baseURI);
+    event BaseURIChanged(string baseURI);
     event CreateAgent(address indexed agentOwner, Multihash agentHash, uint256 agentId);
     event UpdateHash(address indexed agentOwner, Multihash agentHash, uint256 agentId);
 
@@ -48,10 +48,10 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
     // Map of IPFS hash => agent Id
     mapping(bytes32 => uint256) public mapHashTokenId;
 
-    /// @dev Agent constructor.
-    /// @param _name Agent contract name.
-    /// @param _symbol Agent contract symbol.
-    /// @param _baseURI Agent token base URI.
+    /// @dev Agent registry constructor.
+    /// @param _name Agent registry contract name.
+    /// @param _symbol Agent registry contract symbol.
+    /// @param _baseURI Agent registry token base URI.
     /// @param _componentRegistry Component registry address.
     constructor(string memory _name, string memory _symbol, string memory _baseURI, address _componentRegistry)
         ERC721(_name, _symbol) {
@@ -111,7 +111,7 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
     /// @param developer Developer of the agent.
     /// @param agentHash IPFS hash of the agent.
     /// @param description Description of the agent.
-    /// @param dependencies Set of component dependencies.
+    /// @param dependencies Set of component dependencies (component Ids).
     function _setAgentInfo(uint256 agentId, address developer, Multihash memory agentHash,
         string memory description, uint256[] memory dependencies)
         private
@@ -131,7 +131,7 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
     /// @param developer Developer of the agent.
     /// @param agentHash IPFS hash of the agent.
     /// @param description Description of the agent.
-    /// @param dependencies Set of component dependencies in a sorted ascending order.
+    /// @param dependencies Set of component dependencies in a sorted ascending order (component Ids).
     /// @return agentId The id of a minted agent.
     function create(address agentOwner, address developer, Multihash memory agentHash, string memory description,
         uint256[] memory dependencies)
@@ -285,7 +285,7 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
         }
 
         baseURI = bURI;
-        emit baseURIChanged(bURI);
+        emit BaseURIChanged(bURI);
     }
 
     /// @dev Gets the valid agent Id from the provided index.
