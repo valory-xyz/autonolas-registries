@@ -82,6 +82,9 @@ interface IErrorsRegistries {
     /// @param serviceId Service Id.
     error AgentNotInService(uint256 agentId, uint256 serviceId);
 
+    /// @dev The contract is paused.
+    error Paused();
+
     /// @dev Zero value when it has to be different from zero.
     error ZeroValue();
 

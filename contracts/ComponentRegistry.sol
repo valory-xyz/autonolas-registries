@@ -13,7 +13,7 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
 
     event OwnerUpdated(address indexed owner);
     event ManagerUpdated(address indexed manager);
-    event baseURIChanged(string baseURI);
+    event BaseURIChanged(string baseURI);
     event CreateComponent(address indexed componentOwner, Multihash componentHash, uint256 componentId);
     event UpdateHash(address indexed componentOwner, Multihash componentHash, uint256 componentId);
 
@@ -51,10 +51,10 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
     // Map of IPFS hash => component Id
     mapping(bytes32 => uint256) public mapHashTokenId;
 
-    /// @dev Component constructor.
-    /// @param _name Component contract name.
-    /// @param _symbol Component contract symbol.
-    /// @param _baseURI Component token base URI.
+    /// @dev Component registry constructor.
+    /// @param _name Component registry contract name.
+    /// @param _symbol Component registry contract symbol.
+    /// @param _baseURI Component registry token base URI.
     constructor(string memory _name, string memory _symbol, string memory _baseURI) ERC721(_name, _symbol) {
         baseURI = _baseURI;
         owner = msg.sender;
@@ -136,7 +136,7 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
     /// @param developer Developer of the component.
     /// @param componentHash IPFS hash of the component.
     /// @param description Description of the component.
-    /// @param dependencies Set of component dependencies in a sorted ascending order.
+    /// @param dependencies Set of component dependencies in a sorted ascending order (component Ids).
     /// @return componentId The id of a minted component.
     function create(address componentOwner, address developer, Multihash memory componentHash, string memory description,
         uint256[] memory dependencies)
@@ -235,15 +235,13 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
             uint256 numDependencies, uint256[] memory dependencies)
     {
         // Check for the component existence
-        // TODO These checks can be removed and return empty values instead
-        if (componentId == 0 || componentId > totalSupply) {
-            revert ComponentNotFound(componentId);
+        if (componentId > 0 && componentId < (totalSupply + 1)) {
+            Component memory component = mapTokenIdComponent[componentId];
+            // TODO Here we return the initial hash (componentHashes[0]). With hashes outside of the Component struct,
+            // TODO we could just return the component itself
+            return (ownerOf(componentId), component.developer, component.componentHashes[0], component.description,
+                component.dependencies.length, component.dependencies);
         }
-        Component memory component = mapTokenIdComponent[componentId];
-        // TODO Here we return the initial hash (componentHashes[0]). With hashes outside of the Component struct,
-        // TODO we could just return the component itself
-        return (ownerOf(componentId), component.developer, component.componentHashes[0], component.description,
-            component.dependencies.length, component.dependencies);
     }
 
     /// @dev Gets component dependencies.
@@ -254,12 +252,10 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         returns (uint256 numDependencies, uint256[] memory dependencies)
     {
         // Check for the component existence
-        // TODO These checks can be removed and return empty values instead
-        if (componentId == 0 || componentId > totalSupply) {
-            revert ComponentNotFound(componentId);
+        if (componentId > 0 && componentId < (totalSupply + 1)) {
+            Component memory component = mapTokenIdComponent[componentId];
+            return (component.dependencies.length, component.dependencies);
         }
-        Component memory component = mapTokenIdComponent[componentId];
-        return (component.dependencies.length, component.dependencies);
     }
 
     /// @dev Gets component hashes.
@@ -270,12 +266,10 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         returns (uint256 numHashes, Multihash[] memory componentHashes)
     {
         // Check for the component existence
-        // TODO These checks can be removed and return empty values instead
-        if (componentId == 0 || componentId > totalSupply) {
-            revert ComponentNotFound(componentId);
+        if (componentId > 0 && componentId < (totalSupply + 1)) {
+            Component memory component = mapTokenIdComponent[componentId];
+            return (component.componentHashes.length, component.componentHashes);
         }
-        Component memory component = mapTokenIdComponent[componentId];
-        return (component.componentHashes.length, component.componentHashes);
     }
 
     // TODO Alternativly, the component hash can be taken as an URI: string(abi.encodePacked(bytes32));
@@ -300,7 +294,7 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         }
 
         baseURI = bURI;
-        emit baseURIChanged(bURI);
+        emit BaseURIChanged(bURI);
     }
 
     /// @dev Gets the valid component Id from the provided index.
