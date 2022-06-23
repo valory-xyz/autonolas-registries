@@ -2,7 +2,6 @@
 pragma solidity ^0.8.15;
 
 import "./GenericRegistry.sol";
-import "./interfaces/IRegistry.sol";
 
 /// @title Component Registry - Smart contract for registering components
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -19,8 +18,7 @@ contract ComponentRegistry is GenericRegistry {
         // TODO Or (initial hash <=> set of hashes) map. Here we could store only the initial hash
         Multihash[] componentHashes;
         // Description of the component
-        // TODO string in struct is very expensive. One solution is bytes32
-        string description;
+        bytes32 description;
         // Set of component dependencies
         // TODO Think of smaller values than uint256 to save storage
         uint256[] dependencies;
@@ -66,7 +64,7 @@ contract ComponentRegistry is GenericRegistry {
     /// @param description Description of the component.
     /// @param dependencies Set of component dependencies.
     function _setComponentInfo(uint256 componentId, address developer, Multihash memory componentHash,
-        string memory description, uint256[] memory dependencies)
+        bytes32 description, uint256[] memory dependencies)
         private
     {
         Component storage component = mapTokenIdComponent[componentId];
@@ -88,7 +86,7 @@ contract ComponentRegistry is GenericRegistry {
     /// @param description Description of the component.
     /// @param dependencies Set of component dependencies in a sorted ascending order (component Ids).
     /// @return componentId The id of a minted component.
-    function create(address componentOwner, address developer, Multihash memory componentHash, string memory description,
+    function create(address componentOwner, address developer, Multihash memory componentHash, bytes32 description,
         uint256[] memory dependencies)
         external
         checkHash(componentHash)
@@ -111,7 +109,7 @@ contract ComponentRegistry is GenericRegistry {
         }
 
         // Checks for non-empty description and component dependency
-        if (bytes(description).length == 0) {
+        if (description == 0) {
             revert ZeroValue();
         }
         
@@ -174,7 +172,7 @@ contract ComponentRegistry is GenericRegistry {
     /// @return numDependencies The number of components in the dependency list.
     /// @return dependencies The list of component dependencies.
     function getInfo(uint256 componentId) external view
-        returns (address componentOwner, address developer, Multihash memory componentHash, string memory description,
+        returns (address componentOwner, address developer, Multihash memory componentHash, bytes32 description,
             uint256 numDependencies, uint256[] memory dependencies)
     {
         // Check for the component existence

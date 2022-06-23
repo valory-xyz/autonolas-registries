@@ -31,7 +31,7 @@ contract RegistriesManager is GenericManager {
         address agentOwner,
         address developer,
         IRegistry.Multihash memory agentHash,
-        string memory description,
+        bytes32 description,
         uint256[] memory dependencies
     ) external returns (uint256)
     {
@@ -60,7 +60,7 @@ contract RegistriesManager is GenericManager {
         address componentOwner,
         address developer,
         IRegistry.Multihash memory componentHash,
-        string memory description,
+        bytes32 description,
         uint256[] memory dependencies
     ) external returns (uint256)
     {

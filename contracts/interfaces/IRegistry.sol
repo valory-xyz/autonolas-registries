@@ -24,7 +24,7 @@ interface IRegistry {
         address owner,
         address developer,
         Multihash memory mHash,
-        string memory description,
+        bytes32 description,
         uint256[] memory dependencies
     ) external returns (uint256);
 
@@ -51,7 +51,7 @@ interface IRegistry {
         address owner,
         address developer,
         Multihash memory mHash,
-        string memory description,
+        bytes32 description,
         uint256 numDependencies,
         uint256[] memory dependencies
     );

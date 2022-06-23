@@ -17,7 +17,7 @@ contract AgentRegistry is GenericRegistry {
         // IPFS hashes of the agent
         Multihash[] agentHashes;
         // Description of the agent
-        string description;
+        bytes32 description;
         // Set of component dependencies
         uint256[] dependencies;
         // Agent activity
@@ -63,7 +63,7 @@ contract AgentRegistry is GenericRegistry {
     /// @param description Description of the agent.
     /// @param dependencies Set of component dependencies (component Ids).
     function _setAgentInfo(uint256 agentId, address developer, Multihash memory agentHash,
-        string memory description, uint256[] memory dependencies)
+        bytes32 description, uint256[] memory dependencies)
         private
     {
         Agent storage agent = mapTokenIdAgent[agentId];
@@ -83,7 +83,7 @@ contract AgentRegistry is GenericRegistry {
     /// @param description Description of the agent.
     /// @param dependencies Set of component dependencies in a sorted ascending order (component Ids).
     /// @return agentId The id of a minted agent.
-    function create(address agentOwner, address developer, Multihash memory agentHash, string memory description,
+    function create(address agentOwner, address developer, Multihash memory agentHash, bytes32 description,
         uint256[] memory dependencies)
         external
         checkHash(agentHash)
@@ -106,7 +106,7 @@ contract AgentRegistry is GenericRegistry {
         }
 
         // Checks for non-empty description and component dependency
-        if (bytes(description).length == 0) {
+        if (description == 0) {
             revert ZeroValue();
         }
 //        require(dependencies.length > 0, "Agent must have at least one component dependency");
@@ -168,7 +168,7 @@ contract AgentRegistry is GenericRegistry {
     /// @return numDependencies The number of components in the dependency list.
     /// @return dependencies The list of component dependencies.
     function getInfo(uint256 agentId) external view
-        returns (address agentOwner, address developer, Multihash memory agentHash, string memory description,
+        returns (address agentOwner, address developer, Multihash memory agentHash, bytes32 description,
             uint256 numDependencies, uint256[] memory dependencies)
     {
         if (agentId > 0 && agentId < (totalSupply + 1)) {

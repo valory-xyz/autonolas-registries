@@ -8,7 +8,7 @@ describe("RegistriesManager", function () {
     let agentRegistry;
     let registriesManager;
     let signers;
-    const description = "description";
+    const description = ethers.utils.formatBytes32String("unit description");
     const componentHashes = [{hash: "0x" + "0".repeat(64), hashFunction: "0x12", size: "0x20"},
         {hash: "0x" + "1".repeat(64), hashFunction: "0x12", size: "0x20"}];
     const agentHashes = [{hash: "0x" + "5".repeat(64), hashFunction: "0x12", size: "0x20"},
