@@ -687,8 +687,9 @@ contract ServiceRegistry is GenericRegistry {
     }
 
     // TODO This function needs revisiting and coordination with update() function that already includes hash update
+    // TODO Need to understand if the config can be changed throughout the service activity and deployment stage
     /// @dev Updates the service config hash.
-    /// @param serviceOwner Owner of the agent.
+    /// @param serviceOwner Owner of the service.
     /// @param serviceId Service Id.
     /// @param configHash New IPFS config hash of the service.
     /// @return success True, if function executed successfully.

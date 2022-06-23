@@ -4,7 +4,6 @@ pragma solidity ^0.8.15;
 import "../lib/solmate/src/tokens/ERC721.sol";
 import "../lib/solmate/src/utils/LibString.sol";
 import "./interfaces/IErrorsRegistries.sol";
-import "./interfaces/IRegistry.sol";
 
 /// @title Generic Registry - Smart contract for generic registry template
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>

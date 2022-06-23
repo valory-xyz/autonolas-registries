@@ -12,7 +12,7 @@ contract RegistriesManager is GenericManager {
     // Agent registry address
     address public immutable agentRegistry;
     // Mint fee
-    uint256 private _mintFee;
+    uint256 private _creationFee;
 
     constructor(address _componentRegistry, address _agentRegistry) {
         componentRegistry = _componentRegistry;
@@ -26,7 +26,7 @@ contract RegistriesManager is GenericManager {
     /// @param agentHash IPFS hash of the agent.
     /// @param description Description of the agent.
     /// @param dependencies Set of component dependencies in a sorted ascending order.
-    /// @return The id of a minted agent.
+    /// @return The id of a created agent.
     function createAgent(
         address agentOwner,
         address developer,
@@ -35,7 +35,7 @@ contract RegistriesManager is GenericManager {
         uint256[] memory dependencies
     ) external returns (uint256)
     {
-        // Check if the minting is paused
+        // Check if the creation is paused
         if (paused) {
             revert Paused();
         }
@@ -55,7 +55,7 @@ contract RegistriesManager is GenericManager {
     /// @param componentHash IPFS hash of the component.
     /// @param description Description of the component.
     /// @param dependencies Set of component dependencies in a sorted ascending order.
-    /// @return The id of a minted component.
+    /// @return The id of a created component.
     function createComponent(
         address componentOwner,
         address developer,
@@ -64,7 +64,7 @@ contract RegistriesManager is GenericManager {
         uint256[] memory dependencies
     ) external returns (uint256)
     {
-        // Check if the minting is paused
+        // Check if the creation is paused
         if (paused) {
             revert Paused();
         }
