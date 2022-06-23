@@ -1,25 +1,32 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
-import "../lib/solmate/src/tokens/ERC721.sol";
-import "../lib/solmate/src/utils/LibString.sol";
 import "./AgentRegistry.sol";
-import "./interfaces/IErrorsRegistries.sol";
 import "./interfaces/IMultisig.sol";
 import "./interfaces/IRegistry.sol";
 
+struct AgentParams {
+    // Number of agent instances
+    uint256 slots;
+    // Bond per agent instance
+    uint256 bond;
+}
+
+struct AgentInstance {
+    // Address of an agent instance
+    address instance;
+    // Canonical agent Id
+    uint256 id;
+}
+
 /// @title Service Registry - Smart contract for registering services
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-contract ServiceRegistry is IErrorsRegistries, IStructs, ERC721 {
-    using LibString for uint256;
-
-    event OwnerUpdated(address indexed owner);
-    event ManagerUpdated(address indexed manager);
-    event BaseURIChanged(string baseURI);
+contract ServiceRegistry is GenericRegistry {
     event Deposit(address sender, uint256 amount);
     event Refund(address sendee, uint256 amount);
     event CreateService(address serviceOwner, string name, uint256 threshold, uint256 serviceId);
     event UpdateService(address serviceOwner, string name, uint256 threshold, uint256 serviceId);
+    event UpdateServiceHash(address indexed serviceOwner, Multihash configHash, uint256 serviceId);
     event RegisterInstance(address operator, uint256 serviceId, address agent, uint256 agentId);
     event CreateMultisigWithAgents(uint256 serviceId, address multisig, address[] agentInstances, uint256 threshold);
     event ActivateRegistration(address serviceOwner, uint256 serviceId);
@@ -36,13 +43,6 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, ERC721 {
         Deployed,
         TerminatedBonded,
         TerminatedUnbonded
-    }
-
-    struct AgentInstance {
-        // Address of an agent instance
-        address instance;
-        // Canonical agent Id
-        uint256 id;
     }
 
     // Service parameters
@@ -83,18 +83,8 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, ERC721 {
 
     // Agent Registry
     address public immutable agentRegistry;
-    // Service counter
-    uint256 public totalSupply;
     // The amount of funds slashed
     uint256 public slashedFunds;
-    // Reentrancy lock
-    uint256 private _locked = 1;
-    // Owner address
-    address public owner;
-    // Service Manager
-    address public manager;
-    // Base URI
-    string public baseURI;
     // Map of service counter => service
     mapping (uint256 => Service) public mapServices;
     // Map of agent instance address => service id it is registered with and operator address that supplied the instance
@@ -128,7 +118,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, ERC721 {
     // Check for the service existence
     modifier serviceExists(uint256 serviceId) {
         if (serviceId == 0 || serviceId > totalSupply) {
-            revert ServiceDoesNotExist(serviceId);
+            revert ServiceNotFound(serviceId);
         }
         _;
     }
@@ -141,39 +131,6 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, ERC721 {
     /// @dev Receive function
     receive() external payable {
         revert WrongFunction();
-    }
-
-    /// @dev Changes the owner address.
-    /// @param newOwner Address of a new owner.
-    function changeOwner(address newOwner) external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero address
-        if (newOwner == address(0)) {
-            revert ZeroAddress();
-        }
-
-        owner = newOwner;
-        emit OwnerUpdated(newOwner);
-    }
-
-    /// @dev Changes the agent manager.
-    /// @param newManager Address of a new agent manager.
-    function changeManager(address newManager) external {
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero address
-        if (newManager == address(0)) {
-            revert ZeroAddress();
-        }
-
-        manager = newManager;
-        emit ManagerUpdated(newManager);
     }
 
     /// @dev Going through basic initial service checks.
@@ -192,7 +149,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, ERC721 {
     {
         // Checks for non-empty strings
         if(bytes(name).length == 0 || bytes(description).length == 0) {
-            revert EmptyString();
+            revert ZeroValue();
         }
 
         // Check for the hash format
@@ -729,6 +686,32 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, ERC721 {
         _locked = 1;
     }
 
+    // TODO This function needs revisiting and coordination with update() function that already includes hash update
+    // TODO Need to understand if the config can be changed throughout the service activity and deployment stage
+    /// @dev Updates the service config hash.
+    /// @param serviceOwner Owner of the service.
+    /// @param serviceId Service Id.
+    /// @param configHash New IPFS config hash of the service.
+    /// @return success True, if function executed successfully.
+    function updateHash(address serviceOwner, uint256 serviceId, Multihash memory configHash) external override
+        returns (bool success)
+    {
+        // Check for the manager privilege for an agent modification
+        if (manager != msg.sender) {
+            revert ManagerOnly(msg.sender, manager);
+        }
+
+        // Checking the agent ownership
+        if (ownerOf(serviceId) != serviceOwner) {
+            revert ServiceNotFound(serviceId);
+        }
+        Service storage service = mapServices[serviceId];
+        service.configHashes.push(configHash);
+        success = true;
+
+        emit UpdateServiceHash(serviceOwner, configHash, serviceId);
+    }
+
     /// @dev Gets all agent instances
     /// @param agentInstances Pre-allocated list of agent instance addresses.
     /// @param service Service instance.
@@ -815,14 +798,6 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, ERC721 {
         mapServiceIdSetComponents[serviceId] = componentIds;
     }
 
-
-    /// @dev Checks if the service Id exists.
-    /// @param serviceId Service Id.
-    /// @return true if the service exists, false otherwise.
-    function exists(uint256 serviceId) external view returns (bool) {
-        return serviceId > 0 && serviceId < (totalSupply + 1);
-    }
-
     /// @dev Gets the high-level service information.
     /// @param serviceId Service Id.
     /// @return serviceOwner Address of the service owner.
@@ -879,7 +854,7 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, ERC721 {
     /// @param serviceId Service Id.
     /// @return numHashes Number of hashes.
     /// @return configHashes The list of component hashes.
-    function getConfigHashes(uint256 serviceId) external view serviceExists(serviceId)
+    function getHashes(uint256 serviceId) external view override serviceExists(serviceId)
         returns (uint256 numHashes, Multihash[] memory configHashes)
     {
         Service storage service = mapServices[serviceId];
@@ -940,39 +915,5 @@ contract ServiceRegistry is IErrorsRegistries, IStructs, ERC721 {
         }
         mapMultisigs[multisig] = permission;
         success = true;
-    }
-
-    /// @dev Returns component token URI.
-    /// @param componentId Component Id.
-    /// @return Component token URI string.
-    function tokenURI(uint256 componentId) public view override returns (string memory) {
-        return string.concat(baseURI, componentId.toString());
-    }
-
-    /// @dev Sets component base URI.
-    /// @param bURI Base URI string.
-    function setBaseURI(string memory bURI) external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero value
-        if (bytes(bURI).length == 0) {
-            revert ZeroValue();
-        }
-
-        baseURI = bURI;
-        emit BaseURIChanged(bURI);
-    }
-
-    /// @dev Gets the valid service Id from the provided index.
-    /// @param id Service counter.
-    /// @return serviceId Service Id.
-    function tokenByIndex(uint256 id) external view returns (uint256 serviceId) {
-        serviceId = id + 1;
-        if (serviceId > totalSupply) {
-            revert Overflow(serviceId, totalSupply);
-        }
     }
 }

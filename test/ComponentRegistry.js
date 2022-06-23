@@ -6,7 +6,7 @@ const { ethers } = require("hardhat");
 describe("ComponentRegistry", function () {
     let componentRegistry;
     let signers;
-    const description = "component description";
+    const description = ethers.utils.formatBytes32String("component description");
     const componentHash = {hash: "0x" + "0".repeat(64), hashFunction: "0x12", size: "0x20"};
     const componentHash1 = {hash: "0x" + "1".repeat(64), hashFunction: "0x12", size: "0x20"};
     const componentHash2 = {hash: "0x" + "2".repeat(64), hashFunction: "0x12", size: "0x20"};
@@ -92,9 +92,9 @@ describe("ComponentRegistry", function () {
             const user = signers[2];
             await componentRegistry.changeManager(mechManager.address);
             await expect(
-                componentRegistry.connect(mechManager).create(user.address, user.address, componentHash, "",
-                    dependencies)
-            ).to.be.revertedWith("EmptyString");
+                componentRegistry.connect(mechManager).create(user.address, user.address, componentHash,
+                    "0x" + "0".repeat(64), dependencies)
+            ).to.be.revertedWith("ZeroValue");
         });
 
         it("Should fail when creating a second component with the same hash", async function () {
@@ -116,11 +116,11 @@ describe("ComponentRegistry", function () {
             await expect(
                 componentRegistry.connect(mechManager).create(user.address, user.address, componentHash,
                     description, [0])
-            ).to.be.revertedWith("WrongComponentId");
+            ).to.be.revertedWith("ComponentNotFound");
             await expect(
                 componentRegistry.connect(mechManager).create(user.address, user.address, componentHash,
                     description, [1])
-            ).to.be.revertedWith("WrongComponentId");
+            ).to.be.revertedWith("ComponentNotFound");
         });
 
         it("Create a components with duplicate dependencies in the list of dependencies", async function () {
@@ -132,11 +132,11 @@ describe("ComponentRegistry", function () {
             await expect(
                 componentRegistry.connect(mechManager).create(user.address, user.address, componentHash2,
                     description, [1, 1, 1])
-            ).to.be.revertedWith("WrongComponentId");
+            ).to.be.revertedWith("ComponentNotFound");
             await expect(
                 componentRegistry.connect(mechManager).create(user.address, user.address, componentHash2,
                     description, [2, 1, 2, 1, 1, 1, 2])
-            ).to.be.revertedWith("WrongComponentId");
+            ).to.be.revertedWith("ComponentNotFound");
         });
 
         it("Token Id=1 after first successful component creation must exist", async function () {
@@ -170,14 +170,15 @@ describe("ComponentRegistry", function () {
                 componentHash, description, dependencies);
             await componentRegistry.connect(mechManager).create(user.address, user.address,
                 componentHash1, description, dependencies);
+            const description2 = ethers.utils.id("component description2");
             await componentRegistry.connect(mechManager).create(user.address, user.address,
-                componentHash2, description + "2", lastDependencies);
+                componentHash2, description2, lastDependencies);
 
             let compInfo = await componentRegistry.getInfo(tokenId);
             expect(compInfo.componentOwner).to.equal(user.address);
             expect(compInfo.developer).to.equal(user.address);
             expect(compInfo.componentHash.hash).to.equal(componentHash2.hash);
-            expect(compInfo.description).to.equal(description + "2");
+            expect(compInfo.description).to.equal(description2);
             expect(compInfo.numDependencies).to.equal(lastDependencies.length);
             for (let i = 0; i < lastDependencies.length; i++) {
                 expect(compInfo.dependencies[i]).to.equal(lastDependencies[i]);

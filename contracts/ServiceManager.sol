@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
-import "./interfaces/IErrorsRegistries.sol";
-import "./interfaces/IStructs.sol";
+import "./GenericManager.sol";
 import "./interfaces/IService.sol";
 
 // Treasury related interface
@@ -15,10 +14,7 @@ interface IReward {
 
 /// @title Service Manager - Periphery smart contract for managing services
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-contract ServiceManager is IErrorsRegistries, IStructs {
-    event OwnerUpdated(address indexed owner);
-    event Pause(address indexed owner);
-    event Unpause(address indexed owner);
+contract ServiceManager is GenericManager {
     event TreasuryUpdated(address indexed treasury);
     event CreateMultisig(address indexed multisig);
     event RewardService(uint256 serviceId, uint256 amount);
@@ -27,10 +23,6 @@ contract ServiceManager is IErrorsRegistries, IStructs {
     address public immutable serviceRegistry;
     // Treasury address
     address public treasury;
-    // Owner address
-    address public owner;
-    // Pause switch
-    bool public paused;
 
     constructor(address _serviceRegistry, address _treasury) {
         serviceRegistry = _serviceRegistry;
@@ -46,23 +38,6 @@ contract ServiceManager is IErrorsRegistries, IStructs {
     /// @dev Receive function
     receive() external payable {
         revert WrongFunction();
-    }
-
-    /// @dev Changes the owner address.
-    /// @param newOwner Address of a new owner.
-    function changeOwner(address newOwner) external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero address
-        if (newOwner == address(0)) {
-            revert ZeroAddress();
-        }
-
-        owner = newOwner;
-        emit OwnerUpdated(newOwner);
     }
 
     /// @dev Changes the treasury address.
@@ -89,9 +64,9 @@ contract ServiceManager is IErrorsRegistries, IStructs {
         address serviceOwner,
         string memory name,
         string memory description,
-        Multihash memory configHash,
+        IService.Multihash memory configHash,
         uint256[] memory agentIds,
-        AgentParams[] memory agentParams,
+        IService.AgentParams[] memory agentParams,
         uint256 threshold
     ) external returns (uint256)
     {
@@ -114,9 +89,9 @@ contract ServiceManager is IErrorsRegistries, IStructs {
     function serviceUpdate(
         string memory name,
         string memory description,
-        Multihash memory configHash,
+        IService.Multihash memory configHash,
         uint256[] memory agentIds,
-        AgentParams[] memory agentParams,
+        IService.AgentParams[] memory agentParams,
         uint256 threshold,
         uint256 serviceId
     ) external
@@ -193,27 +168,5 @@ contract ServiceManager is IErrorsRegistries, IStructs {
         amounts[0] = msg.value;
         IReward(treasury).depositETHFromServices{value: msg.value}(serviceIds, amounts);
         emit RewardService(serviceId, msg.value);
-    }
-
-    /// @dev Pauses the contract.
-    function pause() external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        paused = true;
-        emit Pause(msg.sender);
-    }
-
-    /// @dev Unpauses the contract.
-    function unpause() external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        paused = false;
-        emit Unpause(msg.sender);
     }
 }

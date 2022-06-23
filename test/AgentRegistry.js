@@ -7,7 +7,7 @@ describe("AgentRegistry", function () {
     let componentRegistry;
     let agentRegistry;
     let signers;
-    const description = "agent description";
+    const description = ethers.utils.formatBytes32String("agent description");
     const agentHash = {hash: "0x" + "0".repeat(64), hashFunction: "0x12", size: "0x20"};
     const agentHash1 = {hash: "0x" + "1".repeat(64), hashFunction: "0x12", size: "0x20"};
     const agentHash2 = {hash: "0x" + "2".repeat(64), hashFunction: "0x12", size: "0x20"};
@@ -97,9 +97,9 @@ describe("AgentRegistry", function () {
             const user = signers[2];
             await agentRegistry.changeManager(mechManager.address);
             await expect(
-                agentRegistry.connect(mechManager).create(user.address, user.address, agentHash, "",
+                agentRegistry.connect(mechManager).create(user.address, user.address, agentHash, "0x" + "0".repeat(64),
                     dependencies)
-            ).to.be.revertedWith("EmptyString");
+            ).to.be.revertedWith("ZeroValue");
         });
 
         it("Should fail when creating a second agent with the same hash", async function () {
@@ -121,7 +121,7 @@ describe("AgentRegistry", function () {
             await expect(
                 agentRegistry.connect(mechManager).create(user.address, user.address, agentHash,
                     description, [0])
-            ).to.be.revertedWith("WrongComponentId");
+            ).to.be.revertedWith("ComponentNotFound");
         });
 
         it("Should fail when creating a non-existent component dependency", async function () {
@@ -131,7 +131,7 @@ describe("AgentRegistry", function () {
             await expect(
                 agentRegistry.connect(mechManager).create(user.address, user.address, agentHash,
                     description, [1])
-            ).to.be.revertedWith("WrongComponentId");
+            ).to.be.revertedWith("ComponentNotFound");
         });
 
         it("Token Id=1 after first successful agent creation must exist ", async function () {
@@ -166,14 +166,15 @@ describe("AgentRegistry", function () {
                 agentHash, description, dependencies);
             await componentRegistry.connect(mechManager).create(user.address, user.address,
                 agentHash1, description, dependencies);
+            const description2 = ethers.utils.id("component description2");
             await agentRegistry.connect(mechManager).create(user.address, user.address,
-                agentHash2, description + "2", lastDependencies);
+                agentHash2, description2, lastDependencies);
 
             let agentInfo = await agentRegistry.getInfo(tokenId);
             expect(agentInfo.agentOwner).to.equal(user.address);
             expect(agentInfo.developer).to.equal(user.address);
             expect(agentInfo.agentHash.hash).to.equal(agentHash2.hash);
-            expect(agentInfo.description).to.equal(description + "2");
+            expect(agentInfo.description).to.equal(description2);
             expect(agentInfo.numDependencies).to.equal(lastDependencies.length);
             for (let i = 0; i < lastDependencies.length; i++) {
                 expect(agentInfo.dependencies[i]).to.equal(lastDependencies[i]);

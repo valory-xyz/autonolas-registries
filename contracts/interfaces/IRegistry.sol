@@ -1,10 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.14;
 
-import "./IStructs.sol";
-
 /// @dev Required interface for the component / agent manipulation.
-interface IRegistry is IStructs {
+interface IRegistry {
+    // Multihash according to self-describing hashes standard. For more information of multihashes please visit https://multiformats.io/multihash/
+    struct Multihash {
+        // IPFS uses a sha2-256 hashing function. Each IPFS hash has to start with 1220.
+        bytes32 hash;
+        // Code in hex for sha2-256 is 0x12
+        uint8 hashFunction;
+        // Length of the hash is 32 bytes, or 0x20 in hex
+        uint8 size;
+    }
+
     /// @dev Creates component / agent.
     /// @param owner Owner of the component / agent.
     /// @param developer Developer of the component / agent.
@@ -16,7 +24,7 @@ interface IRegistry is IStructs {
         address owner,
         address developer,
         Multihash memory mHash,
-        string memory description,
+        bytes32 description,
         uint256[] memory dependencies
     ) external returns (uint256);
 
@@ -43,7 +51,7 @@ interface IRegistry is IStructs {
         address owner,
         address developer,
         Multihash memory mHash,
-        string memory description,
+        bytes32 description,
         uint256 numDependencies,
         uint256[] memory dependencies
     );

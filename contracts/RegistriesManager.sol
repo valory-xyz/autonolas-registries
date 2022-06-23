@@ -1,26 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
-import "./interfaces/IErrorsRegistries.sol";
+import "./GenericManager.sol";
 import "./interfaces/IRegistry.sol";
 
 /// @title Registries Manager - Periphery smart contract for managing components and agents
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-contract RegistriesManager is IErrorsRegistries, IStructs {
-    event OwnerUpdated(address indexed owner);
-    event Pause(address indexed owner);
-    event Unpause(address indexed owner);
-
+contract RegistriesManager is GenericManager {
     // Component registry address
     address public immutable componentRegistry;
     // Agent registry address
     address public immutable agentRegistry;
-    // Owner address
-    address public owner;
     // Mint fee
-    uint256 private _mintFee;
-    // Pause switch
-    bool public paused;
+    uint256 private _creationFee;
 
     constructor(address _componentRegistry, address _agentRegistry) {
         componentRegistry = _componentRegistry;
@@ -28,39 +20,22 @@ contract RegistriesManager is IErrorsRegistries, IStructs {
         owner = msg.sender;
     }
 
-    /// @dev Changes the owner address.
-    /// @param newOwner Address of a new owner.
-    function changeOwner(address newOwner) external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero address
-        if (newOwner == address(0)) {
-            revert ZeroAddress();
-        }
-
-        owner = newOwner;
-        emit OwnerUpdated(newOwner);
-    }
-
-    /// @dev Mints agent.
+    /// @dev Creates agent.
     /// @param agentOwner Owner of the agent.
     /// @param developer Developer of the agent.
     /// @param agentHash IPFS hash of the agent.
     /// @param description Description of the agent.
     /// @param dependencies Set of component dependencies in a sorted ascending order.
-    /// @return The id of a minted agent.
-    function mintAgent(
+    /// @return The id of a created agent.
+    function createAgent(
         address agentOwner,
         address developer,
-        Multihash memory agentHash,
-        string memory description,
+        IRegistry.Multihash memory agentHash,
+        bytes32 description,
         uint256[] memory dependencies
     ) external returns (uint256)
     {
-        // Check if the minting is paused
+        // Check if the creation is paused
         if (paused) {
             revert Paused();
         }
@@ -70,26 +45,26 @@ contract RegistriesManager is IErrorsRegistries, IStructs {
     /// @dev Updates the agent hash.
     /// @param tokenId Token Id.
     /// @param agentHash New IPFS hash of the agent.
-    function updateAgentHash(uint256 tokenId, Multihash memory agentHash) external {
+    function updateAgentHash(uint256 tokenId, IRegistry.Multihash memory agentHash) external {
         return IRegistry(agentRegistry).updateHash(msg.sender, tokenId, agentHash);
     }
 
-    /// @dev Mints component.
+    /// @dev Creates component.
     /// @param componentOwner Owner of the component.
     /// @param developer Developer of the component.
     /// @param componentHash IPFS hash of the component.
     /// @param description Description of the component.
     /// @param dependencies Set of component dependencies in a sorted ascending order.
-    /// @return The id of a minted component.
-    function mintComponent(
+    /// @return The id of a created component.
+    function createComponent(
         address componentOwner,
         address developer,
-        Multihash memory componentHash,
-        string memory description,
+        IRegistry.Multihash memory componentHash,
+        bytes32 description,
         uint256[] memory dependencies
     ) external returns (uint256)
     {
-        // Check if the minting is paused
+        // Check if the creation is paused
         if (paused) {
             revert Paused();
         }
@@ -99,29 +74,7 @@ contract RegistriesManager is IErrorsRegistries, IStructs {
     /// @dev Updates the component hash.
     /// @param tokenId Token Id.
     /// @param componentHash New IPFS hash of the component.
-    function updateComponentHash(uint256 tokenId, Multihash memory componentHash) external {
+    function updateComponentHash(uint256 tokenId, IRegistry.Multihash memory componentHash) external {
         return IRegistry(componentRegistry).updateHash(msg.sender, tokenId, componentHash);
-    }
-
-    /// @dev Pauses the contract.
-    function pause() external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        paused = true;
-        emit Pause(msg.sender);
-    }
-
-    /// @dev Unpauses the contract.
-    function unpause() external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        paused = false;
-        emit Unpause(msg.sender);
     }
 }
