@@ -1,21 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
-import "../lib/solmate/src/tokens/ERC721.sol";
-import "../lib/solmate/src/utils/LibString.sol";
-import "./interfaces/IErrorsRegistries.sol";
+import "./GenericRegistry.sol";
 import "./interfaces/IRegistry.sol";
 
 /// @title Component Registry - Smart contract for registering components
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
-    using LibString for uint256;
-
-    event OwnerUpdated(address indexed owner);
-    event ManagerUpdated(address indexed manager);
-    event BaseURIChanged(string baseURI);
+contract ComponentRegistry is GenericRegistry {
     event CreateComponent(address indexed componentOwner, Multihash componentHash, uint256 componentId);
-    event UpdateHash(address indexed componentOwner, Multihash componentHash, uint256 componentId);
+    event UpdateComponentHash(address indexed componentOwner, Multihash componentHash, uint256 componentId);
 
     // Component parameters
     struct Component {
@@ -36,16 +29,6 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         bool active;
     }
 
-    // Owner address
-    address public owner;
-    // Component manager
-    address public manager;
-    // Base URI
-    string public baseURI;
-    // Component counter
-    uint256 public totalSupply;
-    // Reentrancy lock
-    uint256 private _locked = 1;
     // Map of component Id => component
     mapping(uint256 => Component) public mapTokenIdComponent;
     // Map of IPFS hash => component Id
@@ -58,39 +41,6 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
     constructor(string memory _name, string memory _symbol, string memory _baseURI) ERC721(_name, _symbol) {
         baseURI = _baseURI;
         owner = msg.sender;
-    }
-
-    /// @dev Changes the owner address.
-    /// @param newOwner Address of a new owner.
-    function changeOwner(address newOwner) external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero address
-        if (newOwner == address(0)) {
-            revert ZeroAddress();
-        }
-
-        owner = newOwner;
-        emit OwnerUpdated(newOwner);
-    }
-
-    /// @dev Changes the component manager.
-    /// @param newManager Address of a new component manager.
-    function changeManager(address newManager) external {
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero address
-        if (newManager == address(0)) {
-            revert ZeroAddress();
-        }
-
-        manager = newManager;
-        emit ManagerUpdated(newManager);
     }
 
     // Checks for supplied IPFS hash
@@ -162,7 +112,7 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
 
         // Checks for non-empty description and component dependency
         if (bytes(description).length == 0) {
-            revert EmptyString();
+            revert ZeroValue();
         }
         
         // Check for dependencies validity: must be already allocated, must not repeat
@@ -193,7 +143,7 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
     /// @param componentId Component Id.
     /// @param componentHash New IPFS hash of the component.
     /// @return success True, if function executed successfully.
-    function updateHash(address componentOwner, uint256 componentId, Multihash memory componentHash) external
+    function updateHash(address componentOwner, uint256 componentId, Multihash memory componentHash) external override
         checkHash(componentHash)
         returns (bool success)
     {
@@ -210,14 +160,7 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
         component.componentHashes.push(componentHash);
         success = true;
 
-        emit UpdateHash(componentOwner, componentHash, componentId);
-    }
-
-    /// @dev Checks for the component existence.
-    /// @param componentId Component Id.
-    /// @return true if the component exists, false otherwise.
-    function exists(uint256 componentId) external view returns (bool) {
-        return componentId > 0 && componentId < (totalSupply + 1);
+        emit UpdateComponentHash(componentOwner, componentHash, componentId);
     }
 
     // TODO As mentioned earlier, this can go away with the component owner, dependencies and set of hashes returned separately,
@@ -262,48 +205,13 @@ contract ComponentRegistry is IErrorsRegistries, IStructs, ERC721 {
     /// @param componentId Component Id.
     /// @return numHashes Number of hashes.
     /// @return componentHashes The list of component hashes.
-    function getHashes(uint256 componentId) external view
+    function getHashes(uint256 componentId) external view override
         returns (uint256 numHashes, Multihash[] memory componentHashes)
     {
         // Check for the component existence
         if (componentId > 0 && componentId < (totalSupply + 1)) {
             Component memory component = mapTokenIdComponent[componentId];
             return (component.componentHashes.length, component.componentHashes);
-        }
-    }
-
-    // TODO Alternativly, the component hash can be taken as an URI: string(abi.encodePacked(bytes32));
-    /// @dev Returns component token URI.
-    /// @param componentId Component Id.
-    /// @return Component token URI string.
-    function tokenURI(uint256 componentId) public view override returns (string memory) {
-        return string.concat(baseURI, componentId.toString());
-    }
-
-    /// @dev Sets component base URI.
-    /// @param bURI Base URI string.
-    function setBaseURI(string memory bURI) external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero value
-        if (bytes(bURI).length == 0) {
-            revert ZeroValue();
-        }
-
-        baseURI = bURI;
-        emit BaseURIChanged(bURI);
-    }
-
-    /// @dev Gets the valid component Id from the provided index.
-    /// @param id Component counter.
-    /// @return componentId Component Id.
-    function tokenByIndex(uint256 id) external view returns (uint256 componentId) {
-        componentId = id + 1;
-        if (componentId > totalSupply) {
-            revert Overflow(componentId, totalSupply);
         }
     }
 }

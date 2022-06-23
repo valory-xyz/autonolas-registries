@@ -1,21 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
-import "../lib/solmate/src/tokens/ERC721.sol";
-import "../lib/solmate/src/utils/LibString.sol";
-import "./interfaces/IErrorsRegistries.sol";
+import "./GenericRegistry.sol";
 import "./interfaces/IRegistry.sol";
 
 /// @title Agent Registry - Smart contract for registering agents
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
-    using LibString for uint256;
-
-    event OwnerUpdated(address indexed owner);
-    event ManagerUpdated(address indexed manager);
-    event BaseURIChanged(string baseURI);
+contract AgentRegistry is GenericRegistry {
     event CreateAgent(address indexed agentOwner, Multihash agentHash, uint256 agentId);
-    event UpdateHash(address indexed agentOwner, Multihash agentHash, uint256 agentId);
+    event UpdateAgentHash(address indexed agentOwner, Multihash agentHash, uint256 agentId);
 
     // Agent parameters
     struct Agent {
@@ -33,16 +26,6 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
 
     // Component registry
     address public immutable componentRegistry;
-    // Owner address
-    address public owner;
-    // Agent manager
-    address public manager;
-    // Base URI
-    string public baseURI;
-    // Agent counter
-    uint256 public totalSupply;
-    // Reentrancy lock
-    uint256 private _locked = 1;
     // Map of agent Id => agent
     mapping(uint256 => Agent) public mapTokenIdAgent;
     // Map of IPFS hash => agent Id
@@ -58,39 +41,6 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
         baseURI = _baseURI;
         componentRegistry = _componentRegistry;
         owner = msg.sender;
-    }
-
-    /// @dev Changes the owner address.
-    /// @param newOwner Address of a new owner.
-    function changeOwner(address newOwner) external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero address
-        if (newOwner == address(0)) {
-            revert ZeroAddress();
-        }
-
-        owner = newOwner;
-        emit OwnerUpdated(newOwner);
-    }
-
-    /// @dev Changes the agent manager.
-    /// @param newManager Address of a new agent manager.
-    function changeManager(address newManager) external {
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero address
-        if (newManager == address(0)) {
-            revert ZeroAddress();
-        }
-
-        manager = newManager;
-        emit ManagerUpdated(newManager);
     }
 
     // Checks for supplied IPFS hash
@@ -157,7 +107,7 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
 
         // Checks for non-empty description and component dependency
         if (bytes(description).length == 0) {
-            revert EmptyString();
+            revert ZeroValue();
         }
 //        require(dependencies.length > 0, "Agent must have at least one component dependency");
 
@@ -190,7 +140,7 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
     /// @param agentId Agent Id.
     /// @param agentHash New IPFS hash of the agent.
     /// @return success True, if function executed successfully.
-    function updateHash(address agentOwner, uint256 agentId, Multihash memory agentHash) external
+    function updateHash(address agentOwner, uint256 agentId, Multihash memory agentHash) external override
         checkHash(agentHash) returns (bool success)
     {
         // Check for the manager privilege for an agent modification
@@ -206,14 +156,7 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
         agent.agentHashes.push(agentHash);
         success = true;
 
-        emit UpdateHash(agentOwner, agentHash, agentId);
-    }
-
-    /// @dev Checks for the agent existence.
-    /// @param agentId Agent Id.
-    /// @return true if the agent exists, false otherwise.
-    function exists(uint256 agentId) external view returns (bool) {
-        return agentId > 0 && agentId < (totalSupply + 1);
+        emit UpdateAgentHash(agentOwner, agentHash, agentId);
     }
 
     /// @dev Gets the agent info.
@@ -252,46 +195,12 @@ contract AgentRegistry is IErrorsRegistries, IStructs, ERC721 {
     /// @param agentId Agent Id.
     /// @return numHashes Number of hashes.
     /// @return agentHashes The list of agent hashes.
-    function getHashes(uint256 agentId) external view
+    function getHashes(uint256 agentId) external view override
         returns (uint256 numHashes, Multihash[] memory agentHashes)
     {
         if (agentId > 0 && agentId < (totalSupply + 1)) {
             Agent memory agent = mapTokenIdAgent[agentId];
             return (agent.agentHashes.length, agent.agentHashes);
-        }
-    }
-
-    /// @dev Returns agent token URI.
-    /// @param agentId Agent Id.
-    /// @return Agent token URI string.
-    function tokenURI(uint256 agentId) public view override returns (string memory) {
-        return string.concat(baseURI, agentId.toString());
-    }
-    
-    /// @dev Sets agent base URI.
-    /// @param bURI Base URI string.
-    function setBaseURI(string memory bURI) external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero value
-        if (bytes(bURI).length == 0) {
-            revert ZeroValue();
-        }
-
-        baseURI = bURI;
-        emit BaseURIChanged(bURI);
-    }
-
-    /// @dev Gets the valid agent Id from the provided index.
-    /// @param id Agent counter.
-    /// @return agentId Agent Id.
-    function tokenByIndex(uint256 id) external view returns (uint256 agentId) {
-        agentId = id + 1;
-        if (agentId > totalSupply) {
-            revert Overflow(agentId, totalSupply);
         }
     }
 }

@@ -94,7 +94,7 @@ describe("ComponentRegistry", function () {
             await expect(
                 componentRegistry.connect(mechManager).create(user.address, user.address, componentHash, "",
                     dependencies)
-            ).to.be.revertedWith("EmptyString");
+            ).to.be.revertedWith("ZeroValue");
         });
 
         it("Should fail when creating a second component with the same hash", async function () {

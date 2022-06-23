@@ -101,7 +101,7 @@ describe("ServiceRegistry", function () {
             await expect(
                 serviceRegistry.connect(serviceManager).create(owner, "", description, configHash, agentIds,
                     agentParams, threshold)
-            ).to.be.revertedWith("EmptyString");
+            ).to.be.revertedWith("ZeroValue");
         });
 
         it("Should fail when creating a service with an empty description", async function () {
@@ -111,7 +111,7 @@ describe("ServiceRegistry", function () {
             await expect(
                 serviceRegistry.connect(serviceManager).create(owner, name, "", configHash, agentIds, agentParams,
                     threshold)
-            ).to.be.revertedWith("EmptyString");
+            ).to.be.revertedWith("ZeroValue");
         });
 
         it("Should fail when creating a service with a wrong config IPFS hash header", async function () {
@@ -327,14 +327,14 @@ describe("ServiceRegistry", function () {
             // If we update with the same config hash as previous one, it must not be added
             await serviceRegistry.connect(serviceManager).update(owner, name, description, configHash, agentIds,
                 agentParams, maxThreshold, 1);
-            let hashes = await serviceRegistry.getConfigHashes(serviceId);
+            let hashes = await serviceRegistry.getHashes(serviceId);
             expect(hashes.numHashes).to.equal(1);
             expect(hashes.configHashes[0].hash).to.equal(configHash.hash);
 
             // Now we are going to have two config hashes
             await serviceRegistry.connect(serviceManager).update(owner, name, description, configHash1, agentIds,
                 agentParams, maxThreshold, 1);
-            hashes = await serviceRegistry.getConfigHashes(serviceId);
+            hashes = await serviceRegistry.getHashes(serviceId);
             expect(hashes.numHashes).to.equal(2);
             expect(hashes.configHashes[0].hash).to.equal(configHash.hash);
             expect(hashes.configHashes[1].hash).to.equal(configHash1.hash);
@@ -744,7 +744,7 @@ describe("ServiceRegistry", function () {
 
             await expect(
                 serviceRegistry.getServiceInfo(serviceId)
-            ).to.be.revertedWith("ServiceDoesNotExist");
+            ).to.be.revertedWith("ServiceNotFound");
         });
 
         it("Obtaining information about service existence, balance, owner, service info", async function () {
@@ -876,8 +876,8 @@ describe("ServiceRegistry", function () {
 
         it("Should fail when getting hashes of non-existent services", async function () {
             await expect(
-                serviceRegistry.getConfigHashes(1)
-            ).to.be.revertedWith("ServiceDoesNotExist");
+                serviceRegistry.getHashes(1)
+            ).to.be.revertedWith("ServiceNotFound");
         });
     });
 

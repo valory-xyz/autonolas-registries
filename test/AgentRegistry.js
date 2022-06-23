@@ -99,7 +99,7 @@ describe("AgentRegistry", function () {
             await expect(
                 agentRegistry.connect(mechManager).create(user.address, user.address, agentHash, "",
                     dependencies)
-            ).to.be.revertedWith("EmptyString");
+            ).to.be.revertedWith("ZeroValue");
         });
 
         it("Should fail when creating a second agent with the same hash", async function () {
