@@ -121,7 +121,7 @@ describe("AgentRegistry", function () {
             await expect(
                 agentRegistry.connect(mechManager).create(user.address, user.address, agentHash,
                     description, [0])
-            ).to.be.revertedWith("WrongComponentId");
+            ).to.be.revertedWith("ComponentNotFound");
         });
 
         it("Should fail when creating a non-existent component dependency", async function () {
@@ -131,7 +131,7 @@ describe("AgentRegistry", function () {
             await expect(
                 agentRegistry.connect(mechManager).create(user.address, user.address, agentHash,
                     description, [1])
-            ).to.be.revertedWith("WrongComponentId");
+            ).to.be.revertedWith("ComponentNotFound");
         });
 
         it("Token Id=1 after first successful agent creation must exist ", async function () {

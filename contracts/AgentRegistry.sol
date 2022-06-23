@@ -117,7 +117,7 @@ contract AgentRegistry is GenericRegistry {
         uint256 lastId;
         for (uint256 iDep = 0; iDep < dependencies.length; ++iDep) {
             if (dependencies[iDep] < (lastId + 1) || dependencies[iDep] > componentTotalSupply) {
-                revert WrongComponentId(dependencies[iDep]);
+                revert ComponentNotFound(dependencies[iDep]);
             }
             lastId = dependencies[iDep];
         }

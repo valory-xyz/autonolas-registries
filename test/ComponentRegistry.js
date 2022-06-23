@@ -116,11 +116,11 @@ describe("ComponentRegistry", function () {
             await expect(
                 componentRegistry.connect(mechManager).create(user.address, user.address, componentHash,
                     description, [0])
-            ).to.be.revertedWith("WrongComponentId");
+            ).to.be.revertedWith("ComponentNotFound");
             await expect(
                 componentRegistry.connect(mechManager).create(user.address, user.address, componentHash,
                     description, [1])
-            ).to.be.revertedWith("WrongComponentId");
+            ).to.be.revertedWith("ComponentNotFound");
         });
 
         it("Create a components with duplicate dependencies in the list of dependencies", async function () {
@@ -132,11 +132,11 @@ describe("ComponentRegistry", function () {
             await expect(
                 componentRegistry.connect(mechManager).create(user.address, user.address, componentHash2,
                     description, [1, 1, 1])
-            ).to.be.revertedWith("WrongComponentId");
+            ).to.be.revertedWith("ComponentNotFound");
             await expect(
                 componentRegistry.connect(mechManager).create(user.address, user.address, componentHash2,
                     description, [2, 1, 2, 1, 1, 1, 2])
-            ).to.be.revertedWith("WrongComponentId");
+            ).to.be.revertedWith("ComponentNotFound");
         });
 
         it("Token Id=1 after first successful component creation must exist", async function () {

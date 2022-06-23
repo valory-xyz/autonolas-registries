@@ -26,10 +26,6 @@ interface IErrorsRegistries {
     /// @dev Provided zero address.
     error ZeroAddress();
 
-    /// @dev Component Id is not correctly provided for the current routine.
-    /// @param componentId Component Id.
-    error WrongComponentId(uint256 componentId);
-
     /// @dev Agent Id is not correctly provided for the current routine.
     /// @param agentId Component Id.
     error WrongAgentId(uint256 agentId);
