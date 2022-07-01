@@ -12,24 +12,25 @@ contract AgentRegistry is GenericRegistry {
 
     // Agent parameters
     struct Agent {
-        // Developer of the agent
-        address developer;
-        // IPFS hashes of the agent
-        Multihash[] agentHashes;
+        // Primary IPFS hashes of the agent
+        Multihash agentHash;
         // Description of the agent
         bytes32 description;
+        // Developer of the agent
+        address developer;
         // Set of component dependencies
-        uint256[] dependencies;
-        // Agent activity
-        bool active;
+        // If one component is created every second, it will take 136 years to get to the 2^32 - 1 number limit
+        uint32[] dependencies;
     }
 
     // Component registry
     address public immutable componentRegistry;
-    // Map of agent Id => agent
-    mapping(uint256 => Agent) public mapTokenIdAgent;
     // Map of IPFS hash => agent Id
     mapping(bytes32 => uint256) public mapHashTokenId;
+    // Map of agent Id => set of updated IPFS hashes
+    mapping(uint256 => Multihash[]) public mapTokenIdHashes;
+    // Map of agent Id => agent
+    mapping(uint256 => Agent) public mapTokenIdAgent;
 
     /// @dev Agent registry constructor.
     /// @param _name Agent registry contract name.
@@ -56,26 +57,6 @@ contract AgentRegistry is GenericRegistry {
         _;
     }
 
-    /// @dev Sets the agent data.
-    /// @param agentId Agent Id.
-    /// @param developer Developer of the agent.
-    /// @param agentHash IPFS hash of the agent.
-    /// @param description Description of the agent.
-    /// @param dependencies Set of component dependencies (component Ids).
-    function _setAgentInfo(uint256 agentId, address developer, Multihash memory agentHash,
-        bytes32 description, uint256[] memory dependencies)
-        private
-    {
-        Agent storage agent = mapTokenIdAgent[agentId];
-        agent.developer = developer;
-        agent.agentHashes.push(agentHash);
-        agent.description = description;
-        agent.dependencies = dependencies;
-        agent.active = true;
-//        mapTokenIdComponent[agentId] = agent;
-        mapHashTokenId[agentHash.hash] = agentId;
-    }
-
     /// @dev Creates agent.
     /// @param agentOwner Owner of the agent.
     /// @param developer Developer of the agent.
@@ -84,7 +65,7 @@ contract AgentRegistry is GenericRegistry {
     /// @param dependencies Set of component dependencies in a sorted ascending order (component Ids).
     /// @return agentId The id of a minted agent.
     function create(address agentOwner, address developer, Multihash memory agentHash, bytes32 description,
-        uint256[] memory dependencies)
+        uint32[] memory dependencies)
         external
         checkHash(agentHash)
         returns (uint256 agentId)
@@ -125,7 +106,9 @@ contract AgentRegistry is GenericRegistry {
         // Mint token and initialize the agent
         agentId++;
         // Initialize the agent and mint its token
-        _setAgentInfo(agentId, developer, agentHash, description, dependencies);
+        Agent memory agent = Agent(agentHash, description, developer, dependencies);
+        mapTokenIdAgent[agentId] = agent;
+        mapHashTokenId[agentHash.hash] = agentId;
 
         // Safe mint is needed since contracts can create agents as well
         _safeMint(agentOwner, agentId);
@@ -152,8 +135,7 @@ contract AgentRegistry is GenericRegistry {
         if (ownerOf(agentId) != agentOwner) {
             revert AgentNotFound(agentId);
         }
-        Agent storage agent = mapTokenIdAgent[agentId];
-        agent.agentHashes.push(agentHash);
+        mapTokenIdHashes[agentId].push(agentHash);
         success = true;
 
         emit UpdateAgentHash(agentOwner, agentHash, agentId);
@@ -169,11 +151,11 @@ contract AgentRegistry is GenericRegistry {
     /// @return dependencies The list of component dependencies.
     function getInfo(uint256 agentId) external view
         returns (address agentOwner, address developer, Multihash memory agentHash, bytes32 description,
-            uint256 numDependencies, uint256[] memory dependencies)
+            uint256 numDependencies, uint32[] memory dependencies)
     {
         if (agentId > 0 && agentId < (totalSupply + 1)) {
             Agent memory agent = mapTokenIdAgent[agentId];
-            return (ownerOf(agentId), agent.developer, agent.agentHashes[0], agent.description, agent.dependencies.length,
+            return (ownerOf(agentId), agent.developer, agent.agentHash, agent.description, agent.dependencies.length,
                 agent.dependencies);
         }
     }
@@ -183,7 +165,7 @@ contract AgentRegistry is GenericRegistry {
     /// @return numDependencies The number of components in the dependency list.
     /// @return dependencies The list of component dependencies.
     function getDependencies(uint256 agentId) external view
-        returns (uint256 numDependencies, uint256[] memory dependencies)
+        returns (uint256 numDependencies, uint32[] memory dependencies)
     {
         if (agentId > 0 && agentId < (totalSupply + 1)) {
             Agent memory agent = mapTokenIdAgent[agentId];
@@ -194,13 +176,13 @@ contract AgentRegistry is GenericRegistry {
     /// @dev Gets agent hashes.
     /// @param agentId Agent Id.
     /// @return numHashes Number of hashes.
-    /// @return agentHashes The list of agent hashes.
+    /// @return agentHashes The list of updated agent hashes (without the primary one).
     function getHashes(uint256 agentId) external view override
         returns (uint256 numHashes, Multihash[] memory agentHashes)
     {
         if (agentId > 0 && agentId < (totalSupply + 1)) {
-            Agent memory agent = mapTokenIdAgent[agentId];
-            return (agent.agentHashes.length, agent.agentHashes);
+            Multihash[] memory hashes = mapTokenIdHashes[agentId];
+            return (hashes.length, hashes);
         }
     }
 }

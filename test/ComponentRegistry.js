@@ -242,18 +242,19 @@ describe("ComponentRegistry", function () {
             expect(hashes.numHashes).to.equal(0);
         });
 
-        it("Update hash, get component hashes", async function () {
+        it("Update hash, get new component hashes", async function () {
             const mechManager = signers[1];
             const user = signers[2];
             await componentRegistry.changeManager(mechManager.address);
             await componentRegistry.connect(mechManager).create(user.address, user.address,
                 componentHash, description, dependencies);
             await componentRegistry.connect(mechManager).updateHash(user.address, 1, componentHash1);
+            await componentRegistry.connect(mechManager).updateHash(user.address, 1, componentHash2);
 
             const hashes = await componentRegistry.getHashes(1);
             expect(hashes.numHashes).to.equal(2);
-            expect(hashes.componentHashes[0].hash).to.equal(componentHash.hash);
-            expect(hashes.componentHashes[1].hash).to.equal(componentHash1.hash);
+            expect(hashes.componentHashes[0].hash).to.equal(componentHash1.hash);
+            expect(hashes.componentHashes[1].hash).to.equal(componentHash2.hash);
         });
     });
 });

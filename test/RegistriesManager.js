@@ -10,9 +10,11 @@ describe("RegistriesManager", function () {
     let signers;
     const description = ethers.utils.formatBytes32String("unit description");
     const componentHashes = [{hash: "0x" + "0".repeat(64), hashFunction: "0x12", size: "0x20"},
-        {hash: "0x" + "1".repeat(64), hashFunction: "0x12", size: "0x20"}];
+        {hash: "0x" + "1".repeat(64), hashFunction: "0x12", size: "0x20"},
+        {hash: "0x" + "2".repeat(64), hashFunction: "0x12", size: "0x20"}];
     const agentHashes = [{hash: "0x" + "5".repeat(64), hashFunction: "0x12", size: "0x20"},
-        {hash: "0x" + "6".repeat(64), hashFunction: "0x12", size: "0x20"}];
+        {hash: "0x" + "6".repeat(64), hashFunction: "0x12", size: "0x20"},
+        {hash: "0x" + "7".repeat(64), hashFunction: "0x12", size: "0x20"}];
     const dependencies = [];
     beforeEach(async function () {
         const ComponentRegistry = await ethers.getContractFactory("ComponentRegistry");
@@ -72,20 +74,22 @@ describe("RegistriesManager", function () {
             await registriesManager.createComponent(user.address, user.address, componentHashes[0], description,
                 dependencies);
             await registriesManager.connect(user).updateComponentHash(1, componentHashes[1]);
+            await registriesManager.connect(user).updateComponentHash(1, componentHashes[2]);
 
             await registriesManager.createAgent(user.address, user.address, agentHashes[0], description,
                 dependencies);
             await registriesManager.connect(user).updateAgentHash(1, agentHashes[1]);
+            await registriesManager.connect(user).updateAgentHash(1, agentHashes[2]);
 
             const cHashes = await componentRegistry.getHashes(1);
             expect(cHashes.numHashes).to.equal(2);
-            expect(cHashes.componentHashes[0].hash).to.equal(componentHashes[0].hash);
-            expect(cHashes.componentHashes[1].hash).to.equal(componentHashes[1].hash);
+            expect(cHashes.componentHashes[0].hash).to.equal(componentHashes[1].hash);
+            expect(cHashes.componentHashes[1].hash).to.equal(componentHashes[2].hash);
 
             const aHashes = await agentRegistry.getHashes(1);
             expect(aHashes.numHashes).to.equal(2);
-            expect(aHashes.agentHashes[0].hash).to.equal(agentHashes[0].hash);
-            expect(aHashes.agentHashes[1].hash).to.equal(agentHashes[1].hash);
+            expect(aHashes.agentHashes[0].hash).to.equal(agentHashes[1].hash);
+            expect(aHashes.agentHashes[1].hash).to.equal(agentHashes[2].hash);
         });
     });
 });

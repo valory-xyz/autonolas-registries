@@ -32,7 +32,7 @@ contract RegistriesManager is GenericManager {
         address developer,
         IRegistry.Multihash memory agentHash,
         bytes32 description,
-        uint256[] memory dependencies
+        uint32[] memory dependencies
     ) external returns (uint256)
     {
         // Check if the creation is paused
@@ -43,10 +43,10 @@ contract RegistriesManager is GenericManager {
     }
 
     /// @dev Updates the agent hash.
-    /// @param tokenId Token Id.
+    /// @param agentId Agent Id.
     /// @param agentHash New IPFS hash of the agent.
-    function updateAgentHash(uint256 tokenId, IRegistry.Multihash memory agentHash) external {
-        return IRegistry(agentRegistry).updateHash(msg.sender, tokenId, agentHash);
+    function updateAgentHash(uint256 agentId, IRegistry.Multihash memory agentHash) external {
+        return IRegistry(agentRegistry).updateHash(msg.sender, agentId, agentHash);
     }
 
     /// @dev Creates component.
@@ -61,7 +61,7 @@ contract RegistriesManager is GenericManager {
         address developer,
         IRegistry.Multihash memory componentHash,
         bytes32 description,
-        uint256[] memory dependencies
+        uint32[] memory dependencies
     ) external returns (uint256)
     {
         // Check if the creation is paused
@@ -72,9 +72,9 @@ contract RegistriesManager is GenericManager {
     }
 
     /// @dev Updates the component hash.
-    /// @param tokenId Token Id.
+    /// @param componentId Token Id.
     /// @param componentHash New IPFS hash of the component.
-    function updateComponentHash(uint256 tokenId, IRegistry.Multihash memory componentHash) external {
-        return IRegistry(componentRegistry).updateHash(msg.sender, tokenId, componentHash);
+    function updateComponentHash(uint256 componentId, IRegistry.Multihash memory componentHash) external {
+        return IRegistry(componentRegistry).updateHash(msg.sender, componentId, componentHash);
     }
 }

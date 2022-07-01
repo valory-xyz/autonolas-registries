@@ -11,26 +11,23 @@ contract ComponentRegistry is GenericRegistry {
 
     // Component parameters
     struct Component {
-        // Developer of the component
-        address developer;
-        // IPFS hashes of the component
-        // TODO This can be stored outside of component in its separate (componentId <=> set of hashes) map
-        // TODO Or (initial hash <=> set of hashes) map. Here we could store only the initial hash
-        Multihash[] componentHashes;
+        // Primary IPFS hash of the component
+        Multihash componentHash;
         // Description of the component
         bytes32 description;
+        // Developer of the component
+        address developer;
         // Set of component dependencies
-        // TODO Think of smaller values than uint256 to save storage
-        uint256[] dependencies;
-        // Component activity
-        // TODO Seems like this variable is not needed, there will be no inactive component, otherwise it could break other dependent ones
-        bool active;
+        // If one component is created every second, it will take 136 years to get to the 2^32 - 1 number limit
+        uint32[] dependencies;
     }
 
-    // Map of component Id => component
-    mapping(uint256 => Component) public mapTokenIdComponent;
     // Map of IPFS hash => component Id
     mapping(bytes32 => uint256) public mapHashTokenId;
+    // Map of component Id => set of updated IPFS hashes
+    mapping(uint256 => Multihash[]) public mapTokenIdHashes;
+    // Map of component Id => component
+    mapping(uint256 => Component) public mapTokenIdComponent;
 
     /// @dev Component registry constructor.
     /// @param _name Component registry contract name.
@@ -43,6 +40,7 @@ contract ComponentRegistry is GenericRegistry {
 
     // Checks for supplied IPFS hash
     // TODO This should go away, to be embedded in the code itself
+    // TODO Will be optimized when Multihash becomes bytes32[]
     modifier checkHash(Multihash memory hashStruct) {
         // Check hash IPFS current standard validity
         if (hashStruct.hashFunction != 0x12 || hashStruct.size != 0x20) {
@@ -56,29 +54,6 @@ contract ComponentRegistry is GenericRegistry {
         _;
     }
 
-    // TODO This needs to be embedded into the create() function itself to save on gas
-    /// @dev Sets the component data.
-    /// @param componentId Component Id.
-    /// @param developer Developer of the component.
-    /// @param componentHash IPFS hash of the component.
-    /// @param description Description of the component.
-    /// @param dependencies Set of component dependencies.
-    function _setComponentInfo(uint256 componentId, address developer, Multihash memory componentHash,
-        bytes32 description, uint256[] memory dependencies)
-        private
-    {
-        Component storage component = mapTokenIdComponent[componentId];
-        component.developer = developer;
-        // TODO when componentHashes is stored in its own map, or when it becomes just the set of bytes32[3] arrays (v1 Multihash representation),
-        // TODO the component is then taken as a memory instance, filled and assigned in a single storage operation
-        component.componentHashes.push(componentHash);
-        component.description = description;
-        component.dependencies = dependencies;
-        component.active = true;
-//        mapTokenIdComponent[componentId] = component;
-        mapHashTokenId[componentHash.hash] = componentId;
-    }
-
     /// @dev Creates component.
     /// @param componentOwner Owner of the component.
     /// @param developer Developer of the component.
@@ -87,7 +62,7 @@ contract ComponentRegistry is GenericRegistry {
     /// @param dependencies Set of component dependencies in a sorted ascending order (component Ids).
     /// @return componentId The id of a minted component.
     function create(address componentOwner, address developer, Multihash memory componentHash, bytes32 description,
-        uint256[] memory dependencies)
+        uint32[] memory dependencies)
         external
         checkHash(componentHash)
         returns (uint256 componentId)
@@ -125,8 +100,11 @@ contract ComponentRegistry is GenericRegistry {
 
         // Component with Id = 0 is left empty not to do additional checks for the index zero
         componentId++;
+
         // Initialize the component and mint its token
-        _setComponentInfo(componentId, developer, componentHash, description, dependencies);
+        Component memory component = Component(componentHash, description, developer, dependencies);
+        mapTokenIdComponent[componentId] = component;
+        mapHashTokenId[componentHash.hash] = componentId;
 
         // Safe mint is needed since contracts can create components as well
         _safeMint(componentOwner, componentId);
@@ -154,8 +132,7 @@ contract ComponentRegistry is GenericRegistry {
         if (ownerOf(componentId) != componentOwner) {
             revert ComponentNotFound(componentId);
         }
-        Component storage component = mapTokenIdComponent[componentId];
-        component.componentHashes.push(componentHash);
+        mapTokenIdHashes[componentId].push(componentHash);
         success = true;
 
         emit UpdateComponentHash(componentOwner, componentHash, componentId);
@@ -173,14 +150,14 @@ contract ComponentRegistry is GenericRegistry {
     /// @return dependencies The list of component dependencies.
     function getInfo(uint256 componentId) external view
         returns (address componentOwner, address developer, Multihash memory componentHash, bytes32 description,
-            uint256 numDependencies, uint256[] memory dependencies)
+            uint256 numDependencies, uint32[] memory dependencies)
     {
         // Check for the component existence
         if (componentId > 0 && componentId < (totalSupply + 1)) {
             Component memory component = mapTokenIdComponent[componentId];
             // TODO Here we return the initial hash (componentHashes[0]). With hashes outside of the Component struct,
             // TODO we could just return the component itself
-            return (ownerOf(componentId), component.developer, component.componentHashes[0], component.description,
+            return (ownerOf(componentId), component.developer, component.componentHash, component.description,
                 component.dependencies.length, component.dependencies);
         }
     }
@@ -190,7 +167,7 @@ contract ComponentRegistry is GenericRegistry {
     /// @return numDependencies The number of components in the dependency list.
     /// @return dependencies The list of component dependencies.
     function getDependencies(uint256 componentId) external view
-        returns (uint256 numDependencies, uint256[] memory dependencies)
+        returns (uint256 numDependencies, uint32[] memory dependencies)
     {
         // Check for the component existence
         if (componentId > 0 && componentId < (totalSupply + 1)) {
@@ -202,14 +179,14 @@ contract ComponentRegistry is GenericRegistry {
     /// @dev Gets component hashes.
     /// @param componentId Component Id.
     /// @return numHashes Number of hashes.
-    /// @return componentHashes The list of component hashes.
+    /// @return componentHashes The list of updated component hashes (without the primary one).
     function getHashes(uint256 componentId) external view override
         returns (uint256 numHashes, Multihash[] memory componentHashes)
     {
         // Check for the component existence
         if (componentId > 0 && componentId < (totalSupply + 1)) {
-            Component memory component = mapTokenIdComponent[componentId];
-            return (component.componentHashes.length, component.componentHashes);
+            Multihash[] memory hashes = mapTokenIdHashes[componentId];
+            return (hashes.length, hashes);
         }
     }
 }
