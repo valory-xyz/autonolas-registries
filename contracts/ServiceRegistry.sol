@@ -7,16 +7,16 @@ import "./interfaces/IRegistry.sol";
 
 struct AgentParams {
     // Number of agent instances
-    uint256 slots;
+    uint256 slots; // => uint32
     // Bond per agent instance
-    uint256 bond;
+    uint256 bond; // => uint96
 }
 
 struct AgentInstance {
     // Address of an agent instance
     address instance;
     // Canonical agent Id
-    uint256 id;
+    uint256 id; // => uint32
 }
 
 /// @title Service Registry - Smart contract for registering services
@@ -45,57 +45,57 @@ contract ServiceRegistry is GenericRegistry {
         TerminatedUnbonded
     }
 
+    // TODO After all maps are extracted from the struct, this can be treated as memory
     // Service parameters
     struct Service {
         // Registration activation deposit
-        uint256 securityDeposit;
-        address proxyContract;
+        // This is enough for 1b+ ETH or 1e27
+        uint256 securityDeposit; // => uint96, 12
         // Multisig address for agent instances
-        address multisig;
+        address multisig; // 12 + 20 = 32, slot[0]
         // Service name
-        string name;
+        string name; // => bytes32, slot[1]
         // Service description
-        string description;
+        string description; // => bytes32, slot[2]
         // IPFS hashes pointing to the config metadata
-        Multihash[] configHashes;
+        Multihash[] configHashes; // bytes32 * 3, slot[3-5]
         // Agent instance signers threshold: must no less than ceil((n * 2 + 1) / 3) of all the agent instances combined
-        uint256 threshold;
+        // This number will be enough to have ((2^32 - 1) * 3 - 1) / 2, which is bigger than 6.44b
+        uint256 threshold; // => uint32, 4, slot[6] (remaining 28)
         // Total number of agent instances
-        uint256 maxNumAgentInstances;
+        uint256 maxNumAgentInstances; // => uint32, slot[6] (remaining 24)
         // Actual number of agent instances
-        uint256 numAgentInstances;
+        uint256 numAgentInstances; // => uint32, slot[6] (remaining 20)
+        // Service state
+        ServiceState state; // 1, slot[6] (remaining 19)
         // Canonical agent Ids for the service
-        uint256[] agentIds;
-        // Canonical agent Id => number of agent instances and correspondent instance registration bond
-        mapping(uint256 => AgentParams) mapAgentParams;
-        // Actual agent instance addresses. Canonical agent Id => Set of agent instance addresses.
-        mapping(uint256 => address[]) mapAgentInstances;
+        uint256[] agentIds; // => uint32[], 4 Ids in slot[6] (remaining 3)
         // Operator address => set of registered agent instance addresses
-        mapping(address => AgentInstance[]) mapOperatorsAgentInstances;
+        mapping(address => AgentInstance[]) mapOperatorsAgentInstances; // => take out of struct, make a map with a key of struct {serviceId: uint32, operator: address} < uin256 or 1 slot only
+        // Canonical agent Id => number of agent instances and correspondent instance registration bond
+        mapping(uint256 => AgentParams) mapAgentParams; // => same as one before, combine a key as a struct of {serviceId: uint32, agentId: 32}
+        // Actual agent instance addresses. Canonical agent Id => Set of agent instance addresses.
+        mapping(uint256 => address[]) mapAgentInstances; // => uint96, same as one before, combine a key as a struct of {serviceId: uint32, agentId: 32}
         // Map of operator address => agent instance bonding / escrow balance
         // TODO Consider merging with another operator-related data structure
-        mapping(address => uint256) mapOperatorsBalances;
-        // Config hash per agent
-//        mapping(uint256 => Multihash) mapAgentHash;
-        // Service state
-        ServiceState state;
+        mapping(address => uint256) mapOperatorsBalances; // => uint96, same as one before, combine a key as a struct of {serviceId: uint32, operator: address}
     }
 
     // Agent Registry
-    address public immutable agentRegistry;
+    address public immutable agentRegistry; // 20 bytes
     // The amount of funds slashed
-    uint256 public slashedFunds;
-    // Map of service counter => service
-    mapping (uint256 => Service) public mapServices;
+    uint256 public slashedFunds; // => uint96, slot[0]
     // Map of agent instance address => service id it is registered with and operator address that supplied the instance
     mapping (address => address) public mapAgentInstanceOperators;
     // Map of service Id => set of unique component Ids
     // Updated during the service deployment via deploy() function
-    mapping (uint256 => uint256[]) public mapServiceIdSetComponents;
+    mapping (uint256 => uint256[]) public mapServiceIdSetComponents; // uin256 => uint32
     // Map of service Id => set of unique agent Ids
-    mapping (uint256 => uint256[]) public mapServiceIdSetAgents;
+    mapping (uint256 => uint256[]) public mapServiceIdSetAgents; // uint256 => uint32
     // Map of policy for multisig implementations
     mapping (address => bool) public mapMultisigs;
+    // Map of service counter => service
+    mapping (uint256 => Service) public mapServices;
 
     /// @dev Service registry constructor.
     /// @param _name Service contract name.
@@ -741,7 +741,7 @@ contract ServiceRegistry is GenericRegistry {
         // Array of numbers of components per each agent Id
         uint256[] memory numComponents = new uint256[](numAgents);
         // 2D array of all the sets of components per each agent Id
-        uint256[][] memory components = new uint256[][](numAgents);
+        uint32[][] memory components = new uint32[][](numAgents);
 
         // Get total possible number of components and lists of components
         uint maxNumComponents;
@@ -850,11 +850,11 @@ contract ServiceRegistry is GenericRegistry {
         }
     }
 
-    /// @dev Gets service config hashes.
+    /// @dev Gets updated service config hashes.
     /// @param serviceId Service Id.
     /// @return numHashes Number of hashes.
     /// @return configHashes The list of component hashes.
-    function getHashes(uint256 serviceId) external view override serviceExists(serviceId)
+    function getUpdatedHashes(uint256 serviceId) external view override serviceExists(serviceId)
         returns (uint256 numHashes, Multihash[] memory configHashes)
     {
         Service storage service = mapServices[serviceId];
