@@ -83,11 +83,11 @@ abstract contract GenericRegistry is IErrorsRegistries, ERC721 {
     /// @return success True, if function executed successfully.
     function updateHash(address unitOwner, uint256 unitId, Multihash memory unitHash) external virtual returns (bool success);
 
-    /// @dev Gets unit hashes.
+    /// @dev Gets updated unit hashes.
     /// @param unitId Unit Id.
     /// @return numHashes Number of hashes.
     /// @return unitHashes The list of unit hashes.
-    function getHashes(uint256 unitId) external view virtual returns (uint256 numHashes, Multihash[] memory unitHashes);
+    function getUpdatedHashes(uint256 unitId) external view virtual returns (uint256 numHashes, Multihash[] memory unitHashes);
 
     /// @dev Returns unit token URI.
     /// @param unitId Unit Id.

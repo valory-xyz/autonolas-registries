@@ -244,7 +244,7 @@ describe("AgentRegistry", function () {
             await agentRegistry.connect(mechManager).create(user.address, user.address,
                 agentHash, description, dependencies);
 
-            const hashes = await agentRegistry.getHashes(2);
+            const hashes = await agentRegistry.getUpdatedHashes(2);
             expect(hashes.numHashes).to.equal(0);
         });
 
@@ -257,7 +257,7 @@ describe("AgentRegistry", function () {
             await agentRegistry.connect(mechManager).updateHash(user.address, 1, agentHash1);
             await agentRegistry.connect(mechManager).updateHash(user.address, 1, agentHash2);
 
-            const hashes = await agentRegistry.getHashes(1);
+            const hashes = await agentRegistry.getUpdatedHashes(1);
             expect(hashes.numHashes).to.equal(2);
             expect(hashes.agentHashes[0].hash).to.equal(agentHash1.hash);
             expect(hashes.agentHashes[1].hash).to.equal(agentHash2.hash);

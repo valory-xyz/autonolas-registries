@@ -64,11 +64,11 @@ interface IRegistry {
         uint32[] memory dependencies
     );
 
-    /// @dev Gets component / agent hashes.
+    /// @dev Gets updated component / agent hashes.
     /// @param unitId Unit Id.
     /// @return numHashes Number of hashes.
     /// @return mHashes The list of component / agent hashes.
-    function getHashes(uint256 unitId) external view returns (uint256 numHashes, Multihash[] memory mHashes);
+    function getUpdatedHashes(uint256 unitId) external view returns (uint256 numHashes, Multihash[] memory mHashes);
 
     /// @dev Gets the total supply of components / agents.
     /// @return Total supply.

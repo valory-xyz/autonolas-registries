@@ -850,11 +850,11 @@ contract ServiceRegistry is GenericRegistry {
         }
     }
 
-    /// @dev Gets service config hashes.
+    /// @dev Gets updated service config hashes.
     /// @param serviceId Service Id.
     /// @return numHashes Number of hashes.
     /// @return configHashes The list of component hashes.
-    function getHashes(uint256 serviceId) external view override serviceExists(serviceId)
+    function getUpdatedHashes(uint256 serviceId) external view override serviceExists(serviceId)
         returns (uint256 numHashes, Multihash[] memory configHashes)
     {
         Service storage service = mapServices[serviceId];

@@ -328,14 +328,14 @@ describe("ServiceRegistry", function () {
             // If we update with the same config hash as previous one, it must not be added
             await serviceRegistry.connect(serviceManager).update(owner, name, description, configHash, agentIds,
                 agentParams, maxThreshold, 1);
-            let hashes = await serviceRegistry.getHashes(serviceId);
+            let hashes = await serviceRegistry.getUpdatedHashes(serviceId);
             expect(hashes.numHashes).to.equal(1);
             expect(hashes.configHashes[0].hash).to.equal(configHash.hash);
 
             // Now we are going to have two config hashes
             await serviceRegistry.connect(serviceManager).update(owner, name, description, configHash1, agentIds,
                 agentParams, maxThreshold, 1);
-            hashes = await serviceRegistry.getHashes(serviceId);
+            hashes = await serviceRegistry.getUpdatedHashes(serviceId);
             expect(hashes.numHashes).to.equal(2);
             expect(hashes.configHashes[0].hash).to.equal(configHash.hash);
             expect(hashes.configHashes[1].hash).to.equal(configHash1.hash);
@@ -877,7 +877,7 @@ describe("ServiceRegistry", function () {
 
         it("Should fail when getting hashes of non-existent services", async function () {
             await expect(
-                serviceRegistry.getHashes(1)
+                serviceRegistry.getUpdatedHashes(1)
             ).to.be.revertedWith("ServiceNotFound");
         });
     });

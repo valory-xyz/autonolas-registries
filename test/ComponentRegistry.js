@@ -238,7 +238,7 @@ describe("ComponentRegistry", function () {
             await componentRegistry.connect(mechManager).create(user.address, user.address,
                 componentHash, description, dependencies);
 
-            const hashes = await componentRegistry.getHashes(2);
+            const hashes = await componentRegistry.getUpdatedHashes(2);
             expect(hashes.numHashes).to.equal(0);
         });
 
@@ -251,7 +251,7 @@ describe("ComponentRegistry", function () {
             await componentRegistry.connect(mechManager).updateHash(user.address, 1, componentHash1);
             await componentRegistry.connect(mechManager).updateHash(user.address, 1, componentHash2);
 
-            const hashes = await componentRegistry.getHashes(1);
+            const hashes = await componentRegistry.getUpdatedHashes(1);
             expect(hashes.numHashes).to.equal(2);
             expect(hashes.componentHashes[0].hash).to.equal(componentHash1.hash);
             expect(hashes.componentHashes[1].hash).to.equal(componentHash2.hash);

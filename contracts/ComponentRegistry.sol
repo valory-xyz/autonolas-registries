@@ -176,11 +176,11 @@ contract ComponentRegistry is GenericRegistry {
         }
     }
 
-    /// @dev Gets component hashes.
+    /// @dev Gets updated component hashes.
     /// @param componentId Component Id.
     /// @return numHashes Number of hashes.
     /// @return componentHashes The list of updated component hashes (without the primary one).
-    function getHashes(uint256 componentId) external view override
+    function getUpdatedHashes(uint256 componentId) external view override
         returns (uint256 numHashes, Multihash[] memory componentHashes)
     {
         // Check for the component existence

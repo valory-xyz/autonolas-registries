@@ -173,11 +173,11 @@ contract AgentRegistry is GenericRegistry {
         }
     }
 
-    /// @dev Gets agent hashes.
+    /// @dev Gets updated agent hashes.
     /// @param agentId Agent Id.
     /// @return numHashes Number of hashes.
     /// @return agentHashes The list of updated agent hashes (without the primary one).
-    function getHashes(uint256 agentId) external view override
+    function getUpdatedHashes(uint256 agentId) external view override
         returns (uint256 numHashes, Multihash[] memory agentHashes)
     {
         if (agentId > 0 && agentId < (totalSupply + 1)) {
