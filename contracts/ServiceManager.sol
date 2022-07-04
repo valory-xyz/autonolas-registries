@@ -64,7 +64,7 @@ contract ServiceManager is GenericManager {
         address serviceOwner,
         string memory name,
         string memory description,
-        IService.Multihash memory configHash,
+        bytes32 configHash,
         uint256[] memory agentIds,
         IService.AgentParams[] memory agentParams,
         uint256 threshold
@@ -89,7 +89,7 @@ contract ServiceManager is GenericManager {
     function serviceUpdate(
         string memory name,
         string memory description,
-        IService.Multihash memory configHash,
+        bytes32 configHash,
         uint256[] memory agentIds,
         IService.AgentParams[] memory agentParams,
         uint256 threshold,

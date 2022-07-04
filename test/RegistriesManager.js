@@ -9,12 +9,8 @@ describe("RegistriesManager", function () {
     let registriesManager;
     let signers;
     const description = ethers.utils.formatBytes32String("unit description");
-    const componentHashes = [{hash: "0x" + "0".repeat(64), hashFunction: "0x12", size: "0x20"},
-        {hash: "0x" + "1".repeat(64), hashFunction: "0x12", size: "0x20"},
-        {hash: "0x" + "2".repeat(64), hashFunction: "0x12", size: "0x20"}];
-    const agentHashes = [{hash: "0x" + "5".repeat(64), hashFunction: "0x12", size: "0x20"},
-        {hash: "0x" + "6".repeat(64), hashFunction: "0x12", size: "0x20"},
-        {hash: "0x" + "7".repeat(64), hashFunction: "0x12", size: "0x20"}];
+    const componentHashes = ["0x" + "0".repeat(64), "0x" + "1".repeat(64), "0x" + "2".repeat(64)];
+    const agentHashes = ["0x" + "5".repeat(64), "0x" + "6".repeat(64), "0x" + "7".repeat(64)];
     const dependencies = [];
     beforeEach(async function () {
         const ComponentRegistry = await ethers.getContractFactory("ComponentRegistry");

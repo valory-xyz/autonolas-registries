@@ -7,9 +7,9 @@ describe("ComponentRegistry", function () {
     let componentRegistry;
     let signers;
     const description = ethers.utils.formatBytes32String("component description");
-    const componentHash = {hash: "0x" + "0".repeat(64), hashFunction: "0x12", size: "0x20"};
-    const componentHash1 = {hash: "0x" + "1".repeat(64), hashFunction: "0x12", size: "0x20"};
-    const componentHash2 = {hash: "0x" + "2".repeat(64), hashFunction: "0x12", size: "0x20"};
+    const componentHash = "0x" + "0".repeat(64);
+    const componentHash1 = "0x" + "1".repeat(64);
+    const componentHash2 = "0x" + "2".repeat(64);
     const dependencies = [];
     const AddressZero = "0x" + "0".repeat(40);
 
@@ -69,22 +69,6 @@ describe("ComponentRegistry", function () {
                 componentRegistry.connect(mechManager).create(AddressZero, AddressZero, componentHash, description,
                     dependencies)
             ).to.be.revertedWith("ZeroAddress");
-        });
-
-        it("Should fail when creating a component with a wrong IPFS hash header", async function () {
-            const wrongComponentHashes = [{hash: "0x" + "0".repeat(64), hashFunction: "0x11", size: "0x20"},
-                {hash: "0x" + "0".repeat(64), hashFunction: "0x12", size: "0x19"}];
-            const mechManager = signers[1];
-            const user = signers[2];
-            await componentRegistry.changeManager(mechManager.address);
-            await expect(
-                componentRegistry.connect(mechManager).create(user.address, user.address, wrongComponentHashes[0],
-                    description, dependencies)
-            ).to.be.revertedWith("WrongHash");
-            await expect(
-                componentRegistry.connect(mechManager).create(user.address, user.address, wrongComponentHashes[1],
-                    description, dependencies)
-            ).to.be.revertedWith("WrongHash");
         });
 
         it("Should fail when creating a component with an empty description", async function () {

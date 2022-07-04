@@ -8,10 +8,10 @@ describe("AgentRegistry", function () {
     let agentRegistry;
     let signers;
     const description = ethers.utils.formatBytes32String("agent description");
-    const componentHash = {hash: "0x" + "5".repeat(64), hashFunction: "0x12", size: "0x20"};
-    const agentHash = {hash: "0x" + "0".repeat(64), hashFunction: "0x12", size: "0x20"};
-    const agentHash1 = {hash: "0x" + "1".repeat(64), hashFunction: "0x12", size: "0x20"};
-    const agentHash2 = {hash: "0x" + "2".repeat(64), hashFunction: "0x12", size: "0x20"};
+    const componentHash = "0x" + "5".repeat(64);
+    const agentHash = "0x" + "0".repeat(64);
+    const agentHash1 = "0x" + "1".repeat(64);
+    const agentHash2 = "0x" + "2".repeat(64);
     const dependencies = [1];
     const AddressZero = "0x" + "0".repeat(40);
     beforeEach(async function () {
@@ -78,22 +78,6 @@ describe("AgentRegistry", function () {
                 agentRegistry.connect(mechManager).create(AddressZero, AddressZero, agentHash, description,
                     dependencies)
             ).to.be.revertedWith("ZeroAddress");
-        });
-
-        it("Should fail when creating an agent with a wrong IPFS hash header", async function () {
-            const wrongAgentHashes = [{hash: "0x" + "0".repeat(64), hashFunction: "0x11", size: "0x20"},
-                {hash: "0x" + "0".repeat(64), hashFunction: "0x12", size: "0x19"}];
-            const mechManager = signers[1];
-            const user = signers[2];
-            await agentRegistry.changeManager(mechManager.address);
-            await expect(
-                agentRegistry.connect(mechManager).create(user.address, user.address, wrongAgentHashes[0],
-                    description, dependencies)
-            ).to.be.revertedWith("WrongHash");
-            await expect(
-                agentRegistry.connect(mechManager).create(user.address, user.address, wrongAgentHashes[1],
-                    description, dependencies)
-            ).to.be.revertedWith("WrongHash");
         });
 
         it("Should fail when creating an agent with an empty description", async function () {

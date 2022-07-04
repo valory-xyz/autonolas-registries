@@ -12,8 +12,8 @@ describe("ServiceRegistry", function () {
     const name = "service name";
     const description = "service description";
     const unitDescription = ethers.utils.formatBytes32String("unit description");
-    const configHash = {hash: "0x" + "5".repeat(64), hashFunction: "0x12", size: "0x20"};
-    const configHash1 = {hash: "0x" + "6".repeat(64), hashFunction: "0x12", size: "0x20"};
+    const configHash = "0x" + "5".repeat(64);
+    const configHash1 = "0x" + "6".repeat(64);
     const regBond = 1000;
     const regDeposit = 1000;
     const regFine = 500;
@@ -23,12 +23,12 @@ describe("ServiceRegistry", function () {
     const agentId = 1;
     const threshold = 1;
     const maxThreshold = agentParams[0][0] + agentParams[1][0];
-    const componentHash = {hash: "0x" + "0".repeat(64), hashFunction: "0x12", size: "0x20"};
-    const componentHash1 = {hash: "0x" + "1".repeat(64), hashFunction: "0x12", size: "0x20"};
-    const componentHash2 = {hash: "0x" + "2".repeat(64), hashFunction: "0x12", size: "0x20"};
-    const agentHash = {hash: "0x" + "7".repeat(64), hashFunction: "0x12", size: "0x20"};
-    const agentHash1 = {hash: "0x" + "8".repeat(64), hashFunction: "0x12", size: "0x20"};
-    const agentHash2 = {hash: "0x" + "9".repeat(64), hashFunction: "0x12", size: "0x20"};
+    const componentHash = "0x" + "0".repeat(64);
+    const componentHash1 = "0x" + "1".repeat(64);
+    const componentHash2 = "0x" + "2".repeat(64);
+    const agentHash = "0x" + "7".repeat(64);
+    const agentHash1 = "0x" + "8".repeat(64);
+    const agentHash2 = "0x" + "9".repeat(64);
     const AddressZero = "0x" + "0".repeat(40);
     const payload = "0x";
     beforeEach(async function () {
@@ -117,22 +117,6 @@ describe("ServiceRegistry", function () {
                 serviceRegistry.connect(serviceManager).create(owner, name, "", configHash, agentIds, agentParams,
                     threshold)
             ).to.be.revertedWith("ZeroValue");
-        });
-
-        it("Should fail when creating a service with a wrong config IPFS hash header", async function () {
-            const wrongConfigHashes = [ {hash: "0x" + "0".repeat(64), hashFunction: "0x11", size: "0x20"},
-                {hash: "0x" + "0".repeat(64), hashFunction: "0x12", size: "0x19"}];
-            const serviceManager = signers[3];
-            const owner = signers[4].address;
-            await serviceRegistry.changeManager(serviceManager.address);
-            await expect(
-                serviceRegistry.connect(serviceManager).create(owner, name, description, wrongConfigHashes[0],
-                    agentIds, agentParams, threshold)
-            ).to.be.revertedWith("WrongHash");
-            await expect(
-                serviceRegistry.connect(serviceManager).create(owner, name, description, wrongConfigHashes[1],
-                    agentIds, agentParams, threshold)
-            ).to.be.revertedWith("WrongHash");
         });
 
         it("Should fail when creating a service with incorrect agent slots values", async function () {

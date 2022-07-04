@@ -6,8 +6,8 @@ import "./GenericRegistry.sol";
 /// @title Unit Registry - Smart contract for registering generalized units / units
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 abstract contract UnitRegistry is GenericRegistry {
-    event CreateUnit(uint256 unitId, UnitType uType, Multihash unitHash);
-    event UpdateUnitHash(uint256 unitId, UnitType uType, Multihash unitHash);
+    event CreateUnit(uint256 unitId, UnitType uType, bytes32 unitHash);
+    event UpdateUnitHash(uint256 unitId, UnitType uType, bytes32 unitHash);
 
     enum UnitType {
         Component,
@@ -17,7 +17,7 @@ abstract contract UnitRegistry is GenericRegistry {
     // Unit parameters
     struct Unit {
         // Primary IPFS hash of the unit
-        Multihash unitHash;
+        bytes32 unitHash;
         // Description of the unit
         bytes32 description;
         // Developer of the unit
@@ -32,27 +32,11 @@ abstract contract UnitRegistry is GenericRegistry {
     // Map of IPFS hash => unit Id
     mapping(bytes32 => uint256) public mapHashUnitId;
     // Map of unit Id => set of updated IPFS hashes
-    mapping(uint256 => Multihash[]) public mapUnitIdHashes;
+    mapping(uint256 => bytes32[]) public mapUnitIdHashes;
     // Map of unit Id => set of subcomponents (possible to derive from any registry)
     mapping(uint256 => uint32[]) public mapSubComponents;
     // Map of unit Id => unit
     mapping(uint256 => Unit) public mapUnits;
-
-    // Checks for supplied IPFS hash
-    // TODO This should go away, to be embedded in the code itself
-    // TODO Will be optimized when Multihash becomes bytes32[]
-    modifier checkHash(Multihash memory hashStruct) {
-        // Check hash IPFS current standard validity
-        if (hashStruct.hashFunction != 0x12 || hashStruct.size != 0x20) {
-            revert WrongHash(hashStruct.hashFunction, 0x12, hashStruct.size, 0x20);
-        }
-
-        // Check for the existent IPFS hashes
-        if (mapHashUnitId[hashStruct.hash] > 0) {
-            revert HashExists();
-        }
-        _;
-    }
 
     /// @dev Checks the provided component dependencies.
     /// @param dependencies Set of component dependencies.
@@ -66,11 +50,10 @@ abstract contract UnitRegistry is GenericRegistry {
     /// @param description Description of the unit.
     /// @param dependencies Set of unit dependencies in a sorted ascending order (unit Ids).
     /// @return unitId The id of a minted unit.
-    function create(address unitOwner, address developer, Multihash memory unitHash, bytes32 description,
+    function create(address unitOwner, address developer, bytes32 unitHash, bytes32 description,
         uint32[] memory dependencies)
         external
         virtual
-        checkHash(unitHash)
         returns (uint256 unitId)
     {
         // Reentrancy guard
@@ -89,6 +72,16 @@ abstract contract UnitRegistry is GenericRegistry {
             revert ZeroAddress();
         }
 
+        // Check for the hash format
+        if (unitHash == "0x") {
+            revert ZeroValue();
+        }
+
+        // Check for the existent IPFS hashes
+        if (mapHashUnitId[unitHash] > 0) {
+            revert HashExists();
+        }
+
         // Checks for non-empty description and unit dependency
         if (description == 0) {
             revert ZeroValue();
@@ -104,7 +97,7 @@ abstract contract UnitRegistry is GenericRegistry {
         // Initialize the unit and mint its token
         Unit memory unit = Unit(unitHash, description, developer, dependencies);
         mapUnits[unitId] = unit;
-        mapHashUnitId[unitHash.hash] = unitId;
+        mapHashUnitId[unitHash] = unitId;
 
         // Update the map of subcomponents
         mapSubComponents[unitId] = getSubComponents(dependencies);
@@ -122,8 +115,7 @@ abstract contract UnitRegistry is GenericRegistry {
     /// @param unitId Unit Id.
     /// @param unitHash New IPFS hash of the unit.
     /// @return success True, if function executed successfully.
-    function updateHash(address unitOwner, uint256 unitId, Multihash memory unitHash) external virtual
-        checkHash(unitHash)
+    function updateHash(address unitOwner, uint256 unitId, bytes32 unitHash) external virtual
         returns (bool success)
     {
         // Check for the manager privilege for a unit modification
@@ -139,6 +131,17 @@ abstract contract UnitRegistry is GenericRegistry {
                 revert AgentNotFound(unitId);
             }
         }
+
+        // Check for the hash value
+        if (unitHash == 0) {
+            revert ZeroValue();
+        }
+
+        // Check for the existent IPFS hashes
+        if (mapHashUnitId[unitHash] > 0) {
+            revert HashExists();
+        }
+
         mapUnitIdHashes[unitId].push(unitHash);
         success = true;
 
@@ -156,7 +159,7 @@ abstract contract UnitRegistry is GenericRegistry {
     /// @return numDependencies The number of units in the dependency list.
     /// @return dependencies The list of unit dependencies.
     function getInfo(uint256 unitId) external view virtual
-        returns (address unitOwner, address developer, Multihash memory unitHash, bytes32 description,
+        returns (address unitOwner, address developer, bytes32 unitHash, bytes32 description,
             uint256 numDependencies, uint32[] memory dependencies)
     {
         // Check for the unit existence
@@ -188,11 +191,11 @@ abstract contract UnitRegistry is GenericRegistry {
     /// @return numHashes Number of hashes.
     /// @return unitHashes The list of updated unit hashes (without the primary one).
     function getUpdatedHashes(uint256 unitId) external view virtual
-        returns (uint256 numHashes, Multihash[] memory unitHashes)
+        returns (uint256 numHashes, bytes32[] memory unitHashes)
     {
         // Check for the unit existence
         if (unitId > 0 && unitId < (totalSupply + 1)) {
-            Multihash[] memory hashes = mapUnitIdHashes[unitId];
+            bytes32[] memory hashes = mapUnitIdHashes[unitId];
             return (hashes.length, hashes);
         }
     }

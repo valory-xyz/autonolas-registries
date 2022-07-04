@@ -26,7 +26,7 @@ contract ServiceRegistry is GenericRegistry {
     event Refund(address sendee, uint256 amount);
     event CreateService(address serviceOwner, string name, uint256 threshold, uint256 serviceId);
     event UpdateService(address serviceOwner, string name, uint256 threshold, uint256 serviceId);
-    event UpdateServiceHash(address indexed serviceOwner, Multihash configHash, uint256 serviceId);
+    event UpdateServiceHash(address indexed serviceOwner, bytes32 configHash, uint256 serviceId);
     event RegisterInstance(address operator, uint256 serviceId, address agent, uint256 agentId);
     event CreateMultisigWithAgents(uint256 serviceId, address multisig, address[] agentInstances, uint256 threshold);
     event ActivateRegistration(address serviceOwner, uint256 serviceId);
@@ -58,7 +58,7 @@ contract ServiceRegistry is GenericRegistry {
         // Service description
         string description; // => bytes32, slot[2]
         // IPFS hashes pointing to the config metadata
-        Multihash[] configHashes; // bytes32 * 3, slot[3-5]
+        bytes32[] configHashes; // bytes32 * 3, slot[3-5]
         // Agent instance signers threshold: must no less than ceil((n * 2 + 1) / 3) of all the agent instances combined
         // This number will be enough to have ((2^32 - 1) * 3 - 1) / 2, which is bigger than 6.44b
         uint256 threshold; // => uint32, 4, slot[6] (remaining 28)
@@ -142,7 +142,7 @@ contract ServiceRegistry is GenericRegistry {
     function _initialChecks(
         string memory name,
         string memory description,
-        Multihash memory configHash,
+        bytes32 configHash,
         uint256[] memory agentIds,
         AgentParams[] memory agentParams
     ) private view
@@ -152,9 +152,9 @@ contract ServiceRegistry is GenericRegistry {
             revert ZeroValue();
         }
 
-        // Check for the hash format
-        if (configHash.hashFunction != 0x12 || configHash.size != 0x20) {
-            revert WrongHash(configHash.hashFunction, 0x12, configHash.size, 0x20);
+        // Check for the hash value
+        if (configHash == "0x") {
+            revert ZeroValue();
         }
 
         // Checking for non-empty arrays and correct number of values in them
@@ -236,7 +236,7 @@ contract ServiceRegistry is GenericRegistry {
         address serviceOwner,
         string memory name,
         string memory description,
-        Multihash memory configHash,
+        bytes32 configHash,
         uint256[] memory agentIds,
         AgentParams[] memory agentParams,
         uint256 threshold
@@ -297,7 +297,7 @@ contract ServiceRegistry is GenericRegistry {
         address serviceOwner,
         string memory name,
         string memory description,
-        Multihash memory configHash,
+        bytes32 configHash,
         uint256[] memory agentIds,
         AgentParams[] memory agentParams,
         uint256 threshold,
@@ -333,7 +333,7 @@ contract ServiceRegistry is GenericRegistry {
         // Set of canonical agent Ids has to be completely overwritten (push-based)
         delete service.agentIds;
         // Check if the previous hash is the same / hash was not updated
-        if (service.configHashes[service.configHashes.length - 1].hash != configHash.hash) {
+        if (service.configHashes[service.configHashes.length - 1] != configHash) {
             service.configHashes.push(configHash);
         }
 
@@ -693,7 +693,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @param serviceId Service Id.
     /// @param configHash New IPFS config hash of the service.
     /// @return success True, if function executed successfully.
-    function updateHash(address serviceOwner, uint256 serviceId, Multihash memory configHash) external
+    function updateHash(address serviceOwner, uint256 serviceId, bytes32 configHash) external
         returns (bool success)
     {
         // Check for the manager privilege for an agent modification
@@ -756,7 +756,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @return agentInstances Set of agent instances currently registered for the service.
     /// @return multisig Agent instances multisig address.
     function getServiceInfo(uint256 serviceId) external view serviceExists(serviceId)
-        returns (address serviceOwner, string memory name, string memory description, Multihash memory configHash,
+        returns (address serviceOwner, string memory name, string memory description, bytes32 configHash,
             uint256 threshold, uint256 numAgentIds, uint256[] memory agentIds, AgentParams[] memory agentParams,
             uint256 numAgentInstances, address[] memory agentInstances, address multisig)
     {
@@ -799,7 +799,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @return numHashes Number of hashes.
     /// @return configHashes The list of component hashes.
     function getUpdatedHashes(uint256 serviceId) external view serviceExists(serviceId)
-        returns (uint256 numHashes, Multihash[] memory configHashes)
+        returns (uint256 numHashes, bytes32[] memory configHashes)
     {
         Service storage service = mapServices[serviceId];
         return (service.configHashes.length, service.configHashes);
