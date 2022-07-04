@@ -62,7 +62,7 @@ describe("RegistriesManager", function () {
             await componentRegistry.changeManager(registriesManager.address);
             await agentRegistry.changeManager(registriesManager.address);
             await registriesManager.createComponent(user.address, user.address, componentHashes[0], description, dependencies);
-            await registriesManager.createAgent(user.address, user.address, componentHashes[1], description, dependencies);
+            await registriesManager.createAgent(user.address, user.address, componentHashes[1], description, [1]);
         });
     });
 
@@ -76,8 +76,7 @@ describe("RegistriesManager", function () {
             await registriesManager.connect(user).updateComponentHash(1, componentHashes[1]);
             await registriesManager.connect(user).updateComponentHash(1, componentHashes[2]);
 
-            await registriesManager.createAgent(user.address, user.address, agentHashes[0], description,
-                dependencies);
+            await registriesManager.createAgent(user.address, user.address, agentHashes[0], description, [1]);
             await registriesManager.connect(user).updateAgentHash(1, agentHashes[1]);
             await registriesManager.connect(user).updateAgentHash(1, agentHashes[2]);
 

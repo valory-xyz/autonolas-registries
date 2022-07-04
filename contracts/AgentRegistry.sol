@@ -90,7 +90,11 @@ contract AgentRegistry is GenericRegistry {
         if (description == 0) {
             revert ZeroValue();
         }
-//        require(dependencies.length > 0, "Agent must have at least one component dependency");
+
+        // Check that the agent has at least one component
+        if (dependencies.length == 0) {
+            revert ZeroValue();
+        }
 
         // Check for dependencies validity: must be already allocated, must not repeat
         agentId = totalSupply;
