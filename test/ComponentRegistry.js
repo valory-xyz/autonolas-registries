@@ -175,9 +175,9 @@ describe("ComponentRegistry", function () {
                 componentHash2, description2, lastDependencies);
 
             let compInfo = await componentRegistry.getInfo(tokenId);
-            expect(compInfo.componentOwner).to.equal(user.address);
+            expect(compInfo.unitOwner).to.equal(user.address);
             expect(compInfo.developer).to.equal(user.address);
-            expect(compInfo.componentHash.hash).to.equal(componentHash2.hash);
+            expect(compInfo.unitHash.hash).to.equal(componentHash2.hash);
             expect(compInfo.description).to.equal(description2);
             expect(compInfo.numDependencies).to.equal(lastDependencies.length);
             for (let i = 0; i < lastDependencies.length; i++) {
@@ -185,7 +185,7 @@ describe("ComponentRegistry", function () {
             }
             // Getting info about non-existent agent Id
             compInfo = await componentRegistry.getInfo(tokenId + 1);
-            expect(compInfo.componentOwner).to.equal(AddressZero);
+            expect(compInfo.unitOwner).to.equal(AddressZero);
             
             let componentDependencies = await componentRegistry.getDependencies(tokenId);
             expect(componentDependencies.numDependencies).to.equal(lastDependencies.length);
@@ -253,8 +253,8 @@ describe("ComponentRegistry", function () {
 
             const hashes = await componentRegistry.getUpdatedHashes(1);
             expect(hashes.numHashes).to.equal(2);
-            expect(hashes.componentHashes[0].hash).to.equal(componentHash1.hash);
-            expect(hashes.componentHashes[1].hash).to.equal(componentHash2.hash);
+            expect(hashes.unitHashes[0].hash).to.equal(componentHash1.hash);
+            expect(hashes.unitHashes[1].hash).to.equal(componentHash2.hash);
         });
     });
 });

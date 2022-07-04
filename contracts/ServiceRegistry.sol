@@ -693,7 +693,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @param serviceId Service Id.
     /// @param configHash New IPFS config hash of the service.
     /// @return success True, if function executed successfully.
-    function updateHash(address serviceOwner, uint256 serviceId, Multihash memory configHash) external override
+    function updateHash(address serviceOwner, uint256 serviceId, Multihash memory configHash) external
         returns (bool success)
     {
         // Check for the manager privilege for an agent modification
@@ -854,7 +854,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @param serviceId Service Id.
     /// @return numHashes Number of hashes.
     /// @return configHashes The list of component hashes.
-    function getUpdatedHashes(uint256 serviceId) external view override serviceExists(serviceId)
+    function getUpdatedHashes(uint256 serviceId) external view serviceExists(serviceId)
         returns (uint256 numHashes, Multihash[] memory configHashes)
     {
         Service storage service = mapServices[serviceId];
