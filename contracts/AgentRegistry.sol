@@ -23,7 +23,8 @@ contract AgentRegistry is UnitRegistry {
         unitType = UnitType.Agent;
     }
 
-
+    /// @dev Checks the provided component dependencies.
+    /// @param dependencies Set of component dependencies.
     function _checkDependencies(uint32[] memory dependencies, uint256) internal virtual override {
         // Check that the agent has at least one component
         if (dependencies.length == 0) {
@@ -39,5 +40,12 @@ contract AgentRegistry is UnitRegistry {
             }
             lastId = dependencies[iDep];
         }
+    }
+
+    /// @dev Gets subcomponents of a provided component Id.
+    /// @param componentId Component Id.
+    /// @return subComponentIds Set of subcomponents.
+    function _getSubComponents(uint32 componentId) internal view virtual override returns (uint32[] memory subComponentIds) {
+        subComponentIds = IRegistry(componentRegistry).getSubComponentsFromMap(uint256(componentId));
     }
 }

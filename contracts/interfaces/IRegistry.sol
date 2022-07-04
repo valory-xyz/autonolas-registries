@@ -64,6 +64,16 @@ interface IRegistry {
         uint32[] memory dependencies
     );
 
+    /// @dev Gets subcomponents of a provided unit Id from a public map.
+    /// @param unitId Unit Id.
+    /// @return subComponentIds Set of subcomponents.
+    function getSubComponentsFromMap(uint256 unitId) external view returns (uint32[] memory subComponentIds);
+
+    /// @dev Gets calculated subcomponents.
+    /// @param unitIds Set of unit Ids.
+    /// @return subComponentIds Set of subcomponents.
+    function getSubComponents(uint32[] memory unitIds) external view returns (uint32[] memory subComponentIds);
+
     /// @dev Gets updated component / agent hashes.
     /// @param unitId Unit Id.
     /// @return numHashes Number of hashes.

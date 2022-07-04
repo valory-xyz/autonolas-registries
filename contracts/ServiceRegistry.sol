@@ -89,7 +89,7 @@ contract ServiceRegistry is GenericRegistry {
     mapping (address => address) public mapAgentInstanceOperators;
     // Map of service Id => set of unique component Ids
     // Updated during the service deployment via deploy() function
-    mapping (uint256 => uint256[]) public mapServiceIdSetComponents; // uin256 => uint32
+    mapping (uint256 => uint32[]) public mapServiceIdSetComponents; // uin256 => uint32
     // Map of service Id => set of unique agent Ids
     mapping (uint256 => uint256[]) public mapServiceIdSetAgents; // uint256 => uint32
     // Map of policy for multisig implementations
@@ -732,70 +732,14 @@ contract ServiceRegistry is GenericRegistry {
     /// @dev Update the map of service Id => set of components / canonical agent Ids.
     /// @param serviceId Service Id.
     function _updateServiceComponentAgentConnection(uint256 serviceId) private {
-        Service storage service = mapServices[serviceId];
-        // Set of canonical agent Ids is straightforward
-        mapServiceIdSetAgents[serviceId] = service.agentIds;
-
-        uint256[] memory agents = service.agentIds;
-        uint256 numAgents = agents.length;
-        // Array of numbers of components per each agent Id
-        uint256[] memory numComponents = new uint256[](numAgents);
-        // 2D array of all the sets of components per each agent Id
-        uint32[][] memory components = new uint32[][](numAgents);
-
-        // Get total possible number of components and lists of components
-        uint maxNumComponents;
-        for (uint256 i = 0; i < numAgents; ++i) {
-            (numComponents[i], components[i]) = IRegistry(agentRegistry).getDependencies(agents[i]);
-            maxNumComponents += numComponents[i];
+        uint256[] memory agentIds = mapServices[serviceId].agentIds;
+        mapServiceIdSetAgents[serviceId] = agentIds;
+        uint32[] memory agentIdsShort = new uint32[](agentIds.length);
+        for (uint256 i = 0; i < agentIds.length; ++i) {
+            agentIdsShort[i] = uint32(agentIds[i]);
         }
-
-        // Lists of components are sorted, take unique values in ascending order
-        uint256[] memory allComponents = new uint256[](maxNumComponents);
-        // Processed component counter
-        uint256[] memory processedComponents = new uint256[](numAgents);
-        // Minimal component Id
-        uint256 minComponent;
-        // Overall component counter
-        uint256 counter;
-        // Iterate until we process all components, at the maximum of the sum of all the components in all agents
-        for (counter = 0; counter < maxNumComponents; ++counter) {
-            // Index of a minimal component
-            uint256 minIdxComponent;
-            // Amount of components identified as the next minimal component number
-            uint256 numComponentsCheck;
-            uint256 tryMinComponent = type(uint256).max;
-            // Assemble an array of all first components from each component array
-            for (uint256 i = 0; i < numAgents; ++i) {
-                // Either get a component that has a higher id than the last one ore reach the end of the processed Ids
-                for (; processedComponents[i] < numComponents[i]; ++processedComponents[i]) {
-                    if (minComponent < components[i][processedComponents[i]]) {
-                        // Out of those component Ids that are higher than the last one, pich the minimal
-                        if (components[i][processedComponents[i]] < tryMinComponent) {
-                            tryMinComponent = components[i][processedComponents[i]];
-                            minIdxComponent = i;
-                        }
-                        numComponentsCheck++;
-                        break;
-                    }
-                }
-            }
-            minComponent = tryMinComponent;
-
-            // If minimal component Id is greater than the last one, it should be added, otherwise we reached the end
-            if (numComponentsCheck > 0) {
-                allComponents[counter] = minComponent;
-                processedComponents[minIdxComponent]++;
-            } else {
-                break;
-            }
-        }
-
-        uint256[] memory componentIds = new uint256[](counter);
-        for (uint256 i = 0; i < counter; ++i) {
-            componentIds[i] = allComponents[i];
-        }
-        mapServiceIdSetComponents[serviceId] = componentIds;
+        uint32[] memory subComponentIds = IRegistry(agentRegistry).getSubComponents(agentIdsShort);
+        mapServiceIdSetComponents[serviceId] = subComponentIds;
     }
 
     /// @dev Gets the high-level service information.
@@ -877,7 +821,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @return numComponentIds Number of component Ids.
     /// @return componentIds Set of component Ids.
     function getComponentIdsOfServiceId(uint256 serviceId) external view
-        returns (uint256 numComponentIds, uint256[] memory componentIds)
+        returns (uint256 numComponentIds, uint32[] memory componentIds)
     {
         componentIds = mapServiceIdSetComponents[serviceId];
         numComponentIds = componentIds.length;

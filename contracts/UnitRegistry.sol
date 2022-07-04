@@ -3,7 +3,7 @@ pragma solidity ^0.8.15;
 
 import "./GenericRegistry.sol";
 
-/// @title Unit Registry - Smart contract for registering generalized units / agents
+/// @title Unit Registry - Smart contract for registering generalized units / units
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 abstract contract UnitRegistry is GenericRegistry {
     event CreateUnit(uint256 unitId, UnitType uType, Multihash unitHash);
@@ -27,12 +27,14 @@ abstract contract UnitRegistry is GenericRegistry {
         uint32[] dependencies;
     }
 
-    // Type of the unit: component or agent
-    UnitType unitType;
+    // Type of the unit: component or unit
+    UnitType public unitType;
     // Map of IPFS hash => unit Id
     mapping(bytes32 => uint256) public mapHashUnitId;
     // Map of unit Id => set of updated IPFS hashes
     mapping(uint256 => Multihash[]) public mapUnitIdHashes;
+    // Map of unit Id => set of subcomponents (possible to derive from any registry)
+    mapping(uint256 => uint32[]) public mapSubComponents;
     // Map of unit Id => unit
     mapping(uint256 => Unit) public mapUnits;
 
@@ -52,6 +54,9 @@ abstract contract UnitRegistry is GenericRegistry {
         _;
     }
 
+    /// @dev Checks the provided component dependencies.
+    /// @param dependencies Set of component dependencies.
+    /// @param maxUnitId Maximum unit Id.
     function _checkDependencies(uint32[] memory dependencies, uint256 maxUnitId) internal virtual;
 
     /// @dev Creates unit.
@@ -101,6 +106,9 @@ abstract contract UnitRegistry is GenericRegistry {
         mapUnits[unitId] = unit;
         mapHashUnitId[unitHash.hash] = unitId;
 
+        // Update the map of subcomponents
+        mapSubComponents[unitId] = getSubComponents(dependencies);
+
         // Safe mint is needed since contracts can create units as well
         _safeMint(unitOwner, unitId);
         totalSupply = unitId;
@@ -123,7 +131,7 @@ abstract contract UnitRegistry is GenericRegistry {
             revert ManagerOnly(msg.sender, manager);
         }
 
-        // Checking the agent ownership
+        // Checking the unit ownership
         if (ownerOf(unitId) != unitOwner) {
             if (unitType == UnitType.Component) {
                 revert ComponentNotFound(unitId);
@@ -186,6 +194,76 @@ abstract contract UnitRegistry is GenericRegistry {
         if (unitId > 0 && unitId < (totalSupply + 1)) {
             Multihash[] memory hashes = mapUnitIdHashes[unitId];
             return (hashes.length, hashes);
+        }
+    }
+
+    /// @dev Gets subcomponents of a provided unit Id.
+    /// @param unitId Unit Id.
+    /// @return subComponentIds Set of subcomponents.
+    function _getSubComponents(uint32 unitId) internal view virtual returns (uint32[] memory subComponentIds);
+
+    /// @dev Gets the set of subcomponent Ids.
+    /// @param unitIds Unit Ids.
+    /// @param subComponentIds Subcomponent Ids.
+    function getSubComponents(uint32[] memory unitIds) public view virtual returns (uint32[] memory subComponentIds) {
+        uint256 numUnits = unitIds.length;
+        // Array of numbers of components per each unit Id
+        uint256[] memory numComponents = new uint256[](numUnits);
+        // 2D array of all the sets of components per each unit Id
+        uint32[][] memory components = new uint32[][](numUnits);
+
+        // Get total possible number of components and lists of components
+        uint maxNumComponents;
+        for (uint256 i = 0; i < numUnits; ++i) {
+            components[i] = _getSubComponents(unitIds[i]);
+            numComponents[i] = components[i].length;
+            maxNumComponents += numComponents[i];
+        }
+
+        // Lists of components are sorted, take unique values in ascending order
+        uint32[] memory allComponents = new uint32[](maxNumComponents);
+        // Processed component counter
+        uint256[] memory processedComponents = new uint256[](numUnits);
+        // Minimal component Id
+        uint32 minComponent;
+        // Overall component counter
+        uint256 counter;
+        // Iterate until we process all components, at the maximum of the sum of all the components in all units
+        for (counter = 0; counter < maxNumComponents; ++counter) {
+            // Index of a minimal component
+            uint256 minIdxComponent;
+            // Amount of components identified as the next minimal component number
+            uint256 numComponentsCheck;
+            uint32 tryMinComponent = type(uint32).max;
+            // Assemble an array of all first components from each component array
+            for (uint256 i = 0; i < numUnits; ++i) {
+                // Either get a component that has a higher id than the last one ore reach the end of the processed Ids
+                for (; processedComponents[i] < numComponents[i]; ++processedComponents[i]) {
+                    if (minComponent < components[i][processedComponents[i]]) {
+                        // Out of those component Ids that are higher than the last one, pich the minimal
+                        if (components[i][processedComponents[i]] < tryMinComponent) {
+                            tryMinComponent = components[i][processedComponents[i]];
+                            minIdxComponent = i;
+                        }
+                        numComponentsCheck++;
+                        break;
+                    }
+                }
+            }
+            minComponent = tryMinComponent;
+
+            // If minimal component Id is greater than the last one, it should be added, otherwise we reached the end
+            if (numComponentsCheck > 0) {
+                allComponents[counter] = minComponent;
+                processedComponents[minIdxComponent]++;
+            } else {
+                break;
+            }
+        }
+
+        subComponentIds = new uint32[](counter);
+        for (uint256 i = 0; i < counter; ++i) {
+            subComponentIds[i] = allComponents[i];
         }
     }
 }
