@@ -30,7 +30,7 @@ contract RegistriesManager is GenericManager {
     function createAgent(
         address agentOwner,
         address developer,
-        IRegistry.Multihash memory agentHash,
+        bytes32 agentHash,
         bytes32 description,
         uint32[] memory dependencies
     ) external returns (uint256)
@@ -45,7 +45,7 @@ contract RegistriesManager is GenericManager {
     /// @dev Updates the agent hash.
     /// @param agentId Agent Id.
     /// @param agentHash New IPFS hash of the agent.
-    function updateAgentHash(uint256 agentId, IRegistry.Multihash memory agentHash) external {
+    function updateAgentHash(uint256 agentId, bytes32 agentHash) external {
         return IRegistry(agentRegistry).updateHash(msg.sender, agentId, agentHash);
     }
 
@@ -59,7 +59,7 @@ contract RegistriesManager is GenericManager {
     function createComponent(
         address componentOwner,
         address developer,
-        IRegistry.Multihash memory componentHash,
+        bytes32 componentHash,
         bytes32 description,
         uint32[] memory dependencies
     ) external returns (uint256)
@@ -74,7 +74,7 @@ contract RegistriesManager is GenericManager {
     /// @dev Updates the component hash.
     /// @param componentId Token Id.
     /// @param componentHash New IPFS hash of the component.
-    function updateComponentHash(uint256 componentId, IRegistry.Multihash memory componentHash) external {
+    function updateComponentHash(uint256 componentId, bytes32 componentHash) external {
         return IRegistry(componentRegistry).updateHash(msg.sender, componentId, componentHash);
     }
 }

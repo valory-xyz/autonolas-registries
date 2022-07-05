@@ -13,13 +13,6 @@ interface IErrorsRegistries {
     /// @param owner Required sender address as an owner.
     error OwnerOnly(address sender, address owner);
 
-    /// @dev Wrong hash format.
-    /// @param hashFunctionProvided Hash function classification provided.
-    /// @param hashFunctionNeeded Hash function classification needed.
-    /// @param sizeProvided Size of a hash digest provided.
-    /// @param sizeNeeded Size of a hash digest needed.
-    error WrongHash(uint8 hashFunctionProvided, uint8 hashFunctionNeeded, uint8 sizeProvided, uint8 sizeNeeded);
-
     /// @dev Hash already exists in the records.
     error HashExists();
 
