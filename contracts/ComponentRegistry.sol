@@ -16,7 +16,7 @@ contract ComponentRegistry is UnitRegistry {
         unitType = UnitType.Component;
     }
 
-    /// @dev Checks the provided component dependencies.
+    /// @dev Checks provided component dependencies.
     /// @param dependencies Set of component dependencies.
     /// @param maxComponentId Maximum component Id.
     function _checkDependencies(uint32[] memory dependencies, uint256 maxComponentId) internal virtual override {

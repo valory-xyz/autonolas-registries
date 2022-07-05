@@ -5,6 +5,7 @@ import "./AgentRegistry.sol";
 import "./interfaces/IMultisig.sol";
 import "./interfaces/IRegistry.sol";
 
+// This struct is 128 bits in total
 struct AgentParams {
     // Number of agent instances. This number is limited by the number of agent instances
     uint32 slots;
@@ -12,14 +13,13 @@ struct AgentParams {
     uint96 bond;
 }
 
+// This struct is 192 bits in total
 struct AgentInstance {
     // Address of an agent instance
     address instance;
     // Canonical agent Id. This number is limited by the max number of agent Ids (see UnitRegistry contract)
     uint32 agentId;
 }
-
-// Service Id. If one service is created every second, it will take 136 years to get to the 2^32 - 1 number limit
 
 /// @title Service Registry - Smart contract for registering services
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -207,9 +207,11 @@ contract ServiceRegistry is GenericRegistry {
         // Add canonical agent Ids for the service and the slots map
         for (uint256 i = 0; i < size; i++) {
             service.agentIds.push(agentIds[i]);
+            // Push a pair of key defining variables into one key
             uint256 serviceAgent;
+            // Service Id. If one service is created every second, it will take 136 years to get to the 2^32 - 1 number limit
             serviceAgent |= serviceId << 32;
-            serviceAgent |= agentIds[i] << 32;
+            serviceAgent |= agentIds[i] << 64;
             mapAgentParams[serviceAgent] = agentParams[i];
             service.maxNumAgentInstances += agentParams[i].slots;
             // Security deposit is the maximum of the canonical agent registration bond
@@ -333,7 +335,7 @@ contract ServiceRegistry is GenericRegistry {
             if (agentParams[i].slots == 0) {
                 uint256 serviceAgent;
                 serviceAgent |= serviceId << 32;
-                serviceAgent |= agentIds[i] << 32;
+                serviceAgent |= agentIds[i] << 64;
                 delete mapAgentParams[serviceAgent];
             } else {
                 newAgentIds[size] = agentIds[i];
@@ -439,7 +441,7 @@ contract ServiceRegistry is GenericRegistry {
             // Check if canonical agent Id exists in the service
             uint256 serviceAgent;
             serviceAgent |= serviceId << 32;
-            serviceAgent |= agentIds[i] << 32;
+            serviceAgent |= agentIds[i] << 64;
             if (mapAgentParams[serviceAgent].slots == 0) {
                 revert AgentNotInService(agentIds[i], serviceId);
             }
@@ -471,7 +473,7 @@ contract ServiceRegistry is GenericRegistry {
             // Check if there is an empty slot for the agent instance in this specific service
             uint256 serviceAgent;
             serviceAgent |= serviceId << 32;
-            serviceAgent |= agentIds[i] << 32;
+            serviceAgent |= agentIds[i] << 64;
             if (mapAgentInstances[serviceAgent].length == mapAgentParams[serviceAgent].slots) {
                 revert AgentInstancesSlotsFilled(serviceId);
             }
@@ -684,7 +686,7 @@ contract ServiceRegistry is GenericRegistry {
         for (uint256 i = 0; i < numAgentsUnbond; i++) {
             uint256 serviceAgent;
             serviceAgent |= serviceId << 32;
-            serviceAgent |= agentInstances[i].agentId << 32;
+            serviceAgent |= agentInstances[i].agentId << 64;
             refund += mapAgentParams[serviceAgent].bond;
             // Since the service is done, there's no need to clean-up the service-related data, just the state variables
             delete mapAgentInstanceOperators[agentInstances[i].instance];
@@ -728,7 +730,7 @@ contract ServiceRegistry is GenericRegistry {
         for (uint256 i = 0; i < service.agentIds.length; i++) {
             uint256 serviceAgent;
             serviceAgent |= serviceId << 32;
-            serviceAgent |= service.agentIds[i] << 32;
+            serviceAgent |= service.agentIds[i] << 64;
             for (uint256 j = 0; j < mapAgentInstances[serviceAgent].length; j++) {
                 agentInstances[count] = mapAgentInstances[serviceAgent][j];
                 count++;
@@ -772,7 +774,7 @@ contract ServiceRegistry is GenericRegistry {
             uint256 serviceAgent;
             serviceAgent |= serviceId << 32;
             // TODO Revision of all storage data to greatly reduce gas cost
-            serviceAgent |= service.agentIds[i] << 32;
+            serviceAgent |= service.agentIds[i] << 64;
             agentParams[i] = mapAgentParams[serviceAgent];
         }
         serviceOwner = ownerOf(serviceId);
@@ -796,7 +798,7 @@ contract ServiceRegistry is GenericRegistry {
         Service storage service = mapServices[serviceId];
         uint256 serviceAgent;
         serviceAgent |= serviceId << 32;
-        serviceAgent |= agentId << 32;
+        serviceAgent |= agentId << 64;
         numAgentInstances = mapAgentInstances[serviceAgent].length;
         agentInstances = new address[](numAgentInstances);
         for (uint256 i = 0; i < numAgentInstances; i++) {
@@ -824,6 +826,7 @@ contract ServiceRegistry is GenericRegistry {
     {
         agentIds = mapServiceIdSetAgents[serviceId];
         numAgentIds = agentIds.length;
+        // TODO This vs if we just get the mapServices[serviceId].agentIds
     }
 
     /// @dev Gets the set of component Ids that contain specified service Id.
