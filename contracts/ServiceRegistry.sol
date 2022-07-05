@@ -42,8 +42,7 @@ contract ServiceRegistry is GenericRegistry {
         ActiveRegistration,
         FinishedRegistration,
         Deployed,
-        TerminatedBonded,
-        TerminatedUnbonded
+        TerminatedBonded
     }
 
     // TODO After all maps are extracted from the struct, this can be treated as memory
@@ -632,15 +631,14 @@ contract ServiceRegistry is GenericRegistry {
 
         Service memory service = mapServices[serviceId];
         // Check if the service is already terminated
-        if (service.state == ServiceState.PreRegistration || service.state == ServiceState.TerminatedBonded ||
-            service.state == ServiceState.TerminatedUnbonded) {
+        if (service.state == ServiceState.PreRegistration || service.state == ServiceState.TerminatedBonded) {
             revert WrongServiceState(uint256(service.state), serviceId);
         }
         // Define the state of the service depending on the number of bonded agent instances
         if (service.numAgentInstances > 0) {
             service.state = ServiceState.TerminatedBonded;
         } else {
-            service.state = ServiceState.TerminatedUnbonded;
+            service.state = ServiceState.PreRegistration;
         }
         mapServices[serviceId] = service;
 
@@ -699,7 +697,7 @@ contract ServiceRegistry is GenericRegistry {
         // Subtract number of unbonded agent instances
         service.numAgentInstances -= uint32(numAgentsUnbond);
         if (service.numAgentInstances == 0) {
-            service.state = ServiceState.TerminatedUnbonded;
+            service.state = ServiceState.PreRegistration;
         }
 
         // Calculate registration refund and free all agent instances
