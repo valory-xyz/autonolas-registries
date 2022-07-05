@@ -252,31 +252,31 @@ describe("ComponentRegistry", function () {
             salt += "00";
             let hash = ethers.utils.keccak256(salt);
             await componentRegistry.create(user.address, user.address, hash, description, []);
-            let subComponents = await componentRegistry.getSubComponentsFromMap(1);
+            let subComponents = await componentRegistry.getLocalSubComponents(1);
             expect(subComponents.numSubComponents).to.equal(1);
             // c2
             salt += "00";
             hash = ethers.utils.keccak256(salt);
             await componentRegistry.create(user.address, user.address, hash, description, []);
-            subComponents = await componentRegistry.getSubComponentsFromMap(2);
+            subComponents = await componentRegistry.getLocalSubComponents(2);
             expect(subComponents.numSubComponents).to.equal(1);
             // c3
             salt += "00";
             hash = ethers.utils.keccak256(salt);
             await componentRegistry.create(user.address, user.address, hash, description, [1]);
-            subComponents = await componentRegistry.getSubComponentsFromMap(3);
+            subComponents = await componentRegistry.getLocalSubComponents(3);
             expect(subComponents.numSubComponents).to.equal(2);
             // c4
             salt += "00";
             hash = ethers.utils.keccak256(salt);
             await componentRegistry.create(user.address, user.address, hash, description, [2]);
-            subComponents = await componentRegistry.getSubComponentsFromMap(4);
+            subComponents = await componentRegistry.getLocalSubComponents(4);
             expect(subComponents.numSubComponents).to.equal(2);
             // c5
             salt += "00";
             hash = ethers.utils.keccak256(salt);
             await componentRegistry.create(user.address, user.address, hash, description, [3, 4]);
-            subComponents = await componentRegistry.getSubComponentsFromMap(5);
+            subComponents = await componentRegistry.getLocalSubComponents(5);
             expect(subComponents.numSubComponents).to.equal(5);
             for (let i = 0; i < subComponents.numSubComponents; i++) {
                 expect(subComponents.subComponentIds[i]).to.equal(i + 1);

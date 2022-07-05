@@ -54,11 +54,11 @@ interface IRegistry {
         uint32[] memory dependencies
     );
 
-    /// @dev Gets subcomponents of a provided unit Id from a public map.
+    /// @dev Gets subcomponents of a provided unit Id from a local public map.
     /// @param unitId Unit Id.
     /// @return subComponentIds Set of subcomponents.
     /// @return numSubComponents Number of subcomponents.
-    function getSubComponentsFromMap(uint256 unitId) external view returns (uint32[] memory subComponentIds, uint256 numSubComponents);
+    function getLocalSubComponents(uint256 unitId) external view returns (uint32[] memory subComponentIds, uint256 numSubComponents);
 
     /// @dev Gets calculated subcomponents.
     /// @param unitIds Set of unit Ids.

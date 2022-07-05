@@ -545,7 +545,7 @@ contract ServiceRegistry is GenericRegistry {
         // Create a multisig with agent instances
         multisig = IMultisig(multisigImplementation).create(agentInstances, service.threshold, data);
 
-        // Update maps of service Id to component and agent Ids
+        // Update maps of service Id to subcomponent and agent Ids
         mapServiceIdSetAgents[serviceId] = service.agentIds;
         mapServiceIdSetComponents[serviceId] = IRegistry(agentRegistry).getSubComponents(service.agentIds);
 
