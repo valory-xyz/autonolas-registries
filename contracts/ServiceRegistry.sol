@@ -81,10 +81,8 @@ contract ServiceRegistry is GenericRegistry {
     // Map of service Id => set of IPFS hashes pointing to the config metadata
     mapping (uint256 => bytes32[]) public mapConfigHashes;
     // Map of operator address and serviceId => set of registered agent instance addresses
-    // TODO If time permits, consider having those not in the map, but in a service array with offsets of the number of agent instances per each agent Id
     mapping(uint256 => AgentInstance[]) public mapOperatorsAgentInstances;
     // Service Id and canonical agent Id => number of agent instances and correspondent instance registration bond
-    // TODO consider having those not in the map, but in a service array with offsets of the number of agent instances per each agent Id
     mapping(uint256 => AgentParams) public mapAgentParams;
     // Actual agent instance addresses. Service Id and canonical agent Id => Set of agent instance addresses.
     mapping(uint256 => address[]) public mapAgentInstances;
@@ -826,7 +824,6 @@ contract ServiceRegistry is GenericRegistry {
     {
         agentIds = mapServiceIdSetAgents[serviceId];
         numAgentIds = agentIds.length;
-        // TODO This vs if we just get the mapServices[serviceId].agentIds
     }
 
     /// @dev Gets the set of component Ids that contain specified service Id.
