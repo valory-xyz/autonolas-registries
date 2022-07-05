@@ -459,8 +459,11 @@ contract ServiceRegistry is GenericRegistry {
             revert IncorrectAgentBondingValue(msg.value, totalBond, serviceId);
         }
 
+        // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
         uint256 operatorService;
+        // operator occupies first 160 bits
         operatorService |= uint256(uint160(operator)) << 160;
+        // serviceId occupies next 32 bits
         operatorService |= serviceId << 192;
         for (uint256 i = 0; i < numAgents; ++i) {
             address agentInstance = agentInstances[i];
@@ -581,8 +584,11 @@ contract ServiceRegistry is GenericRegistry {
         for (uint256 i = 0; i < numInstancesToSlash; ++i) {
             // Get the service Id from the agentInstance map
             address operator = mapAgentInstanceOperators[agentInstances[i]];
+            // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
             uint256 operatorService;
+            // operator occupies first 160 bits
             operatorService |= uint256(uint160(operator)) << 160;
+            // serviceId occupies next 32 bits
             operatorService |= serviceId << 192;
 
             // Slash the balance of the operator, make sure it does not go below zero
@@ -678,8 +684,11 @@ contract ServiceRegistry is GenericRegistry {
         }
 
         // Check for the operator and unbond all its agent instances
+        // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
         uint256 operatorService;
+        // operator occupies first 160 bits
         operatorService |= uint256(uint160(operator)) << 160;
+        // serviceId occupies next 32 bits
         operatorService |= serviceId << 192;
         AgentInstance[] memory agentInstances = mapOperatorsAgentInstances[operatorService];
         uint256 numAgentsUnbond = agentInstances.length;
