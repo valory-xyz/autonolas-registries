@@ -47,6 +47,6 @@ contract AgentRegistry is UnitRegistry {
     /// @param componentId Component Id.
     /// @return subComponentIds Set of subcomponents.
     function _getSubComponents(uint32 componentId) internal view virtual override returns (uint32[] memory subComponentIds) {
-        subComponentIds = IRegistry(componentRegistry).getSubComponentsFromMap(uint256(componentId));
+        (subComponentIds, ) = IRegistry(componentRegistry).getSubComponentsFromMap(uint256(componentId));
     }
 }

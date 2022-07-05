@@ -29,8 +29,11 @@ contract ComponentRegistry is UnitRegistry {
         }
     }
 
-    function getSubComponentsFromMap(uint256 componentId) external view returns (uint32[] memory subComponentIds){
+    function getSubComponentsFromMap(uint256 componentId) external view
+        returns (uint32[] memory subComponentIds, uint256 numSubComponents)
+    {
         subComponentIds = mapSubComponents[uint256(componentId)];
+        numSubComponents = subComponentIds.length;
     }
 
     /// @dev Gets subcomponents of a provided component Id.

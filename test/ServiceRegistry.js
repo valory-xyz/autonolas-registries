@@ -3,7 +3,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe.only("ServiceRegistry", function () {
+describe("ServiceRegistry", function () {
     let componentRegistry;
     let agentRegistry;
     let serviceRegistry;

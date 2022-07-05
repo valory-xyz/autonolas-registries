@@ -22,17 +22,17 @@ abstract contract UnitRegistry is GenericRegistry {
         bytes32 description;
         // Developer of the unit
         address developer;
-        // Set of unit dependencies
-        // If one unit is created every second, it will take 136 years to get to the 2^32 - 1 number limit
+        // Set of component dependencies (agents are also based on components)
+        // We believe that the system is expected to support no more than 2^32-1 components
         uint32[] dependencies;
     }
 
     // Type of the unit: component or unit
     UnitType public unitType;
-    // Map of IPFS hash => unit Id
-    mapping(bytes32 => uint256) public mapHashUnitId;
     // Map of unit Id => set of updated IPFS hashes
     mapping(uint256 => bytes32[]) public mapUnitIdHashes;
+    // Map of IPFS hash => unit Id
+    mapping(bytes32 => uint32) public mapHashUnitId;
     // Map of unit Id => set of subcomponents (possible to derive from any registry)
     mapping(uint256 => uint32[]) public mapSubComponents;
     // Map of unit Id => unit
@@ -72,7 +72,7 @@ abstract contract UnitRegistry is GenericRegistry {
             revert ZeroAddress();
         }
 
-        // Check for the hash format
+        // Check for the non-zero hash value
         if (unitHash == "0x") {
             revert ZeroValue();
         }
@@ -97,10 +97,21 @@ abstract contract UnitRegistry is GenericRegistry {
         // Initialize the unit and mint its token
         Unit memory unit = Unit(unitHash, description, developer, dependencies);
         mapUnits[unitId] = unit;
-        mapHashUnitId[unitHash] = unitId;
+        mapHashUnitId[unitHash] = uint32(unitId);
 
         // Update the map of subcomponents
-        mapSubComponents[unitId] = getSubComponents(dependencies);
+        uint32[] memory subComponentIds = getSubComponents(dependencies);
+        // We need to add a current component Id to the set of subcomponents if the unit is a component
+        if (unitType == UnitType.Component) {
+            uint256 subLen = subComponentIds.length + 1;
+            uint32[] memory addSubComponentIds = new uint32[](subLen);
+            for (uint256 i = 0; i < subLen - 1; ++i) {
+                addSubComponentIds[i] = subComponentIds[i];
+            }
+            addSubComponentIds[subLen - 1] = uint32(unitId);
+            subComponentIds = addSubComponentIds;
+        }
+        mapSubComponents[unitId] = subComponentIds;
 
         // Safe mint is needed since contracts can create units as well
         _safeMint(unitOwner, unitId);
@@ -118,7 +129,7 @@ abstract contract UnitRegistry is GenericRegistry {
     function updateHash(address unitOwner, uint256 unitId, bytes32 unitHash) external virtual
         returns (bool success)
     {
-        // Check for the manager privilege for a unit modification
+        // Check the manager privilege for a unit modification
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
         }
