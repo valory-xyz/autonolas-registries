@@ -171,9 +171,9 @@ describe("AgentRegistry", function () {
                 agentHash2, description2, lastDependencies);
 
             let agentInfo = await agentRegistry.getInfo(tokenId);
-            expect(agentInfo.agentOwner).to.equal(user.address);
+            expect(agentInfo.unitOwner).to.equal(user.address);
             expect(agentInfo.developer).to.equal(user.address);
-            expect(agentInfo.agentHash.hash).to.equal(agentHash2.hash);
+            expect(agentInfo.unitHash.hash).to.equal(agentHash2.hash);
             expect(agentInfo.description).to.equal(description2);
             expect(agentInfo.numDependencies).to.equal(lastDependencies.length);
             for (let i = 0; i < lastDependencies.length; i++) {
@@ -181,7 +181,7 @@ describe("AgentRegistry", function () {
             }
             // Getting info about non-existent agent Id
             agentInfo = await agentRegistry.getInfo(tokenId + 1);
-            expect(agentInfo.agentOwner).to.equal(AddressZero);
+            expect(agentInfo.unitOwner).to.equal(AddressZero);
 
             let agentDependencies = await agentRegistry.getDependencies(tokenId);
             expect(agentDependencies.numDependencies).to.equal(lastDependencies.length);
@@ -259,8 +259,8 @@ describe("AgentRegistry", function () {
 
             const hashes = await agentRegistry.getUpdatedHashes(1);
             expect(hashes.numHashes).to.equal(2);
-            expect(hashes.agentHashes[0].hash).to.equal(agentHash1.hash);
-            expect(hashes.agentHashes[1].hash).to.equal(agentHash2.hash);
+            expect(hashes.unitHashes[0].hash).to.equal(agentHash1.hash);
+            expect(hashes.unitHashes[1].hash).to.equal(agentHash2.hash);
         });
     });
 });
