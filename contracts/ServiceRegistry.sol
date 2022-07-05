@@ -165,7 +165,7 @@ contract ServiceRegistry is GenericRegistry {
             revert WrongArrayLength(agentIds.length, agentParams.length);
         }
 
-        // Check for canonical agent Ids existence and for duplicate Ids
+        // Check for duplicate canonical agent Ids
         uint256 agentTotalSupply = IRegistry(agentRegistry).totalSupply();
         uint256 lastId;
         for (uint256 i = 0; i < agentIds.length; i++) {
@@ -183,18 +183,19 @@ contract ServiceRegistry is GenericRegistry {
     /// @param size Size of a canonical agent ids set.
     /// @param serviceId ServiceId.
     function _setServiceData(
-        Service storage service,
+        Service memory service,
         uint32[] memory agentIds,
         AgentParams[] memory agentParams,
         uint256 size,
         uint256 serviceId
     ) private
     {
+        // Security deposit
         uint96 securityDeposit;
-
         // Add canonical agent Ids for the service and the slots map
+        service.agentIds = new uint32[](size);
         for (uint256 i = 0; i < size; i++) {
-            service.agentIds.push(agentIds[i]);
+            service.agentIds[i] = agentIds[i];
             // Push a pair of key defining variables into one key. Service or agent Ids are not enough by themselves
             uint256 serviceAgent;
             // As with other units, we believe that the system is not expected to support more than than 2^32-1 services
@@ -268,7 +269,7 @@ contract ServiceRegistry is GenericRegistry {
         serviceId++;
 
         // Set high-level data components of the service instance
-        Service storage service = mapServices[serviceId];
+        Service memory service;
         // Updating high-level data components of the service
         service.name = name;
         service.description = description;
@@ -276,14 +277,15 @@ contract ServiceRegistry is GenericRegistry {
         service.maxNumAgentInstances = 0;
         // Assigning the initial hash
         service.configHash = configHash;
+        // Set the initial service state
+        service.state = ServiceState.PreRegistration;
 
         // Set service data
         _setServiceData(service, agentIds, agentParams, agentIds.length, serviceId);
 
-        // Mint the service instance to the service owner
+        // Mint the service instance to the service owner and record the service structure
         _safeMint(serviceOwner, serviceId);
-
-        service.state = ServiceState.PreRegistration;
+        mapServices[serviceId] = service;
 
         totalSupply = serviceId;
         emit CreateService(serviceId);
@@ -315,7 +317,7 @@ contract ServiceRegistry is GenericRegistry {
             revert ManagerOnly(msg.sender, manager);
         }
 
-        Service storage service = mapServices[serviceId];
+        Service memory service = mapServices[serviceId];
         if (service.state != ServiceState.PreRegistration) {
             revert WrongServiceState(uint256(service.state), serviceId);
         }
@@ -347,8 +349,6 @@ contract ServiceRegistry is GenericRegistry {
                 size++;
             }
         }
-        // Set of canonical agent Ids has to be completely overwritten (push-based)
-        delete service.agentIds;
         // Check if the previous hash is the same / hash was not updated
         bytes32 lastConfigHash = service.configHash;
         if (lastConfigHash != configHash) {
@@ -356,8 +356,9 @@ contract ServiceRegistry is GenericRegistry {
             service.configHash = configHash;
         }
 
-        // Set service data
+        // Set service data and record the modified service struct
         _setServiceData(service, newAgentIds, newAgentParams, size, serviceId);
+        mapServices[serviceId] = service;
 
         emit UpdateService(serviceId, configHash);
         success = true;
@@ -384,7 +385,7 @@ contract ServiceRegistry is GenericRegistry {
             revert ManagerOnly(msg.sender, manager);
         }
 
-        Service storage service = mapServices[serviceId];
+        Service memory service = mapServices[serviceId];
         // Service must be inactive
         if (service.state != ServiceState.PreRegistration) {
             revert ServiceMustBeInactive(serviceId);
@@ -396,6 +397,7 @@ contract ServiceRegistry is GenericRegistry {
 
         // Activate the agent instance registration
         service.state = ServiceState.ActiveRegistration;
+        mapServices[serviceId] = service;
 
         emit ActivateRegistration(serviceId);
         success = true;
@@ -432,7 +434,7 @@ contract ServiceRegistry is GenericRegistry {
             revert WrongArrayLength(agentInstances.length, agentIds.length);
         }
 
-        Service storage service = mapServices[serviceId];
+        Service memory service = mapServices[serviceId];
         // The service has to be active to register agents
         if (service.state != ServiceState.ActiveRegistration) {
             revert WrongServiceState(uint256(service.state), serviceId);
@@ -498,6 +500,7 @@ contract ServiceRegistry is GenericRegistry {
         if (service.numAgentInstances == service.maxNumAgentInstances) {
             service.state = ServiceState.FinishedRegistration;
         }
+        mapServices[serviceId] = service;
 
         // Update operator's bonding balance
         mapOperatorsBalances[operatorService] += uint96(msg.value);
@@ -531,7 +534,7 @@ contract ServiceRegistry is GenericRegistry {
             revert UnauthorizedMultisig(multisigImplementation);
         }
 
-        Service storage service = mapServices[serviceId];
+        Service memory service = mapServices[serviceId];
         if (service.state != ServiceState.FinishedRegistration) {
             revert WrongServiceState(uint256(service.state), serviceId);
         }
@@ -543,13 +546,12 @@ contract ServiceRegistry is GenericRegistry {
         multisig = IMultisig(multisigImplementation).create(agentInstances, service.threshold, data);
 
         // Update maps of service Id to component and agent Ids
-        uint32[] memory agentIds = mapServices[serviceId].agentIds;
-        mapServiceIdSetAgents[serviceId] = agentIds;
-        uint32[] memory subComponentIds = IRegistry(agentRegistry).getSubComponents(agentIds);
-        mapServiceIdSetComponents[serviceId] = subComponentIds;
+        mapServiceIdSetAgents[serviceId] = service.agentIds;
+        mapServiceIdSetComponents[serviceId] = IRegistry(agentRegistry).getSubComponents(service.agentIds);
 
         service.multisig = multisig;
         service.state = ServiceState.Deployed;
+        mapServices[serviceId] = service;
 
         emit CreateMultisigWithAgents(serviceId, multisig);
         emit DeployService(serviceId);
@@ -568,10 +570,10 @@ contract ServiceRegistry is GenericRegistry {
             revert WrongArrayLength(agentInstances.length, amounts.length);
         }
 
-        Service storage service = mapServices[serviceId];
+        address serviceMultisig = mapServices[serviceId].multisig;
         // Only the multisig of a correspondent address can slash its agent instances
-        if (msg.sender != service.multisig) {
-            revert OnlyOwnServiceMultisig(msg.sender, service.multisig, serviceId);
+        if (msg.sender != serviceMultisig) {
+            revert OnlyOwnServiceMultisig(msg.sender, serviceMultisig, serviceId);
         }
 
         // Loop over each agent instance
@@ -622,7 +624,7 @@ contract ServiceRegistry is GenericRegistry {
             revert ManagerOnly(msg.sender, manager);
         }
 
-        Service storage service = mapServices[serviceId];
+        Service memory service = mapServices[serviceId];
         // Check if the service is already terminated
         if (service.state == ServiceState.PreRegistration || service.state == ServiceState.TerminatedBonded ||
             service.state == ServiceState.TerminatedUnbonded) {
@@ -634,6 +636,7 @@ contract ServiceRegistry is GenericRegistry {
         } else {
             service.state = ServiceState.TerminatedUnbonded;
         }
+        mapServices[serviceId] = service;
 
         // Return registration deposit back to the service owner
         refund = service.securityDeposit;
@@ -731,7 +734,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @param agentInstances Pre-allocated list of agent instance addresses.
     /// @param service Service instance.
     /// @param serviceId ServiceId.
-    function _getAgentInstances(Service storage service, uint256 serviceId) private view
+    function _getAgentInstances(Service memory service, uint256 serviceId) private view
         returns (address[] memory agentInstances)
     {
         agentInstances = new address[](service.numAgentInstances);
@@ -766,7 +769,7 @@ contract ServiceRegistry is GenericRegistry {
             uint256 threshold, uint256 numAgentIds, uint32[] memory agentIds, AgentParams[] memory agentParams,
             uint256 numAgentInstances, address[] memory agentInstances, address multisig)
     {
-        Service storage service = mapServices[serviceId];
+        Service memory service = mapServices[serviceId];
         agentParams = new AgentParams[](service.agentIds.length);
         numAgentInstances = service.numAgentInstances;
         agentInstances = _getAgentInstances(service, serviceId);
