@@ -6,7 +6,6 @@ Let's first describe the list of possible states:
 - Service is finished-registration; -> All the agent instances slots are registered
 - Service is deployed; -> Service is deployed and operates via created multisig contract
 - Service is terminated-bonded; -> Some agents are bonded with stake
-- Service is terminated-unbonded; -> All agents have left the service and recovered their stake
 
 In v1 the service has a static set of agent instances following activation of the registration.
 
@@ -30,11 +29,11 @@ would throw an error.
 
 ### terminate()
 - **Current state:** active-registration or finished-registration or deployed
-- **Next state:** terminated-bonded or terminated-unbonded
+- **Next state:** terminated-bonded or pre-registration
 
 ### unbond()
 - **Current state:** expired-registration or terminated-bonded
-- **Next state:** expired-registration or terminated-unbonded
+- **Next state:** expired-registration or pre-registration
    
 ### registerAgents()
 - **Current state:** Service is active-registration
@@ -85,7 +84,7 @@ Functions to call from this state:
     - Condition: At least one agent instance is registered
 
 
-3. **Service is terminated-unbonded**
+3. **Service is pre-registration**
     - Function call for this state: **terminate()**
     - Condition: No single agent instance is registered
 
@@ -111,14 +110,8 @@ Functions to call from this state:
 
 
 List of next possible states:
-1. **Service is terminated-unbonded**
+1. **Service is pre-registration**
     - Function call for this state: **unbond()**
     - Condition: No single agent instance is registered after the function call
 
-### Service is terminated-unbonded
-Condition for this state: Service termination block has passed and all agent instances have left the service and recovered
-their stake or have never registered for the service.
-
-Functions to call from this state:
-- None
 

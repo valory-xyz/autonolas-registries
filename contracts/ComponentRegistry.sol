@@ -16,7 +16,7 @@ contract ComponentRegistry is UnitRegistry {
         unitType = UnitType.Component;
     }
 
-    /// @dev Checks the provided component dependencies.
+    /// @dev Checks provided component dependencies.
     /// @param dependencies Set of component dependencies.
     /// @param maxComponentId Maximum component Id.
     function _checkDependencies(uint32[] memory dependencies, uint256 maxComponentId) internal virtual override {
@@ -29,11 +29,19 @@ contract ComponentRegistry is UnitRegistry {
         }
     }
 
-    function getSubComponentsFromMap(uint256 componentId) external view returns (uint32[] memory subComponentIds){
+    /// @dev Gets the set of subcomponent Ids from a local map of subcomponent.
+    /// @param componentId Component Id.
+    /// @return subComponentIds Set of subcomponent Ids.
+    /// @return numSubComponents Number of subcomponents.
+    function getLocalSubComponents(uint256 componentId) external view
+        returns (uint32[] memory subComponentIds, uint256 numSubComponents)
+    {
         subComponentIds = mapSubComponents[uint256(componentId)];
+        numSubComponents = subComponentIds.length;
     }
 
     /// @dev Gets subcomponents of a provided component Id.
+    /// @notice For components its equivalent to the function above.
     /// @param componentId Component Id.
     /// @return subComponentIds Set of subcomponents.
     function _getSubComponents(uint32 componentId) internal view virtual override returns (uint32[] memory subComponentIds) {

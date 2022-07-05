@@ -162,6 +162,11 @@ contract ServiceManager is GenericManager {
     /// @param serviceId Service Id.
     function serviceReward(uint256 serviceId) external payable
     {
+        // Check for the treasury address
+        if (treasury == address(0)) {
+            revert ZeroAddress();
+        }
+
         uint256[] memory serviceIds = new uint256[](1);
         serviceIds[0] = serviceId;
         uint256[] memory amounts = new uint256[](1);
