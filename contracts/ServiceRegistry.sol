@@ -4,7 +4,6 @@ pragma solidity ^0.8.15;
 import "./AgentRegistry.sol";
 import "./interfaces/IMultisig.sol";
 import "./interfaces/IRegistry.sol";
-import "hardhat/console.sol";
 
 // This struct is 128 bits in total
 struct AgentParams {
@@ -204,7 +203,6 @@ contract ServiceRegistry is GenericRegistry {
             // TODO Need to carefully check pairings, since it's hard to find if something is incorrectly misplaced bitwise
             serviceAgent |= serviceId << 32;
             serviceAgent |= uint256(agentIds[i]) << 64;
-            console.log("creating serviceAgent", serviceAgent);
             mapAgentParams[serviceAgent] = agentParams[i];
             service.maxNumAgentInstances += agentParams[i].slots;
             // Security deposit is the maximum of the canonical agent registration bond
@@ -447,9 +445,6 @@ contract ServiceRegistry is GenericRegistry {
             serviceAgent |= serviceId << 32;
             serviceAgent |= uint256(agentIds[i]) << 64;
             // TODO We read each value from the map, this is expensive
-            console.log("serviceAgent", serviceAgent);
-            console.log("agentIds[i]", agentIds[i]);
-            console.log(mapAgentParams[serviceAgent].slots);
             if (mapAgentParams[serviceAgent].slots == 0) {
                 revert AgentNotInService(agentIds[i], serviceId);
             }
