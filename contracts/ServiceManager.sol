@@ -54,7 +54,6 @@ contract ServiceManager is GenericManager {
 
     /// @dev Creates a new service.
     /// @param serviceOwner Individual that creates and controls a service.
-    /// @param name Name of the service.
     /// @param description Description of the service.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids.
@@ -62,8 +61,7 @@ contract ServiceManager is GenericManager {
     /// @param threshold Threshold for a multisig composed by agents.
     function serviceCreate(
         address serviceOwner,
-        string memory name,
-        string memory description,
+        bytes32 description,
         bytes32 configHash,
         uint256[] memory agentIds,
         IService.AgentParams[] memory agentParams,
@@ -74,12 +72,11 @@ contract ServiceManager is GenericManager {
         if (paused) {
             revert Paused();
         }
-        return IService(serviceRegistry).create(serviceOwner, name, description, configHash, agentIds, agentParams,
+        return IService(serviceRegistry).create(serviceOwner, description, configHash, agentIds, agentParams,
             threshold);
     }
 
     /// @dev Updates a service in a CRUD way.
-    /// @param name Name of the service.
     /// @param description Description of the service.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids.
@@ -87,8 +84,7 @@ contract ServiceManager is GenericManager {
     /// @param threshold Threshold for a multisig composed by agents.
     /// @param serviceId Service Id to be updated.
     function serviceUpdate(
-        string memory name,
-        string memory description,
+        bytes32 description,
         bytes32 configHash,
         uint256[] memory agentIds,
         IService.AgentParams[] memory agentParams,
@@ -96,7 +92,7 @@ contract ServiceManager is GenericManager {
         uint256 serviceId
     ) external
     {
-        IService(serviceRegistry).update(msg.sender, name, description, configHash, agentIds, agentParams,
+        IService(serviceRegistry).update(msg.sender, description, configHash, agentIds, agentParams,
             threshold, serviceId);
     }
 

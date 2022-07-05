@@ -22,16 +22,14 @@ contract RegistriesManager is GenericManager {
 
     /// @dev Creates agent.
     /// @param agentOwner Owner of the agent.
-    /// @param developer Developer of the agent.
-    /// @param agentHash IPFS hash of the agent.
     /// @param description Description of the agent.
+    /// @param agentHash IPFS hash of the agent.
     /// @param dependencies Set of component dependencies in a sorted ascending order.
     /// @return The id of a created agent.
     function createAgent(
         address agentOwner,
-        address developer,
-        bytes32 agentHash,
         bytes32 description,
+        bytes32 agentHash,
         uint32[] memory dependencies
     ) external returns (uint256)
     {
@@ -39,7 +37,7 @@ contract RegistriesManager is GenericManager {
         if (paused) {
             revert Paused();
         }
-        return IRegistry(agentRegistry).create(agentOwner, developer, agentHash, description, dependencies);
+        return IRegistry(agentRegistry).create(agentOwner, description, agentHash, dependencies);
     }
 
     /// @dev Updates the agent hash.
@@ -51,16 +49,14 @@ contract RegistriesManager is GenericManager {
 
     /// @dev Creates component.
     /// @param componentOwner Owner of the component.
-    /// @param developer Developer of the component.
-    /// @param componentHash IPFS hash of the component.
     /// @param description Description of the component.
+    /// @param componentHash IPFS hash of the component.
     /// @param dependencies Set of component dependencies in a sorted ascending order.
     /// @return The id of a created component.
     function createComponent(
         address componentOwner,
-        address developer,
-        bytes32 componentHash,
         bytes32 description,
+        bytes32 componentHash,
         uint32[] memory dependencies
     ) external returns (uint256)
     {
@@ -68,7 +64,7 @@ contract RegistriesManager is GenericManager {
         if (paused) {
             revert Paused();
         }
-        return IRegistry(componentRegistry).create(componentOwner, developer, componentHash, description, dependencies);
+        return IRegistry(componentRegistry).create(componentOwner, description, componentHash, dependencies);
     }
 
     /// @dev Updates the component hash.

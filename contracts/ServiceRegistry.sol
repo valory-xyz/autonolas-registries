@@ -25,7 +25,7 @@ struct AgentInstance {
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 contract ServiceRegistry is GenericRegistry {
     event Deposit(address indexed sender, uint256 amount);
-    event Refund(address indexed sendee, uint256 amount);
+    event Refund(address indexed receiver, uint256 amount);
     event CreateService(uint256 indexed serviceId);
     event UpdateService(uint256 indexed serviceId, bytes32 configHash);
     event RegisterInstance(address indexed operator, uint256 indexed serviceId, address indexed agentInstance, uint256 agentId);
@@ -45,7 +45,6 @@ contract ServiceRegistry is GenericRegistry {
         TerminatedBonded
     }
 
-    // TODO After all maps are extracted from the struct, this can be treated as memory
     // Service parameters
     struct Service {
         // Registration activation deposit
@@ -53,12 +52,9 @@ contract ServiceRegistry is GenericRegistry {
         uint96 securityDeposit;
         // Multisig address for agent instances
         address multisig;
-        // Service name
-        bytes32 name;
         // Service description
         bytes32 description;
         // IPFS hashes pointing to the config metadata
-        // TODO Do we need to check for already added config hashes same as in components and agents?
         bytes32 configHash;
         // Agent instance signers threshold: must no less than ceil((n * 2 + 1) / 3) of all the agent instances combined
         // This number will be enough to have ((2^32 - 1) * 3 - 1) / 2, which is bigger than 6.44b
@@ -136,21 +132,19 @@ contract ServiceRegistry is GenericRegistry {
     }
 
     /// @dev Going through basic initial service checks.
-    /// @param name Name of the service.
     /// @param description Description of the service.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids.
     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
     function _initialChecks(
-        bytes32 name,
         bytes32 description,
         bytes32 configHash,
         uint32[] memory agentIds,
         AgentParams[] memory agentParams
     ) private view
     {
-        // Checks for non-empty strings
-        if(name == 0 || description == 0) {
+        // Checks for non-empty description
+        if(description == 0) {
             revert ZeroValue();
         }
 
@@ -226,7 +220,6 @@ contract ServiceRegistry is GenericRegistry {
 
     /// @dev Creates a new service.
     /// @param serviceOwner Individual that creates and controls a service.
-    /// @param name Name of the service.
     /// @param description Description of the service.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids in a sorted ascending order.
@@ -235,7 +228,6 @@ contract ServiceRegistry is GenericRegistry {
     /// @return serviceId Created service Id.
     function create(
         address serviceOwner,
-        bytes32 name,
         bytes32 description,
         bytes32 configHash,
         uint32[] memory agentIds,
@@ -254,7 +246,7 @@ contract ServiceRegistry is GenericRegistry {
         }
 
         // Execute initial checks
-        _initialChecks(name, description, configHash, agentIds, agentParams);
+        _initialChecks(description, configHash, agentIds, agentParams);
 
         // Check that there are no zero number of slots for a specific canonical agent id and no zero registration bond
         for (uint256 i = 0; i < agentIds.length; i++) {
@@ -270,7 +262,6 @@ contract ServiceRegistry is GenericRegistry {
         // Set high-level data components of the service instance
         Service memory service;
         // Updating high-level data components of the service
-        service.name = name;
         service.description = description;
         service.threshold = threshold;
         service.maxNumAgentInstances = 0;
@@ -292,7 +283,6 @@ contract ServiceRegistry is GenericRegistry {
 
     /// @dev Updates a service in a CRUD way.
     /// @param serviceOwner Individual that creates and controls a service.
-    /// @param name Name of the service.
     /// @param description Description of the service.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids in a sorted ascending order.
@@ -302,7 +292,6 @@ contract ServiceRegistry is GenericRegistry {
     /// @return success True, if function executed successfully.
     function update(
         address serviceOwner,
-        bytes32 name,
         bytes32 description,
         bytes32 configHash,
         uint32[] memory agentIds,
@@ -322,10 +311,9 @@ contract ServiceRegistry is GenericRegistry {
         }
 
         // Execute initial checks
-        _initialChecks(name, description, configHash, agentIds, agentParams);
+        _initialChecks(description, configHash, agentIds, agentParams);
 
         // Updating high-level data components of the service
-        service.name = name;
         service.description = description;
         service.threshold = threshold;
         service.maxNumAgentInstances = 0;
@@ -647,7 +635,6 @@ contract ServiceRegistry is GenericRegistry {
         // By design, the refund is always a non-zero value, so no check is needed here fo that
         (bool result, ) = serviceOwner.call{value: refund}("");
         if (!result) {
-            // TODO When ERC20 token is used, change to the address of a token
             revert TransferFailed(address(0), address(this), serviceOwner, refund);
         }
 
@@ -687,7 +674,7 @@ contract ServiceRegistry is GenericRegistry {
         // operator occupies first 160 bits
         operatorService |= uint256(uint160(operator)) << 160;
         // serviceId occupies next 32 bits
-        operatorService |= serviceId << 192;
+        operatorService |= serviceId << 160;
         AgentInstance[] memory agentInstances = mapOperatorsAgentInstances[operatorService];
         uint256 numAgentsUnbond = agentInstances.length;
         if (numAgentsUnbond == 0) {
@@ -761,7 +748,6 @@ contract ServiceRegistry is GenericRegistry {
     // TODO This must be split into just returning the Service struct and other values from maps called separately
     /// @dev Gets the high-level service information.
     /// @param serviceId Service Id.
-    /// @return name Name of the service.
     /// @return description Description of the service.
     /// @return configHash The most recent IPFS hash pointing to the config metadata.
     /// @return threshold Agent instance signers threshold.
@@ -772,7 +758,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @return agentInstances Set of agent instances currently registered for the service.
     /// @return multisig Agent instances multisig address.
     function getServiceInfo(uint256 serviceId) external view serviceExists(serviceId)
-        returns (bytes32 name, bytes32 description, bytes32 configHash,
+        returns (bytes32 description, bytes32 configHash,
             uint256 threshold, uint256 numAgentIds, uint32[] memory agentIds, AgentParams[] memory agentParams,
             uint256 numAgentInstances, address[] memory agentInstances, address multisig)
     {
@@ -787,7 +773,6 @@ contract ServiceRegistry is GenericRegistry {
             serviceAgent |= uint256(service.agentIds[i]) << 64;
             agentParams[i] = mapAgentParams[serviceAgent];
         }
-        name = service.name;
         description = service.description;
         configHash = service.configHash;
         threshold = service.threshold;

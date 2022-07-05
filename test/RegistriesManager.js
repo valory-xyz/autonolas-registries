@@ -44,11 +44,11 @@ describe("RegistriesManager", function () {
 
             // Try minting when paused
             await expect(
-                registriesManager.createComponent(user.address, user.address, componentHashes[0], description, dependencies)
+                registriesManager.createComponent(user.address, description, componentHashes[0], dependencies)
             ).to.be.revertedWith("Paused");
 
             await expect(
-                registriesManager.createAgent(user.address, user.address, componentHashes[0], description, dependencies)
+                registriesManager.createAgent(user.address, description, componentHashes[0], dependencies)
             ).to.be.revertedWith("Paused");
 
             // Unpause the contract
@@ -57,8 +57,8 @@ describe("RegistriesManager", function () {
             // Mint component and agent
             await componentRegistry.changeManager(registriesManager.address);
             await agentRegistry.changeManager(registriesManager.address);
-            await registriesManager.createComponent(user.address, user.address, componentHashes[0], description, dependencies);
-            await registriesManager.createAgent(user.address, user.address, componentHashes[1], description, [1]);
+            await registriesManager.createComponent(user.address, description, componentHashes[0], dependencies);
+            await registriesManager.createAgent(user.address, description, componentHashes[1], [1]);
         });
     });
 
@@ -67,12 +67,12 @@ describe("RegistriesManager", function () {
             const user = signers[1];
             await componentRegistry.changeManager(registriesManager.address);
             await agentRegistry.changeManager(registriesManager.address);
-            await registriesManager.createComponent(user.address, user.address, componentHashes[0], description,
+            await registriesManager.createComponent(user.address, description, componentHashes[0],
                 dependencies);
             await registriesManager.connect(user).updateComponentHash(1, componentHashes[1]);
             await registriesManager.connect(user).updateComponentHash(1, componentHashes[2]);
 
-            await registriesManager.createAgent(user.address, user.address, agentHashes[0], description, [1]);
+            await registriesManager.createAgent(user.address, agentHashes[0], description, [1]);
             await registriesManager.connect(user).updateAgentHash(1, agentHashes[1]);
             await registriesManager.connect(user).updateAgentHash(1, agentHashes[2]);
 

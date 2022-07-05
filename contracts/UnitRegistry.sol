@@ -16,12 +16,10 @@ abstract contract UnitRegistry is GenericRegistry {
 
     // Unit parameters
     struct Unit {
-        // Primary IPFS hash of the unit
-        bytes32 unitHash;
         // Description of the unit
         bytes32 description;
-        // Developer of the unit
-        address developer;
+        // Primary IPFS hash of the unit
+        bytes32 unitHash;
         // Set of component dependencies (agents are also based on components)
         // We believe that the system is expected to support no more than 2^32-1 components
         uint32[] dependencies;
@@ -45,16 +43,12 @@ abstract contract UnitRegistry is GenericRegistry {
 
     /// @dev Creates unit.
     /// @param unitOwner Owner of the unit.
-    /// @param developer Developer of the unit.
-    /// @param unitHash IPFS hash of the unit.
     /// @param description Description of the unit.
+    /// @param unitHash IPFS CID hash of the unit.
     /// @param dependencies Set of unit dependencies in a sorted ascending order (unit Ids).
     /// @return unitId The id of a minted unit.
-    function create(address unitOwner, address developer, bytes32 unitHash, bytes32 description,
-        uint32[] memory dependencies)
-        external
-        virtual
-        returns (uint256 unitId)
+    function create(address unitOwner, bytes32 description, bytes32 unitHash, uint32[] memory dependencies)
+        external virtual returns (uint256 unitId)
     {
         // Reentrancy guard
         if (_locked > 1) {
@@ -67,8 +61,8 @@ abstract contract UnitRegistry is GenericRegistry {
             revert ManagerOnly(msg.sender, manager);
         }
 
-        // Checks for owner and developer being not zero addresses
-        if(unitOwner == address(0) || developer == address(0)) {
+        // Checks for a non-zero owner address
+        if(unitOwner == address(0)) {
             revert ZeroAddress();
         }
 
@@ -95,7 +89,7 @@ abstract contract UnitRegistry is GenericRegistry {
         unitId++;
 
         // Initialize the unit and mint its token
-        Unit memory unit = Unit(unitHash, description, developer, dependencies);
+        Unit memory unit = Unit(description, unitHash, dependencies);
         mapUnits[unitId] = unit;
         mapHashUnitId[unitHash] = uint32(unitId);
 
@@ -164,22 +158,19 @@ abstract contract UnitRegistry is GenericRegistry {
     /// @dev Gets the unit info.
     /// @param unitId Unit Id.
     /// @return unitOwner Owner of the unit.
-    /// @return developer The unit developer.
     /// @return unitHash The primary unit IPFS hash.
     /// @return description The unit description.
     /// @return numDependencies The number of units in the dependency list.
     /// @return dependencies The list of unit dependencies.
     function getInfo(uint256 unitId) external view virtual
-        returns (address unitOwner, address developer, bytes32 unitHash, bytes32 description,
+        returns (address unitOwner, bytes32 unitHash, bytes32 description,
             uint256 numDependencies, uint32[] memory dependencies)
     {
         // Check for the unit existence
         if (unitId > 0 && unitId < (totalSupply + 1)) {
             Unit memory unit = mapUnits[unitId];
-            // TODO Here we return the initial hash (componentHashes[0]). With hashes outside of the Unit struct,
             // TODO we could just return the unit itself
-            return (ownerOf(unitId), unit.developer, unit.unitHash, unit.description,
-                unit.dependencies.length, unit.dependencies);
+            return (ownerOf(unitId), unit.unitHash, unit.description, unit.dependencies.length, unit.dependencies);
         }
     }
 
@@ -254,7 +245,7 @@ abstract contract UnitRegistry is GenericRegistry {
                 // Either get a component that has a higher id than the last one ore reach the end of the processed Ids
                 for (; processedComponents[i] < numComponents[i]; ++processedComponents[i]) {
                     if (minComponent < components[i][processedComponents[i]]) {
-                        // Out of those component Ids that are higher than the last one, pich the minimal
+                        // Out of those component Ids that are higher than the last one, pick the minimal one
                         if (components[i][processedComponents[i]] < tryMinComponent) {
                             tryMinComponent = components[i][processedComponents[i]];
                             minIdxComponent = i;
