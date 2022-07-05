@@ -7,9 +7,9 @@ describe("ComponentRegistry", function () {
     let componentRegistry;
     let signers;
     const description = ethers.utils.formatBytes32String("component description");
-    const componentHash = {hash: "0x" + "0".repeat(64), hashFunction: "0x12", size: "0x20"};
-    const componentHash1 = {hash: "0x" + "1".repeat(64), hashFunction: "0x12", size: "0x20"};
-    const componentHash2 = {hash: "0x" + "2".repeat(64), hashFunction: "0x12", size: "0x20"};
+    const componentHash = "0x" + "0".repeat(64);
+    const componentHash1 = "0x" + "1".repeat(64);
+    const componentHash2 = "0x" + "2".repeat(64);
     const dependencies = [];
     const AddressZero = "0x" + "0".repeat(40);
 
@@ -69,22 +69,6 @@ describe("ComponentRegistry", function () {
                 componentRegistry.connect(mechManager).create(AddressZero, AddressZero, componentHash, description,
                     dependencies)
             ).to.be.revertedWith("ZeroAddress");
-        });
-
-        it("Should fail when creating a component with a wrong IPFS hash header", async function () {
-            const wrongComponentHashes = [{hash: "0x" + "0".repeat(64), hashFunction: "0x11", size: "0x20"},
-                {hash: "0x" + "0".repeat(64), hashFunction: "0x12", size: "0x19"}];
-            const mechManager = signers[1];
-            const user = signers[2];
-            await componentRegistry.changeManager(mechManager.address);
-            await expect(
-                componentRegistry.connect(mechManager).create(user.address, user.address, wrongComponentHashes[0],
-                    description, dependencies)
-            ).to.be.revertedWith("WrongHash");
-            await expect(
-                componentRegistry.connect(mechManager).create(user.address, user.address, wrongComponentHashes[1],
-                    description, dependencies)
-            ).to.be.revertedWith("WrongHash");
         });
 
         it("Should fail when creating a component with an empty description", async function () {
@@ -255,6 +239,48 @@ describe("ComponentRegistry", function () {
             expect(hashes.numHashes).to.equal(2);
             expect(hashes.unitHashes[0].hash).to.equal(componentHash1.hash);
             expect(hashes.unitHashes[1].hash).to.equal(componentHash2.hash);
+        });
+    });
+
+    context("Subcomponents", async function () {
+        it("Get the list of subcomponents", async function () {
+            const mechManager = signers[0];
+            const user = signers[2];
+            await componentRegistry.changeManager(mechManager.address);
+            let salt = "0x";
+            // Component 1 (c1)
+            salt += "00";
+            let hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(user.address, user.address, hash, description, []);
+            let subComponents = await componentRegistry.getLocalSubComponents(1);
+            expect(subComponents.numSubComponents).to.equal(1);
+            // c2
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(user.address, user.address, hash, description, []);
+            subComponents = await componentRegistry.getLocalSubComponents(2);
+            expect(subComponents.numSubComponents).to.equal(1);
+            // c3
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(user.address, user.address, hash, description, [1]);
+            subComponents = await componentRegistry.getLocalSubComponents(3);
+            expect(subComponents.numSubComponents).to.equal(2);
+            // c4
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(user.address, user.address, hash, description, [2]);
+            subComponents = await componentRegistry.getLocalSubComponents(4);
+            expect(subComponents.numSubComponents).to.equal(2);
+            // c5
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(user.address, user.address, hash, description, [3, 4]);
+            subComponents = await componentRegistry.getLocalSubComponents(5);
+            expect(subComponents.numSubComponents).to.equal(5);
+            for (let i = 0; i < subComponents.numSubComponents; i++) {
+                expect(subComponents.subComponentIds[i]).to.equal(i + 1);
+            }
         });
     });
 });

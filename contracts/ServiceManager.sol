@@ -64,7 +64,7 @@ contract ServiceManager is GenericManager {
         address serviceOwner,
         string memory name,
         string memory description,
-        IService.Multihash memory configHash,
+        bytes32 configHash,
         uint256[] memory agentIds,
         IService.AgentParams[] memory agentParams,
         uint256 threshold
@@ -89,7 +89,7 @@ contract ServiceManager is GenericManager {
     function serviceUpdate(
         string memory name,
         string memory description,
-        IService.Multihash memory configHash,
+        bytes32 configHash,
         uint256[] memory agentIds,
         IService.AgentParams[] memory agentParams,
         uint256 threshold,
@@ -162,6 +162,11 @@ contract ServiceManager is GenericManager {
     /// @param serviceId Service Id.
     function serviceReward(uint256 serviceId) external payable
     {
+        // Check for the treasury address
+        if (treasury == address(0)) {
+            revert ZeroAddress();
+        }
+
         uint256[] memory serviceIds = new uint256[](1);
         serviceIds[0] = serviceId;
         uint256[] memory amounts = new uint256[](1);

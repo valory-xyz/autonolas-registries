@@ -3,16 +3,6 @@ pragma solidity ^0.8.14;
 
 /// @dev Required interface for the component / agent manipulation.
 interface IRegistry {
-    // Multihash according to self-describing hashes standard. For more information of multihashes please visit https://multiformats.io/multihash/
-    struct Multihash {
-        // IPFS uses a sha2-256 hashing function. Each IPFS hash has to start with 1220.
-        bytes32 hash;
-        // Code in hex for sha2-256 is 0x12
-        uint8 hashFunction;
-        // Length of the hash is 32 bytes, or 0x20 in hex
-        uint8 size;
-    }
-
     /// @dev Creates component / agent.
     /// @param owner Owner of the component / agent.
     /// @param developer Developer of the component / agent.
@@ -23,7 +13,7 @@ interface IRegistry {
     function create(
         address owner,
         address developer,
-        Multihash memory mHash,
+        bytes32 mHash,
         bytes32 description,
         uint32[] memory dependencies
     ) external returns (uint256);
@@ -32,7 +22,7 @@ interface IRegistry {
     /// @param owner Owner of the component / agent.
     /// @param unitId Unit Id.
     /// @param mHash New IPFS hash of the component / agent.
-    function updateHash(address owner, uint256 unitId, Multihash memory mHash) external;
+    function updateHash(address owner, uint256 unitId, bytes32 mHash) external;
 
     /// @dev Check for the component / agent existence.
     /// @param unitId Unit Id.
@@ -50,7 +40,7 @@ interface IRegistry {
     function getInfo(uint256 unitId) external view returns (
         address owner,
         address developer,
-        Multihash memory mHash,
+        bytes32 mHash,
         bytes32 description,
         uint256 numDependencies,
         uint32[] memory dependencies
@@ -64,11 +54,22 @@ interface IRegistry {
         uint32[] memory dependencies
     );
 
+    /// @dev Gets subcomponents of a provided unit Id from a local public map.
+    /// @param unitId Unit Id.
+    /// @return subComponentIds Set of subcomponents.
+    /// @return numSubComponents Number of subcomponents.
+    function getLocalSubComponents(uint256 unitId) external view returns (uint32[] memory subComponentIds, uint256 numSubComponents);
+
+    /// @dev Gets calculated subcomponents.
+    /// @param unitIds Set of unit Ids.
+    /// @return subComponentIds Set of subcomponents.
+    function getSubComponents(uint32[] memory unitIds) external view returns (uint32[] memory subComponentIds);
+
     /// @dev Gets updated component / agent hashes.
     /// @param unitId Unit Id.
     /// @return numHashes Number of hashes.
     /// @return mHashes The list of component / agent hashes.
-    function getUpdatedHashes(uint256 unitId) external view returns (uint256 numHashes, Multihash[] memory mHashes);
+    function getUpdatedHashes(uint256 unitId) external view returns (uint256 numHashes, bytes32[] memory mHashes);
 
     /// @dev Gets the total supply of components / agents.
     /// @return Total supply.
