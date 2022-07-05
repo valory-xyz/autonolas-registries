@@ -3,7 +3,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe.only("ServiceRegistry", function () {
+describe("ServiceRegistry", function () {
     let componentRegistry;
     let agentRegistry;
     let serviceRegistry;
@@ -585,7 +585,7 @@ describe.only("ServiceRegistry", function () {
 
             // The service state must be terminated-unbonded
             const state = await serviceRegistry.getServiceState(serviceId);
-            expect(state).to.equal(6);
+            expect(state).to.equal(1);
         });
     });
 
@@ -937,7 +937,7 @@ describe.only("ServiceRegistry", function () {
             await serviceRegistry.connect(serviceManager).terminate(owner, serviceId);
             // The service state must be terminated-unbonded
             const state = await serviceRegistry.getServiceState(serviceId);
-            expect(state).to.equal(6);
+            expect(state).to.equal(1);
         });
 
         it("Unbond when the service registration is terminated", async function () {
@@ -991,7 +991,7 @@ describe.only("ServiceRegistry", function () {
             expect(result.events[0].event).to.equal("Refund");
             expect(result.events[1].event).to.equal("OperatorUnbond");
             const state = await serviceRegistry.getServiceState(serviceId);
-            expect(state).to.equal(6);
+            expect(state).to.equal(1);
 
             // Operator's balance after unbonding must be zero
             const newBalanceOperator = Number(await serviceRegistry.getOperatorBalance(operator, serviceId));
