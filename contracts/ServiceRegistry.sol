@@ -97,10 +97,10 @@ contract ServiceRegistry is GenericRegistry {
     mapping (uint256 => uint32[]) public mapServiceIdSetComponents;
     // Map of service Id => set of unique agent Ids
     mapping (uint256 => uint32[]) public mapServiceIdSetAgents;
-    // Map of service counter => service
-    mapping (uint256 => Service) public mapServices;
     // Map of policy for multisig implementations
     mapping (address => bool) public mapMultisigs;
+    // Map of service counter => service
+    mapping (uint256 => Service) public mapServices;
 
     /// @dev Service registry constructor.
     /// @param _name Service contract name.
@@ -683,7 +683,7 @@ contract ServiceRegistry is GenericRegistry {
         // operator occupies first 160 bits
         operatorService |= uint256(uint160(operator)) << 160;
         // serviceId occupies next 32 bits
-        operatorService |= serviceId << 160;
+        operatorService |= serviceId << 192;
         AgentInstance[] memory agentInstances = mapOperatorAndServiceIdAgentInstances[operatorService];
         uint256 numAgentsUnbond = agentInstances.length;
         if (numAgentsUnbond == 0) {

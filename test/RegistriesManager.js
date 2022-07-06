@@ -39,6 +39,11 @@ describe("RegistriesManager", function () {
         it("Pausing and unpausing", async function () {
             const user = signers[3];
 
+            // Try to pause not from the owner of the service manager
+            await expect(
+                serviceManager.connect(user).pause()
+            ).to.be.revertedWith("OwnerOnly");
+
             // Pause the contract
             await registriesManager.pause();
 
@@ -51,6 +56,11 @@ describe("RegistriesManager", function () {
             await expect(
                 registriesManager.create(1, user.address, description, componentHashes[0], dependencies)
             ).to.be.revertedWith("Paused");
+
+            // Try to unpause not from the owner of the service manager
+            await expect(
+                serviceManager.connect(user).unpause()
+            ).to.be.revertedWith("OwnerOnly");
 
             // Unpause the contract
             await registriesManager.unpause();
