@@ -42,10 +42,6 @@ interface IErrorsRegistries {
     /// @param maxThreshold Maximum possible threshold value.
     error WrongThreshold(uint256 currentThreshold, uint256 minThreshold, uint256 maxThreshold);
 
-    /// @dev Service Id is not found, although service Id might exist in the records.
-    /// @dev serviceId Service Id.
-    error ServiceNotFound(uint256 serviceId);
-
     /// @dev Agent instance is already registered with a specified `operator`.
     /// @param operator Operator that registered an instance.
     error AgentInstanceRegistered(address operator);

@@ -115,22 +115,6 @@ contract ServiceRegistry is GenericRegistry {
         owner = msg.sender;
     }
 
-    // Only the owner of the service is authorized to manipulate it
-    modifier onlyServiceOwner(address serviceOwner, uint256 serviceId) {
-        if (serviceOwner == address(0) || serviceId == 0 || serviceId > totalSupply || ownerOf(serviceId) != serviceOwner) {
-            revert ServiceNotFound(serviceId);
-        }
-        _;
-    }
-
-    // Check for the service existence
-    modifier serviceExists(uint256 serviceId) {
-        if (serviceId == 0 || serviceId > totalSupply) {
-            revert ServiceNotFound(serviceId);
-        }
-        _;
-    }
-
     /// @dev Fallback function
     fallback() external payable {
         revert WrongFunction();
@@ -315,11 +299,17 @@ contract ServiceRegistry is GenericRegistry {
         AgentParams[] memory agentParams,
         uint32 threshold,
         uint256 serviceId
-    ) external onlyServiceOwner(serviceOwner, serviceId) returns (bool success)
+    ) external returns (bool success)
     {
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
+        }
+
+        // Check for the service ownership
+        address actualOwner = ownerOf(serviceId);
+        if (actualOwner != serviceOwner) {
+            revert OwnerOnly(serviceOwner, actualOwner);
         }
 
         Service memory service = mapServices[serviceId];
@@ -371,11 +361,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @param serviceOwner Individual that creates and controls a service.
     /// @param serviceId Correspondent service Id.
     /// @return success True, if function executed successfully.
-    function activateRegistration(address serviceOwner, uint256 serviceId)
-        external
-        onlyServiceOwner(serviceOwner, serviceId)
-        payable
-        returns (bool success)
+    function activateRegistration(address serviceOwner, uint256 serviceId) external payable returns (bool success)
     {
         // Reentrancy guard
         if (_locked > 1) {
@@ -386,6 +372,12 @@ contract ServiceRegistry is GenericRegistry {
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
+        }
+
+        // Check for the service ownership
+        address actualOwner = ownerOf(serviceId);
+        if (actualOwner != serviceOwner) {
+            revert OwnerOnly(serviceOwner, actualOwner);
         }
 
         Service memory service = mapServices[serviceId];
@@ -452,13 +444,19 @@ contract ServiceRegistry is GenericRegistry {
             // serviceId occupies first 32 bits, agentId gets the next 32 bits
             uint256 serviceAgent = serviceId;
             serviceAgent |= uint256(agentIds[i]) << 32;
-            if (mapServiceAndAgentIdAgentParams[serviceAgent].slots == 0) {
+            AgentParams memory agentParams = mapServiceAndAgentIdAgentParams[serviceAgent];
+            if (agentParams.slots == 0) {
                 revert AgentNotInService(agentIds[i], serviceId);
             }
-            totalBond += mapServiceAndAgentIdAgentParams[serviceAgent].bond;
+            totalBond += agentParams.bond;
         }
         if (msg.value != totalBond) {
             revert IncorrectAgentBondingValue(msg.value, totalBond, serviceId);
+        }
+
+        // Operator address must not be used as an agent instance anywhere else
+        if (mapAgentInstanceOperators[operator] != address(0)) {
+            revert WrongOperator(serviceId);
         }
 
         // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
@@ -471,8 +469,7 @@ contract ServiceRegistry is GenericRegistry {
             uint32 agentId = agentIds[i];
 
             // Operator address must be different from agent instance one
-            // Also, operator address must not be used as an agent instance anywhere else
-            if (operator == agentInstance || mapAgentInstanceOperators[operator] != address(0)) {
+            if (operator == agentInstance) {
                 revert WrongOperator(serviceId);
             }
 
@@ -524,7 +521,7 @@ contract ServiceRegistry is GenericRegistry {
         uint256 serviceId,
         address multisigImplementation,
         bytes memory data
-    ) external onlyServiceOwner(serviceOwner, serviceId) returns (address multisig)
+    ) external returns (address multisig)
     {
         // Reentrancy guard
         if (_locked > 1) {
@@ -535,6 +532,12 @@ contract ServiceRegistry is GenericRegistry {
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
+        }
+
+        // Check for the service ownership
+        address actualOwner = ownerOf(serviceId);
+        if (actualOwner != serviceOwner) {
+            revert OwnerOnly(serviceOwner, actualOwner);
         }
 
         // Check for the whitelisted multisig implementation
@@ -573,17 +576,22 @@ contract ServiceRegistry is GenericRegistry {
     /// @param serviceId Service Id.
     /// @return success True, if function executed successfully.
     function slash(address[] memory agentInstances, uint96[] memory amounts, uint256 serviceId) external
-        serviceExists(serviceId) returns (bool success)
+        returns (bool success)
     {
+        // Check if the service is deployed
+        Service memory service = mapServices[serviceId];
+        if (service.state != ServiceState.Deployed) {
+            revert WrongServiceState(uint256(service.state), serviceId);
+        }
+
         // Check for the array size
         if (agentInstances.length != amounts.length) {
             revert WrongArrayLength(agentInstances.length, amounts.length);
         }
 
-        address serviceMultisig = mapServices[serviceId].multisig;
         // Only the multisig of a correspondent address can slash its agent instances
-        if (msg.sender != serviceMultisig) {
-            revert OnlyOwnServiceMultisig(msg.sender, serviceMultisig, serviceId);
+        if (msg.sender != service.multisig) {
+            revert OnlyOwnServiceMultisig(msg.sender, service.multisig, serviceId);
         }
 
         // Loop over each agent instance
@@ -596,10 +604,9 @@ contract ServiceRegistry is GenericRegistry {
             uint256 operatorService = uint256(uint160(operator));
             // serviceId occupies next 32 bits
             operatorService |= serviceId << 160;
-
             // Slash the balance of the operator, make sure it does not go below zero
             uint96 balance = mapOperatorAndServiceIdOperatorBalances[operatorService];
-            if (amounts[i] >= balance) {
+            if ((amounts[i] + 1) > balance) {
                 // We can't add to the slashed amount more than the balance
                 slashedFunds += balance;
                 balance = 0;
@@ -611,7 +618,6 @@ contract ServiceRegistry is GenericRegistry {
 
             emit OperatorSlashed(amounts[i], operator, serviceId);
         }
-
         success = true;
     }
 
@@ -620,10 +626,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @param serviceId Service Id to be updated.
     /// @return success True, if function executed successfully.
     /// @return refund Refund to return to the service owner.
-    function terminate(address serviceOwner, uint256 serviceId)
-        external
-        onlyServiceOwner(serviceOwner, serviceId)
-        returns (bool success, uint256 refund)
+    function terminate(address serviceOwner, uint256 serviceId) external returns (bool success, uint256 refund)
     {
         // Reentrancy guard
         if (_locked > 1) {
@@ -634,6 +637,12 @@ contract ServiceRegistry is GenericRegistry {
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
+        }
+
+        // Check for the service ownership
+        address actualOwner = ownerOf(serviceId);
+        if (actualOwner != serviceOwner) {
+            revert OwnerOnly(serviceOwner, actualOwner);
         }
 
         Service memory service = mapServices[serviceId];
@@ -787,7 +796,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @param agentId Canonical agent Id.
     /// @return numAgentInstances Number of agent instances.
     /// @return agentInstances Set of agent instances for a specified canonical agent Id.
-    function getInstancesForAgentId(uint256 serviceId, uint256 agentId) external view serviceExists(serviceId)
+    function getInstancesForAgentId(uint256 serviceId, uint256 agentId) external view
         returns (uint256 numAgentInstances, address[] memory agentInstances)
     {
         uint256 serviceAgent = serviceId;
@@ -835,7 +844,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @param serviceId Service Id.
     /// @return numHashes Number of hashes.
     /// @return configHashes The list of previous component hashes (excluding the current one).
-    function getPreviousHashes(uint256 serviceId) external view serviceExists(serviceId)
+    function getPreviousHashes(uint256 serviceId) external view
         returns (uint256 numHashes, bytes32[] memory configHashes)
     {
         configHashes = mapConfigHashes[serviceId];
@@ -863,8 +872,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @param operator Operator address.
     /// @param serviceId Service Id.
     /// @return balance The balance of the operator.
-    function getOperatorBalance(address operator, uint256 serviceId) external view serviceExists(serviceId)
-        returns (uint256 balance)
+    function getOperatorBalance(address operator, uint256 serviceId) external view returns (uint256 balance)
     {
         uint256 operatorService = uint256(uint160(operator));
         operatorService |= serviceId << 160;
