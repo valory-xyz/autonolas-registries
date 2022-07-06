@@ -579,6 +579,10 @@ contract ServiceRegistry is GenericRegistry {
         returns (bool success)
     {
         // Check if the service is deployed
+        // Since we do not kill (burn) services, we want this check to happen in a right service state.
+        // If the service is deployed, it definitely exists and is running. We do not want this function to be abused
+        // when the service was deployed, then terminated, then in a sleep mode or before next deployment somebody
+        // could use this function and try to slash operators.
         Service memory service = mapServices[serviceId];
         if (service.state != ServiceState.Deployed) {
             revert WrongServiceState(uint256(service.state), serviceId);
