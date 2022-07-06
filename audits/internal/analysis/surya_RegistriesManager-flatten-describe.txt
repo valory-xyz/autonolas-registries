@@ -1,0 +1,30 @@
+ + [34m[Int][39m IErrorsRegistries 
+
+ +  GenericManager [90m(IErrorsRegistries)[39m
+    - [34m[Ext][39m changeOwner[31m #[39m
+    - [34m[Ext][39m pause[31m #[39m
+    - [34m[Ext][39m unpause[31m #[39m
+
+ + [34m[Int][39m IRegistry 
+    - [34m[Ext][39m create[31m #[39m
+    - [34m[Ext][39m updateHash[31m #[39m
+    - [34m[Ext][39m exists
+    - [34m[Ext][39m getInfo
+    - [34m[Ext][39m getDependencies
+    - [34m[Ext][39m getLocalSubComponents
+    - [34m[Ext][39m getSubComponents
+    - [34m[Ext][39m getUpdatedHashes
+    - [34m[Ext][39m totalSupply
+    - [34m[Ext][39m tokenByIndex
+
+ +  RegistriesManager [90m(GenericManager)[39m
+    - [32m[Pub][39m [90m<Constructor>[39m[31m #[39m
+    - [34m[Ext][39m createAgent[31m #[39m
+    - [34m[Ext][39m updateAgentHash[31m #[39m
+    - [34m[Ext][39m createComponent[31m #[39m
+    - [34m[Ext][39m updateComponentHash[31m #[39m
+
+
+[33m ($)[39m = payable function
+[31m #[39m = non-constant function
+  

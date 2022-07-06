@@ -1,0 +1,486 @@
+'npx hardhat compile --force' running
+Compiled 35 Solidity files successfully
+
+Solidity 0.8.15 is not fully supported yet. You can still use Hardhat, but some features, like stack traces, might not work correctly.
+
+Learn more at https://hardhat.org/reference/solidity-support
+
+
+
+Contract GnosisSafeL2
++-------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+|               Function              |                                                       require or assert                                                        |
++-------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+|             constructor             |                                                                                                                                |
+|                setup                |                                    require(bool,string)(owners[owner] == address(0),GS204)                                     |
+|                                     |                                                   require(bool)(c / a == b)                                                    |
+|                                     |                                    require(bool,string)(_threshold <= _owners.length,GS201)                                    |
+|                                     |                                                     require(bool)(c >= a)                                                      |
+|                                     |                                           require(bool,string)(threshold == 0,GS200)                                           |
+|                                     |                                          require(bool,string)(_threshold >= 1,GS202)                                           |
+|                                     |                              require(bool,string)(modules[SENTINEL_MODULES] == address(0),GS100)                               |
+|                                     |                                       require(bool,string)(receiver.send(payment),GS011)                                       |
+|                                     |                     require(bool,string)(execute(to,0,data,Enum.Operation.DelegateCall,gasleft()()),GS000)                     |
+|                                     |                              require(bool,string)(transferToken(gasToken,receiver,payment),GS012)                              |
+|                                     | require(bool,string)(owner != address(0) && owner != SENTINEL_OWNERS && owner != address(this) && currentOwner != owner,GS203) |
+|           execTransaction           |                                                     require(bool)(b <= a)                                                      |
+|                                     |                                                   require(bool)(c / a == b)                                                    |
+|                                     |                 require(bool,string)(uint256(s).add(32).add(contractSignatureLen) <= signatures.length,GS023)                  |
+|                                     |                 require(bool,string)(gasleft()() >= ((safeTxGas * 64) / 63).max(safeTxGas + 2500) + 500,GS010)                 |
+|                                     |                                                     require(bool)(c >= a)                                                      |
+|                                     |                          require(bool,string)(signatures.length >= requiredSignatures.mul(65),GS020)                           |
+|                                     | require(bool,string)(currentOwner > lastOwner && owners[currentOwner] != address(0) && currentOwner != SENTINEL_OWNERS,GS026)  |
+|                                     |             require(bool,string)(msg.sender == currentOwner || approvedHashes[currentOwner][dataHash] != 0,GS025)              |
+|                                     |                                       require(bool,string)(receiver.send(payment),GS011)                                       |
+|                                     |                              require(bool,string)(transferToken(gasToken,receiver,payment),GS012)                              |
+|                                     | require(bool,string)(ISignatureValidator(currentOwner).isValidSignature(data,contractSignature) == EIP1271_MAGIC_VALUE,GS024)  |
+|                                     |                              require(bool,string)(uint256(s) >= requiredSignatures.mul(65),GS021)                              |
+|                                     |                             require(bool,string)(success || safeTxGas != 0 || gasPrice != 0,GS013)                             |
+|                                     |                                           require(bool,string)(_threshold > 0,GS001)                                           |
+|                                     |                              require(bool,string)(uint256(s).add(32) <= signatures.length,GS022)                               |
+|            handlePayment            |                                                     require(bool)(c >= a)                                                      |
+|                                     |                              require(bool,string)(transferToken(gasToken,receiver,payment),GS012)                              |
+|                                     |                                       require(bool,string)(receiver.send(payment),GS011)                                       |
+|                                     |                                                   require(bool)(c / a == b)                                                    |
+|           checkSignatures           |                 require(bool,string)(uint256(s).add(32).add(contractSignatureLen) <= signatures.length,GS023)                  |
+|                                     |                                                   require(bool)(c / a == b)                                                    |
+|                                     |                                                     require(bool)(c >= a)                                                      |
+|                                     | require(bool,string)(currentOwner > lastOwner && owners[currentOwner] != address(0) && currentOwner != SENTINEL_OWNERS,GS026)  |
+|                                     |                          require(bool,string)(signatures.length >= requiredSignatures.mul(65),GS020)                           |
+|                                     |             require(bool,string)(msg.sender == currentOwner || approvedHashes[currentOwner][dataHash] != 0,GS025)              |
+|                                     | require(bool,string)(ISignatureValidator(currentOwner).isValidSignature(data,contractSignature) == EIP1271_MAGIC_VALUE,GS024)  |
+|                                     |                              require(bool,string)(uint256(s) >= requiredSignatures.mul(65),GS021)                              |
+|                                     |                                           require(bool,string)(_threshold > 0,GS001)                                           |
+|                                     |                              require(bool,string)(uint256(s).add(32) <= signatures.length,GS022)                               |
+|           checkNSignatures          |                 require(bool,string)(uint256(s).add(32).add(contractSignatureLen) <= signatures.length,GS023)                  |
+|                                     |                                                   require(bool)(c / a == b)                                                    |
+|                                     |                                                     require(bool)(c >= a)                                                      |
+|                                     | require(bool,string)(currentOwner > lastOwner && owners[currentOwner] != address(0) && currentOwner != SENTINEL_OWNERS,GS026)  |
+|                                     |                          require(bool,string)(signatures.length >= requiredSignatures.mul(65),GS020)                           |
+|                                     |             require(bool,string)(msg.sender == currentOwner || approvedHashes[currentOwner][dataHash] != 0,GS025)              |
+|                                     | require(bool,string)(ISignatureValidator(currentOwner).isValidSignature(data,contractSignature) == EIP1271_MAGIC_VALUE,GS024)  |
+|                                     |                              require(bool,string)(uint256(s) >= requiredSignatures.mul(65),GS021)                              |
+|                                     |                              require(bool,string)(uint256(s).add(32) <= signatures.length,GS022)                               |
+|            requiredTxGas            |                                  require(bool)(execute(to,value,data,operation,gasleft()()))                                   |
+|             approveHash             |                                  require(bool,string)(owners[msg.sender] != address(0),GS030)                                  |
+|              getChainId             |                                                                                                                                |
+|           domainSeparator           |                                                                                                                                |
+|        encodeTransactionData        |                                                                                                                                |
+|          getTransactionHash         |                                                                                                                                |
+|               setGuard              |                                    require(bool,string)(msg.sender == address(this),GS031)                                     |
+|               getGuard              |                                                                                                                                |
+|           requireSelfCall           |                                    require(bool,string)(msg.sender == address(this),GS031)                                     |
+|             getStorageAt            |                                                                                                                                |
+|          simulateAndRevert          |                                                                                                                                |
+|      internalSetFallbackHandler     |                                                                                                                                |
+|          setFallbackHandler         |                                    require(bool,string)(msg.sender == address(this),GS031)                                     |
+|               fallback              |                                                                                                                                |
+|            transferToken            |                                                                                                                                |
+|            signatureSplit           |                                                                                                                                |
+|             setupOwners             |                                    require(bool,string)(owners[owner] == address(0),GS204)                                     |
+|                                     |                                    require(bool,string)(_threshold <= _owners.length,GS201)                                    |
+|                                     |                                           require(bool,string)(threshold == 0,GS200)                                           |
+|                                     |                                          require(bool,string)(_threshold >= 1,GS202)                                           |
+|                                     | require(bool,string)(owner != address(0) && owner != SENTINEL_OWNERS && owner != address(this) && currentOwner != owner,GS203) |
+|        addOwnerWithThreshold        |                                      require(bool,string)(_threshold <= ownerCount,GS201)                                      |
+|                                     |                                    require(bool,string)(msg.sender == address(this),GS031)                                     |
+|                                     |             require(bool,string)(owner != address(0) && owner != SENTINEL_OWNERS && owner != address(this),GS203)              |
+|                                     |                                          require(bool,string)(_threshold >= 1,GS202)                                           |
+|                                     |                                    require(bool,string)(owners[owner] == address(0),GS204)                                     |
+|             removeOwner             |                                      require(bool,string)(_threshold <= ownerCount,GS201)                                      |
+|                                     |                                     require(bool,string)(owners[prevOwner] == owner,GS205)                                     |
+|                                     |                                    require(bool,string)(msg.sender == address(this),GS031)                                     |
+|                                     |                                          require(bool,string)(_threshold >= 1,GS202)                                           |
+|                                     |                                    require(bool,string)(ownerCount - 1 >= _threshold,GS201)                                    |
+|                                     |                          require(bool,string)(owner != address(0) && owner != SENTINEL_OWNERS,GS203)                           |
+|              swapOwner              |                       require(bool,string)(oldOwner != address(0) && oldOwner != SENTINEL_OWNERS,GS203)                        |
+|                                     |                                    require(bool,string)(msg.sender == address(this),GS031)                                     |
+|                                     |                                   require(bool,string)(owners[prevOwner] == oldOwner,GS205)                                    |
+|                                     |         require(bool,string)(newOwner != address(0) && newOwner != SENTINEL_OWNERS && newOwner != address(this),GS203)         |
+|                                     |                                   require(bool,string)(owners[newOwner] == address(0),GS204)                                   |
+|           changeThreshold           |                                    require(bool,string)(msg.sender == address(this),GS031)                                     |
+|                                     |                                      require(bool,string)(_threshold <= ownerCount,GS201)                                      |
+|                                     |                                          require(bool,string)(_threshold >= 1,GS202)                                           |
+|             getThreshold            |                                                                                                                                |
+|               isOwner               |                                                                                                                                |
+|              getOwners              |                                                                                                                                |
+|             setupModules            |                              require(bool,string)(modules[SENTINEL_MODULES] == address(0),GS100)                               |
+|                                     |                     require(bool,string)(execute(to,0,data,Enum.Operation.DelegateCall,gasleft()()),GS000)                     |
+|             enableModule            |                         require(bool,string)(module != address(0) && module != SENTINEL_MODULES,GS101)                         |
+|                                     |                                    require(bool,string)(msg.sender == address(this),GS031)                                     |
+|                                     |                                   require(bool,string)(modules[module] == address(0),GS102)                                    |
+|            disableModule            |                         require(bool,string)(module != address(0) && module != SENTINEL_MODULES,GS101)                         |
+|                                     |                                   require(bool,string)(modules[prevModule] == module,GS103)                                    |
+|                                     |                                    require(bool,string)(msg.sender == address(this),GS031)                                     |
+|      execTransactionFromModule      |                require(bool,string)(msg.sender != SENTINEL_MODULES && modules[msg.sender] != address(0),GS104)                 |
+| execTransactionFromModuleReturnData |                require(bool,string)(msg.sender != SENTINEL_MODULES && modules[msg.sender] != address(0),GS104)                 |
+|           isModuleEnabled           |                                                                                                                                |
+|         getModulesPaginated         |                                                                                                                                |
+|               execute               |                                                                                                                                |
+|               receive               |                                                                                                                                |
+|           execTransaction           |                                                     require(bool)(b <= a)                                                      |
+|                                     |                                                   require(bool)(c / a == b)                                                    |
+|                                     |                 require(bool,string)(uint256(s).add(32).add(contractSignatureLen) <= signatures.length,GS023)                  |
+|                                     |                 require(bool,string)(gasleft()() >= ((safeTxGas * 64) / 63).max(safeTxGas + 2500) + 500,GS010)                 |
+|                                     |                                                     require(bool)(c >= a)                                                      |
+|                                     |                          require(bool,string)(signatures.length >= requiredSignatures.mul(65),GS020)                           |
+|                                     | require(bool,string)(currentOwner > lastOwner && owners[currentOwner] != address(0) && currentOwner != SENTINEL_OWNERS,GS026)  |
+|                                     |             require(bool,string)(msg.sender == currentOwner || approvedHashes[currentOwner][dataHash] != 0,GS025)              |
+|                                     |                                       require(bool,string)(receiver.send(payment),GS011)                                       |
+|                                     |                              require(bool,string)(transferToken(gasToken,receiver,payment),GS012)                              |
+|                                     | require(bool,string)(ISignatureValidator(currentOwner).isValidSignature(data,contractSignature) == EIP1271_MAGIC_VALUE,GS024)  |
+|                                     |                              require(bool,string)(uint256(s) >= requiredSignatures.mul(65),GS021)                              |
+|                                     |                             require(bool,string)(success || safeTxGas != 0 || gasPrice != 0,GS013)                             |
+|                                     |                                           require(bool,string)(_threshold > 0,GS001)                                           |
+|                                     |                              require(bool,string)(uint256(s).add(32) <= signatures.length,GS022)                               |
+|      execTransactionFromModule      |                require(bool,string)(msg.sender != SENTINEL_MODULES && modules[msg.sender] != address(0),GS104)                 |
+| slitherConstructorConstantVariables |                                                                                                                                |
++-------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+
+Contract Guard
++---------------------+-------------------+
+|       Function      | require or assert |
++---------------------+-------------------+
+|   checkTransaction  |                   |
+| checkAfterExecution |                   |
++---------------------+-------------------+
+
+Contract Enum
++----------+-------------------+
+| Function | require or assert |
++----------+-------------------+
++----------+-------------------+
+
+Contract GnosisSafeMath
++----------+---------------------------+
+| Function |     require or assert     |
++----------+---------------------------+
+|   mul    | require(bool)(c / a == b) |
+|   sub    |   require(bool)(b <= a)   |
+|   add    |   require(bool)(c >= a)   |
+|   max    |                           |
++----------+---------------------------+
+
+Contract ISignatureValidator
++-------------------------------------+-------------------+
+|               Function              | require or assert |
++-------------------------------------+-------------------+
+|           isValidSignature          |                   |
+| slitherConstructorConstantVariables |                   |
++-------------------------------------+-------------------+
+
+Contract IProxy
++------------+-------------------+
+|  Function  | require or assert |
++------------+-------------------+
+| masterCopy |                   |
++------------+-------------------+
+
+Contract GnosisSafeProxy
++-------------+-----------------------------------------------------------------------------------+
+|   Function  |                                 require or assert                                 |
++-------------+-----------------------------------------------------------------------------------+
+| constructor | require(bool,string)(_singleton != address(0),Invalid singleton address provided) |
+|   fallback  |                                                                                   |
++-------------+-----------------------------------------------------------------------------------+
+
+Contract GnosisSafeProxyFactory
++--------------------------------------+------------------------------------------------------------------------+
+|               Function               |                           require or assert                            |
++--------------------------------------+------------------------------------------------------------------------+
+|             createProxy              |                                                                        |
+|           proxyRuntimeCode           |                                                                        |
+|          proxyCreationCode           |                                                                        |
+|         deployProxyWithNonce         | require(bool,string)(address(proxy) != address(0),Create2 call failed) |
+|         createProxyWithNonce         | require(bool,string)(address(proxy) != address(0),Create2 call failed) |
+|       createProxyWithCallback        | require(bool,string)(address(proxy) != address(0),Create2 call failed) |
+| calculateCreateProxyWithNonceAddress | require(bool,string)(address(proxy) != address(0),Create2 call failed) |
++--------------------------------------+------------------------------------------------------------------------+
+
+Contract IProxyCreationCallback
++--------------+-------------------+
+|   Function   | require or assert |
++--------------+-------------------+
+| proxyCreated |                   |
++--------------+-------------------+
+
+Contract GnosisSafeMultisig
++-------------------------------------+-------------------+
+|               Function              | require or assert |
++-------------------------------------+-------------------+
+|             constructor             |                   |
+|              _parseData             |                   |
+|                create               |                   |
+| slitherConstructorConstantVariables |                   |
++-------------------------------------+-------------------+
+
+Contract AgentRegistry
++-----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           Function          |                                                                        require or assert                                                                        |
++-----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|      _checkDependencies     |                                                                                                                                                                 |
+|            create           |   require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,address(0),id,) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT)   |
+|                             |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                                                 require(bool,string)(_ownerOf[id] == address(0),ALREADY_MINTED)                                                 |
+|          updateHash         |                                              require(bool,string)((owner = _ownerOf[id]) != address(0),NOT_MINTED)                                              |
+|           getInfo           |                                              require(bool,string)((owner = _ownerOf[id]) != address(0),NOT_MINTED)                                              |
+|       getDependencies       |                                                                                                                                                                 |
+|       getUpdatedHashes      |                                                                                                                                                                 |
+|      _getSubComponents      |                                                                                                                                                                 |
+|       getSubComponents      |                                                                                                                                                                 |
+|         changeOwner         |                                                                                                                                                                 |
+|        changeManager        |                                                                                                                                                                 |
+|            exists           |                                                                                                                                                                 |
+|           tokenURI          |                                                                                                                                                                 |
+|          setBaseURI         |                                                                                                                                                                 |
+|         tokenByIndex        |                                                                                                                                                                 |
+|           tokenURI          |                                                                                                                                                                 |
+|           ownerOf           |                                              require(bool,string)((owner = _ownerOf[id]) != address(0),NOT_MINTED)                                              |
+|          balanceOf          |                                                      require(bool,string)(owner != address(0),ZERO_ADDRESS)                                                     |
+|         constructor         |                                                                                                                                                                 |
+|           approve           |                                 require(bool,string)(msg.sender == owner || isApprovedForAll[owner][msg.sender],NOT_AUTHORIZED)                                 |
+|      setApprovalForAll      |                                                                                                                                                                 |
+|         transferFrom        |                                                      require(bool,string)(from == _ownerOf[id],WRONG_FROM)                                                      |
+|                             |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                  require(bool,string)(msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],NOT_AUTHORIZED)                 |
+|       safeTransferFrom      |      require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,from,id,) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT)      |
+|                             |                                                      require(bool,string)(from == _ownerOf[id],WRONG_FROM)                                                      |
+|                             |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                  require(bool,string)(msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],NOT_AUTHORIZED)                 |
+|       safeTransferFrom      |                                                      require(bool,string)(from == _ownerOf[id],WRONG_FROM)                                                      |
+|                             |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                  require(bool,string)(msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],NOT_AUTHORIZED)                 |
+|                             |    require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,from,id,data) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT)    |
+|      supportsInterface      |                                                                                                                                                                 |
+|            _mint            |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                                                 require(bool,string)(_ownerOf[id] == address(0),ALREADY_MINTED)                                                 |
+|            _burn            |                                                       require(bool,string)(owner != address(0),NOT_MINTED)                                                      |
+|          _safeMint          |   require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,address(0),id,) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT)   |
+|                             |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                                                 require(bool,string)(_ownerOf[id] == address(0),ALREADY_MINTED)                                                 |
+|          _safeMint          | require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,address(0),id,data) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT) |
+|                             |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                                                 require(bool,string)(_ownerOf[id] == address(0),ALREADY_MINTED)                                                 |
+|         constructor         |                                                                                                                                                                 |
+|      _checkDependencies     |                                                                                                                                                                 |
+|      _getSubComponents      |                                                                                                                                                                 |
+| slitherConstructorVariables |                                                                                                                                                                 |
++-----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+Contract ComponentRegistry
++-----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           Function          |                                                                        require or assert                                                                        |
++-----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|      _checkDependencies     |                                                                                                                                                                 |
+|            create           |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                                                 require(bool,string)(_ownerOf[id] == address(0),ALREADY_MINTED)                                                 |
+|                             |   require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,address(0),id,) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT)   |
+|          updateHash         |                                              require(bool,string)((owner = _ownerOf[id]) != address(0),NOT_MINTED)                                              |
+|           getInfo           |                                              require(bool,string)((owner = _ownerOf[id]) != address(0),NOT_MINTED)                                              |
+|       getDependencies       |                                                                                                                                                                 |
+|       getUpdatedHashes      |                                                                                                                                                                 |
+|      _getSubComponents      |                                                                                                                                                                 |
+|       getSubComponents      |                                                                                                                                                                 |
+|         changeOwner         |                                                                                                                                                                 |
+|        changeManager        |                                                                                                                                                                 |
+|            exists           |                                                                                                                                                                 |
+|           tokenURI          |                                                                                                                                                                 |
+|          setBaseURI         |                                                                                                                                                                 |
+|         tokenByIndex        |                                                                                                                                                                 |
+|           tokenURI          |                                                                                                                                                                 |
+|           ownerOf           |                                              require(bool,string)((owner = _ownerOf[id]) != address(0),NOT_MINTED)                                              |
+|          balanceOf          |                                                      require(bool,string)(owner != address(0),ZERO_ADDRESS)                                                     |
+|         constructor         |                                                                                                                                                                 |
+|           approve           |                                 require(bool,string)(msg.sender == owner || isApprovedForAll[owner][msg.sender],NOT_AUTHORIZED)                                 |
+|      setApprovalForAll      |                                                                                                                                                                 |
+|         transferFrom        |                                                      require(bool,string)(from == _ownerOf[id],WRONG_FROM)                                                      |
+|                             |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                  require(bool,string)(msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],NOT_AUTHORIZED)                 |
+|       safeTransferFrom      |      require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,from,id,) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT)      |
+|                             |                                                      require(bool,string)(from == _ownerOf[id],WRONG_FROM)                                                      |
+|                             |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                  require(bool,string)(msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],NOT_AUTHORIZED)                 |
+|       safeTransferFrom      |                                                      require(bool,string)(from == _ownerOf[id],WRONG_FROM)                                                      |
+|                             |    require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,from,id,data) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT)    |
+|                             |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                  require(bool,string)(msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],NOT_AUTHORIZED)                 |
+|      supportsInterface      |                                                                                                                                                                 |
+|            _mint            |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                                                 require(bool,string)(_ownerOf[id] == address(0),ALREADY_MINTED)                                                 |
+|            _burn            |                                                       require(bool,string)(owner != address(0),NOT_MINTED)                                                      |
+|          _safeMint          |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                                                 require(bool,string)(_ownerOf[id] == address(0),ALREADY_MINTED)                                                 |
+|                             |   require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,address(0),id,) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT)   |
+|          _safeMint          |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                                                 require(bool,string)(_ownerOf[id] == address(0),ALREADY_MINTED)                                                 |
+|                             | require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,address(0),id,data) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT) |
+|         constructor         |                                                                                                                                                                 |
+|      _checkDependencies     |                                                                                                                                                                 |
+|    getLocalSubComponents    |                                                                                                                                                                 |
+|      _getSubComponents      |                                                                                                                                                                 |
+| slitherConstructorVariables |                                                                                                                                                                 |
++-----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+Contract RegistriesManager
++---------------------+-------------------+
+|       Function      | require or assert |
++---------------------+-------------------+
+|     changeOwner     |                   |
+|        pause        |                   |
+|       unpause       |                   |
+|     constructor     |                   |
+|     createAgent     |                   |
+|   updateAgentHash   |                   |
+|   createComponent   |                   |
+| updateComponentHash |                   |
++---------------------+-------------------+
+
+Contract IReward
++------------------------+-------------------+
+|        Function        | require or assert |
++------------------------+-------------------+
+| depositETHFromServices |                   |
++------------------------+-------------------+
+
+Contract ServiceManager
++-----------------------------+-------------------+
+|           Function          | require or assert |
++-----------------------------+-------------------+
+|         changeOwner         |                   |
+|            pause            |                   |
+|           unpause           |                   |
+|         constructor         |                   |
+|           fallback          |                   |
+|           receive           |                   |
+|        changeTreasury       |                   |
+|        serviceCreate        |                   |
+|        serviceUpdate        |                   |
+| serviceActivateRegistration |                   |
+|    serviceRegisterAgents    |                   |
+|        serviceDeploy        |                   |
+|       serviceTerminate      |                   |
+|        serviceUnbond        |                   |
+|        serviceDestroy       |                   |
+|        serviceReward        |                   |
++-----------------------------+-------------------+
+
+Contract ServiceRegistry
++-----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           Function          |                                                                        require or assert                                                                        |
++-----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|         changeOwner         |                                                                                                                                                                 |
+|        changeManager        |                                                                                                                                                                 |
+|            exists           |                                                                                                                                                                 |
+|           tokenURI          |                                                                                                                                                                 |
+|          setBaseURI         |                                                                                                                                                                 |
+|         tokenByIndex        |                                                                                                                                                                 |
+|           tokenURI          |                                                                                                                                                                 |
+|           ownerOf           |                                              require(bool,string)((owner = _ownerOf[id]) != address(0),NOT_MINTED)                                              |
+|          balanceOf          |                                                      require(bool,string)(owner != address(0),ZERO_ADDRESS)                                                     |
+|         constructor         |                                                                                                                                                                 |
+|           approve           |                                 require(bool,string)(msg.sender == owner || isApprovedForAll[owner][msg.sender],NOT_AUTHORIZED)                                 |
+|      setApprovalForAll      |                                                                                                                                                                 |
+|         transferFrom        |                  require(bool,string)(msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],NOT_AUTHORIZED)                 |
+|                             |                                                      require(bool,string)(from == _ownerOf[id],WRONG_FROM)                                                      |
+|                             |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|       safeTransferFrom      |                  require(bool,string)(msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],NOT_AUTHORIZED)                 |
+|                             |      require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,from,id,) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT)      |
+|                             |                                                      require(bool,string)(from == _ownerOf[id],WRONG_FROM)                                                      |
+|                             |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|       safeTransferFrom      |                  require(bool,string)(msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],NOT_AUTHORIZED)                 |
+|                             |    require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,from,id,data) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT)    |
+|                             |                                                      require(bool,string)(from == _ownerOf[id],WRONG_FROM)                                                      |
+|                             |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|      supportsInterface      |                                                                                                                                                                 |
+|            _mint            |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                                                 require(bool,string)(_ownerOf[id] == address(0),ALREADY_MINTED)                                                 |
+|            _burn            |                                                       require(bool,string)(owner != address(0),NOT_MINTED)                                                      |
+|          _safeMint          |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                                                 require(bool,string)(_ownerOf[id] == address(0),ALREADY_MINTED)                                                 |
+|                             |   require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,address(0),id,) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT)   |
+|          _safeMint          |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                                                 require(bool,string)(_ownerOf[id] == address(0),ALREADY_MINTED)                                                 |
+|                             | require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,address(0),id,data) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT) |
+|         constructor         |                                                                                                                                                                 |
+|           fallback          |                                                                                                                                                                 |
+|           receive           |                                                                                                                                                                 |
+|        _initialChecks       |                                                                                                                                                                 |
+|       _setServiceData       |                                                                                                                                                                 |
+|            create           |                                                     require(bool,string)(to != address(0),INVALID_RECIPIENT)                                                    |
+|                             |                                                 require(bool,string)(_ownerOf[id] == address(0),ALREADY_MINTED)                                                 |
+|                             |   require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,address(0),id,) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT)   |
+|            update           |                                              require(bool,string)((owner = _ownerOf[id]) != address(0),NOT_MINTED)                                              |
+|     activateRegistration    |                                              require(bool,string)((owner = _ownerOf[id]) != address(0),NOT_MINTED)                                              |
+|        registerAgents       |                                                                                                                                                                 |
+|            deploy           |                                              require(bool,string)((owner = _ownerOf[id]) != address(0),NOT_MINTED)                                              |
+|            slash            |                                                                                                                                                                 |
+|          terminate          |                                              require(bool,string)((owner = _ownerOf[id]) != address(0),NOT_MINTED)                                              |
+|            unbond           |                                                                                                                                                                 |
+|      _getAgentInstances     |                                                                                                                                                                 |
+|        getServiceInfo       |                                                                                                                                                                 |
+|    getInstancesForAgentId   |                                                                                                                                                                 |
+|      getPreviousHashes      |                                                                                                                                                                 |
+|    getAgentIdsOfServiceId   |                                                                                                                                                                 |
+|  getComponentIdsOfServiceId |                                                                                                                                                                 |
+|       getServiceState       |                                                                                                                                                                 |
+|      getOperatorBalance     |                                                                                                                                                                 |
+|   changeMultisigPermission  |                                                                                                                                                                 |
+| slitherConstructorVariables |                                                                                                                                                                 |
++-----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+Contract IMultisig
++----------+-------------------+
+| Function | require or assert |
++----------+-------------------+
+|  create  |                   |
++----------+-------------------+
+
+Contract IRegistry
++-----------------------+-------------------+
+|        Function       | require or assert |
++-----------------------+-------------------+
+|         create        |                   |
+|       updateHash      |                   |
+|         exists        |                   |
+|        getInfo        |                   |
+|    getDependencies    |                   |
+| getLocalSubComponents |                   |
+|    getSubComponents   |                   |
+|    getUpdatedHashes   |                   |
+|      totalSupply      |                   |
+|      tokenByIndex     |                   |
++-----------------------+-------------------+
+
+Contract IService
++-------------------------------------+-------------------+
+|               Function              | require or assert |
++-------------------------------------+-------------------+
+|                create               |                   |
+|                update               |                   |
+|         activateRegistration        |                   |
+|            registerAgents           |                   |
+|                deploy               |                   |
+|              terminate              |                   |
+|                unbond               |                   |
+|               destroy               |                   |
+|                exists               |                   |
+|   getServiceIdsCreatedWithAgentId   |                   |
+| getServiceIdsCreatedWithComponentId |                   |
+|        getAgentIdsOfServiceId       |                   |
+|      getComponentIdsOfServiceId     |                   |
++-------------------------------------+-------------------+
+
+Contract ERC721TokenReceiver
++------------------+-------------------+
+|     Function     | require or assert |
++------------------+-------------------+
+| onERC721Received |                   |
++------------------+-------------------+
+
+Contract LibString
++----------+-------------------+
+| Function | require or assert |
++----------+-------------------+
+| toString |                   |
++----------+-------------------+
+. analyzed (39 contracts)

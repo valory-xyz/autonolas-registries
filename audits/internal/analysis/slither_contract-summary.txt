@@ -1,0 +1,505 @@
+'npx hardhat compile --force' running
+Compiled 35 Solidity files successfully
+
+Solidity 0.8.15 is not fully supported yet. You can still use Hardhat, but some features, like stack traces, might not work correctly.
+
+Learn more at https://hardhat.org/reference/solidity-support
+
+
+[94m
++ Contract GnosisSafe
+[0m[94m  - From GuardManager
+[0m[95m    - getGuard() (internal)
+[0m[92m    - setGuard(address) (external)
+[0m[94m  - From SelfAuthorized
+[0m[95m    - requireSelfCall() (private)
+[0m[94m  - From StorageAccessible
+[0m[92m    - getStorageAt(uint256,uint256) (public)
+[0m[92m    - simulateAndRevert(address,bytes) (external)
+[0m[94m  - From FallbackManager
+[0m[92m    - fallback() (external)
+[0m[95m    - internalSetFallbackHandler(address) (internal)
+[0m[92m    - setFallbackHandler(address) (public)
+[0m[94m  - From SecuredTokenTransfer
+[0m[95m    - transferToken(address,address,uint256) (internal)
+[0m[94m  - From SignatureDecoder
+[0m[95m    - signatureSplit(bytes,uint256) (internal)
+[0m[94m  - From OwnerManager
+[0m[92m    - addOwnerWithThreshold(address,uint256) (public)
+[0m[92m    - changeThreshold(uint256) (public)
+[0m[92m    - getOwners() (public)
+[0m[92m    - getThreshold() (public)
+[0m[92m    - isOwner(address) (public)
+[0m[92m    - removeOwner(address,address,uint256) (public)
+[0m[95m    - setupOwners(address[],uint256) (internal)
+[0m[92m    - swapOwner(address,address,address) (public)
+[0m[94m  - From ModuleManager
+[0m[92m    - disableModule(address,address) (public)
+[0m[92m    - enableModule(address) (public)
+[0m[92m    - execTransactionFromModule(address,uint256,bytes,Enum.Operation) (public)
+[0m[92m    - execTransactionFromModuleReturnData(address,uint256,bytes,Enum.Operation) (public)
+[0m[92m    - getModulesPaginated(address,uint256) (external)
+[0m[92m    - isModuleEnabled(address) (public)
+[0m[95m    - setupModules(address,bytes) (internal)
+[0m[94m  - From Executor
+[0m[95m    - execute(address,uint256,bytes,Enum.Operation,uint256) (internal)
+[0m[94m  - From EtherPaymentFallback
+[0m[92m    - receive() (external)
+[0m[94m  - From GnosisSafe
+[0m[92m    - approveHash(bytes32) (external)
+[0m[92m    - checkNSignatures(bytes32,bytes,bytes,uint256) (public)
+[0m[92m    - checkSignatures(bytes32,bytes,bytes) (public)
+[0m[92m    - constructor() (public)
+[0m[92m    - domainSeparator() (public)
+[0m[92m    - encodeTransactionData(address,uint256,bytes,Enum.Operation,uint256,uint256,uint256,address,address,uint256) (public)
+[0m[92m    - execTransaction(address,uint256,bytes,Enum.Operation,uint256,uint256,uint256,address,address,bytes) (public)
+[0m[92m    - getChainId() (public)
+[0m[92m    - getTransactionHash(address,uint256,bytes,Enum.Operation,uint256,uint256,uint256,address,address,uint256) (public)
+[0m[95m    - handlePayment(uint256,uint256,uint256,address,address) (private)
+[0m[92m    - requiredTxGas(address,uint256,bytes,Enum.Operation) (external)
+[0m[92m    - setup(address[],uint256,address,bytes,address,address,uint256,address) (external)
+[0m[94m
++ Contract GnosisSafeL2 (Most derived contract)
+[0m[94m  - From GnosisSafe
+[0m[92m    - approveHash(bytes32) (external)
+[0m[92m    - checkNSignatures(bytes32,bytes,bytes,uint256) (public)
+[0m[92m    - checkSignatures(bytes32,bytes,bytes) (public)
+[0m[92m    - constructor() (public)
+[0m[92m    - domainSeparator() (public)
+[0m[92m    - encodeTransactionData(address,uint256,bytes,Enum.Operation,uint256,uint256,uint256,address,address,uint256) (public)
+[0m[92m    - getChainId() (public)
+[0m[92m    - getTransactionHash(address,uint256,bytes,Enum.Operation,uint256,uint256,uint256,address,address,uint256) (public)
+[0m[95m    - handlePayment(uint256,uint256,uint256,address,address) (private)
+[0m[92m    - requiredTxGas(address,uint256,bytes,Enum.Operation) (external)
+[0m[92m    - setup(address[],uint256,address,bytes,address,address,uint256,address) (external)
+[0m[94m  - From GuardManager
+[0m[95m    - getGuard() (internal)
+[0m[92m    - setGuard(address) (external)
+[0m[94m  - From SelfAuthorized
+[0m[95m    - requireSelfCall() (private)
+[0m[94m  - From StorageAccessible
+[0m[92m    - getStorageAt(uint256,uint256) (public)
+[0m[92m    - simulateAndRevert(address,bytes) (external)
+[0m[94m  - From FallbackManager
+[0m[92m    - fallback() (external)
+[0m[95m    - internalSetFallbackHandler(address) (internal)
+[0m[92m    - setFallbackHandler(address) (public)
+[0m[94m  - From SecuredTokenTransfer
+[0m[95m    - transferToken(address,address,uint256) (internal)
+[0m[94m  - From SignatureDecoder
+[0m[95m    - signatureSplit(bytes,uint256) (internal)
+[0m[94m  - From OwnerManager
+[0m[92m    - addOwnerWithThreshold(address,uint256) (public)
+[0m[92m    - changeThreshold(uint256) (public)
+[0m[92m    - getOwners() (public)
+[0m[92m    - getThreshold() (public)
+[0m[92m    - isOwner(address) (public)
+[0m[92m    - removeOwner(address,address,uint256) (public)
+[0m[95m    - setupOwners(address[],uint256) (internal)
+[0m[92m    - swapOwner(address,address,address) (public)
+[0m[94m  - From ModuleManager
+[0m[92m    - disableModule(address,address) (public)
+[0m[92m    - enableModule(address) (public)
+[0m[92m    - execTransactionFromModuleReturnData(address,uint256,bytes,Enum.Operation) (public)
+[0m[92m    - getModulesPaginated(address,uint256) (external)
+[0m[92m    - isModuleEnabled(address) (public)
+[0m[95m    - setupModules(address,bytes) (internal)
+[0m[94m  - From Executor
+[0m[95m    - execute(address,uint256,bytes,Enum.Operation,uint256) (internal)
+[0m[94m  - From EtherPaymentFallback
+[0m[92m    - receive() (external)
+[0m[94m  - From GnosisSafeL2
+[0m[92m    - execTransaction(address,uint256,bytes,Enum.Operation,uint256,uint256,uint256,address,address,bytes) (public)
+[0m[92m    - execTransactionFromModule(address,uint256,bytes,Enum.Operation) (public)
+[0m[94m
++ Contract Executor
+[0m[94m  - From Executor
+[0m[95m    - execute(address,uint256,bytes,Enum.Operation,uint256) (internal)
+[0m[94m
++ Contract FallbackManager
+[0m[94m  - From SelfAuthorized
+[0m[95m    - requireSelfCall() (private)
+[0m[94m  - From FallbackManager
+[0m[92m    - fallback() (external)
+[0m[95m    - internalSetFallbackHandler(address) (internal)
+[0m[92m    - setFallbackHandler(address) (public)
+[0m[94m
++ Contract Guard (Most derived contract)
+[0m[94m  - From Guard
+[0m[92m    - checkAfterExecution(bytes32,bool) (external)
+[0m[92m    - checkTransaction(address,uint256,bytes,Enum.Operation,uint256,uint256,uint256,address,address,bytes,address) (external)
+[0m[94m
++ Contract GuardManager
+[0m[94m  - From SelfAuthorized
+[0m[95m    - requireSelfCall() (private)
+[0m[94m  - From GuardManager
+[0m[95m    - getGuard() (internal)
+[0m[92m    - setGuard(address) (external)
+[0m[94m
++ Contract ModuleManager
+[0m[94m  - From Executor
+[0m[95m    - execute(address,uint256,bytes,Enum.Operation,uint256) (internal)
+[0m[94m  - From SelfAuthorized
+[0m[95m    - requireSelfCall() (private)
+[0m[94m  - From ModuleManager
+[0m[92m    - disableModule(address,address) (public)
+[0m[92m    - enableModule(address) (public)
+[0m[92m    - execTransactionFromModule(address,uint256,bytes,Enum.Operation) (public)
+[0m[92m    - execTransactionFromModuleReturnData(address,uint256,bytes,Enum.Operation) (public)
+[0m[92m    - getModulesPaginated(address,uint256) (external)
+[0m[92m    - isModuleEnabled(address) (public)
+[0m[95m    - setupModules(address,bytes) (internal)
+[0m[94m
++ Contract OwnerManager
+[0m[94m  - From SelfAuthorized
+[0m[95m    - requireSelfCall() (private)
+[0m[94m  - From OwnerManager
+[0m[92m    - addOwnerWithThreshold(address,uint256) (public)
+[0m[92m    - changeThreshold(uint256) (public)
+[0m[92m    - getOwners() (public)
+[0m[92m    - getThreshold() (public)
+[0m[92m    - isOwner(address) (public)
+[0m[92m    - removeOwner(address,address,uint256) (public)
+[0m[95m    - setupOwners(address[],uint256) (internal)
+[0m[92m    - swapOwner(address,address,address) (public)
+[0m[94m
++ Contract Enum (Most derived contract)
+[0m[94m
++ Contract EtherPaymentFallback
+[0m[94m  - From EtherPaymentFallback
+[0m[92m    - receive() (external)
+[0m[94m
++ Contract SecuredTokenTransfer
+[0m[94m  - From SecuredTokenTransfer
+[0m[95m    - transferToken(address,address,uint256) (internal)
+[0m[94m
++ Contract SelfAuthorized
+[0m[94m  - From SelfAuthorized
+[0m[95m    - requireSelfCall() (private)
+[0m[94m
++ Contract SignatureDecoder
+[0m[94m  - From SignatureDecoder
+[0m[95m    - signatureSplit(bytes,uint256) (internal)
+[0m[94m
++ Contract Singleton
+[0m[94m
++ Contract StorageAccessible
+[0m[94m  - From StorageAccessible
+[0m[92m    - getStorageAt(uint256,uint256) (public)
+[0m[92m    - simulateAndRevert(address,bytes) (external)
+[0m[94m
++ Contract GnosisSafeMath (Most derived contract)
+[0m[94m  - From GnosisSafeMath
+[0m[95m    - add(uint256,uint256) (internal)
+[0m[95m    - max(uint256,uint256) (internal)
+[0m[95m    - mul(uint256,uint256) (internal)
+[0m[95m    - sub(uint256,uint256) (internal)
+[0m[94m
++ Contract ISignatureValidatorConstants
+[0m[94m
++ Contract ISignatureValidator (Most derived contract)
+[0m[94m  - From ISignatureValidator
+[0m[92m    - isValidSignature(bytes,bytes) (public)
+[0m[94m
++ Contract IProxy (Upgradeable Proxy) (Most derived contract)
+[0m[94m  - From IProxy
+[0m[92m    - masterCopy() (external)
+[0m[94m
++ Contract GnosisSafeProxy (Upgradeable Proxy) (Most derived contract)
+[0m[94m  - From GnosisSafeProxy
+[0m[92m    - constructor(address) (public)
+[0m[92m    - fallback() (external)
+[0m[94m
++ Contract GnosisSafeProxyFactory (Upgradeable Proxy) (Most derived contract)
+[0m[94m  - From GnosisSafeProxyFactory
+[0m[92m    - calculateCreateProxyWithNonceAddress(address,bytes,uint256) (external)
+[0m[92m    - createProxy(address,bytes) (public)
+[0m[92m    - createProxyWithCallback(address,bytes,uint256,IProxyCreationCallback) (public)
+[0m[92m    - createProxyWithNonce(address,bytes,uint256) (public)
+[0m[95m    - deployProxyWithNonce(address,bytes,uint256) (internal)
+[0m[92m    - proxyCreationCode() (public)
+[0m[92m    - proxyRuntimeCode() (public)
+[0m[94m
++ Contract IProxyCreationCallback (Upgradeable Proxy) (Most derived contract)
+[0m[94m  - From IProxyCreationCallback
+[0m[92m    - proxyCreated(GnosisSafeProxy,address,bytes,uint256) (external)
+[0m[94m
++ Contract GnosisSafeMultisig (Most derived contract)
+[0m[94m  - From GnosisSafeMultisig
+[0m[95m    - _parseData(bytes) (internal)
+[0m[92m    - constructor(address,address) (public)
+[0m[92m    - create(address[],uint256,bytes) (external)
+[0m[94m
++ Contract AgentRegistry (Most derived contract)
+[0m[94m  - From UnitRegistry
+[0m[92m    - create(address,address,bytes32,bytes32,uint32[]) (external)
+[0m[92m    - getDependencies(uint256) (external)
+[0m[92m    - getInfo(uint256) (external)
+[0m[92m    - getSubComponents(uint32[]) (public)
+[0m[92m    - getUpdatedHashes(uint256) (external)
+[0m[92m    - updateHash(address,uint256,bytes32) (external)
+[0m[94m  - From GenericRegistry
+[0m[92m    - changeManager(address) (external)
+[0m[92m    - changeOwner(address) (external)
+[0m[92m    - exists(uint256) (external)
+[0m[92m    - setBaseURI(string) (external)
+[0m[92m    - tokenByIndex(uint256) (external)
+[0m[92m    - tokenURI(uint256) (public)
+[0m[94m  - From ERC721
+[0m[95m    - _burn(uint256) (internal)
+[0m[95m    - _mint(address,uint256) (internal)
+[0m[95m    - _safeMint(address,uint256) (internal)
+[0m[95m    - _safeMint(address,uint256,bytes) (internal)
+[0m[92m    - approve(address,uint256) (public)
+[0m[92m    - balanceOf(address) (public)
+[0m[95m    - constructor(string,string) (internal)
+[0m[92m    - ownerOf(uint256) (public)
+[0m[92m    - safeTransferFrom(address,address,uint256) (public)
+[0m[92m    - safeTransferFrom(address,address,uint256,bytes) (public)
+[0m[92m    - setApprovalForAll(address,bool) (public)
+[0m[92m    - supportsInterface(bytes4) (public)
+[0m[92m    - transferFrom(address,address,uint256) (public)
+[0m[94m  - From AgentRegistry
+[0m[95m    - _checkDependencies(uint32[],uint256) (internal)
+[0m[95m    - _getSubComponents(uint32) (internal)
+[0m[92m    - constructor(string,string,string,address) (public)
+[0m[94m
++ Contract ComponentRegistry (Most derived contract)
+[0m[94m  - From UnitRegistry
+[0m[92m    - create(address,address,bytes32,bytes32,uint32[]) (external)
+[0m[92m    - getDependencies(uint256) (external)
+[0m[92m    - getInfo(uint256) (external)
+[0m[92m    - getSubComponents(uint32[]) (public)
+[0m[92m    - getUpdatedHashes(uint256) (external)
+[0m[92m    - updateHash(address,uint256,bytes32) (external)
+[0m[94m  - From GenericRegistry
+[0m[92m    - changeManager(address) (external)
+[0m[92m    - changeOwner(address) (external)
+[0m[92m    - exists(uint256) (external)
+[0m[92m    - setBaseURI(string) (external)
+[0m[92m    - tokenByIndex(uint256) (external)
+[0m[92m    - tokenURI(uint256) (public)
+[0m[94m  - From ERC721
+[0m[95m    - _burn(uint256) (internal)
+[0m[95m    - _mint(address,uint256) (internal)
+[0m[95m    - _safeMint(address,uint256) (internal)
+[0m[95m    - _safeMint(address,uint256,bytes) (internal)
+[0m[92m    - approve(address,uint256) (public)
+[0m[92m    - balanceOf(address) (public)
+[0m[95m    - constructor(string,string) (internal)
+[0m[92m    - ownerOf(uint256) (public)
+[0m[92m    - safeTransferFrom(address,address,uint256) (public)
+[0m[92m    - safeTransferFrom(address,address,uint256,bytes) (public)
+[0m[92m    - setApprovalForAll(address,bool) (public)
+[0m[92m    - supportsInterface(bytes4) (public)
+[0m[92m    - transferFrom(address,address,uint256) (public)
+[0m[94m  - From ComponentRegistry
+[0m[95m    - _checkDependencies(uint32[],uint256) (internal)
+[0m[95m    - _getSubComponents(uint32) (internal)
+[0m[92m    - constructor(string,string,string) (public)
+[0m[92m    - getLocalSubComponents(uint256) (external)
+[0m[94m
++ Contract GenericManager
+[0m[94m  - From GenericManager
+[0m[92m    - changeOwner(address) (external)
+[0m[92m    - pause() (external)
+[0m[92m    - unpause() (external)
+[0m[94m
++ Contract GenericRegistry
+[0m[94m  - From ERC721
+[0m[95m    - _burn(uint256) (internal)
+[0m[95m    - _mint(address,uint256) (internal)
+[0m[95m    - _safeMint(address,uint256) (internal)
+[0m[95m    - _safeMint(address,uint256,bytes) (internal)
+[0m[92m    - approve(address,uint256) (public)
+[0m[92m    - balanceOf(address) (public)
+[0m[95m    - constructor(string,string) (internal)
+[0m[92m    - ownerOf(uint256) (public)
+[0m[92m    - safeTransferFrom(address,address,uint256) (public)
+[0m[92m    - safeTransferFrom(address,address,uint256,bytes) (public)
+[0m[92m    - setApprovalForAll(address,bool) (public)
+[0m[92m    - supportsInterface(bytes4) (public)
+[0m[92m    - transferFrom(address,address,uint256) (public)
+[0m[94m  - From GenericRegistry
+[0m[92m    - changeManager(address) (external)
+[0m[92m    - changeOwner(address) (external)
+[0m[92m    - exists(uint256) (external)
+[0m[92m    - setBaseURI(string) (external)
+[0m[92m    - tokenByIndex(uint256) (external)
+[0m[92m    - tokenURI(uint256) (public)
+[0m[94m
++ Contract RegistriesManager (Most derived contract)
+[0m[94m  - From GenericManager
+[0m[92m    - changeOwner(address) (external)
+[0m[92m    - pause() (external)
+[0m[92m    - unpause() (external)
+[0m[94m  - From RegistriesManager
+[0m[92m    - constructor(address,address) (public)
+[0m[92m    - createAgent(address,address,bytes32,bytes32,uint32[]) (external)
+[0m[92m    - createComponent(address,address,bytes32,bytes32,uint32[]) (external)
+[0m[92m    - updateAgentHash(uint256,bytes32) (external)
+[0m[92m    - updateComponentHash(uint256,bytes32) (external)
+[0m[94m
++ Contract IReward (Most derived contract)
+[0m[94m  - From IReward
+[0m[92m    - depositETHFromServices(uint256[],uint256[]) (external)
+[0m[94m
++ Contract ServiceManager (Most derived contract)
+[0m[94m  - From GenericManager
+[0m[92m    - changeOwner(address) (external)
+[0m[92m    - pause() (external)
+[0m[92m    - unpause() (external)
+[0m[94m  - From ServiceManager
+[0m[92m    - changeTreasury(address) (external)
+[0m[92m    - constructor(address,address) (public)
+[0m[92m    - fallback() (external)
+[0m[92m    - receive() (external)
+[0m[92m    - serviceActivateRegistration(uint256) (external)
+[0m[92m    - serviceCreate(address,string,string,bytes32,uint256[],IService.AgentParams[],uint256) (external)
+[0m[92m    - serviceDeploy(uint256,address,bytes) (external)
+[0m[92m    - serviceDestroy(uint256) (external)
+[0m[92m    - serviceRegisterAgents(uint256,address[],uint256[]) (external)
+[0m[92m    - serviceReward(uint256) (external)
+[0m[92m    - serviceTerminate(uint256) (external)
+[0m[92m    - serviceUnbond(uint256) (external)
+[0m[92m    - serviceUpdate(string,string,bytes32,uint256[],IService.AgentParams[],uint256,uint256) (external)
+[0m[94m
++ Contract ServiceRegistry (Most derived contract)
+[0m[94m  - From GenericRegistry
+[0m[92m    - changeManager(address) (external)
+[0m[92m    - changeOwner(address) (external)
+[0m[92m    - exists(uint256) (external)
+[0m[92m    - setBaseURI(string) (external)
+[0m[92m    - tokenByIndex(uint256) (external)
+[0m[92m    - tokenURI(uint256) (public)
+[0m[94m  - From ERC721
+[0m[95m    - _burn(uint256) (internal)
+[0m[95m    - _mint(address,uint256) (internal)
+[0m[95m    - _safeMint(address,uint256) (internal)
+[0m[95m    - _safeMint(address,uint256,bytes) (internal)
+[0m[92m    - approve(address,uint256) (public)
+[0m[92m    - balanceOf(address) (public)
+[0m[95m    - constructor(string,string) (internal)
+[0m[92m    - ownerOf(uint256) (public)
+[0m[92m    - safeTransferFrom(address,address,uint256) (public)
+[0m[92m    - safeTransferFrom(address,address,uint256,bytes) (public)
+[0m[92m    - setApprovalForAll(address,bool) (public)
+[0m[92m    - supportsInterface(bytes4) (public)
+[0m[92m    - transferFrom(address,address,uint256) (public)
+[0m[94m  - From ServiceRegistry
+[0m[95m    - _getAgentInstances(ServiceRegistry.Service,uint256) (private)
+[0m[95m    - _initialChecks(bytes32,bytes32,bytes32,uint32[],AgentParams[]) (private)
+[0m[95m    - _setServiceData(ServiceRegistry.Service,uint32[],AgentParams[],uint256,uint256) (private)
+[0m[92m    - activateRegistration(address,uint256) (external)
+[0m[92m    - changeMultisigPermission(address,bool) (external)
+[0m[92m    - constructor(string,string,address) (public)
+[0m[92m    - create(address,bytes32,bytes32,bytes32,uint32[],AgentParams[],uint32) (external)
+[0m[92m    - deploy(address,uint256,address,bytes) (external)
+[0m[92m    - fallback() (external)
+[0m[92m    - getAgentIdsOfServiceId(uint256) (external)
+[0m[92m    - getComponentIdsOfServiceId(uint256) (external)
+[0m[92m    - getInstancesForAgentId(uint256,uint256) (external)
+[0m[92m    - getOperatorBalance(address,uint256) (external)
+[0m[92m    - getPreviousHashes(uint256) (external)
+[0m[92m    - getServiceInfo(uint256) (external)
+[0m[92m    - getServiceState(uint256) (external)
+[0m[92m    - receive() (external)
+[0m[92m    - registerAgents(address,uint256,address[],uint32[]) (external)
+[0m[92m    - slash(address[],uint96[],uint256) (external)
+[0m[92m    - terminate(address,uint256) (external)
+[0m[92m    - unbond(address,uint256) (external)
+[0m[92m    - update(address,bytes32,bytes32,bytes32,uint32[],AgentParams[],uint32,uint256) (external)
+[0m[94m
++ Contract UnitRegistry
+[0m[94m  - From GenericRegistry
+[0m[92m    - changeManager(address) (external)
+[0m[92m    - changeOwner(address) (external)
+[0m[92m    - exists(uint256) (external)
+[0m[92m    - setBaseURI(string) (external)
+[0m[92m    - tokenByIndex(uint256) (external)
+[0m[92m    - tokenURI(uint256) (public)
+[0m[94m  - From ERC721
+[0m[95m    - _burn(uint256) (internal)
+[0m[95m    - _mint(address,uint256) (internal)
+[0m[95m    - _safeMint(address,uint256) (internal)
+[0m[95m    - _safeMint(address,uint256,bytes) (internal)
+[0m[92m    - approve(address,uint256) (public)
+[0m[92m    - balanceOf(address) (public)
+[0m[95m    - constructor(string,string) (internal)
+[0m[92m    - ownerOf(uint256) (public)
+[0m[92m    - safeTransferFrom(address,address,uint256) (public)
+[0m[92m    - safeTransferFrom(address,address,uint256,bytes) (public)
+[0m[92m    - setApprovalForAll(address,bool) (public)
+[0m[92m    - supportsInterface(bytes4) (public)
+[0m[92m    - transferFrom(address,address,uint256) (public)
+[0m[94m  - From UnitRegistry
+[0m[95m    - _checkDependencies(uint32[],uint256) (internal)
+[0m[95m    - _getSubComponents(uint32) (internal)
+[0m[92m    - create(address,address,bytes32,bytes32,uint32[]) (external)
+[0m[92m    - getDependencies(uint256) (external)
+[0m[92m    - getInfo(uint256) (external)
+[0m[92m    - getSubComponents(uint32[]) (public)
+[0m[92m    - getUpdatedHashes(uint256) (external)
+[0m[92m    - updateHash(address,uint256,bytes32) (external)
+[0m[94m
++ Contract IErrorsRegistries
+[0m[94m
++ Contract IMultisig (Most derived contract)
+[0m[94m  - From IMultisig
+[0m[92m    - create(address[],uint256,bytes) (external)
+[0m[94m
++ Contract IRegistry (Most derived contract)
+[0m[94m  - From IRegistry
+[0m[92m    - create(address,address,bytes32,bytes32,uint32[]) (external)
+[0m[92m    - exists(uint256) (external)
+[0m[92m    - getDependencies(uint256) (external)
+[0m[92m    - getInfo(uint256) (external)
+[0m[92m    - getLocalSubComponents(uint256) (external)
+[0m[92m    - getSubComponents(uint32[]) (external)
+[0m[92m    - getUpdatedHashes(uint256) (external)
+[0m[92m    - tokenByIndex(uint256) (external)
+[0m[92m    - totalSupply() (external)
+[0m[92m    - updateHash(address,uint256,bytes32) (external)
+[0m[94m
++ Contract IService (Most derived contract)
+[0m[94m  - From IService
+[0m[92m    - activateRegistration(address,uint256) (external)
+[0m[92m    - create(address,string,string,bytes32,uint256[],IService.AgentParams[],uint256) (external)
+[0m[92m    - deploy(address,uint256,address,bytes) (external)
+[0m[92m    - destroy(address,uint256) (external)
+[0m[92m    - exists(uint256) (external)
+[0m[92m    - getAgentIdsOfServiceId(uint256) (external)
+[0m[92m    - getComponentIdsOfServiceId(uint256) (external)
+[0m[92m    - getServiceIdsCreatedWithAgentId(uint256) (external)
+[0m[92m    - getServiceIdsCreatedWithComponentId(uint256) (external)
+[0m[92m    - registerAgents(address,uint256,address[],uint256[]) (external)
+[0m[92m    - terminate(address,uint256) (external)
+[0m[92m    - unbond(address,uint256) (external)
+[0m[92m    - update(address,string,string,bytes32,uint256[],IService.AgentParams[],uint256,uint256) (external)
+[0m[94m
++ Contract ERC721
+[0m[94m  - From ERC721
+[0m[95m    - _burn(uint256) (internal)
+[0m[95m    - _mint(address,uint256) (internal)
+[0m[95m    - _safeMint(address,uint256) (internal)
+[0m[95m    - _safeMint(address,uint256,bytes) (internal)
+[0m[92m    - approve(address,uint256) (public)
+[0m[92m    - balanceOf(address) (public)
+[0m[95m    - constructor(string,string) (internal)
+[0m[92m    - ownerOf(uint256) (public)
+[0m[92m    - safeTransferFrom(address,address,uint256) (public)
+[0m[92m    - safeTransferFrom(address,address,uint256,bytes) (public)
+[0m[92m    - setApprovalForAll(address,bool) (public)
+[0m[92m    - supportsInterface(bytes4) (public)
+[0m[92m    - tokenURI(uint256) (public)
+[0m[92m    - transferFrom(address,address,uint256) (public)
+[0m[94m
++ Contract ERC721TokenReceiver (Most derived contract)
+[0m[94m  - From ERC721TokenReceiver
+[0m[92m    - onERC721Received(address,address,uint256,bytes) (external)
+[0m[94m
++ Contract LibString (Most derived contract)
+[0m[94m  - From LibString
+[0m[95m    - toString(uint256) (internal)
+[0m
+. analyzed (39 contracts)

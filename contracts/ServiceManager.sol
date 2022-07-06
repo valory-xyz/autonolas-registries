@@ -59,6 +59,7 @@ contract ServiceManager is GenericManager {
     /// @param agentParams Number of agent instances and required bond to register an instance in the service.
     /// @param threshold Threshold for a multisig composed by agents.
     /// @param serviceId Service Id to be updated.
+    /// @return success True, if function executed successfully.
     function update(
         bytes32 description,
         bytes32 configHash,
@@ -66,9 +67,9 @@ contract ServiceManager is GenericManager {
         IService.AgentParams[] memory agentParams,
         uint32 threshold,
         uint256 serviceId
-    ) external
+    ) external returns (bool)
     {
-        IService(serviceRegistry).update(msg.sender, description, configHash, agentIds, agentParams,
+        return IService(serviceRegistry).update(msg.sender, description, configHash, agentIds, agentParams,
             threshold, serviceId);
     }
 

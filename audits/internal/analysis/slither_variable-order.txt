@@ -1,0 +1,206 @@
+'npx hardhat compile --force' running
+Compiled 35 Solidity files successfully
+
+Solidity 0.8.15 is not fully supported yet. You can still use Hardhat, but some features, like stack traces, might not work correctly.
+
+Learn more at https://hardhat.org/reference/solidity-support
+
+
+
+GnosisSafeL2:
++---------------------------------------+-------------------------------------------------+------+--------+
+|                  Name                 |                       Type                      | Slot | Offset |
++---------------------------------------+-------------------------------------------------+------+--------+
+|          Singleton.singleton          |                     address                     |  0   |   0    |
+|         ModuleManager.modules         |           mapping(address => address)           |  1   |   0    |
+|          OwnerManager.owners          |           mapping(address => address)           |  2   |   0    |
+|        OwnerManager.ownerCount        |                     uint256                     |  3   |   0    |
+|         OwnerManager.threshold        |                     uint256                     |  4   |   0    |
+|            GnosisSafe.nonce           |                     uint256                     |  5   |   0    |
+| GnosisSafe._deprecatedDomainSeparator |                     bytes32                     |  6   |   0    |
+|       GnosisSafe.signedMessages       |           mapping(bytes32 => uint256)           |  7   |   0    |
+|       GnosisSafe.approvedHashes       | mapping(address => mapping(bytes32 => uint256)) |  8   |   0    |
++---------------------------------------+-------------------------------------------------+------+--------+
+
+Guard:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+Enum:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+GnosisSafeMath:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+ISignatureValidator:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+IProxy:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+GnosisSafeProxy:
++---------------------------+---------+------+--------+
+|            Name           |   Type  | Slot | Offset |
++---------------------------+---------+------+--------+
+| GnosisSafeProxy.singleton | address |  0   |   0    |
++---------------------------+---------+------+--------+
+
+GnosisSafeProxyFactory:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+IProxyCreationCallback:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+GnosisSafeMultisig:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+AgentRegistry:
++-------------------------------+----------------------------------------------+------+--------+
+|              Name             |                     Type                     | Slot | Offset |
++-------------------------------+----------------------------------------------+------+--------+
+|          ERC721.name          |                    string                    |  0   |   0    |
+|         ERC721.symbol         |                    string                    |  1   |   0    |
+|        ERC721._ownerOf        |         mapping(uint256 => address)          |  2   |   0    |
+|       ERC721._balanceOf       |         mapping(address => uint256)          |  3   |   0    |
+|       ERC721.getApproved      |         mapping(uint256 => address)          |  4   |   0    |
+|    ERC721.isApprovedForAll    | mapping(address => mapping(address => bool)) |  5   |   0    |
+|     GenericRegistry.owner     |                   address                    |  6   |   0    |
+|    GenericRegistry.manager    |                   address                    |  7   |   0    |
+|    GenericRegistry.baseURI    |                    string                    |  8   |   0    |
+|  GenericRegistry.totalSupply  |                   uint256                    |  9   |   0    |
+|    GenericRegistry._locked    |                   uint256                    |  10  |   0    |
+|     UnitRegistry.unitType     |            UnitRegistry.UnitType             |  11  |   0    |
+|  UnitRegistry.mapUnitIdHashes |        mapping(uint256 => bytes32[])         |  12  |   0    |
+|   UnitRegistry.mapHashUnitId  |          mapping(bytes32 => uint32)          |  13  |   0    |
+| UnitRegistry.mapSubComponents |         mapping(uint256 => uint32[])         |  14  |   0    |
+|     UnitRegistry.mapUnits     |    mapping(uint256 => UnitRegistry.Unit)     |  15  |   0    |
++-------------------------------+----------------------------------------------+------+--------+
+
+ComponentRegistry:
++-------------------------------+----------------------------------------------+------+--------+
+|              Name             |                     Type                     | Slot | Offset |
++-------------------------------+----------------------------------------------+------+--------+
+|          ERC721.name          |                    string                    |  0   |   0    |
+|         ERC721.symbol         |                    string                    |  1   |   0    |
+|        ERC721._ownerOf        |         mapping(uint256 => address)          |  2   |   0    |
+|       ERC721._balanceOf       |         mapping(address => uint256)          |  3   |   0    |
+|       ERC721.getApproved      |         mapping(uint256 => address)          |  4   |   0    |
+|    ERC721.isApprovedForAll    | mapping(address => mapping(address => bool)) |  5   |   0    |
+|     GenericRegistry.owner     |                   address                    |  6   |   0    |
+|    GenericRegistry.manager    |                   address                    |  7   |   0    |
+|    GenericRegistry.baseURI    |                    string                    |  8   |   0    |
+|  GenericRegistry.totalSupply  |                   uint256                    |  9   |   0    |
+|    GenericRegistry._locked    |                   uint256                    |  10  |   0    |
+|     UnitRegistry.unitType     |            UnitRegistry.UnitType             |  11  |   0    |
+|  UnitRegistry.mapUnitIdHashes |        mapping(uint256 => bytes32[])         |  12  |   0    |
+|   UnitRegistry.mapHashUnitId  |          mapping(bytes32 => uint32)          |  13  |   0    |
+| UnitRegistry.mapSubComponents |         mapping(uint256 => uint32[])         |  14  |   0    |
+|     UnitRegistry.mapUnits     |    mapping(uint256 => UnitRegistry.Unit)     |  15  |   0    |
++-------------------------------+----------------------------------------------+------+--------+
+
+RegistriesManager:
++--------------------------------+---------+------+--------+
+|              Name              |   Type  | Slot | Offset |
++--------------------------------+---------+------+--------+
+|      GenericManager.owner      | address |  0   |   0    |
+|     GenericManager.paused      |   bool  |  0   |   20   |
+| RegistriesManager._creationFee | uint256 |  1   |   0    |
++--------------------------------+---------+------+--------+
+
+IReward:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+ServiceManager:
++-------------------------+---------+------+--------+
+|           Name          |   Type  | Slot | Offset |
++-------------------------+---------+------+--------+
+|   GenericManager.owner  | address |  0   |   0    |
+|  GenericManager.paused  |   bool  |  0   |   20   |
+| ServiceManager.treasury | address |  1   |   0    |
++-------------------------+---------+------+--------+
+
+ServiceRegistry:
++--------------------------------------------+----------------------------------------------+------+--------+
+|                    Name                    |                     Type                     | Slot | Offset |
++--------------------------------------------+----------------------------------------------+------+--------+
+|                ERC721.name                 |                    string                    |  0   |   0    |
+|               ERC721.symbol                |                    string                    |  1   |   0    |
+|              ERC721._ownerOf               |         mapping(uint256 => address)          |  2   |   0    |
+|             ERC721._balanceOf              |         mapping(address => uint256)          |  3   |   0    |
+|             ERC721.getApproved             |         mapping(uint256 => address)          |  4   |   0    |
+|          ERC721.isApprovedForAll           | mapping(address => mapping(address => bool)) |  5   |   0    |
+|           GenericRegistry.owner            |                   address                    |  6   |   0    |
+|          GenericRegistry.manager           |                   address                    |  7   |   0    |
+|          GenericRegistry.baseURI           |                    string                    |  8   |   0    |
+|        GenericRegistry.totalSupply         |                   uint256                    |  9   |   0    |
+|          GenericRegistry._locked           |                   uint256                    |  10  |   0    |
+|        ServiceRegistry.slashedFunds        |                    uint96                    |  11  |   0    |
+|      ServiceRegistry.mapConfigHashes       |        mapping(uint256 => bytes32[])         |  12  |   0    |
+| ServiceRegistry.mapOperatorsAgentInstances |     mapping(uint256 => AgentInstance[])      |  13  |   0    |
+|       ServiceRegistry.mapAgentParams       |       mapping(uint256 => AgentParams)        |  14  |   0    |
+|     ServiceRegistry.mapAgentInstances      |        mapping(uint256 => address[])         |  15  |   0    |
+|    ServiceRegistry.mapOperatorsBalances    |          mapping(uint256 => uint96)          |  16  |   0    |
+| ServiceRegistry.mapAgentInstanceOperators  |         mapping(address => address)          |  17  |   0    |
+| ServiceRegistry.mapServiceIdSetComponents  |         mapping(uint256 => uint32[])         |  18  |   0    |
+|   ServiceRegistry.mapServiceIdSetAgents    |         mapping(uint256 => uint32[])         |  19  |   0    |
+|        ServiceRegistry.mapServices         | mapping(uint256 => ServiceRegistry.Service)  |  20  |   0    |
+|        ServiceRegistry.mapMultisigs        |           mapping(address => bool)           |  21  |   0    |
++--------------------------------------------+----------------------------------------------+------+--------+
+
+IMultisig:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+IRegistry:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+IService:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+ERC721TokenReceiver:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+LibString:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+. analyzed (39 contracts)

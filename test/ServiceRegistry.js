@@ -659,6 +659,12 @@ describe("ServiceRegistry", function () {
             let result = await terminateService.wait();
             expect(result.events[0].event).to.equal("Refund");
             expect(result.events[1].event).to.equal("TerminateService");
+
+            // Try to unbond to a zero address
+            await expect(
+                serviceRegistry.connect(serviceManager).unbond(AddressZero, serviceId)
+            ).to.be.revertedWith("ZeroAddress");
+
             await serviceRegistry.connect(serviceManager).unbond(operator, serviceId);
 
             // The service state must be terminated-unbonded
