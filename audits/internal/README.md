@@ -183,7 +183,7 @@ slither-check-erc --erc ERC721 ServiceRegistry.sol ServiceRegistry
 
 ### Fuzzing check, Update 06-07-22
 
-Candidates to fuzzing: <br>
+Candidates to [fuzzing](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal/analysis/fuzzer): <br>
 ```
 ./echidna-test analysis/ServiceRegistry-flatten.sol --contract ServiceRegistryFuzzing --config echidna.yaml
 -- no problems with negative overflow detected
