@@ -4,29 +4,17 @@ pragma solidity ^0.8.15;
 import "./GenericManager.sol";
 import "./interfaces/IService.sol";
 
-// Treasury related interface
-interface IReward {
-    /// @dev Deposits ETH from protocol-owned service.
-    /// @param serviceIds Set of service Ids.
-    /// @param amounts Correspondent set of amounts.
-    function depositETHFromServices(uint256[] memory serviceIds, uint256[] memory amounts) external payable;
-}
-
 /// @title Service Manager - Periphery smart contract for managing services
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 contract ServiceManager is GenericManager {
-    event TreasuryUpdated(address indexed treasury);
     event CreateMultisig(address indexed multisig);
     event RewardService(uint256 serviceId, uint256 amount);
 
     // Service registry address
     address public immutable serviceRegistry;
-    // Treasury address
-    address public treasury;
 
-    constructor(address _serviceRegistry, address _treasury) {
+    constructor(address _serviceRegistry) {
         serviceRegistry = _serviceRegistry;
-        treasury = _treasury;
         owner = msg.sender;
     }
 
@@ -38,18 +26,6 @@ contract ServiceManager is GenericManager {
     /// @dev Receive function
     receive() external payable {
         revert WrongFunction();
-    }
-
-    /// @dev Changes the treasury address.
-    /// @param _treasury Address of a new treasury.
-    function changeTreasury(address _treasury) external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        treasury = _treasury;
-        emit TreasuryUpdated(_treasury);
     }
 
     /// @dev Creates a new service.
@@ -152,22 +128,5 @@ contract ServiceManager is GenericManager {
     /// @return success True, if function executed successfully.
     function serviceDestroy(uint256 serviceId) external returns (bool success) {
         success = IService(serviceRegistry).destroy(msg.sender, serviceId);
-    }
-
-    /// @dev Rewards the protocol-owned service with an ETH payment.
-    /// @param serviceId Service Id.
-    function serviceReward(uint256 serviceId) external payable
-    {
-        // Check for the treasury address
-        if (treasury == address(0)) {
-            revert ZeroAddress();
-        }
-
-        uint256[] memory serviceIds = new uint256[](1);
-        serviceIds[0] = serviceId;
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = msg.value;
-        IReward(treasury).depositETHFromServices{value: msg.value}(serviceIds, amounts);
-        emit RewardService(serviceId, msg.value);
     }
 }

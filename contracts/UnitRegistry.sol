@@ -21,7 +21,7 @@ abstract contract UnitRegistry is GenericRegistry {
         // Primary IPFS hash of the unit
         bytes32 unitHash;
         // Set of component dependencies (agents are also based on components)
-        // We believe that the system is expected to support no more than 2^32-1 components
+        // We assume that the system is expected to support no more than 2^32-1 components
         uint32[] dependencies;
     }
 
@@ -96,13 +96,17 @@ abstract contract UnitRegistry is GenericRegistry {
         // Update the map of subcomponents
         uint32[] memory subComponentIds = getSubComponents(dependencies);
         // We need to add a current component Id to the set of subcomponents if the unit is a component
+        // For example, if component 3 (c3) has dependencies of [c1, c2], then the subcomponents will return [c1, c2].
+        // The resulting set will be [c1, c2, c3]. So we write into the map of component subcomponents: c3=>[c1, c2, c3].
+        // This is done such that the subcomponents start getting explored, and when the agent calls its subcomponents,
+        // it would have [c1, c2, c3] right away instead of adding c3 manually and then (for services) checking
+        // if another agent also has c3 as a component dependency. The latter will consume additional computation.
         if (unitType == UnitType.Component) {
-            uint256 subLen = subComponentIds.length + 1;
-            uint32[] memory addSubComponentIds = new uint32[](subLen);
-            for (uint256 i = 0; i < subLen - 1; ++i) {
+            uint32[] memory addSubComponentIds = new uint32[](subComponentIds.length + 1);
+            for (uint256 i = 0; i < subComponentIds.length; ++i) {
                 addSubComponentIds[i] = subComponentIds[i];
             }
-            addSubComponentIds[subLen - 1] = uint32(unitId);
+            addSubComponentIds[subComponentIds.length] = uint32(unitId);
             subComponentIds = addSubComponentIds;
         }
         mapSubComponents[unitId] = subComponentIds;
@@ -153,25 +157,11 @@ abstract contract UnitRegistry is GenericRegistry {
         emit UpdateUnitHash(unitId, unitType, unitHash);
     }
 
-    // TODO As mentioned earlier, this can go away with the unit owner, dependencies and set of hashes returned separately,
-    // TODO and the rest is just the unit struct publicly available
-    /// @dev Gets the unit info.
+    /// @dev Gets the unit instance.
     /// @param unitId Unit Id.
-    /// @return unitOwner Owner of the unit.
-    /// @return unitHash The primary unit IPFS hash.
-    /// @return description The unit description.
-    /// @return numDependencies The number of units in the dependency list.
-    /// @return dependencies The list of unit dependencies.
-    function getInfo(uint256 unitId) external view virtual
-        returns (address unitOwner, bytes32 unitHash, bytes32 description,
-            uint256 numDependencies, uint32[] memory dependencies)
-    {
-        // Check for the unit existence
-        if (unitId > 0 && unitId < (totalSupply + 1)) {
-            Unit memory unit = mapUnits[unitId];
-            // TODO we could just return the unit itself
-            return (ownerOf(unitId), unit.unitHash, unit.description, unit.dependencies.length, unit.dependencies);
-        }
+    /// @return unit Corresponding Unit struct.
+    function getUnit(uint256 unitId) external view virtual returns (Unit memory unit) {
+        unit = mapUnits[unitId];
     }
 
     /// @dev Gets unit dependencies.
@@ -181,11 +171,8 @@ abstract contract UnitRegistry is GenericRegistry {
     function getDependencies(uint256 unitId) external view virtual
         returns (uint256 numDependencies, uint32[] memory dependencies)
     {
-        // Check for the unit existence
-        if (unitId > 0 && unitId < (totalSupply + 1)) {
-            Unit memory unit = mapUnits[unitId];
-            return (unit.dependencies.length, unit.dependencies);
-        }
+        Unit memory unit = mapUnits[unitId];
+        return (unit.dependencies.length, unit.dependencies);
     }
 
     /// @dev Gets updated unit hashes.
@@ -195,11 +182,8 @@ abstract contract UnitRegistry is GenericRegistry {
     function getUpdatedHashes(uint256 unitId) external view virtual
         returns (uint256 numHashes, bytes32[] memory unitHashes)
     {
-        // Check for the unit existence
-        if (unitId > 0 && unitId < (totalSupply + 1)) {
-            bytes32[] memory hashes = mapUnitIdHashes[unitId];
-            return (hashes.length, hashes);
-        }
+        unitHashes = mapUnitIdHashes[unitId];
+        return (unitHashes.length, unitHashes);
     }
 
     /// @dev Gets subcomponents of a provided unit Id.
@@ -250,6 +234,7 @@ abstract contract UnitRegistry is GenericRegistry {
                             tryMinComponent = components[i][processedComponents[i]];
                             minIdxComponent = i;
                         }
+                        // If we found a minimal component Id, we increase the counter and break to start the search again
                         numComponentsCheck++;
                         break;
                     }
