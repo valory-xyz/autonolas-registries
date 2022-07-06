@@ -1,0 +1,53 @@
+ +  ERC721 
+    - [32m[Pub][39m tokenURI
+    - [32m[Pub][39m ownerOf
+    - [32m[Pub][39m balanceOf
+    - [32m[Pub][39m [90m<Constructor>[39m[31m #[39m
+    - [32m[Pub][39m approve[31m #[39m
+    - [32m[Pub][39m setApprovalForAll[31m #[39m
+    - [32m[Pub][39m transferFrom[31m #[39m
+    - [32m[Pub][39m safeTransferFrom[31m #[39m
+    - [32m[Pub][39m safeTransferFrom[31m #[39m
+    - [32m[Pub][39m supportsInterface
+    - [90m[Int][39m _mint[31m #[39m
+    - [90m[Int][39m _burn[31m #[39m
+    - [90m[Int][39m _safeMint[31m #[39m
+    - [90m[Int][39m _safeMint[31m #[39m
+
+ +  ERC721TokenReceiver 
+    - [34m[Ext][39m onERC721Received[31m #[39m
+
+ + [33m[Lib][39m LibString 
+    - [90m[Int][39m toString
+
+ + [34m[Int][39m IErrorsRegistries 
+
+ +  GenericRegistry [90m(IErrorsRegistries, ERC721)[39m
+    - [34m[Ext][39m changeOwner[31m #[39m
+    - [34m[Ext][39m changeManager[31m #[39m
+    - [34m[Ext][39m exists
+    - [32m[Pub][39m tokenURI
+    - [34m[Ext][39m setBaseURI[31m #[39m
+    - [34m[Ext][39m tokenByIndex
+
+ +  UnitRegistry [90m(GenericRegistry)[39m
+    - [90m[Int][39m _checkDependencies[31m #[39m
+    - [34m[Ext][39m create[31m #[39m
+    - [34m[Ext][39m updateHash[31m #[39m
+    - [34m[Ext][39m getInfo
+    - [34m[Ext][39m getDependencies
+    - [34m[Ext][39m getUpdatedHashes
+    - [90m[Int][39m _getSubComponents
+    - [32m[Pub][39m getSubComponents
+
+ +  ComponentRegistry [90m(UnitRegistry)[39m
+    - [32m[Pub][39m [90m<Constructor>[39m[31m #[39m
+       - modifiers: ERC721
+    - [90m[Int][39m _checkDependencies[31m #[39m
+    - [34m[Ext][39m getLocalSubComponents
+    - [90m[Int][39m _getSubComponents
+
+
+[33m ($)[39m = payable function
+[31m #[39m = non-constant function
+  

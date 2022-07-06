@@ -1,0 +1,359 @@
+'npx hardhat compile --force' running
+Compiled 35 Solidity files successfully
+
+Solidity 0.8.15 is not fully supported yet. You can still use Hardhat, but some features, like stack traces, might not work correctly.
+
+Learn more at https://hardhat.org/reference/solidity-support
+
+
+
+Contract GnosisSafeL2
++-------------------------------------+----------------+
+|               Function              |   Modifiers    |
++-------------------------------------+----------------+
+|             constructor             |       []       |
+|                setup                |       []       |
+|           execTransaction           |       []       |
+|            handlePayment            |       []       |
+|           checkSignatures           |       []       |
+|           checkNSignatures          |       []       |
+|            requiredTxGas            |       []       |
+|             approveHash             |       []       |
+|              getChainId             |       []       |
+|           domainSeparator           |       []       |
+|        encodeTransactionData        |       []       |
+|          getTransactionHash         |       []       |
+|               setGuard              | ['authorized'] |
+|               getGuard              |       []       |
+|           requireSelfCall           |       []       |
+|             getStorageAt            |       []       |
+|          simulateAndRevert          |       []       |
+|      internalSetFallbackHandler     |       []       |
+|          setFallbackHandler         | ['authorized'] |
+|               fallback              |       []       |
+|            transferToken            |       []       |
+|            signatureSplit           |       []       |
+|             setupOwners             |       []       |
+|        addOwnerWithThreshold        | ['authorized'] |
+|             removeOwner             | ['authorized'] |
+|              swapOwner              | ['authorized'] |
+|           changeThreshold           | ['authorized'] |
+|             getThreshold            |       []       |
+|               isOwner               |       []       |
+|              getOwners              |       []       |
+|             setupModules            |       []       |
+|             enableModule            | ['authorized'] |
+|            disableModule            | ['authorized'] |
+|      execTransactionFromModule      |       []       |
+| execTransactionFromModuleReturnData |       []       |
+|           isModuleEnabled           |       []       |
+|         getModulesPaginated         |       []       |
+|               execute               |       []       |
+|               receive               |       []       |
+|           execTransaction           |       []       |
+|      execTransactionFromModule      |       []       |
+| slitherConstructorConstantVariables |       []       |
++-------------------------------------+----------------+
+
+Contract Guard
++---------------------+-----------+
+|       Function      | Modifiers |
++---------------------+-----------+
+|   checkTransaction  |     []    |
+| checkAfterExecution |     []    |
++---------------------+-----------+
+
+Contract Enum
++----------+-----------+
+| Function | Modifiers |
++----------+-----------+
++----------+-----------+
+
+Contract GnosisSafeMath
++----------+-----------+
+| Function | Modifiers |
++----------+-----------+
+|   mul    |     []    |
+|   sub    |     []    |
+|   add    |     []    |
+|   max    |     []    |
++----------+-----------+
+
+Contract ISignatureValidator
++-------------------------------------+-----------+
+|               Function              | Modifiers |
++-------------------------------------+-----------+
+|           isValidSignature          |     []    |
+| slitherConstructorConstantVariables |     []    |
++-------------------------------------+-----------+
+
+Contract IProxy
++------------+-----------+
+|  Function  | Modifiers |
++------------+-----------+
+| masterCopy |     []    |
++------------+-----------+
+
+Contract GnosisSafeProxy
++-------------+-----------+
+|   Function  | Modifiers |
++-------------+-----------+
+| constructor |     []    |
+|   fallback  |     []    |
++-------------+-----------+
+
+Contract GnosisSafeProxyFactory
++--------------------------------------+-----------+
+|               Function               | Modifiers |
++--------------------------------------+-----------+
+|             createProxy              |     []    |
+|           proxyRuntimeCode           |     []    |
+|          proxyCreationCode           |     []    |
+|         deployProxyWithNonce         |     []    |
+|         createProxyWithNonce         |     []    |
+|       createProxyWithCallback        |     []    |
+| calculateCreateProxyWithNonceAddress |     []    |
++--------------------------------------+-----------+
+
+Contract IProxyCreationCallback
++--------------+-----------+
+|   Function   | Modifiers |
++--------------+-----------+
+| proxyCreated |     []    |
++--------------+-----------+
+
+Contract GnosisSafeMultisig
++-------------------------------------+-----------+
+|               Function              | Modifiers |
++-------------------------------------+-----------+
+|             constructor             |     []    |
+|              _parseData             |     []    |
+|                create               |     []    |
+| slitherConstructorConstantVariables |     []    |
++-------------------------------------+-----------+
+
+Contract AgentRegistry
++-----------------------------+-----------+
+|           Function          | Modifiers |
++-----------------------------+-----------+
+|      _checkDependencies     |     []    |
+|            create           |     []    |
+|          updateHash         |     []    |
+|           getInfo           |     []    |
+|       getDependencies       |     []    |
+|       getUpdatedHashes      |     []    |
+|      _getSubComponents      |     []    |
+|       getSubComponents      |     []    |
+|         changeOwner         |     []    |
+|        changeManager        |     []    |
+|            exists           |     []    |
+|           tokenURI          |     []    |
+|          setBaseURI         |     []    |
+|         tokenByIndex        |     []    |
+|           tokenURI          |     []    |
+|           ownerOf           |     []    |
+|          balanceOf          |     []    |
+|         constructor         |     []    |
+|           approve           |     []    |
+|      setApprovalForAll      |     []    |
+|         transferFrom        |     []    |
+|       safeTransferFrom      |     []    |
+|       safeTransferFrom      |     []    |
+|      supportsInterface      |     []    |
+|            _mint            |     []    |
+|            _burn            |     []    |
+|          _safeMint          |     []    |
+|          _safeMint          |     []    |
+|         constructor         |     []    |
+|      _checkDependencies     |     []    |
+|      _getSubComponents      |     []    |
+| slitherConstructorVariables |     []    |
++-----------------------------+-----------+
+
+Contract ComponentRegistry
++-----------------------------+-----------+
+|           Function          | Modifiers |
++-----------------------------+-----------+
+|      _checkDependencies     |     []    |
+|            create           |     []    |
+|          updateHash         |     []    |
+|           getInfo           |     []    |
+|       getDependencies       |     []    |
+|       getUpdatedHashes      |     []    |
+|      _getSubComponents      |     []    |
+|       getSubComponents      |     []    |
+|         changeOwner         |     []    |
+|        changeManager        |     []    |
+|            exists           |     []    |
+|           tokenURI          |     []    |
+|          setBaseURI         |     []    |
+|         tokenByIndex        |     []    |
+|           tokenURI          |     []    |
+|           ownerOf           |     []    |
+|          balanceOf          |     []    |
+|         constructor         |     []    |
+|           approve           |     []    |
+|      setApprovalForAll      |     []    |
+|         transferFrom        |     []    |
+|       safeTransferFrom      |     []    |
+|       safeTransferFrom      |     []    |
+|      supportsInterface      |     []    |
+|            _mint            |     []    |
+|            _burn            |     []    |
+|          _safeMint          |     []    |
+|          _safeMint          |     []    |
+|         constructor         |     []    |
+|      _checkDependencies     |     []    |
+|    getLocalSubComponents    |     []    |
+|      _getSubComponents      |     []    |
+| slitherConstructorVariables |     []    |
++-----------------------------+-----------+
+
+Contract RegistriesManager
++---------------------+-----------+
+|       Function      | Modifiers |
++---------------------+-----------+
+|     changeOwner     |     []    |
+|        pause        |     []    |
+|       unpause       |     []    |
+|     constructor     |     []    |
+|     createAgent     |     []    |
+|   updateAgentHash   |     []    |
+|   createComponent   |     []    |
+| updateComponentHash |     []    |
++---------------------+-----------+
+
+Contract IReward
++------------------------+-----------+
+|        Function        | Modifiers |
++------------------------+-----------+
+| depositETHFromServices |     []    |
++------------------------+-----------+
+
+Contract ServiceManager
++-----------------------------+-----------+
+|           Function          | Modifiers |
++-----------------------------+-----------+
+|         changeOwner         |     []    |
+|            pause            |     []    |
+|           unpause           |     []    |
+|         constructor         |     []    |
+|           fallback          |     []    |
+|           receive           |     []    |
+|        changeTreasury       |     []    |
+|        serviceCreate        |     []    |
+|        serviceUpdate        |     []    |
+| serviceActivateRegistration |     []    |
+|    serviceRegisterAgents    |     []    |
+|        serviceDeploy        |     []    |
+|       serviceTerminate      |     []    |
+|        serviceUnbond        |     []    |
+|        serviceDestroy       |     []    |
+|        serviceReward        |     []    |
++-----------------------------+-----------+
+
+Contract ServiceRegistry
++-----------------------------+----------------------+
+|           Function          |      Modifiers       |
++-----------------------------+----------------------+
+|         changeOwner         |          []          |
+|        changeManager        |          []          |
+|            exists           |          []          |
+|           tokenURI          |          []          |
+|          setBaseURI         |          []          |
+|         tokenByIndex        |          []          |
+|           tokenURI          |          []          |
+|           ownerOf           |          []          |
+|          balanceOf          |          []          |
+|         constructor         |          []          |
+|           approve           |          []          |
+|      setApprovalForAll      |          []          |
+|         transferFrom        |          []          |
+|       safeTransferFrom      |          []          |
+|       safeTransferFrom      |          []          |
+|      supportsInterface      |          []          |
+|            _mint            |          []          |
+|            _burn            |          []          |
+|          _safeMint          |          []          |
+|          _safeMint          |          []          |
+|         constructor         |          []          |
+|           fallback          |          []          |
+|           receive           |          []          |
+|        _initialChecks       |          []          |
+|       _setServiceData       |          []          |
+|            create           |          []          |
+|            update           | ['onlyServiceOwner'] |
+|     activateRegistration    | ['onlyServiceOwner'] |
+|        registerAgents       |          []          |
+|            deploy           | ['onlyServiceOwner'] |
+|            slash            |  ['serviceExists']   |
+|          terminate          | ['onlyServiceOwner'] |
+|            unbond           |          []          |
+|      _getAgentInstances     |          []          |
+|        getServiceInfo       |  ['serviceExists']   |
+|    getInstancesForAgentId   |  ['serviceExists']   |
+|      getPreviousHashes      |  ['serviceExists']   |
+|    getAgentIdsOfServiceId   |          []          |
+|  getComponentIdsOfServiceId |          []          |
+|       getServiceState       |          []          |
+|      getOperatorBalance     |  ['serviceExists']   |
+|   changeMultisigPermission  |          []          |
+| slitherConstructorVariables |          []          |
++-----------------------------+----------------------+
+
+Contract IMultisig
++----------+-----------+
+| Function | Modifiers |
++----------+-----------+
+|  create  |     []    |
++----------+-----------+
+
+Contract IRegistry
++-----------------------+-----------+
+|        Function       | Modifiers |
++-----------------------+-----------+
+|         create        |     []    |
+|       updateHash      |     []    |
+|         exists        |     []    |
+|        getInfo        |     []    |
+|    getDependencies    |     []    |
+| getLocalSubComponents |     []    |
+|    getSubComponents   |     []    |
+|    getUpdatedHashes   |     []    |
+|      totalSupply      |     []    |
+|      tokenByIndex     |     []    |
++-----------------------+-----------+
+
+Contract IService
++-------------------------------------+-----------+
+|               Function              | Modifiers |
++-------------------------------------+-----------+
+|                create               |     []    |
+|                update               |     []    |
+|         activateRegistration        |     []    |
+|            registerAgents           |     []    |
+|                deploy               |     []    |
+|              terminate              |     []    |
+|                unbond               |     []    |
+|               destroy               |     []    |
+|                exists               |     []    |
+|   getServiceIdsCreatedWithAgentId   |     []    |
+| getServiceIdsCreatedWithComponentId |     []    |
+|        getAgentIdsOfServiceId       |     []    |
+|      getComponentIdsOfServiceId     |     []    |
++-------------------------------------+-----------+
+
+Contract ERC721TokenReceiver
++------------------+-----------+
+|     Function     | Modifiers |
++------------------+-----------+
+| onERC721Received |     []    |
++------------------+-----------+
+
+Contract LibString
++----------+-----------+
+| Function | Modifiers |
++----------+-----------+
+| toString |     []    |
++----------+-----------+
+. analyzed (39 contracts)

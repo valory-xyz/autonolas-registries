@@ -221,8 +221,7 @@ describe("ComponentRegistry", function () {
             const mechManager = signers[1];
             const user = signers[2];
             await componentRegistry.changeManager(mechManager.address);
-            await componentRegistry.connect(mechManager).create(user.address,
-                description, componentHash, dependencies);
+            await componentRegistry.connect(mechManager).create(user.address, description, componentHash, dependencies);
 
             // Try to update hash not via a manager
             await expect(
@@ -284,6 +283,24 @@ describe("ComponentRegistry", function () {
             for (let i = 0; i < subComponents.numSubComponents; i++) {
                 expect(subComponents.subComponentIds[i]).to.equal(i + 1);
             }
+        });
+    });
+
+    context("ERC721 transfer", async function () {
+        it("Transfer of a component", async function () {
+            const mechManager = signers[0];
+            const user1 = signers[1];
+            const user2 = signers[2];
+            await componentRegistry.changeManager(mechManager.address);
+
+            // Create a component with user1 being its owner
+            await componentRegistry.connect(mechManager).create(user1.address, description, componentHash, dependencies);
+
+            // Transfer a component to user2
+            await componentRegistry.connect(user1).transferFrom(user1.address, user2.address, 1);
+
+            // Checking the new owner
+            expect(await componentRegistry.ownerOf(1)).to.equal(user2.address);
         });
     });
 });

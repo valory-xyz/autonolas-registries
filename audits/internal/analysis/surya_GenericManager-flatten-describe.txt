@@ -1,0 +1,11 @@
+ + [34m[Int][39m IErrorsRegistries 
+
+ +  GenericManager [90m(IErrorsRegistries)[39m
+    - [34m[Ext][39m changeOwner[31m #[39m
+    - [34m[Ext][39m pause[31m #[39m
+    - [34m[Ext][39m unpause[31m #[39m
+
+
+[33m ($)[39m = payable function
+[31m #[39m = non-constant function
+  

@@ -1,0 +1,118 @@
+
+False positive:
+
+Reentrancy in ServiceRegistry.terminate(address,uint256) (contracts/ServiceRegistry.sol#616-659):
+	External calls:
+	- (result) = serviceOwner.call{value: refund}() (contracts/ServiceRegistry.sol#648)
+	State variables written after the call(s):
+	- _locked = 1 (contracts/ServiceRegistry.sol#658)
+	
+Reentrancy in ServiceRegistry.unbond(address,uint256) (contracts/ServiceRegistry.sol#666-738):
+	External calls:
+	- (result) = operator.call{value: refund}() (contracts/ServiceRegistry.sol#727)
+	State variables written after the call(s):
+	- _locked = 1 (contracts/ServiceRegistry.sol#737)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities[0m
+[93m
+
+
+Low problem:
+
+Reentrancy in ServiceRegistry.create(address,bytes32,bytes32,bytes32,uint32[],AgentParams[],uint32) (contracts/ServiceRegistry.sol#236-291):
+	External calls:
+	- _safeMint(serviceOwner,serviceId) (contracts/ServiceRegistry.sol#286)
+		- require(bool,string)(ERC721TokenReceiver(to).onERC721Received(msg.sender,address(0),id,) == ERC721TokenReceiver.onERC721Received.selector,UNSAFE_RECIPIENT) (lib/solmate/src/tokens/ERC721.sol#197-201)
+	State variables written after the call(s):
+	- totalSupply = serviceId (contracts/ServiceRegistry.sol#289)
+	
+function _safeMint(address to, uint256 id) internal virtual {
+        _mint(to, id);
+
+        if (to.code.length != 0)```````````````````````````````````````````
+            require(
+                ERC721TokenReceiver(to).onERC721Received(msg.sender, address(0), id, "") ==
+                    ERC721TokenReceiver.onERC721Received.selector,
+                "UNSAFE_RECIPIENT"
+            );
+    }
+
+On the one hand, this is protected by the fact that
+// Check for the manager privilege for a service management
+        if (manager != msg.sender) {
+            revert ManagerOnly(msg.sender, manager);
+        }
+In other hand, reentrancy possible via ERC721TokenReceiver(to).onERC721Received
+	
+Low problem:
+	
+ServiceManager.serviceUpdate(string,string,bytes32,uint256[],IService.AgentParams[],uint256,uint256) (contracts/ServiceManager.sol#89-101) ignores return value by IService(serviceRegistry).update(msg.sender,name,description,configHash,agentIds,agentParams,threshold,serviceId) (contracts/ServiceManager.sol#99-100)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unused-return[0m
+[92m
+
+
+Medium problem:
+ServiceRegistry._initialChecks(bytes32,bytes32,bytes32,uint32[],AgentParams[]).name (contracts/ServiceRegistry.sol#145) shadows:
+	- ERC721.name (lib/solmate/src/tokens/ERC721.sol#21) (state variable)
+ServiceRegistry.create(address,bytes32,bytes32,bytes32,uint32[],AgentParams[],uint32).name (contracts/ServiceRegistry.sol#238) shadows:
+	- ERC721.name (lib/solmate/src/tokens/ERC721.sol#21) (state variable)
+ServiceRegistry.update(address,bytes32,bytes32,bytes32,uint32[],AgentParams[],uint32,uint256).name (contracts/ServiceRegistry.sol#305) shadows:
+	- ERC721.name (lib/solmate/src/tokens/ERC721.sol#21) (state variable)
+ServiceRegistry.getServiceInfo(uint256).name (contracts/ServiceRegistry.sol#775) shadows:
+	- ERC721.name (lib/solmate/src/tokens/ERC721.sol#21) (state variable)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#local-variable-shadowing[0m
+
+Low problem:
+
+AgentRegistry.constructor(string,string,string,address)._componentRegistry (contracts/AgentRegistry.sol#18) lacks a zero-check on :
+		- componentRegistry = _componentRegistry (contracts/AgentRegistry.sol#21)
+RegistriesManager.constructor(address,address)._componentRegistry (contracts/RegistriesManager.sol#17) lacks a zero-check on :
+		- componentRegistry = _componentRegistry (contracts/RegistriesManager.sol#18)
+RegistriesManager.constructor(address,address)._agentRegistry (contracts/RegistriesManager.sol#17) lacks a zero-check on :
+		- agentRegistry = _agentRegistry (contracts/RegistriesManager.sol#19)
+ServiceManager.constructor(address,address)._serviceRegistry (contracts/ServiceManager.sol#27) lacks a zero-check on :
+		- serviceRegistry = _serviceRegistry (contracts/ServiceManager.sol#28)
+ServiceManager.constructor(address,address)._treasury (contracts/ServiceManager.sol#27) lacks a zero-check on :
+		- treasury = _treasury (contracts/ServiceManager.sol#29)
+ServiceManager.changeTreasury(address)._treasury (contracts/ServiceManager.sol#45) lacks a zero-check on :
+		- treasury = _treasury (contracts/ServiceManager.sol#51)
+ServiceRegistry.constructor(string,string,address)._agentRegistry (contracts/ServiceRegistry.sol#106) lacks a zero-check on :
+		- agentRegistry = _agentRegistry (contracts/ServiceRegistry.sol#108)
+ServiceRegistry.unbond(address,uint256).operator (contracts/ServiceRegistry.sol#666) lacks a zero-check on :
+		- (result) = operator.call{value: refund}() (contracts/ServiceRegistry.sol#727)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#missing-zero-address-validation[0m
+
+Pay attention (it takes time to classify the threat level):
+AgentRegistry._getSubComponents(uint32) (contracts/AgentRegistry.sol#49-51) has external calls inside a loop: (subComponentIds,None) = IRegistry(componentRegistry).getLocalSubComponents(uint256(componentId)) (contracts/AgentRegistry.sol#50)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation/#calls-inside-a-loop[0m
+[92m
+
+
+Pay attention, probably false positive:
+
+Reentrancy in ServiceRegistry.deploy(address,uint256,address,bytes) (contracts/ServiceRegistry.sol#522-560):
+	External calls:
+	- multisig = IMultisig(multisigImplementation).create(agentInstances,service.threshold,data) (contracts/ServiceRegistry.sol#548)
+	State variables written after the call(s):
+	- mapServiceIdSetAgents[serviceId] = service.agentIds (contracts/ServiceRegistry.sol#551)
+	- mapServiceIdSetComponents[serviceId] = IRegistry(agentRegistry).getSubComponents(service.agentIds) (contracts/ServiceRegistry.sol#552)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-2[0m
+
+Low problem:
+
+Different versions of Solidity are used:
+	- Version used: ['>=0.8.0', '^0.8.14', '^0.8.15']
+	- ^0.8.15 (contracts/AgentRegistry.sol#2)
+	- ^0.8.15 (contracts/ComponentRegistry.sol#2)
+	- ^0.8.15 (contracts/GenericManager.sol#2)
+	- ^0.8.15 (contracts/GenericRegistry.sol#2)
+	- ^0.8.15 (contracts/RegistriesManager.sol#2)
+	- ^0.8.15 (contracts/ServiceManager.sol#2)
+	- ^0.8.15 (contracts/ServiceRegistry.sol#2)
+	- ^0.8.15 (contracts/UnitRegistry.sol#2)
+	- ^0.8.14 (contracts/interfaces/IErrorsRegistries.sol#2)
+	- ^0.8.14 (contracts/interfaces/IMultisig.sol#2)
+	- ^0.8.14 (contracts/interfaces/IRegistry.sol#2)
+	- ^0.8.14 (contracts/interfaces/IService.sol#2)
+
+
+

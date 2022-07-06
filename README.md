@@ -22,7 +22,7 @@ An overview of the design is provided [here](https://github.com/valory-xyz/auton
 
 We have a core periphery architecture for both the components/agents and services. The core contracts are ERC721s primarily accessed via the peripheral manager contracts.
 
-An overview of the state machine governing service managament and usage is provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/FSM.md).
+An overview of the state machine governing service management and usage is provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/FSM.md).
 
 A more detailed set of registries definitions are provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/definitions.md).
 
@@ -45,7 +45,7 @@ As more multisigs come into play, their underlying implementation of the generic
 
 ### Prerequisites
 - This repository follows the standard [`Hardhat`](https://hardhat.org/tutorial/) development process.
-- The code is written on Solidity `0.8.14`.
+- The code is written on Solidity `0.8.15`.
 - The standard versions of Node.js along with Yarn are required to proceed further (confirmed to work with Yarn `1.22.10` and npx/npm `6.14.11` and node `v12.22.0`).
 
 ### Install the dependencies

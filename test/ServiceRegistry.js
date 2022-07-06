@@ -287,7 +287,7 @@ describe("ServiceRegistry", function () {
             await agentRegistry.connect(mechManager).create(owner, description, agentHash, [1]);
             await agentRegistry.connect(mechManager).create(owner, description, agentHash1, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
-            const service = await serviceRegistry.connect(serviceManager).create(owner, description, configHash,
+            await serviceRegistry.connect(serviceManager).create(owner, description, configHash,
                 agentIds, agentParams, maxThreshold);
             expect(await serviceRegistry.tokenURI(serviceId)).to.equal("https://localhost/service/1");
         });
@@ -300,7 +300,7 @@ describe("ServiceRegistry", function () {
             await agentRegistry.connect(mechManager).create(owner, description, agentHash, [1]);
             await agentRegistry.connect(mechManager).create(owner, description, agentHash1, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
-            const service = await serviceRegistry.connect(serviceManager).create(owner, description, configHash,
+            await serviceRegistry.connect(serviceManager).create(owner, description, configHash,
                 agentIds, agentParams, maxThreshold);
             await expect(
                 serviceRegistry.tokenByIndex(1)
@@ -659,6 +659,12 @@ describe("ServiceRegistry", function () {
             let result = await terminateService.wait();
             expect(result.events[0].event).to.equal("Refund");
             expect(result.events[1].event).to.equal("TerminateService");
+
+            // Try to unbond to a zero address
+            await expect(
+                serviceRegistry.connect(serviceManager).unbond(AddressZero, serviceId)
+            ).to.be.revertedWith("ZeroAddress");
+
             await serviceRegistry.connect(serviceManager).unbond(operator, serviceId);
 
             // The service state must be terminated-unbonded
@@ -1344,7 +1350,7 @@ describe("ServiceRegistry", function () {
             await agentRegistry.connect(mechManager).create(owner, description, agentHash1, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
             // Create a service
-            const service = await serviceRegistry.connect(serviceManager).create(owner, description, configHash,
+            await serviceRegistry.connect(serviceManager).create(owner, description, configHash,
                 agentIds, agentParams, maxThreshold);
 
             // Trying to update with a wrong manager

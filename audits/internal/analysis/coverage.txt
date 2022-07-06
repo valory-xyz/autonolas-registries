@@ -1,0 +1,221 @@
+
+Version
+=======
+> solidity-coverage: v0.7.21
+
+Instrumenting for coverage...
+=============================
+
+> AgentRegistry.sol
+> ComponentRegistry.sol
+> GenericManager.sol
+> GenericRegistry.sol
+> interfaces/IErrorsRegistries.sol
+> interfaces/IMultisig.sol
+> interfaces/IRegistry.sol
+> interfaces/IService.sol
+> multisigs/GnosisSafeMultisig.sol
+> RegistriesManager.sol
+> ServiceManager.sol
+> ServiceRegistry.sol
+> test/GnosisSafeABICreator.sol
+> UnitRegistry.sol
+
+Compilation:
+============
+
+Warning: Contract code size is 24806 bytes and exceeds 24576 bytes (a limit introduced in Spurious Dragon). This contract may not be deployable on mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> @gnosis.pm/safe-contracts/contracts/GnosisSafe.sol:19:1:
+   |
+19 | contract GnosisSafe is
+   | ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Warning: Contract code size is 25392 bytes and exceeds 24576 bytes (a limit introduced in Spurious Dragon). This contract may not be deployable on mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+ --> @gnosis.pm/safe-contracts/contracts/GnosisSafeL2.sol:9:1:
+  |
+9 | contract GnosisSafeL2 is GnosisSafe {
+  | ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Warning: Contract code size is 31688 bytes and exceeds 24576 bytes (a limit introduced in Spurious Dragon). This contract may not be deployable on mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> contracts/AgentRegistry.sol:11:1:
+   |
+11 | contract AgentRegistry is UnitRegistry {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Warning: Contract code size is 31230 bytes and exceeds 24576 bytes (a limit introduced in Spurious Dragon). This contract may not be deployable on mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> contracts/ComponentRegistry.sol:10:1:
+   |
+10 | contract ComponentRegistry is UnitRegistry {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Warning: Contract code size is 77796 bytes and exceeds 24576 bytes (a limit introduced in Spurious Dragon). This contract may not be deployable on mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> contracts/ServiceRegistry.sol:28:1:
+   |
+28 | contract ServiceRegistry is GenericRegistry {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Compiled 35 Solidity files successfully
+
+Network Info
+============
+> HardhatEVM: v2.9.7
+> network:    hardhat
+
+
+
+  AgentRegistry
+    Initialization
+      ✔ Checking for arguments passed to the constructor (48ms)
+      ✔ Should fail when checking for the token id existence
+      ✔ Should fail when trying to change the mechManager from a different address (62ms)
+      ✔ Setting the base URI
+    Agent creation
+      ✔ Should fail when creating an agent without a mechManager
+      ✔ Should fail when creating an agent with a zero address of owner and / or developer (60ms)
+      ✔ Should fail when creating an agent with an empty description
+      ✔ Should fail when creating a second agent with the same hash (112ms)
+      ✔ Should fail when component number is less or equal to zero (42ms)
+      ✔ Should fail when creating a non-existent component dependency (39ms)
+      ✔ Token Id=1 after first successful agent creation must exist  (76ms)
+      ✔ Catching "Transfer" event log after successful creation of an agent (69ms)
+      ✔ Getting agent info after its creation (152ms)
+    Updating hashes
+      ✔ Should fail when the agent does not belong to the owner or IPFS hash is invalid (169ms)
+      ✔ Should fail when the updated hash already exists (143ms)
+      ✔ Should return zeros when getting hashes of non-existent agent (68ms)
+      ✔ Update hash, get component hashes (112ms)
+
+  ComponentRegistry
+    Initialization
+      ✔ Checking for arguments passed to the constructor
+      ✔ Should fail when checking for the token id existence
+      ✔ Should fail when trying to change the mechManager from a different address
+      ✔ Setting the base URI
+    Component creation
+      ✔ Should fail when creating a component without a mechManager
+      ✔ Should fail when creating a component with a zero address of owner and / or developer (50ms)
+      ✔ Should fail when creating a component with an empty description
+      ✔ Should fail when creating a second component with the same hash (66ms)
+      ✔ Should fail when creating a non-existent component dependency (45ms)
+      ✔ Create a components with duplicate dependencies in the list of dependencies (145ms)
+      ✔ Token Id=1 after first successful component creation must exist (60ms)
+      ✔ Catching "Transfer" event log after successful creation of a component (51ms)
+      ✔ Getting component info after its creation (175ms)
+    Updating hashes
+      ✔ Should fail when the component does not belong to the owner or IPFS hash is invalid (131ms)
+      ✔ Should fail when the updated hash already exists (107ms)
+      ✔ Should return zeros when getting hashes of non-existent component (52ms)
+      ✔ Update hash, get new component hashes (81ms)
+    Subcomponents
+      ✔ Get the list of subcomponents (277ms)
+
+  RegistriesManager
+    Initialization
+      ✔ Checking for arguments passed to the constructor
+      ✔ Pausing and unpausing (177ms)
+    Updating hashes
+      ✔ Update hash, get component hashes (194ms)
+
+  ServiceRegistry
+    Initialization
+      ✔ Should fail when checking for the service id existence
+      ✔ Should fail when trying to change the serviceManager from a different address
+      ✔ Setting the base URI
+    Service creation
+      ✔ Should fail when creating a service without a serviceManager
+      ✔ Should fail when the owner of a service has zero address
+      ✔ Should fail when creating a service with an empty name
+      ✔ Should fail when creating a service with an empty description
+      ✔ Should fail when creating a service with incorrect agent slots values (54ms)
+      ✔ Should fail when creating a service with non existent canonical agent
+      ✔ Should fail when creating a service with duplicate canonical agents in agent slots (96ms)
+      ✔ Should fail when creating a service with incorrect input parameter (146ms)
+      ✔ Should fail when trying to set empty agent slots (154ms)
+      ✔ Checking for different signers threshold combinations (305ms)
+      ✔ Catching "CreateService" event log after registration of a service (166ms)
+      ✔ Service Id=1 after first successful service registration must exist (165ms)
+    Service update
+      ✔ Should fail when creating a service without a serviceManager
+      ✔ Should fail when the owner of a service has zero address
+      ✔ Should fail when trying to update a non-existent service
+      ✔ Catching "UpdateService" event log after update of a service (221ms)
+      ✔ Should fail when trying to update the service with already active registration (257ms)
+      ✔ Update specifically for hashes, then get service hashes (279ms)
+    Register agent instance
+      ✔ Should fail when registering an agent instance without a serviceManager
+      ✔ Should fail when registering an agent instance with a non-existent service (38ms)
+      ✔ Should fail when registering an agent instance for the inactive service (186ms)
+      ✔ Should fail when registering an agent instance that is already registered (299ms)
+      ✔ Should fail when registering an agent instance for non existent canonical agent Id (218ms)
+      ✔ Should fail when registering an agent instance for the service with no available slots (263ms)
+      ✔ Catching "RegisterInstance" event log after agent instance registration (227ms)
+      ✔ Registering several agent instances in different services by the same operator (353ms)
+      ✔ Should fail when registering an agent instance with the same address as operator (273ms)
+    activateRegistration / termination of the service
+      ✔ Should fail when activating a non-existent service
+      ✔ Should fail when activating a non-existent service
+      ✔ Should fail when activating a service that is already active (225ms)
+      ✔ Catching "ActivateRegistration" event log after service activation (205ms)
+      ✔ Catching "TerminateService" event log after service termination (209ms)
+      ✔ Destroying a service with at least one agent instance (285ms)
+    Safe contract from agent instances
+      ✔ Should fail when creating a Safe without a full set of registered agent instances (266ms)
+      ✔ Catching "CreateMultisigWithAgents" event log when calling the Safe contract creation (525ms)
+      ✔ Making sure we get correct mapping of _mapComponentIdSetServices formed (642ms)
+    High-level read-only service info requests
+      ✔ Should fail when requesting info about a non-existent service
+      ✔ Obtaining information about service existence, balance, owner, service info (203ms)
+      ✔ Obtaining service information after update and creating one more service (390ms)
+      ✔ Check for returned set of registered agent instances (209ms)
+      ✔ Should fail when getting hashes of non-existent services
+    Termination and unbonding
+      ✔ Should fail when trying to terminate service right after creation (158ms)
+      ✔ Terminate service right after creation and registering a single agent instance (227ms)
+      ✔ Calling terminate from active-registration state (219ms)
+      ✔ Unbond when the service registration is terminated (340ms)
+      ✔ Should fail when unbond in the incorrect service state (143ms)
+    Manipulations with payable set of functions or balance-related
+      ✔ Should revert when calling fallback and receive
+      ✔ Should revert when trying to register an agent instance with a smaller amount (169ms)
+      ✔ Should fail when trying to activate registration with a smaller amount (136ms)
+      ✔ Should fail when slashing the agent not in a service (260ms)
+      ✔ Slashing the operator of agent instance (370ms)
+      ✔ Slashing the operator of agent instances twice and getting the slashed deposit (534ms)
+    Whitelisting multisig implementations
+      ✔ Should fail when passing a zero address multisig
+      ✔ Adding and removing multisig implementation addresses (44ms)
+
+
+  95 passing (41s)
+
+---------------------------|----------|----------|----------|----------|----------------|
+File                       |  % Stmts | % Branch |  % Funcs |  % Lines |Uncovered Lines |
+---------------------------|----------|----------|----------|----------|----------------|
+ contracts/                |     91.9 |    76.14 |    75.81 |    86.13 |                |
+  AgentRegistry.sol        |      100 |       75 |      100 |    92.31 |             31 |
+  ComponentRegistry.sol    |      100 |      100 |      100 |      100 |                |
+  GenericManager.sol       |       60 |       25 |    66.67 |    42.86 |... 31,32,39,50 |
+  GenericRegistry.sol      |    68.75 |    42.86 |    66.67 |    52.17 |... 3,81,86,100 |
+  RegistriesManager.sol    |      100 |      100 |      100 |      100 |                |
+  ServiceManager.sol       |        0 |        0 |        0 |        0 |... 173,174,175 |
+  ServiceRegistry.sol      |      100 |    85.29 |      100 |    95.29 |... 675,729,877 |
+  UnitRegistry.sol         |      100 |    83.33 |      100 |    94.19 |... 134,148,274 |
+ contracts/interfaces/     |      100 |      100 |      100 |      100 |                |
+  IErrorsRegistries.sol    |      100 |      100 |      100 |      100 |                |
+  IMultisig.sol            |      100 |      100 |      100 |      100 |                |
+  IRegistry.sol            |      100 |      100 |      100 |      100 |                |
+  IService.sol             |      100 |      100 |      100 |      100 |                |
+ contracts/multisigs/      |      100 |      100 |      100 |      100 |                |
+  GnosisSafeMultisig.sol   |      100 |      100 |      100 |      100 |                |
+ contracts/test/           |      100 |      100 |      100 |      100 |                |
+  GnosisSafeABICreator.sol |      100 |      100 |      100 |      100 |                |
+---------------------------|----------|----------|----------|----------|----------------|
+All files                  |    92.08 |     76.4 |    76.92 |    86.41 |                |
+---------------------------|----------|----------|----------|----------|----------------|
+
+> Istanbul reports written to ./coverage/ and ./coverage.json

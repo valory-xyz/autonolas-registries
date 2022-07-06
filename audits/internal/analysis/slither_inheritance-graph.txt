@@ -1,0 +1,11 @@
+'npx hardhat compile --force' running
+Compiled 35 Solidity files successfully
+
+Solidity 0.8.15 is not fully supported yet. You can still use Hardhat, but some features, like stack traces, might not work correctly.
+
+Learn more at https://hardhat.org/reference/solidity-support
+
+
+Inheritance Graph: inheritance-graph.dot
+
+. analyzed (39 contracts)

@@ -1,0 +1,171 @@
+'npx hardhat compile --force' running
+Compiled 35 Solidity files successfully
+
+Solidity 0.8.15 is not fully supported yet. You can still use Hardhat, but some features, like stack traces, might not work correctly.
+
+Learn more at https://hardhat.org/reference/solidity-support
+
+
+
+############################
+####### GnosisSafeL2 #######
+############################
+
+## Constructor Call Sequence
+	- GnosisSafe
+
+## Constructor Definitions
+
+### GnosisSafe
+
+     constructor() {
+        // By setting the threshold it is not possible to call setup anymore,
+        // so we create a Safe with 0 owners and threshold 1.
+        // This is an unusable Safe, perfect for the singleton
+        threshold = 1;
+    }
+
+###############################
+####### GnosisSafeProxy #######
+###############################
+
+## Constructor Call Sequence
+	- GnosisSafeProxy
+
+## Constructor Definitions
+
+### GnosisSafeProxy
+
+     constructor(address _singleton) {
+        require(_singleton != address(0), "Invalid singleton address provided");
+        singleton = _singleton;
+    }
+
+##################################
+####### GnosisSafeMultisig #######
+##################################
+
+## Constructor Call Sequence
+	- GnosisSafeMultisig
+
+## Constructor Definitions
+
+### GnosisSafeMultisig
+
+     constructor (address payable _gnosisSafeL2, address _gnosisSafeProxyFactory) {
+        gnosisSafeL2 = _gnosisSafeL2;
+        gnosisSafeProxyFactory = _gnosisSafeProxyFactory;
+    }
+
+#############################
+####### AgentRegistry #######
+#############################
+
+## Constructor Call Sequence
+	- ERC721
+	- AgentRegistry
+
+## Constructor Definitions
+
+### ERC721
+
+     constructor(string memory _name, string memory _symbol) {
+        name = _name;
+        symbol = _symbol;
+    }
+
+### AgentRegistry
+
+     constructor(string memory _name, string memory _symbol, string memory _baseURI, address _componentRegistry)
+        ERC721(_name, _symbol) {
+        baseURI = _baseURI;
+        componentRegistry = _componentRegistry;
+        owner = msg.sender;
+        unitType = UnitType.Agent;
+    }
+
+#################################
+####### ComponentRegistry #######
+#################################
+
+## Constructor Call Sequence
+	- ERC721
+	- ComponentRegistry
+
+## Constructor Definitions
+
+### ERC721
+
+     constructor(string memory _name, string memory _symbol) {
+        name = _name;
+        symbol = _symbol;
+    }
+
+### ComponentRegistry
+
+     constructor(string memory _name, string memory _symbol, string memory _baseURI) ERC721(_name, _symbol) {
+        baseURI = _baseURI;
+        owner = msg.sender;
+        unitType = UnitType.Component;
+    }
+
+#################################
+####### RegistriesManager #######
+#################################
+
+## Constructor Call Sequence
+	- RegistriesManager
+
+## Constructor Definitions
+
+### RegistriesManager
+
+     constructor(address _componentRegistry, address _agentRegistry) {
+        componentRegistry = _componentRegistry;
+        agentRegistry = _agentRegistry;
+        owner = msg.sender;
+    }
+
+##############################
+####### ServiceManager #######
+##############################
+
+## Constructor Call Sequence
+	- ServiceManager
+
+## Constructor Definitions
+
+### ServiceManager
+
+     constructor(address _serviceRegistry, address _treasury) {
+        serviceRegistry = _serviceRegistry;
+        treasury = _treasury;
+        owner = msg.sender;
+    }
+
+###############################
+####### ServiceRegistry #######
+###############################
+
+## Constructor Call Sequence
+	- ERC721
+	- ServiceRegistry
+
+## Constructor Definitions
+
+### ERC721
+
+     constructor(string memory _name, string memory _symbol) {
+        name = _name;
+        symbol = _symbol;
+    }
+
+### ServiceRegistry
+
+     constructor(string memory _name, string memory _symbol, address _agentRegistry) ERC721(_name, _symbol)
+    {
+        agentRegistry = _agentRegistry;
+        owner = msg.sender;
+    }
+
+. analyzed (39 contracts)
