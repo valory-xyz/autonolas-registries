@@ -1,0 +1,40 @@
+'npx hardhat compile --force' running
+Compiled 35 Solidity files successfully
+
+Solidity 0.8.15 is not fully supported yet. You can still use Hardhat, but some features, like stack traces, might not work correctly.
+
+Learn more at https://hardhat.org/reference/solidity-support
+
+
+
+Compiled with Builder
+Number of lines: 2399 (+ 1323 in dependencies, + 7 in tests)
+Number of assembly lines: 0
+Number of contracts: 17 (+ 22 in dependencies, + 0 tests) 
+
+Number of optimization issues: [92m28[0m
+Number of informational issues: [92m91[0m
+Number of low issues: [92m26[0m
+Number of medium issues: [93m23[0m
+Number of high issues: [91m3[0m
+ERCs: ERC165, ERC721
+
++---------------------+-------------+---------------+------------+--------------+-------------+
+|         Name        | # functions |      ERCS     | ERC20 info | Complex code |   Features  |
++---------------------+-------------+---------------+------------+--------------+-------------+
+|  GnosisSafeMultisig |      4      |               |            |      [92mNo[0m      |   Assembly  |
+|    AgentRegistry    |      32     | ERC165,ERC721 |            |     [91mYes[0m      |             |
+|  ComponentRegistry  |      33     | ERC165,ERC721 |            |     [91mYes[0m      |             |
+|  RegistriesManager  |      8      |               |            |      [92mNo[0m      |             |
+|       IReward       |      1      |               |            |      [92mNo[0m      | Receive ETH |
+|    ServiceManager   |      16     |               |            |      [92mNo[0m      | Receive ETH |
+|                     |             |               |            |              |   Send ETH  |
+|   ServiceRegistry   |      43     | ERC165,ERC721 |            |     [91mYes[0m      | Receive ETH |
+|                     |             |               |            |              |   Send ETH  |
+|      IMultisig      |      1      |               |            |      [92mNo[0m      |             |
+|      IRegistry      |      10     |               |            |      [92mNo[0m      |             |
+|       IService      |      13     |               |            |      [92mNo[0m      | Receive ETH |
+| ERC721TokenReceiver |      1      |               |            |      [92mNo[0m      |             |
+|      LibString      |      1      |               |            |      [92mNo[0m      |   Assembly  |
++---------------------+-------------+---------------+------------+--------------+-------------+
+. analyzed (39 contracts)

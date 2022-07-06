@@ -1,0 +1,32 @@
+'npx hardhat compile --force' running
+Compiled 35 Solidity files successfully
+
+Solidity 0.8.15 is not fully supported yet. You can still use Hardhat, but some features, like stack traces, might not work correctly.
+
+Learn more at https://hardhat.org/reference/solidity-support
+
+
+Call Graph: all_contracts.call-graph.dot
+Call Graph: GnosisSafeL2.call-graph.dot
+Call Graph: Guard.call-graph.dot
+Call Graph: Enum.call-graph.dot
+Call Graph: GnosisSafeMath.call-graph.dot
+Call Graph: ISignatureValidator.call-graph.dot
+Call Graph: IProxy.call-graph.dot
+Call Graph: GnosisSafeProxy.call-graph.dot
+Call Graph: GnosisSafeProxyFactory.call-graph.dot
+Call Graph: IProxyCreationCallback.call-graph.dot
+Call Graph: GnosisSafeMultisig.call-graph.dot
+Call Graph: AgentRegistry.call-graph.dot
+Call Graph: ComponentRegistry.call-graph.dot
+Call Graph: RegistriesManager.call-graph.dot
+Call Graph: IReward.call-graph.dot
+Call Graph: ServiceManager.call-graph.dot
+Call Graph: ServiceRegistry.call-graph.dot
+Call Graph: IMultisig.call-graph.dot
+Call Graph: IRegistry.call-graph.dot
+Call Graph: IService.call-graph.dot
+Call Graph: ERC721TokenReceiver.call-graph.dot
+Call Graph: LibString.call-graph.dot
+
+. analyzed (39 contracts)

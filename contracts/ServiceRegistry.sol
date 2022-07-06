@@ -94,13 +94,13 @@ contract ServiceRegistry is GenericRegistry {
     mapping (address => address) public mapAgentInstanceOperators;
     // Map of service Id => set of unique component Ids
     // Updated during the service deployment via deploy() function
-    mapping (uint256 => uint32[]) public mapServiceIdSetComponents;
+    mapping (uint256 => uint32[]) public mapServiceIdSetComponentIds;
     // Map of service Id => set of unique agent Ids
-    mapping (uint256 => uint32[]) public mapServiceIdSetAgents;
-    // Map of service counter => service
-    mapping (uint256 => Service) public mapServices;
+    mapping (uint256 => uint32[]) public mapServiceIdSetAgentIds;
     // Map of policy for multisig implementations
     mapping (address => bool) public mapMultisigs;
+    // Map of service counter => service
+    mapping (uint256 => Service) public mapServices;
 
     /// @dev Service registry constructor.
     /// @param _name Service contract name.
@@ -159,7 +159,7 @@ contract ServiceRegistry is GenericRegistry {
         }
 
         // Check for the non-zero hash value
-        if (configHash == "0x") {
+        if (configHash == 0) {
             revert ZeroValue();
         }
 
@@ -200,13 +200,12 @@ contract ServiceRegistry is GenericRegistry {
         for (uint256 i = 0; i < size; i++) {
             service.agentIds[i] = agentIds[i];
             // Push a pair of key defining variables into one key. Service or agent Ids are not enough by themselves
-            uint256 serviceAgent;
             // As with other units, we assume that the system is not expected to support more than than 2^32-1 services
             // Need to carefully check pairings, since it's hard to find if something is incorrectly misplaced bitwise
             // serviceId occupies first 32 bits
-            serviceAgent |= serviceId << 32;
+            uint256 serviceAgent = serviceId;
             // agentId takes the second 32 bits
-            serviceAgent |= uint256(agentIds[i]) << 64;
+            serviceAgent |= uint256(agentIds[i]) << 32;
             mapServiceAndAgentIdAgentParams[serviceAgent] = agentParams[i];
             service.maxNumAgentInstances += agentParams[i].slots;
             // Security deposit is the maximum of the canonical agent registration bond
@@ -245,6 +244,12 @@ contract ServiceRegistry is GenericRegistry {
         uint32 threshold
     ) external returns (uint256 serviceId)
     {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
@@ -289,6 +294,8 @@ contract ServiceRegistry is GenericRegistry {
 
         totalSupply = serviceId;
         emit CreateService(serviceId);
+
+        _locked = 1;
     }
 
     /// @dev Updates a service in a CRUD way.
@@ -335,10 +342,9 @@ contract ServiceRegistry is GenericRegistry {
         for (uint256 i = 0; i < agentIds.length; i++) {
             if (agentParams[i].slots == 0) {
                 // Push a pair of key defining variables into one key. Service or agent Ids are not enough by themselves
-                uint256 serviceAgent;
                 // serviceId occupies first 32 bits, agentId gets the next 32 bits
-                serviceAgent |= serviceId << 32;
-                serviceAgent |= uint256(agentIds[i]) << 64;
+                uint256 serviceAgent = serviceId;
+                serviceAgent |= uint256(agentIds[i]) << 32;
                 delete mapServiceAndAgentIdAgentParams[serviceAgent];
             } else {
                 newAgentIds[size] = agentIds[i];
@@ -443,10 +449,9 @@ contract ServiceRegistry is GenericRegistry {
         for (uint256 i = 0; i < numAgents; ++i) {
             // Check if canonical agent Id exists in the service
             // Push a pair of key defining variables into one key. Service or agent Ids are not enough by themselves
-            uint256 serviceAgent;
             // serviceId occupies first 32 bits, agentId gets the next 32 bits
-            serviceAgent |= serviceId << 32;
-            serviceAgent |= uint256(agentIds[i]) << 64;
+            uint256 serviceAgent = serviceId;
+            serviceAgent |= uint256(agentIds[i]) << 32;
             if (mapServiceAndAgentIdAgentParams[serviceAgent].slots == 0) {
                 revert AgentNotInService(agentIds[i], serviceId);
             }
@@ -457,11 +462,10 @@ contract ServiceRegistry is GenericRegistry {
         }
 
         // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
-        uint256 operatorService;
         // operator occupies first 160 bits
-        operatorService |= uint256(uint160(operator)) << 160;
-        // serviceId occupies next 32 bits
-        operatorService |= serviceId << 192;
+        uint256 operatorService = uint256(uint160(operator));
+        // serviceId occupies next 32 bits assuming it is not greater than 2^32 - 1 in value
+        operatorService |= serviceId << 160;
         for (uint256 i = 0; i < numAgents; ++i) {
             address agentInstance = agentInstances[i];
             uint32 agentId = agentIds[i];
@@ -478,10 +482,9 @@ contract ServiceRegistry is GenericRegistry {
             }
 
             // Check if there is an empty slot for the agent instance in this specific service
-            uint256 serviceAgent;
             // serviceId occupies first 32 bits, agentId gets the next 32 bits
-            serviceAgent |= serviceId << 32;
-            serviceAgent |= uint256(agentIds[i]) << 64;
+            uint256 serviceAgent = serviceId;
+            serviceAgent |= uint256(agentIds[i]) << 32;
             if (mapServiceAndAgentIdAgentInstances[serviceAgent].length == mapServiceAndAgentIdAgentParams[serviceAgent].slots) {
                 revert AgentInstancesSlotsFilled(serviceId);
             }
@@ -523,6 +526,12 @@ contract ServiceRegistry is GenericRegistry {
         bytes memory data
     ) external onlyServiceOwner(serviceOwner, serviceId) returns (address multisig)
     {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
@@ -545,8 +554,8 @@ contract ServiceRegistry is GenericRegistry {
         multisig = IMultisig(multisigImplementation).create(agentInstances, service.threshold, data);
 
         // Update maps of service Id to subcomponent and agent Ids
-        mapServiceIdSetAgents[serviceId] = service.agentIds;
-        mapServiceIdSetComponents[serviceId] = IRegistry(agentRegistry).getSubComponents(service.agentIds);
+        mapServiceIdSetAgentIds[serviceId] = service.agentIds;
+        mapServiceIdSetComponentIds[serviceId] = IRegistry(agentRegistry).getSubComponents(service.agentIds);
 
         service.multisig = multisig;
         service.state = ServiceState.Deployed;
@@ -554,6 +563,8 @@ contract ServiceRegistry is GenericRegistry {
 
         emit CreateMultisigWithAgents(serviceId, multisig);
         emit DeployService(serviceId);
+
+        _locked = 1;
     }
 
     /// @dev Slashes a specified agent instance.
@@ -581,11 +592,10 @@ contract ServiceRegistry is GenericRegistry {
             // Get the service Id from the agentInstance map
             address operator = mapAgentInstanceOperators[agentInstances[i]];
             // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
-            uint256 operatorService;
             // operator occupies first 160 bits
-            operatorService |= uint256(uint160(operator)) << 160;
+            uint256 operatorService = uint256(uint160(operator));
             // serviceId occupies next 32 bits
-            operatorService |= serviceId << 192;
+            operatorService |= serviceId << 160;
 
             // Slash the balance of the operator, make sure it does not go below zero
             uint96 balance = mapOperatorAndServiceIdOperatorBalances[operatorService];
@@ -638,6 +648,16 @@ contract ServiceRegistry is GenericRegistry {
             service.state = ServiceState.PreRegistration;
         }
         mapServices[serviceId] = service;
+        
+        // Delete the sensitive data
+        delete mapServiceIdSetComponentIds[serviceId];
+        delete mapServiceIdSetAgentIds[serviceId];
+        for (uint256 i = 0; i < service.agentIds.length; ++i) {
+            // serviceId occupies first 32 bits, agentId gets the next 32 bits
+            uint256 serviceAgent = serviceId;
+            serviceAgent |= uint256(service.agentIds[i]) << 32;
+            delete mapServiceAndAgentIdAgentInstances[serviceAgent];
+        }
 
         // Return registration deposit back to the service owner
         refund = service.securityDeposit;
@@ -671,6 +691,11 @@ contract ServiceRegistry is GenericRegistry {
             revert ManagerOnly(msg.sender, manager);
         }
 
+        // Checks if the operator address is not zero
+        if (operator == address(0)) {
+            revert ZeroAddress();
+        }
+
         Service storage service = mapServices[serviceId];
         // Service can only be in the terminated-bonded state or expired-registration in order to proceed
         if (service.state != ServiceState.TerminatedBonded) {
@@ -679,9 +704,8 @@ contract ServiceRegistry is GenericRegistry {
 
         // Check for the operator and unbond all its agent instances
         // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
-        uint256 operatorService;
         // operator occupies first 160 bits
-        operatorService |= uint256(uint160(operator)) << 160;
+        uint256 operatorService = uint256(uint160(operator));
         // serviceId occupies next 32 bits
         operatorService |= serviceId << 160;
         AgentInstance[] memory agentInstances = mapOperatorAndServiceIdAgentInstances[operatorService];
@@ -699,14 +723,15 @@ contract ServiceRegistry is GenericRegistry {
         // Calculate registration refund and free all agent instances
         refund = 0;
         for (uint256 i = 0; i < numAgentsUnbond; i++) {
-            uint256 serviceAgent;
             // serviceId occupies first 32 bits, agentId gets the next 32 bits
-            serviceAgent |= serviceId << 32;
-            serviceAgent |= uint256(agentInstances[i].agentId) << 64;
+            uint256 serviceAgent = serviceId;
+            serviceAgent |= uint256(agentInstances[i].agentId) << 32;
             refund += mapServiceAndAgentIdAgentParams[serviceAgent].bond;
-            // Since the service is done, there's no need to clean-up the service-related data, just the state variables
+            // Clean-up the sensitive data such that it is not reused later
             delete mapAgentInstanceOperators[agentInstances[i].instance];
         }
+        // Clean all the operator agent instances records for this service
+        delete mapOperatorAndServiceIdAgentInstances[operatorService];
 
         // Calculate the refund
         uint96 balance = mapOperatorAndServiceIdOperatorBalances[operatorService];
@@ -751,9 +776,8 @@ contract ServiceRegistry is GenericRegistry {
         numAgentIds = service.agentIds.length;
         agentParams = new AgentParams[](numAgentIds);
         for (uint256 i = 0; i < numAgentIds; ++i) {
-            uint256 serviceAgent;
-            serviceAgent |= serviceId << 32;
-            serviceAgent |= uint256(service.agentIds[i]) << 64;
+            uint256 serviceAgent = serviceId;
+            serviceAgent |= uint256(service.agentIds[i]) << 32;
             agentParams[i] = mapServiceAndAgentIdAgentParams[serviceAgent];
         }
     }
@@ -766,9 +790,8 @@ contract ServiceRegistry is GenericRegistry {
     function getInstancesForAgentId(uint256 serviceId, uint256 agentId) external view serviceExists(serviceId)
         returns (uint256 numAgentInstances, address[] memory agentInstances)
     {
-        uint256 serviceAgent;
-        serviceAgent |= serviceId << 32;
-        serviceAgent |= agentId << 64;
+        uint256 serviceAgent = serviceId;
+        serviceAgent |= agentId << 32;
         numAgentInstances = mapServiceAndAgentIdAgentInstances[serviceAgent].length;
         agentInstances = new address[](numAgentInstances);
         for (uint256 i = 0; i < numAgentInstances; i++) {
@@ -786,10 +809,9 @@ contract ServiceRegistry is GenericRegistry {
         agentInstances = new address[](service.numAgentInstances);
         uint256 count;
         for (uint256 i = 0; i < service.agentIds.length; i++) {
-            uint256 serviceAgent;
             // serviceId occupies first 32 bits, agentId gets the next 32 bits
-            serviceAgent |= serviceId << 32;
-            serviceAgent |= uint256(service.agentIds[i]) << 64;
+            uint256 serviceAgent = serviceId;
+            serviceAgent |= uint256(service.agentIds[i]) << 32;
             for (uint256 j = 0; j < mapServiceAndAgentIdAgentInstances[serviceAgent].length; j++) {
                 agentInstances[count] = mapServiceAndAgentIdAgentInstances[serviceAgent][j];
                 count++;
@@ -830,9 +852,9 @@ contract ServiceRegistry is GenericRegistry {
     {
         if (unitType == UnitType.Component) {
             // TODO need to clean these maps when the service is terminated to get the gas back
-            unitIds = mapServiceIdSetComponents[serviceId];
+            unitIds = mapServiceIdSetComponentIds[serviceId];
         } else {
-            unitIds = mapServiceIdSetAgents[serviceId];
+            unitIds = mapServiceIdSetAgentIds[serviceId];
         }
         numUnitIds = unitIds.length;
     }
@@ -844,9 +866,8 @@ contract ServiceRegistry is GenericRegistry {
     function getOperatorBalance(address operator, uint256 serviceId) external view serviceExists(serviceId)
         returns (uint256 balance)
     {
-        uint256 operatorService;
-        operatorService |= uint256(uint160(operator)) << 160;
-        operatorService |= serviceId << 192;
+        uint256 operatorService = uint256(uint160(operator));
+        operatorService |= serviceId << 160;
         balance = mapOperatorAndServiceIdOperatorBalances[operatorService];
     }
 

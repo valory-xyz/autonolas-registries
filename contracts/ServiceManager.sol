@@ -35,13 +35,13 @@ contract ServiceManager is GenericManager {
     /// @param agentIds Canonical agent Ids.
     /// @param agentParams Number of agent instances and required bond to register an instance in the service.
     /// @param threshold Threshold for a multisig composed by agents.
-    function serviceCreate(
+    function create(
         address serviceOwner,
         bytes32 description,
         bytes32 configHash,
-        uint256[] memory agentIds,
+        uint32[] memory agentIds,
         IService.AgentParams[] memory agentParams,
-        uint256 threshold
+        uint32 threshold
     ) external returns (uint256)
     {
         // Check if the minting is paused
@@ -59,23 +59,24 @@ contract ServiceManager is GenericManager {
     /// @param agentParams Number of agent instances and required bond to register an instance in the service.
     /// @param threshold Threshold for a multisig composed by agents.
     /// @param serviceId Service Id to be updated.
-    function serviceUpdate(
+    /// @return success True, if function executed successfully.
+    function update(
         bytes32 description,
         bytes32 configHash,
-        uint256[] memory agentIds,
+        uint32[] memory agentIds,
         IService.AgentParams[] memory agentParams,
-        uint256 threshold,
+        uint32 threshold,
         uint256 serviceId
-    ) external
+    ) external returns (bool)
     {
-        IService(serviceRegistry).update(msg.sender, description, configHash, agentIds, agentParams,
+        return IService(serviceRegistry).update(msg.sender, description, configHash, agentIds, agentParams,
             threshold, serviceId);
     }
 
     /// @dev Activates the service and its sensitive components.
     /// @param serviceId Correspondent service Id.
     /// @return success True, if function executed successfully.
-    function serviceActivateRegistration(uint256 serviceId) external payable returns (bool success) {
+    function activateRegistration(uint256 serviceId) external payable returns (bool success) {
         success = IService(serviceRegistry).activateRegistration{value: msg.value}(msg.sender, serviceId);
     }
 
@@ -84,10 +85,10 @@ contract ServiceManager is GenericManager {
     /// @param agentInstances Agent instance addresses.
     /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
     /// @return success True, if function executed successfully.
-    function serviceRegisterAgents(
+    function registerAgents(
         uint256 serviceId,
         address[] memory agentInstances,
-        uint256[] memory agentIds
+        uint32[] memory agentIds
     ) external payable returns (bool success) {
         success = IService(serviceRegistry).registerAgents{value: msg.value}(msg.sender, serviceId, agentInstances, agentIds);
     }
@@ -97,7 +98,7 @@ contract ServiceManager is GenericManager {
     /// @param multisigImplementation Multisig implementation address.
     /// @param data Data payload for the multisig creation.
     /// @return multisig Address of the created multisig.
-    function serviceDeploy(
+    function deploy(
         uint256 serviceId,
         address multisigImplementation,
         bytes memory data
@@ -111,7 +112,7 @@ contract ServiceManager is GenericManager {
     /// @param serviceId Service Id.
     /// @return success True, if function executed successfully.
     /// @return refund Refund for the service owner.
-    function serviceTerminate(uint256 serviceId) external returns (bool success, uint256 refund) {
+    function terminate(uint256 serviceId) external returns (bool success, uint256 refund) {
         (success, refund) = IService(serviceRegistry).terminate(msg.sender, serviceId);
     }
 
@@ -119,14 +120,7 @@ contract ServiceManager is GenericManager {
     /// @param serviceId Service Id.
     /// @return success True, if function executed successfully.
     /// @return refund The amount of refund returned to the operator.
-    function serviceUnbond(uint256 serviceId) external returns (bool success, uint256 refund) {
+    function unbond(uint256 serviceId) external returns (bool success, uint256 refund) {
         (success, refund) = IService(serviceRegistry).unbond(msg.sender, serviceId);
-    }
-
-    /// @dev Destroys the service instance and frees up its storage.
-    /// @param serviceId Correspondent service Id.
-    /// @return success True, if function executed successfully.
-    function serviceDestroy(uint256 serviceId) external returns (bool success) {
-        success = IService(serviceRegistry).destroy(msg.sender, serviceId);
     }
 }

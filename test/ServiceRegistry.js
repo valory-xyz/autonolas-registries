@@ -22,7 +22,7 @@ describe("ServiceRegistry", function () {
     const threshold = 1;
     const maxThreshold = agentParams[0][0] + agentParams[1][0];
     const ZeroBytes32 = "0x" + "0".repeat(64);
-    const componentHash = "0x" + "0".repeat(64);
+    const componentHash = "0x" + "5".repeat(64);
     const componentHash1 = "0x" + "1".repeat(64);
     const componentHash2 = "0x" + "2".repeat(64);
     const agentHash = "0x" + "7".repeat(64);
@@ -65,6 +65,29 @@ describe("ServiceRegistry", function () {
     });
 
     context("Initialization", async function () {
+        it("Changing owner", async function () {
+            const owner = signers[0];
+            const account = signers[1];
+
+            // Trying to change owner from a non-owner account address
+            await expect(
+                serviceRegistry.connect(account).changeOwner(account.address)
+            ).to.be.revertedWith("OwnerOnly");
+
+            // Trying to change owner for the zero address
+            await expect(
+                serviceRegistry.connect(owner).changeOwner(AddressZero)
+            ).to.be.revertedWith("ZeroAddress");
+
+            // Changing the owner
+            await serviceRegistry.connect(owner).changeOwner(account.address);
+
+            // Trying to change owner from the previous owner address
+            await expect(
+                serviceRegistry.connect(owner).changeOwner(owner.address)
+            ).to.be.revertedWith("OwnerOnly");
+        });
+
         it("Should fail when checking for the service id existence", async function () {
             const tokenId = 0;
             expect(await serviceRegistry.exists(tokenId)).to.equal(false);
@@ -77,8 +100,16 @@ describe("ServiceRegistry", function () {
         });
 
         it("Setting the base URI", async function () {
-            await agentRegistry.setBaseURI("https://localhost2/service/");
-            expect(await agentRegistry.baseURI()).to.equal("https://localhost2/service/");
+            await expect(
+                serviceRegistry.connect(signers[1]).setBaseURI("https://localhost2/service/")
+            ).to.be.revertedWith("OwnerOnly");
+
+            await expect(
+                serviceRegistry.setBaseURI("")
+            ).to.be.revertedWith("ZeroValue");
+
+            await serviceRegistry.setBaseURI("https://localhost2/service/");
+            expect(await serviceRegistry.baseURI()).to.equal("https://localhost2/service/");
         });
     });
 
@@ -90,7 +121,19 @@ describe("ServiceRegistry", function () {
             ).to.be.revertedWith("ManagerOnly");
         });
 
-        it("Should fail when the owner of a service has zero address", async function () {
+        it("Should fail when changing the owner and the manager to a zero address", async function () {
+            // Try to change the owner to the zero address
+            await expect(
+                serviceRegistry.changeOwner(AddressZero)
+            ).to.be.revertedWith("ZeroAddress");
+
+            // Try to change the manager to the zero address
+            await expect(
+                serviceRegistry.changeManager(AddressZero)
+            ).to.be.revertedWith("ZeroAddress");
+        });
+
+        it("Should fail when the owner of a service has a zero address", async function () {
             const serviceManager = signers[3];
             await serviceRegistry.changeManager(serviceManager.address);
             await expect(
@@ -99,12 +142,22 @@ describe("ServiceRegistry", function () {
             ).to.be.revertedWith("ZeroAddress");
         });
 
-        it("Should fail when creating a service with an empty description", async function () {
+        it("Should fail when creating a service with a zero value description", async function () {
             const serviceManager = signers[3];
             const owner = signers[4].address;
             await serviceRegistry.changeManager(serviceManager.address);
             await expect(
                 serviceRegistry.connect(serviceManager).create(owner, ZeroBytes32, configHash, agentIds, agentParams,
+                    threshold)
+            ).to.be.revertedWith("ZeroValue");
+        });
+
+        it("Should fail when creating a service with a zero value config hash", async function () {
+            const serviceManager = signers[3];
+            const owner = signers[4].address;
+            await serviceRegistry.changeManager(serviceManager.address);
+            await expect(
+                serviceRegistry.connect(serviceManager).create(owner, description, ZeroBytes32, agentIds, agentParams,
                     threshold)
             ).to.be.revertedWith("ZeroValue");
         });
@@ -225,6 +278,35 @@ describe("ServiceRegistry", function () {
                 agentParams, maxThreshold);
             expect(await serviceRegistry.exists(1)).to.equal(true);
         });
+
+        it("Getting the token URI", async function () {
+            const mechManager = signers[3];
+            const serviceManager = signers[4];
+            const owner = signers[5].address;
+            await agentRegistry.changeManager(mechManager.address);
+            await agentRegistry.connect(mechManager).create(owner, description, agentHash, [1]);
+            await agentRegistry.connect(mechManager).create(owner, description, agentHash1, [1]);
+            await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistry.connect(serviceManager).create(owner, description, configHash,
+                agentIds, agentParams, maxThreshold);
+            expect(await serviceRegistry.tokenURI(serviceId)).to.equal("https://localhost/service/1");
+        });
+
+        it("Should fail when trying to get a service Id with the wrong token index", async function () {
+            const mechManager = signers[3];
+            const serviceManager = signers[4];
+            const owner = signers[5].address;
+            await agentRegistry.changeManager(mechManager.address);
+            await agentRegistry.connect(mechManager).create(owner, description, agentHash, [1]);
+            await agentRegistry.connect(mechManager).create(owner, description, agentHash1, [1]);
+            await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistry.connect(serviceManager).create(owner, description, configHash,
+                agentIds, agentParams, maxThreshold);
+            await expect(
+                serviceRegistry.tokenByIndex(1)
+            ).to.be.revertedWith("Overflow");
+            expect(await serviceRegistry.tokenByIndex(0)).to.equal(serviceId);
+        });
     });
 
     context("Service update", async function () {
@@ -235,7 +317,7 @@ describe("ServiceRegistry", function () {
             ).to.be.revertedWith("ManagerOnly");
         });
 
-        it("Should fail when the owner of a service has zero address", async function () {
+        it("Should fail when the owner of a service has a zero address during the update", async function () {
             const serviceManager = signers[3];
             await serviceRegistry.changeManager(serviceManager.address);
             await expect(
@@ -285,6 +367,12 @@ describe("ServiceRegistry", function () {
             await serviceRegistry.connect(serviceManager).create(owner, description, configHash, agentIds,
                 agentParams, maxThreshold);
             await serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit});
+
+            // Try to register agents with a conflicting agent information
+            await expect(
+                serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstance], [], {value: regBond})
+            ).to.be.revertedWith("WrongArrayLength");
+
             await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstance], [agentId], {value: regBond});
             await expect(
                 serviceRegistry.connect(serviceManager).update(owner, description, configHash, agentIds,
@@ -571,6 +659,12 @@ describe("ServiceRegistry", function () {
             let result = await terminateService.wait();
             expect(result.events[0].event).to.equal("Refund");
             expect(result.events[1].event).to.equal("TerminateService");
+
+            // Try to unbond to a zero address
+            await expect(
+                serviceRegistry.connect(serviceManager).unbond(AddressZero, serviceId)
+            ).to.be.revertedWith("ZeroAddress");
+
             await serviceRegistry.connect(serviceManager).unbond(operator, serviceId);
 
             // The service state must be terminated-unbonded
@@ -1245,10 +1339,58 @@ describe("ServiceRegistry", function () {
             const unbond = await serviceRegistry.connect(serviceManager).callStatic.unbond(operator, serviceId);
             expect(Number(unbond.refund)).to.equal(0);
         });
+
+        it("Should fail when trying to not act through the service manager", async function () {
+            const mechManager = signers[3];
+            const serviceManager = signers[4];
+            const owner = signers[5].address;
+            const operator = signers[6].address;
+            await agentRegistry.changeManager(mechManager.address);
+            await agentRegistry.connect(mechManager).create(owner, description, agentHash, [1]);
+            await agentRegistry.connect(mechManager).create(owner, description, agentHash1, [1]);
+            await serviceRegistry.changeManager(serviceManager.address);
+            // Create a service
+            await serviceRegistry.connect(serviceManager).create(owner, description, configHash,
+                agentIds, agentParams, maxThreshold);
+
+            // Trying to update with a wrong manager
+            await expect(
+                serviceRegistry.update(owner, description, configHash, agentIds, agentParams, threshold, serviceId)
+            ).to.be.revertedWith("ManagerOnly");
+
+            // Trying to activate the service with a wrong manager
+            await expect(
+                serviceRegistry.activateRegistration(owner, serviceId)
+            ).to.be.revertedWith("ManagerOnly");
+
+            // Trying to register an agent instance with a wrong manager
+            await expect(
+                serviceRegistry.registerAgents(operator, serviceId, [AddressZero], [agentId])
+            ).to.be.revertedWith("ManagerOnly");
+
+            // Trying to deploy the service with a wrong manager
+            await expect(
+                serviceRegistry.deploy(owner, serviceId, AddressZero, "0x")
+            ).to.be.revertedWith("ManagerOnly");
+
+            // Trying to terminate the service with a wrong manager
+            await expect(
+                serviceRegistry.terminate(owner, serviceId)
+            ).to.be.revertedWith("ManagerOnly");
+
+            // Trying to unbond from the service with a wrong manager
+            await expect(
+                serviceRegistry.unbond(operator, serviceId)
+            ).to.be.revertedWith("ManagerOnly");
+        });
     });
 
     context("Whitelisting multisig implementations", async function () {
-        it("Should fail when passing a zero address multisig", async function () {
+        it("Should fail when passing a zero address multisig or trying to change not by the owner", async function () {
+            await expect(
+                serviceRegistry.connect(signers[1]).changeMultisigPermission(AddressZero, true)
+            ).to.be.revertedWith("OwnerOnly");
+
             await expect(
                 serviceRegistry.changeMultisigPermission(AddressZero, true)
             ).to.be.revertedWith("ZeroAddress");

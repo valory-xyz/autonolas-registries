@@ -67,7 +67,7 @@ abstract contract UnitRegistry is GenericRegistry {
         }
 
         // Check for the non-zero hash value
-        if (unitHash == "0x") {
+        if (unitHash == 0) {
             revert ZeroValue();
         }
 
@@ -195,37 +195,37 @@ abstract contract UnitRegistry is GenericRegistry {
     /// @param unitIds Unit Ids.
     /// @param subComponentIds Subcomponent Ids.
     function getSubComponents(uint32[] memory unitIds) public view virtual returns (uint32[] memory subComponentIds) {
-        uint256 numUnits = unitIds.length;
+        uint32 numUnits = uint32(unitIds.length);
         // Array of numbers of components per each unit Id
-        uint256[] memory numComponents = new uint256[](numUnits);
+        uint32[] memory numComponents = new uint32[](numUnits);
         // 2D array of all the sets of components per each unit Id
         uint32[][] memory components = new uint32[][](numUnits);
 
         // Get total possible number of components and lists of components
-        uint maxNumComponents;
-        for (uint256 i = 0; i < numUnits; ++i) {
+        uint32 maxNumComponents;
+        for (uint32 i = 0; i < numUnits; ++i) {
             components[i] = _getSubComponents(unitIds[i]);
-            numComponents[i] = components[i].length;
+            numComponents[i] = uint32(components[i].length);
             maxNumComponents += numComponents[i];
         }
 
         // Lists of components are sorted, take unique values in ascending order
         uint32[] memory allComponents = new uint32[](maxNumComponents);
         // Processed component counter
-        uint256[] memory processedComponents = new uint256[](numUnits);
+        uint32[] memory processedComponents = new uint32[](numUnits);
         // Minimal component Id
         uint32 minComponent;
         // Overall component counter
-        uint256 counter;
+        uint32 counter;
         // Iterate until we process all components, at the maximum of the sum of all the components in all units
         for (counter = 0; counter < maxNumComponents; ++counter) {
             // Index of a minimal component
-            uint256 minIdxComponent;
+            uint32 minIdxComponent;
             // Amount of components identified as the next minimal component number
-            uint256 numComponentsCheck;
+            uint32 numComponentsCheck;
             uint32 tryMinComponent = type(uint32).max;
             // Assemble an array of all first components from each component array
-            for (uint256 i = 0; i < numUnits; ++i) {
+            for (uint32 i = 0; i < numUnits; ++i) {
                 // Either get a component that has a higher id than the last one ore reach the end of the processed Ids
                 for (; processedComponents[i] < numComponents[i]; ++processedComponents[i]) {
                     if (minComponent < components[i][processedComponents[i]]) {
@@ -252,7 +252,7 @@ abstract contract UnitRegistry is GenericRegistry {
         }
 
         subComponentIds = new uint32[](counter);
-        for (uint256 i = 0; i < counter; ++i) {
+        for (uint32 i = 0; i < counter; ++i) {
             subComponentIds[i] = allComponents[i];
         }
     }

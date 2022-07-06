@@ -7,7 +7,7 @@ describe("ComponentRegistry", function () {
     let componentRegistry;
     let signers;
     const description = ethers.utils.formatBytes32String("component description");
-    const componentHash = "0x" + "0".repeat(64);
+    const componentHash = "0x" + "9".repeat(64);
     const componentHash1 = "0x" + "1".repeat(64);
     const componentHash2 = "0x" + "2".repeat(64);
     const dependencies = [];
@@ -67,6 +67,16 @@ describe("ComponentRegistry", function () {
             await componentRegistry.changeManager(mechManager.address);
             await expect(
                 componentRegistry.connect(mechManager).create(user.address, "0x" + "0".repeat(64), componentHash,
+                    dependencies)
+            ).to.be.revertedWith("ZeroValue");
+        });
+
+        it("Should fail when creating a component with an empty hash", async function () {
+            const mechManager = signers[1];
+            const user = signers[2];
+            await componentRegistry.changeManager(mechManager.address);
+            await expect(
+                componentRegistry.connect(mechManager).create(user.address, description, "0x" + "0".repeat(64),
                     dependencies)
             ).to.be.revertedWith("ZeroValue");
         });
@@ -211,8 +221,19 @@ describe("ComponentRegistry", function () {
             const mechManager = signers[1];
             const user = signers[2];
             await componentRegistry.changeManager(mechManager.address);
-            await componentRegistry.connect(mechManager).create(user.address,
-                description, componentHash, dependencies);
+            await componentRegistry.connect(mechManager).create(user.address, description, componentHash, dependencies);
+
+            // Try to update hash not via a manager
+            await expect(
+                componentRegistry.connect(user).updateHash(user.address, 1, componentHash1)
+            ).to.be.revertedWith("ManagerOnly");
+
+            // Try to update to a zero value hash
+            await expect(
+                componentRegistry.connect(mechManager).updateHash(user.address, 1, "0x" + "0".repeat(64))
+            ).to.be.revertedWith("ZeroValue");
+
+            // Proceed with hash updates
             await componentRegistry.connect(mechManager).updateHash(user.address, 1, componentHash1);
             await componentRegistry.connect(mechManager).updateHash(user.address, 1, componentHash2);
 
@@ -262,6 +283,24 @@ describe("ComponentRegistry", function () {
             for (let i = 0; i < subComponents.numSubComponents; i++) {
                 expect(subComponents.subComponentIds[i]).to.equal(i + 1);
             }
+        });
+    });
+
+    context("ERC721 transfer", async function () {
+        it("Transfer of a component", async function () {
+            const mechManager = signers[0];
+            const user1 = signers[1];
+            const user2 = signers[2];
+            await componentRegistry.changeManager(mechManager.address);
+
+            // Create a component with user1 being its owner
+            await componentRegistry.connect(mechManager).create(user1.address, description, componentHash, dependencies);
+
+            // Transfer a component to user2
+            await componentRegistry.connect(user1).transferFrom(user1.address, user2.address, 1);
+
+            // Checking the new owner
+            expect(await componentRegistry.ownerOf(1)).to.equal(user2.address);
         });
     });
 });

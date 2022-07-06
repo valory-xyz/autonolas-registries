@@ -1,0 +1,44 @@
+ + [34m[Int][39m IErrorsRegistries 
+
+ +  GenericManager [90m(IErrorsRegistries)[39m
+    - [34m[Ext][39m changeOwner[31m #[39m
+    - [34m[Ext][39m pause[31m #[39m
+    - [34m[Ext][39m unpause[31m #[39m
+
+ + [34m[Int][39m IService 
+    - [34m[Ext][39m create[31m #[39m
+    - [34m[Ext][39m update[31m #[39m
+    - [34m[Ext][39m activateRegistration[33m ($)[39m
+    - [34m[Ext][39m registerAgents[33m ($)[39m
+    - [34m[Ext][39m deploy[31m #[39m
+    - [34m[Ext][39m terminate[31m #[39m
+    - [34m[Ext][39m unbond[31m #[39m
+    - [34m[Ext][39m destroy[31m #[39m
+    - [34m[Ext][39m exists
+    - [34m[Ext][39m getServiceIdsCreatedWithAgentId
+    - [34m[Ext][39m getServiceIdsCreatedWithComponentId
+    - [34m[Ext][39m getAgentIdsOfServiceId
+    - [34m[Ext][39m getComponentIdsOfServiceId
+
+ + [34m[Int][39m IReward 
+    - [34m[Ext][39m depositETHFromServices[33m ($)[39m
+
+ +  ServiceManager [90m(GenericManager)[39m
+    - [32m[Pub][39m [90m<Constructor>[39m[31m #[39m
+    - [34m[Ext][39m [90m<Fallback>[39m[33m ($)[39m
+    - [34m[Ext][39m [90m<Receive Ether>[39m[33m ($)[39m
+    - [34m[Ext][39m changeTreasury[31m #[39m
+    - [34m[Ext][39m serviceCreate[31m #[39m
+    - [34m[Ext][39m serviceUpdate[31m #[39m
+    - [34m[Ext][39m serviceActivateRegistration[33m ($)[39m
+    - [34m[Ext][39m serviceRegisterAgents[33m ($)[39m
+    - [34m[Ext][39m serviceDeploy[31m #[39m
+    - [34m[Ext][39m serviceTerminate[31m #[39m
+    - [34m[Ext][39m serviceUnbond[31m #[39m
+    - [34m[Ext][39m serviceDestroy[31m #[39m
+    - [34m[Ext][39m serviceReward[33m ($)[39m
+
+
+[33m ($)[39m = payable function
+[31m #[39m = non-constant function
+  

@@ -1,0 +1,227 @@
+'npx hardhat compile --force' running
+Compiled 35 Solidity files successfully
+
+Solidity 0.8.15 is not fully supported yet. You can still use Hardhat, but some features, like stack traces, might not work correctly.
+
+Learn more at https://hardhat.org/reference/solidity-support
+
+
+Inheritance
+[94mChild_Contract -> [0m[92mImmediate_Base_Contracts[0m[92m [Not_Immediate_Base_Contracts][0m[94m
++ GnosisSafe
+[0m -> [92mEtherPaymentFallback, Singleton, ModuleManager, OwnerManager, SignatureDecoder, SecuredTokenTransfer, ISignatureValidatorConstants, FallbackManager, StorageAccessible, GuardManager[0m
+, [[92mExecutor, SelfAuthorized[0m]
+[94m
++ GnosisSafeL2
+[0m -> [92mGnosisSafe[0m
+, [[92mGuardManager, StorageAccessible, FallbackManager, ISignatureValidatorConstants, SecuredTokenTransfer, SignatureDecoder, OwnerManager, ModuleManager, Executor, SelfAuthorized, Singleton, EtherPaymentFallback[0m]
+[94m
++ Executor
+[0m[94m
++ FallbackManager
+[0m -> [92mSelfAuthorized[0m
+[94m
++ Guard
+[0m[94m
++ GuardManager
+[0m -> [92mSelfAuthorized[0m
+[94m
++ ModuleManager
+[0m -> [92mSelfAuthorized, Executor[0m
+[94m
++ OwnerManager
+[0m -> [92mSelfAuthorized[0m
+[94m
++ Enum
+[0m[94m
++ EtherPaymentFallback
+[0m[94m
++ SecuredTokenTransfer
+[0m[94m
++ SelfAuthorized
+[0m[94m
++ SignatureDecoder
+[0m[94m
++ Singleton
+[0m[94m
++ StorageAccessible
+[0m[94m
++ GnosisSafeMath
+[0m[94m
++ ISignatureValidatorConstants
+[0m[94m
++ ISignatureValidator
+[0m -> [92mISignatureValidatorConstants[0m
+[94m
++ IProxy
+[0m[94m
++ GnosisSafeProxy
+[0m[94m
++ GnosisSafeProxyFactory
+[0m[94m
++ IProxyCreationCallback
+[0m[94m
++ GnosisSafeMultisig
+[0m[94m
++ AgentRegistry
+[0m -> [92mUnitRegistry[0m
+, [[92mGenericRegistry, ERC721, IErrorsRegistries[0m]
+[94m
++ ComponentRegistry
+[0m -> [92mUnitRegistry[0m
+, [[92mGenericRegistry, ERC721, IErrorsRegistries[0m]
+[94m
++ GenericManager
+[0m -> [92mIErrorsRegistries[0m
+[94m
++ GenericRegistry
+[0m -> [92mIErrorsRegistries, ERC721[0m
+[94m
++ RegistriesManager
+[0m -> [92mGenericManager[0m
+, [[92mIErrorsRegistries[0m]
+[94m
++ IReward
+[0m[94m
++ ServiceManager
+[0m -> [92mGenericManager[0m
+, [[92mIErrorsRegistries[0m]
+[94m
++ ServiceRegistry
+[0m -> [92mGenericRegistry[0m
+, [[92mERC721, IErrorsRegistries[0m]
+[94m
++ UnitRegistry
+[0m -> [92mGenericRegistry[0m
+, [[92mERC721, IErrorsRegistries[0m]
+[94m
++ IErrorsRegistries
+[0m[94m
++ IMultisig
+[0m[94m
++ IRegistry
+[0m[94m
++ IService
+[0m[94m
++ ERC721
+[0m[94m
++ ERC721TokenReceiver
+[0m[94m
++ LibString
+[0m[92m
+
+Base_Contract -> [0m[94mImmediate_Child_Contracts[0m
+[94m [Not_Immediate_Child_Contracts][0m
+[92m
++ GnosisSafe[0m
+ -> [94mGnosisSafeL2[0m
+[92m
++ GnosisSafeL2[0m
+[92m
++ Executor[0m
+ -> [94mModuleManager[0m
+, [[94mGnosisSafe, GnosisSafeL2[0m]
+[92m
++ FallbackManager[0m
+ -> [94mGnosisSafe[0m
+, [[94mGnosisSafeL2[0m]
+[92m
++ Guard[0m
+[92m
++ GuardManager[0m
+ -> [94mGnosisSafe[0m
+, [[94mGnosisSafeL2[0m]
+[92m
++ ModuleManager[0m
+ -> [94mGnosisSafe[0m
+, [[94mGnosisSafeL2[0m]
+[92m
++ OwnerManager[0m
+ -> [94mGnosisSafe[0m
+, [[94mGnosisSafeL2[0m]
+[92m
++ Enum[0m
+[92m
++ EtherPaymentFallback[0m
+ -> [94mGnosisSafe[0m
+, [[94mGnosisSafeL2[0m]
+[92m
++ SecuredTokenTransfer[0m
+ -> [94mGnosisSafe[0m
+, [[94mGnosisSafeL2[0m]
+[92m
++ SelfAuthorized[0m
+ -> [94mFallbackManager, GuardManager, ModuleManager, OwnerManager[0m
+, [[94mGnosisSafe, GnosisSafeL2[0m]
+[92m
++ SignatureDecoder[0m
+ -> [94mGnosisSafe[0m
+, [[94mGnosisSafeL2[0m]
+[92m
++ Singleton[0m
+ -> [94mGnosisSafe[0m
+, [[94mGnosisSafeL2[0m]
+[92m
++ StorageAccessible[0m
+ -> [94mGnosisSafe[0m
+, [[94mGnosisSafeL2[0m]
+[92m
++ GnosisSafeMath[0m
+[92m
++ ISignatureValidatorConstants[0m
+ -> [94mGnosisSafe, ISignatureValidator[0m
+, [[94mGnosisSafeL2[0m]
+[92m
++ ISignatureValidator[0m
+[92m
++ IProxy[0m
+[92m
++ GnosisSafeProxy[0m
+[92m
++ GnosisSafeProxyFactory[0m
+[92m
++ IProxyCreationCallback[0m
+[92m
++ GnosisSafeMultisig[0m
+[92m
++ AgentRegistry[0m
+[92m
++ ComponentRegistry[0m
+[92m
++ GenericManager[0m
+ -> [94mRegistriesManager, ServiceManager[0m
+[92m
++ GenericRegistry[0m
+ -> [94mServiceRegistry, UnitRegistry[0m
+, [[94mAgentRegistry, ComponentRegistry[0m]
+[92m
++ RegistriesManager[0m
+[92m
++ IReward[0m
+[92m
++ ServiceManager[0m
+[92m
++ ServiceRegistry[0m
+[92m
++ UnitRegistry[0m
+ -> [94mAgentRegistry, ComponentRegistry[0m
+[92m
++ IErrorsRegistries[0m
+ -> [94mGenericManager, GenericRegistry[0m
+, [[94mAgentRegistry, ComponentRegistry, RegistriesManager, ServiceManager, ServiceRegistry, UnitRegistry[0m]
+[92m
++ IMultisig[0m
+[92m
++ IRegistry[0m
+[92m
++ IService[0m
+[92m
++ ERC721[0m
+ -> [94mGenericRegistry[0m
+, [[94mAgentRegistry, ComponentRegistry, ServiceRegistry, UnitRegistry[0m]
+[92m
++ ERC721TokenReceiver[0m
+[92m
++ LibString[0m
+
+. analyzed (39 contracts)

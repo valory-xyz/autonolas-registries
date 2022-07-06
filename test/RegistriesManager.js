@@ -9,7 +9,7 @@ describe("RegistriesManager", function () {
     let registriesManager;
     let signers;
     const description = ethers.utils.formatBytes32String("unit description");
-    const componentHashes = ["0x" + "0".repeat(64), "0x" + "1".repeat(64), "0x" + "2".repeat(64)];
+    const componentHashes = ["0x" + "9".repeat(64), "0x" + "1".repeat(64), "0x" + "2".repeat(64)];
     const agentHashes = ["0x" + "5".repeat(64), "0x" + "6".repeat(64), "0x" + "7".repeat(64)];
     const dependencies = [];
     beforeEach(async function () {
@@ -39,6 +39,11 @@ describe("RegistriesManager", function () {
         it("Pausing and unpausing", async function () {
             const user = signers[3];
 
+            // Try to pause not from the owner of the service manager
+            await expect(
+                registriesManager.connect(user).pause()
+            ).to.be.revertedWith("OwnerOnly");
+
             // Pause the contract
             await registriesManager.pause();
 
@@ -51,6 +56,11 @@ describe("RegistriesManager", function () {
             await expect(
                 registriesManager.create(1, user.address, description, componentHashes[0], dependencies)
             ).to.be.revertedWith("Paused");
+
+            // Try to unpause not from the owner of the service manager
+            await expect(
+                registriesManager.connect(user).unpause()
+            ).to.be.revertedWith("OwnerOnly");
 
             // Unpause the contract
             await registriesManager.unpause();
