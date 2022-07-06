@@ -159,7 +159,7 @@ contract ServiceRegistry is GenericRegistry {
         }
 
         // Check for the non-zero hash value
-        if (configHash == "0x") {
+        if (configHash == 0) {
             revert ZeroValue();
         }
 

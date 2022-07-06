@@ -9,7 +9,7 @@ describe("AgentRegistry", function () {
     let signers;
     const description = ethers.utils.formatBytes32String("agent description");
     const componentHash = "0x" + "5".repeat(64);
-    const agentHash = "0x" + "0".repeat(64);
+    const agentHash = "0x" + "9".repeat(64);
     const agentHash1 = "0x" + "1".repeat(64);
     const agentHash2 = "0x" + "2".repeat(64);
     const dependencies = [1];

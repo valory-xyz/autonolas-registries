@@ -67,7 +67,7 @@ abstract contract UnitRegistry is GenericRegistry {
         }
 
         // Check for the non-zero hash value
-        if (unitHash == "0x") {
+        if (unitHash == 0) {
             revert ZeroValue();
         }
 

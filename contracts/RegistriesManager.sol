@@ -59,7 +59,7 @@ contract RegistriesManager is GenericManager {
     function updateHash(UnitType unitType, uint256 unitId, bytes32 unitHash) external returns (bool success) {
         if (unitType == UnitType.Component) {
             success = IRegistry(componentRegistry).updateHash(msg.sender, unitId, unitHash);
-        } else if (unitType == UnitType.Agent) {
+        } else {
             success = IRegistry(agentRegistry).updateHash(msg.sender, unitId, unitHash);
         }
     }
