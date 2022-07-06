@@ -11,14 +11,14 @@ of entities.
 The registries also provide the capability of creating `services` that are based on canonical agents. Each service
 instance bears a set of canonical agent Ids it is composed of with the number of agent instances for each Id. For the
 service deployment `operators` supply agent instances to a specific service via registration. Once all the required
-agent instances are provided by operators, the service can be deployed forming a Gnosis Safe contract governed by
+agent instances are provided by operators, the service can be deployed forming a multisig contract governed by
 a group of agent instances.
 
 A graphical overview of the whole on-chain architecture is available here:
 
-![architecture](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/On-chain_architecture_v2.png?raw=true)
+![architecture](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/On-chain_architecture_v3.drawio.png?raw=true)
 
-An overview of the design is provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/Audit_AgentServicesFunctionality.pdf?raw=true).
+An overview of the design is provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/AgentServicesFunctionality.pdf?raw=true).
 
 We have a core periphery architecture for both the components/agents and services. The core contracts are ERC721s primarily accessed via the peripheral manager contracts.
 
@@ -26,6 +26,10 @@ An overview of the state machine governing service managament and usage is provi
 
 A more detailed set of registries definitions are provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/definitions.md).
 
+- Abstract contracts:
+  - [GenericRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/GenericRegistry.sol)
+  - [UnitRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/UnitRegistry.sol)
+  - [GenericManager](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/GenericManager.sol)
 - Core contracts:
   - [AgentRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/AgentRegistry.sol)
   - [ComponentRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ComponentRegistry.sol)

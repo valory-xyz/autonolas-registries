@@ -28,4 +28,4 @@ cryptographic key-pair, whose address identifies the agent.
 cryptographic key-pair whose address identifies the operator. This key-pair MUST be different from the ones used
 by the agent.
 - `Service`: defines a set (or singleton) of canonical agents (and therefore components), a set of service extension
-contracts, a number of agents instances per canonical agents.
+contracts, a number of agents instances per canonical agents, and a number of operator slots.
