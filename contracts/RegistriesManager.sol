@@ -7,6 +7,11 @@ import "./interfaces/IRegistry.sol";
 /// @title Registries Manager - Periphery smart contract for managing components and agents
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 contract RegistriesManager is GenericManager {
+    enum UnitType {
+        Component,
+        Agent
+    }
+
     // Component registry address
     address public immutable componentRegistry;
     // Agent registry address
@@ -20,57 +25,42 @@ contract RegistriesManager is GenericManager {
         owner = msg.sender;
     }
 
-    /// @dev Creates agent.
-    /// @param agentOwner Owner of the agent.
-    /// @param description Description of the agent.
-    /// @param agentHash IPFS hash of the agent.
+    /// @dev Creates component / agent.
+    /// @param unitType Unit type (component or agent).
+    /// @param unitOwner Owner of the component / agent.
+    /// @param description Description of the component / agent.
+    /// @param unitHash IPFS hash of the component / agent.
     /// @param dependencies Set of component dependencies in a sorted ascending order.
-    /// @return The id of a created agent.
-    function createAgent(
-        address agentOwner,
+    /// @return unitId The id of a created component / agent.
+    function create(
+        UnitType unitType,
+        address unitOwner,
         bytes32 description,
-        bytes32 agentHash,
+        bytes32 unitHash,
         uint32[] memory dependencies
-    ) external returns (uint256)
+    ) external returns (uint256 unitId)
     {
         // Check if the creation is paused
         if (paused) {
             revert Paused();
         }
-        return IRegistry(agentRegistry).create(agentOwner, description, agentHash, dependencies);
-    }
-
-    /// @dev Updates the agent hash.
-    /// @param agentId Agent Id.
-    /// @param agentHash New IPFS hash of the agent.
-    function updateAgentHash(uint256 agentId, bytes32 agentHash) external {
-        return IRegistry(agentRegistry).updateHash(msg.sender, agentId, agentHash);
-    }
-
-    /// @dev Creates component.
-    /// @param componentOwner Owner of the component.
-    /// @param description Description of the component.
-    /// @param componentHash IPFS hash of the component.
-    /// @param dependencies Set of component dependencies in a sorted ascending order.
-    /// @return The id of a created component.
-    function createComponent(
-        address componentOwner,
-        bytes32 description,
-        bytes32 componentHash,
-        uint32[] memory dependencies
-    ) external returns (uint256)
-    {
-        // Check if the creation is paused
-        if (paused) {
-            revert Paused();
+        if (unitType == UnitType.Component) {
+            unitId = IRegistry(componentRegistry).create(unitOwner, description, unitHash, dependencies);
+        } else {
+            unitId = IRegistry(agentRegistry).create(unitOwner, description, unitHash, dependencies);
         }
-        return IRegistry(componentRegistry).create(componentOwner, description, componentHash, dependencies);
     }
 
-    /// @dev Updates the component hash.
-    /// @param componentId Token Id.
-    /// @param componentHash New IPFS hash of the component.
-    function updateComponentHash(uint256 componentId, bytes32 componentHash) external {
-        return IRegistry(componentRegistry).updateHash(msg.sender, componentId, componentHash);
+    /// @dev Updates the component / agent hash.
+    /// @param unitType Unit type (component or agent).
+    /// @param unitId Agent Id.
+    /// @param unitHash New IPFS hash of the component / agent.
+    /// @return success True, if function executed successfully.
+    function updateHash(UnitType unitType, uint256 unitId, bytes32 unitHash) external returns (bool success) {
+        if (unitType == UnitType.Component) {
+            success = IRegistry(componentRegistry).updateHash(msg.sender, unitId, unitHash);
+        } else if (unitType == UnitType.Agent) {
+            success = IRegistry(agentRegistry).updateHash(msg.sender, unitId, unitHash);
+        }
     }
 }

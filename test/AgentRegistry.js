@@ -137,23 +137,29 @@ describe("AgentRegistry", function () {
             const description2 = ethers.utils.id("component description2");
             await agentRegistry.connect(mechManager).create(user.address, description2, agentHash2, lastDependencies);
 
-            let agentInfo = await agentRegistry.getInfo(tokenId);
-            expect(agentInfo.unitOwner).to.equal(user.address);
-            expect(agentInfo.description).to.equal(description2);
-            expect(agentInfo.unitHash).to.equal(agentHash2);
-            expect(agentInfo.numDependencies).to.equal(lastDependencies.length);
+            expect(await agentRegistry.ownerOf(tokenId)).to.equal(user.address);
+            let agentInstance = await agentRegistry.getUnit(tokenId);
+            expect(agentInstance.description).to.equal(description2);
+            expect(agentInstance.unitHash).to.equal(agentHash2);
+            expect(agentInstance.dependencies.length).to.equal(lastDependencies.length);
             for (let i = 0; i < lastDependencies.length; i++) {
-                expect(agentInfo.dependencies[i]).to.equal(lastDependencies[i]);
+                expect(agentInstance.dependencies[i]).to.equal(lastDependencies[i]);
             }
-            // Getting info about non-existent agent Id
-            agentInfo = await agentRegistry.getInfo(tokenId + 1);
-            expect(agentInfo.unitOwner).to.equal(AddressZero);
 
             let agentDependencies = await agentRegistry.getDependencies(tokenId);
             expect(agentDependencies.numDependencies).to.equal(lastDependencies.length);
             for (let i = 0; i < lastDependencies.length; i++) {
                 expect(agentDependencies.dependencies[i]).to.equal(lastDependencies[i]);
             }
+
+            // Getting info about non-existent agent Id
+            await expect(
+                agentRegistry.ownerOf(tokenId + 1)
+            ).to.be.revertedWith("NOT_MINTED");
+            agentInstance = await agentRegistry.getUnit(tokenId + 1);
+            expect(agentInstance.description).to.equal("0x" + "0".repeat(64));
+            expect(agentInstance.unitHash).to.equal("0x" + "0".repeat(64));
+            expect(agentInstance.dependencies.length).to.equal(0);
             agentDependencies = await agentRegistry.getDependencies(tokenId + 1);
             expect(agentDependencies.numDependencies).to.equal(0);
         });

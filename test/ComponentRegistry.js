@@ -138,23 +138,29 @@ describe("ComponentRegistry", function () {
             const description2 = ethers.utils.id("component description2");
             await componentRegistry.connect(mechManager).create(user.address, description2, componentHash2, lastDependencies);
 
-            let compInfo = await componentRegistry.getInfo(tokenId);
-            expect(compInfo.unitOwner).to.equal(user.address);
-            expect(compInfo.description).to.equal(description2);
-            expect(compInfo.unitHash).to.equal(componentHash2);
-            expect(compInfo.numDependencies).to.equal(lastDependencies.length);
+            expect(await componentRegistry.ownerOf(tokenId)).to.equal(user.address);
+            let compInstance = await componentRegistry.getUnit(tokenId);
+            expect(compInstance.description).to.equal(description2);
+            expect(compInstance.unitHash).to.equal(componentHash2);
+            expect(compInstance.dependencies.length).to.equal(lastDependencies.length);
             for (let i = 0; i < lastDependencies.length; i++) {
-                expect(compInfo.dependencies[i]).to.equal(lastDependencies[i]);
+                expect(compInstance.dependencies[i]).to.equal(lastDependencies[i]);
             }
-            // Getting info about non-existent agent Id
-            compInfo = await componentRegistry.getInfo(tokenId + 1);
-            expect(compInfo.unitOwner).to.equal(AddressZero);
-            
+
             let componentDependencies = await componentRegistry.getDependencies(tokenId);
             expect(componentDependencies.numDependencies).to.equal(lastDependencies.length);
             for (let i = 0; i < lastDependencies.length; i++) {
                 expect(componentDependencies.dependencies[i]).to.equal(lastDependencies[i]);
             }
+
+            // Getting info about non-existent agent Id
+            await expect(
+                componentRegistry.ownerOf(tokenId + 1)
+            ).to.be.revertedWith("NOT_MINTED");
+            compInstance = await componentRegistry.getUnit(tokenId + 1);
+            expect(compInstance.description).to.equal("0x" + "0".repeat(64));
+            expect(compInstance.unitHash).to.equal("0x" + "0".repeat(64));
+            expect(compInstance.dependencies.length).to.equal(0);
             componentDependencies = await componentRegistry.getDependencies(tokenId + 1);
             expect(componentDependencies.numDependencies).to.equal(0);
         });

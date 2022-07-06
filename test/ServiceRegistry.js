@@ -50,7 +50,8 @@ describe("ServiceRegistry", function () {
         await gnosisSafeProxyFactory.deployed();
 
         const ServiceRegistry = await ethers.getContractFactory("ServiceRegistry");
-        serviceRegistry = await ServiceRegistry.deploy("service registry", "SERVICE", agentRegistry.address);
+        serviceRegistry = await ServiceRegistry.deploy("service registry", "SERVICE", "https://localhost/service/",
+            agentRegistry.address);
         await serviceRegistry.deployed();
 
         const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
@@ -546,7 +547,7 @@ describe("ServiceRegistry", function () {
             expect(result.events[1].event).to.equal("TerminateService");
         });
 
-        it("Destroying a service with at least one agent instance", async function () {
+        it("Terminating a service with at least one agent instance", async function () {
             const mechManager = signers[3];
             const serviceManager = signers[4];
             const owner = signers[5].address;
@@ -573,8 +574,8 @@ describe("ServiceRegistry", function () {
             await serviceRegistry.connect(serviceManager).unbond(operator, serviceId);
 
             // The service state must be terminated-unbonded
-            const state = await serviceRegistry.getServiceState(serviceId);
-            expect(state).to.equal(1);
+            const serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.state).to.equal(1);
         });
     });
 
@@ -622,23 +623,23 @@ describe("ServiceRegistry", function () {
             await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
 
             // Create a service and activate the agent instance registration
-            let state = await serviceRegistry.getServiceState(serviceId);
-            expect(state).to.equal(0);
+            let serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.state).to.equal(0);
             await serviceRegistry.changeManager(serviceManager.address);
             await serviceRegistry.connect(serviceManager).create(owner, description, configHash, [1, 2],
                 [[2, regBond], [1, regBond]], maxThreshold);
-            state = await serviceRegistry.getServiceState(serviceId);
-            expect(state).to.equal(1);
+            serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.state).to.equal(1);
 
             await serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit});
-            state = await serviceRegistry.getServiceState(serviceId);
-            expect(state).to.equal(2);
+            serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.state).to.equal(2);
 
             /// Register agent instances
             await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, agentInstances,
                 regAgentIds, {value: 3*regBond});
-            state = await serviceRegistry.getServiceState(serviceId);
-            expect(state).to.equal(3);
+            serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.state).to.equal(3);
 
             // Create safe passing a specific salt / nonce and payload (won't be used)
             const payload = ethers.utils.solidityPack(["address", "address", "address", "address", "uint256", "uint256", "bytes"],
@@ -647,20 +648,21 @@ describe("ServiceRegistry", function () {
                 gnosisSafeMultisig.address, payload);
             const result = await safe.wait();
             expect(result.events[2].event).to.equal("CreateMultisigWithAgents");
-            state = await serviceRegistry.getServiceState(serviceId);
-            expect(state).to.equal(4);
+            serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.state).to.equal(4);
 
             // Check the service info
-            const componentIdsFromServiceId = await serviceRegistry.getComponentIdsOfServiceId(serviceId);
-            expect(componentIdsFromServiceId.numComponentIds).to.equal(2);
-            for (let i = 0; i < componentIdsFromServiceId.numComponentIds; i++) {
-                expect(componentIdsFromServiceId.componentIds[i]).to.equal(i + 1);
+            // 0 is component, 1 is agent
+            const componentIdsFromServiceId = await serviceRegistry.getUnitIdsOfService(0, serviceId);
+            expect(componentIdsFromServiceId.numUnitIds).to.equal(2);
+            for (let i = 0; i < componentIdsFromServiceId.numUnitIds; i++) {
+                expect(componentIdsFromServiceId.unitIds[i]).to.equal(i + 1);
             }
 
-            const agentIdsFromServiceId = await serviceRegistry.getAgentIdsOfServiceId(serviceId);
-            expect(agentIdsFromServiceId.numAgentIds).to.equal(2);
-            for (let i = 0; i < agentIdsFromServiceId.numAgentIds; i++) {
-                expect(agentIdsFromServiceId.agentIds[i]).to.equal(i + 1);
+            const agentIdsFromServiceId = await serviceRegistry.getUnitIdsOfService(1, serviceId);
+            expect(agentIdsFromServiceId.numUnitIds).to.equal(2);
+            for (let i = 0; i < agentIdsFromServiceId.numUnitIds; i++) {
+                expect(agentIdsFromServiceId.unitIds[i]).to.equal(i + 1);
             }
         });
 
@@ -686,8 +688,8 @@ describe("ServiceRegistry", function () {
             await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
 
             // Create services and activate the agent instance registration
-            let state = await serviceRegistry.getServiceState(serviceId);
-            expect(state).to.equal(0);
+            let serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.state).to.equal(0);
             await serviceRegistry.changeManager(serviceManager.address);
             await serviceRegistry.connect(serviceManager).create(owner, description, configHash, [1],
                 [[2, regBond]], maxThreshold);
@@ -709,7 +711,7 @@ describe("ServiceRegistry", function () {
     });
 
     context("High-level read-only service info requests", async function () {
-        it("Should fail when requesting info about a non-existent service", async function () {
+        it("Should fail when requesting an owner info about a non-existent service", async function () {
             const owner = signers[3].address;
             expect(await serviceRegistry.balanceOf(owner)).to.equal(0);
 
@@ -717,9 +719,8 @@ describe("ServiceRegistry", function () {
                 serviceRegistry.ownerOf(serviceId)
             ).to.be.revertedWith("NOT_MINTED");
 
-            await expect(
-                serviceRegistry.getServiceInfo(serviceId)
-            ).to.be.revertedWith("ServiceNotFound");
+            const serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.state).to.equal(0);
         });
 
         it("Obtaining information about service existence, balance, owner, service info", async function () {
@@ -745,16 +746,18 @@ describe("ServiceRegistry", function () {
             expect(await serviceRegistry.ownerOf(serviceId)).to.equal(owner);
 
             // Check for the service info components
-            const serviceInfo = await serviceRegistry.getServiceInfo(serviceId);
-            expect(serviceInfo.description).to.equal(description);
-            expect(serviceInfo.numAgentIds).to.equal(agentIds.length);
-            expect(serviceInfo.configHash.hash).to.equal(configHash.hash);
+            const serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.description).to.equal(description);
+            expect(serviceInstance.agentIds.length).to.equal(agentIds.length);
+            expect(serviceInstance.configHash.hash).to.equal(configHash.hash);
             for (let i = 0; i < agentIds.length; i++) {
-                expect(serviceInfo.agentIds[i]).to.equal(agentIds[i]);
+                expect(serviceInstance.agentIds[i]).to.equal(agentIds[i]);
             }
+            const serviceAgentParams = await serviceRegistry.getAgentParams(serviceId);
+            expect(serviceAgentParams.numAgentIds).to.equal(agentParams.length);
             for (let i = 0; i < agentParams.length; i++) {
-                expect(serviceInfo.agentParams[i].slots).to.equal(agentParams[i][0]);
-                expect(serviceInfo.agentParams[i].bond).to.equal(agentParams[i][1]);
+                expect(serviceAgentParams.agentParams[i].slots).to.equal(agentParams[i][0]);
+                expect(serviceAgentParams.agentParams[i].bond).to.equal(agentParams[i][1]);
             }
         });
 
@@ -785,17 +788,19 @@ describe("ServiceRegistry", function () {
             expect(totalSupply).to.equal(1);
 
             // Check for the service info components
-            const serviceInfo = await serviceRegistry.getServiceInfo(serviceId);
-            expect(serviceInfo.description).to.equal(description);
-            expect(serviceInfo.numAgentIds).to.equal(agentIds.length);
+            const serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.description).to.equal(description);
+            expect(serviceInstance.agentIds.length).to.equal(agentIds.length);
             const agentIdsCheck = [newAgentIds[0], newAgentIds[2]];
             for (let i = 0; i < agentIds.length; i++) {
-                expect(serviceInfo.agentIds[i]).to.equal(agentIdsCheck[i]);
+                expect(serviceInstance.agentIds[i]).to.equal(agentIdsCheck[i]);
             }
             const agentNumSlotsCheck = [newAgentParams[0], newAgentParams[2]];
+            const serviceAgentParams = await serviceRegistry.getAgentParams(serviceId);
+            expect(serviceAgentParams.numAgentIds).to.equal(agentParams.length);
             for (let i = 0; i < agentNumSlotsCheck.length; i++) {
-                expect(serviceInfo.agentParams[i].slots).to.equal(agentNumSlotsCheck[i][0]);
-                expect(serviceInfo.agentParams[i].bond).to.equal(agentNumSlotsCheck[i][1]);
+                expect(serviceAgentParams.agentParams[i].slots).to.equal(agentNumSlotsCheck[i][0]);
+                expect(serviceAgentParams.agentParams[i].bond).to.equal(agentNumSlotsCheck[i][1]);
             }
             const agentInstancesInfo = await serviceRegistry.getInstancesForAgentId(serviceId, agentId);
             expect(agentInstancesInfo.numAgentInstances).to.equal(0);
@@ -833,10 +838,10 @@ describe("ServiceRegistry", function () {
                 regAgentIds, {value: 2*regBond});
 
             /// Get the service info
-            const serviceInfo = await serviceRegistry.getServiceInfo(serviceId);
-            expect(serviceInfo.numAagentInstances == agentInstances.length);
+            const serviceInstance = await serviceRegistry.getAgentInstances(serviceId);
+            expect(serviceInstance.numAgentInstances == agentInstances.length);
             for (let i = 0; i < agentInstances.length; i++) {
-                expect(serviceInfo.agentInstances[i]).to.equal(agentInstances[i]);
+                expect(serviceInstance.agentInstances[i]).to.equal(agentInstances[i]);
             }
             const agentInstancesInfo = await serviceRegistry.getInstancesForAgentId(serviceId, agentId);
             expect(agentInstancesInfo.agentInstances == 2);
@@ -897,8 +902,8 @@ describe("ServiceRegistry", function () {
 
             // Terminating service with a registered agent instance will give it a terminated-bonded state
             await serviceRegistry.connect(serviceManager).terminate(owner, serviceId);
-            const state = await serviceRegistry.getServiceState(serviceId);
-            expect(state).to.equal(5);
+            const serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.state).to.equal(5);
 
             // Trying to terminate it again will revert
             await expect(
@@ -923,8 +928,8 @@ describe("ServiceRegistry", function () {
             await serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit});
             await serviceRegistry.connect(serviceManager).terminate(owner, serviceId);
             // The service state must be terminated-unbonded
-            const state = await serviceRegistry.getServiceState(serviceId);
-            expect(state).to.equal(1);
+            const serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.state).to.equal(1);
         });
 
         it("Unbond when the service registration is terminated", async function () {
@@ -977,8 +982,8 @@ describe("ServiceRegistry", function () {
             const result = await unbondTx.wait();
             expect(result.events[0].event).to.equal("Refund");
             expect(result.events[1].event).to.equal("OperatorUnbond");
-            const state = await serviceRegistry.getServiceState(serviceId);
-            expect(state).to.equal(1);
+            const serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.state).to.equal(1);
 
             // Operator's balance after unbonding must be zero
             const newBalanceOperator = Number(await serviceRegistry.getOperatorBalance(operator, serviceId));
@@ -1117,8 +1122,8 @@ describe("ServiceRegistry", function () {
             await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
 
             // Create services and activate the agent instance registration
-            let state = await serviceRegistry.getServiceState(serviceId);
-            expect(state).to.equal(0);
+            let serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.state).to.equal(0);
             await serviceRegistry.changeManager(serviceManager.address);
             await serviceRegistry.connect(serviceManager).create(owner, description, configHash, [1],
                 [[1, regBond]], maxThreshold);
@@ -1172,8 +1177,8 @@ describe("ServiceRegistry", function () {
             await agentRegistry.connect(mechManager).create(owner, description, agentHash, [1]);
 
             // Create services and activate the agent instance registration
-            let state = await serviceRegistry.getServiceState(serviceId);
-            expect(state).to.equal(0);
+            let serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.state).to.equal(0);
             await serviceRegistry.changeManager(serviceManager.address);
             await serviceRegistry.connect(serviceManager).create(owner, description, configHash, [1],
                 [[2, regBond]], maxThreshold);
