@@ -1468,7 +1468,7 @@ describe("ServiceRegistry", function () {
             const componentOwners = [signers[11], signers[12], signers[13], signers[14]];
             const agentOwners = [signers[15], signers[16], signers[17]];
 
-            // Create 4 components (on is already created in the beforeEach()) and 3 agents based on them
+            // Create 4 components (one is already created in the beforeEach()) and 3 agents based on them
             await componentRegistry.changeManager(mechManager.address);
             await componentRegistry.connect(mechManager).create(componentOwners[0].address, description, componentHash, []);
             await componentRegistry.connect(mechManager).create(componentOwners[1].address, description, componentHash1, []);

@@ -59,4 +59,13 @@ contract AgentRegistry is UnitRegistry {
             subComponentIds = mapSubComponents[uint256(unitId)];
         }
     }
+
+    /// @dev Calculates the set of subcomponent Ids.
+    /// @notice We assume that the external callers calculate subcomponents from the higher unit hierarchy level: agents.
+    /// @param unitIds Unit Ids.
+    /// @return subComponentIds Subcomponent Ids.
+    function calculateSubComponents(uint32[] memory unitIds) external view returns (uint32[] memory subComponentIds)
+    {
+        subComponentIds = _calculateSubComponents(UnitType.Agent, unitIds);
+    }
 }

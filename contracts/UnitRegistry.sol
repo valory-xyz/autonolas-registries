@@ -93,7 +93,7 @@ abstract contract UnitRegistry is GenericRegistry {
         mapUnits[unitId] = unit;
         mapHashUnitId[unitHash] = uint32(unitId);
 
-        // Update the map of subcomponents wit calculated subcomponents for the new unit Id
+        // Update the map of subcomponents with calculated subcomponents for the new unit Id
         // In order to get the correct set of subcomponents, we need to differentiate between the callers of this function
         // Self contract (unit registry) can only call subcomponents calculation from the component level
         uint32[] memory subComponentIds = _calculateSubComponents(UnitType.Component, dependencies);
@@ -205,16 +205,6 @@ abstract contract UnitRegistry is GenericRegistry {
     /// @return subComponentIds Set of subcomponents.
     function _getSubComponents(UnitType subcomponentsFromType, uint32 unitId) internal view virtual
         returns (uint32[] memory subComponentIds);
-
-    /// @dev Calculates the set of subcomponent Ids.
-    /// @notice We assume that the external callers calculate subcomponents from the higher unit hierarchy level: agents.
-    /// @param unitIds Unit Ids.
-    /// @return subComponentIds Subcomponent Ids.
-    function calculateSubComponents(uint32[] memory unitIds) external view virtual
-        returns (uint32[] memory subComponentIds)
-    {
-        subComponentIds = _calculateSubComponents(UnitType.Agent, unitIds);
-    }
 
     /// @dev Calculates the set of subcomponent Ids.
     /// @param subcomponentsFromType Type of the unit: component or agent.

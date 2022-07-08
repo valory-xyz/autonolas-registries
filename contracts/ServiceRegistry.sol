@@ -511,7 +511,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @param multisigImplementation Multisig implementation address.
     /// @param data Data payload for the multisig creation.
     /// @return multisig Address of the created multisig.
-    function deploy (
+    function deploy(
         address serviceOwner,
         uint256 serviceId,
         address multisigImplementation,
