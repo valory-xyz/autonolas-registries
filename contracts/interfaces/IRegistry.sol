@@ -3,6 +3,11 @@ pragma solidity ^0.8.15;
 
 /// @dev Required interface for the component / agent manipulation.
 interface IRegistry {
+    enum UnitType {
+        Component,
+        Agent
+    }
+
     /// @dev Creates component / agent.
     /// @param unitOwner Owner of the component / agent.
     /// @param description Description of the component / agent.
@@ -29,10 +34,10 @@ interface IRegistry {
     /// @return numSubComponents Number of subcomponents.
     function getLocalSubComponents(uint256 unitId) external view returns (uint32[] memory subComponentIds, uint256 numSubComponents);
 
-    /// @dev Gets calculated subcomponents.
+    /// @dev Calculates the set of subcomponent Ids.
     /// @param unitIds Set of unit Ids.
-    /// @return subComponentIds Set of subcomponents.
-    function getSubComponents(uint32[] memory unitIds) external view returns (uint32[] memory subComponentIds);
+    /// @return subComponentIds Subcomponent Ids.
+    function calculateSubComponents(uint32[] memory unitIds) external view returns (uint32[] memory subComponentIds);
 
     /// @dev Gets updated component / agent hashes.
     /// @param unitId Unit Id.

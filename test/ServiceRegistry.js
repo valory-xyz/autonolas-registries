@@ -25,6 +25,7 @@ describe("ServiceRegistry", function () {
     const componentHash = "0x" + "5".repeat(64);
     const componentHash1 = "0x" + "1".repeat(64);
     const componentHash2 = "0x" + "2".repeat(64);
+    const componentHash3 = "0x" + "3".repeat(64);
     const agentHash = "0x" + "7".repeat(64);
     const agentHash1 = "0x" + "8".repeat(64);
     const agentHash2 = "0x" + "9".repeat(64);
@@ -61,7 +62,7 @@ describe("ServiceRegistry", function () {
         signers = await ethers.getSigners();
 
         await componentRegistry.changeManager(signers[0].address);
-        await componentRegistry.create(signers[0].address, description, componentHash2, []);
+        await componentRegistry.create(signers[0].address, description, componentHash3, []);
     });
 
     context("Initialization", async function () {
@@ -1453,6 +1454,65 @@ describe("ServiceRegistry", function () {
             await serviceRegistry.changeMultisigPermission(signers[1].address, false);
             expect(await serviceRegistry.mapMultisigs(signers[1].address)).to.equal(false);
             expect(await serviceRegistry.mapMultisigs(signers[2].address)).to.equal(false);
+        });
+    });
+
+    context("Subcomponents", async function () {
+        it("Get the list of service subcomponents", async function () {
+            const mechManager = signers[1];
+            const serviceManager = signers[2];
+            const owner = signers[3].address;
+            const operator = signers[4].address;
+            const agentInstances = [signers[5].address, signers[6].address, signers[7].address, signers[8].address,
+                signers[9].address];
+            const componentOwners = [signers[11], signers[12], signers[13], signers[14]];
+            const agentOwners = [signers[15], signers[16], signers[17]];
+
+            // Create 4 components (one is already created in the beforeEach()) and 3 agents based on them
+            await componentRegistry.changeManager(mechManager.address);
+            await componentRegistry.connect(mechManager).create(componentOwners[0].address, description, componentHash, []);
+            await componentRegistry.connect(mechManager).create(componentOwners[1].address, description, componentHash1, []);
+            await componentRegistry.connect(mechManager).create(componentOwners[2].address, description, componentHash2, []);
+            await agentRegistry.changeManager(mechManager.address);
+            await agentRegistry.connect(mechManager).create(agentOwners[0].address, description, agentHash, [1, 2]);
+            await agentRegistry.connect(mechManager).create(agentOwners[1].address, description, agentHash1, [2]);
+            await agentRegistry.connect(mechManager).create(agentOwners[2].address, description, agentHash2, [3]);
+
+            // Create 2 services
+            const agentIds = [[1, 2], [1, 3]];
+            const agentParams = [[1, regBond], [1, regBond]];
+            const threshold = 2;
+            await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistry.connect(serviceManager).create(owner, description, configHash, agentIds[0],
+                agentParams, threshold);
+            await serviceRegistry.connect(serviceManager).create(owner, description, configHash1, agentIds[1],
+                agentParams, threshold);
+
+            // Register agent instances
+            await serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit});
+            await serviceRegistry.connect(serviceManager).activateRegistration(owner, 2, {value: regDeposit});
+            await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId,
+                [agentInstances[0], agentInstances[1]], agentIds[0], {value: 2 * regBond});
+            await serviceRegistry.connect(serviceManager).registerAgents(operator, 2, [agentInstances[2], agentInstances[3]],
+                agentIds[1], {value: 2 * regBond});
+
+            // Deploy services
+            await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+            await serviceRegistry.connect(serviceManager).deploy(owner, serviceId, gnosisSafeMultisig.address, payload);
+            await serviceRegistry.connect(serviceManager).deploy(owner, 2, gnosisSafeMultisig.address, payload);
+
+            let subComponents = await serviceRegistry.getUnitIdsOfService(0, 1);
+            // subcomponents for service 1: agent1 => [1, 2] and agent2 => [2] |=> [1, 2]
+            expect(subComponents.numUnitIds).to.equal(2);
+            for (let i = 0; i < subComponents.numUnitIds; i++) {
+                expect(subComponents.unitIds[i]).to.equal(i + 1);
+            }
+            subComponents = await serviceRegistry.getUnitIdsOfService(0, 2);
+            // subcomponents for service 2: agent1 => [1, 2] and agent3 => [3] |=> [1, 2, 3]
+            expect(subComponents.numUnitIds).to.equal(3);
+            for (let i = 0; i < subComponents.numUnitIds; i++) {
+                expect(subComponents.unitIds[i]).to.equal(i + 1);
+            }
         });
     });
 });
