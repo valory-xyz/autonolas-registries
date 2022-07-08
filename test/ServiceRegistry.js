@@ -1465,7 +1465,6 @@ describe("ServiceRegistry", function () {
             const operator = signers[4].address;
             const agentInstances = [signers[5].address, signers[6].address, signers[7].address, signers[8].address,
                 signers[9].address];
-            const staker = signers[10];
             const componentOwners = [signers[11], signers[12], signers[13], signers[14]];
             const agentOwners = [signers[15], signers[16], signers[17]];
 
