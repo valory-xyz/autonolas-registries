@@ -93,8 +93,10 @@ abstract contract UnitRegistry is GenericRegistry {
         mapUnits[unitId] = unit;
         mapHashUnitId[unitHash] = uint32(unitId);
 
-        // Update the map of subcomponents
-        uint32[] memory subComponentIds = getSubComponents(dependencies);
+        // Update the map of subcomponents wit calculated subcomponents for the new unit Id
+        // In order to get the correct set of subcomponents, we need to differentiate between the callers of this function
+        // Self contract (unit registry) can only call subcomponents calculation from the component level
+        uint32[] memory subComponentIds = _calculateSubComponents(UnitType.Component, dependencies);
         // We need to add a current component Id to the set of subcomponents if the unit is a component
         // For example, if component 3 (c3) has dependencies of [c1, c2], then the subcomponents will return [c1, c2].
         // The resulting set will be [c1, c2, c3]. So we write into the map of component subcomponents: c3=>[c1, c2, c3].
@@ -186,15 +188,41 @@ abstract contract UnitRegistry is GenericRegistry {
         return (unitHashes.length, unitHashes);
     }
 
+    /// @dev Gets the set of subcomponent Ids from a local map of subcomponent.
+    /// @param unitId Component Id.
+    /// @return subComponentIds Set of subcomponent Ids.
+    /// @return numSubComponents Number of subcomponents.
+    function getLocalSubComponents(uint256 unitId) external view
+        returns (uint32[] memory subComponentIds, uint256 numSubComponents)
+    {
+        subComponentIds = mapSubComponents[uint256(unitId)];
+        numSubComponents = subComponentIds.length;
+    }
+
     /// @dev Gets subcomponents of a provided unit Id.
+    /// @param subcomponentsFromType Type of the unit: component or agent.
     /// @param unitId Unit Id.
     /// @return subComponentIds Set of subcomponents.
-    function _getSubComponents(uint32 unitId) internal view virtual returns (uint32[] memory subComponentIds);
+    function _getSubComponents(UnitType subcomponentsFromType, uint32 unitId) internal view virtual
+        returns (uint32[] memory subComponentIds);
 
-    /// @dev Gets the set of subcomponent Ids.
+    /// @dev Calculates the set of subcomponent Ids.
+    /// @notice We assume that the external callers calculate subcomponents from the higher unit hierarchy level: agents.
     /// @param unitIds Unit Ids.
-    /// @param subComponentIds Subcomponent Ids.
-    function getSubComponents(uint32[] memory unitIds) public view virtual returns (uint32[] memory subComponentIds) {
+    /// @return subComponentIds Subcomponent Ids.
+    function calculateSubComponents(uint32[] memory unitIds) external view virtual
+        returns (uint32[] memory subComponentIds)
+    {
+        subComponentIds = _calculateSubComponents(UnitType.Agent, unitIds);
+    }
+
+    /// @dev Calculates the set of subcomponent Ids.
+    /// @param subcomponentsFromType Type of the unit: component or agent.
+    /// @param unitIds Unit Ids.
+    /// @return subComponentIds Subcomponent Ids.
+    function _calculateSubComponents(UnitType subcomponentsFromType, uint32[] memory unitIds) internal view virtual
+        returns (uint32[] memory subComponentIds)
+    {
         uint32 numUnits = uint32(unitIds.length);
         // Array of numbers of components per each unit Id
         uint32[] memory numComponents = new uint32[](numUnits);
@@ -204,7 +232,8 @@ abstract contract UnitRegistry is GenericRegistry {
         // Get total possible number of components and lists of components
         uint32 maxNumComponents;
         for (uint32 i = 0; i < numUnits; ++i) {
-            components[i] = _getSubComponents(unitIds[i]);
+            // Get subcomponents for each unit Id based on the subcomponentsFromType
+            components[i] = _getSubComponents(subcomponentsFromType, unitIds[i]);
             numComponents[i] = uint32(components[i].length);
             maxNumComponents += numComponents[i];
         }

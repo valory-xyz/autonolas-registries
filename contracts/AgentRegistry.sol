@@ -42,11 +42,21 @@ contract AgentRegistry is UnitRegistry {
         }
     }
 
-    /// @dev Gets linearized set of subcomponents of a provided component Id.
-    /// @notice For agents this means getting the linearized map of components from the componentRegistry contract.
-    /// @param componentId Component Id.
+    /// @dev Gets linearized set of subcomponents of a provided unit Id and a type of a component.
+    /// @notice (0) For components this means getting the linearized map of components from the componentRegistry contract.
+    /// @notice (1) For agents this means getting the linearized map of components from the local map of subcomponents.
+    /// @param subcomponentsFromType Type of the unit: component or agent.
+    /// @param unitId Component Id.
     /// @return subComponentIds Set of subcomponents.
-    function _getSubComponents(uint32 componentId) internal view virtual override returns (uint32[] memory subComponentIds) {
-        (subComponentIds, ) = IRegistry(componentRegistry).getLocalSubComponents(uint256(componentId));
+    function _getSubComponents(UnitType subcomponentsFromType, uint32 unitId) internal view virtual override
+        returns (uint32[] memory subComponentIds)
+    {
+        // Self contract (agent registry) can only call subcomponents calculation from the component level (0)
+        // Otherwise, the subcomponents are already written into the corresponding subcomponents map
+        if (subcomponentsFromType == UnitType.Component) {
+            (subComponentIds, ) = IRegistry(componentRegistry).getLocalSubComponents(uint256(unitId));
+        } else {
+            subComponentIds = mapSubComponents[uint256(unitId)];
+        }
     }
 }

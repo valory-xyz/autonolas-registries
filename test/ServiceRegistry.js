@@ -1458,7 +1458,7 @@ describe("ServiceRegistry", function () {
     });
 
     context("Subcomponents", async function () {
-        it.only("Get the list of service subcomponents", async function () {
+        it("Get the list of service subcomponents", async function () {
             const mechManager = signers[1];
             const serviceManager = signers[2];
             const owner = signers[3].address;

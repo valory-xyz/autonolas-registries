@@ -36,11 +36,6 @@ contract ServiceRegistry is GenericRegistry {
     event OperatorUnbond(address indexed operator, uint256 indexed serviceId);
     event DeployService(uint256 indexed serviceId);
 
-    enum UnitType {
-        Component,
-        Agent
-    }
-
     enum ServiceState {
         NonExistent,
         PreRegistration,
@@ -516,7 +511,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @param multisigImplementation Multisig implementation address.
     /// @param data Data payload for the multisig creation.
     /// @return multisig Address of the created multisig.
-    function deploy(
+    function deploy (
         address serviceOwner,
         uint256 serviceId,
         address multisigImplementation,
@@ -558,7 +553,7 @@ contract ServiceRegistry is GenericRegistry {
 
         // Update maps of service Id to subcomponent and agent Ids
         mapServiceIdSetAgentIds[serviceId] = service.agentIds;
-        mapServiceIdSetComponentIds[serviceId] = IRegistry(agentRegistry).getSubComponents(service.agentIds);
+        mapServiceIdSetComponentIds[serviceId] = IRegistry(agentRegistry).calculateSubComponents(service.agentIds);
 
         service.multisig = multisig;
         service.state = ServiceState.Deployed;
@@ -860,11 +855,10 @@ contract ServiceRegistry is GenericRegistry {
     /// @param serviceId Service Id.
     /// @return numUnitIds Number of component / agent Ids.
     /// @return unitIds Set of component / agent Ids.
-    function getUnitIdsOfService(UnitType unitType, uint256 serviceId) external view
+    function getUnitIdsOfService(IRegistry.UnitType unitType, uint256 serviceId) external view
         returns (uint256 numUnitIds, uint32[] memory unitIds)
     {
-        if (unitType == UnitType.Component) {
-            // TODO need to clean these maps when the service is terminated to get the gas back
+        if (unitType == IRegistry.UnitType.Component) {
             unitIds = mapServiceIdSetComponentIds[serviceId];
         } else {
             unitIds = mapServiceIdSetAgentIds[serviceId];
