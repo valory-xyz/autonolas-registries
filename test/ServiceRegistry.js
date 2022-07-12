@@ -1458,7 +1458,7 @@ describe("ServiceRegistry", function () {
     });
 
     context("Subcomponents", async function () {
-        it("Get the list of service subcomponents", async function () {
+        it("Get the list of service subcomponents for 4 components and 3 agents", async function () {
             const mechManager = signers[1];
             const serviceManager = signers[2];
             const owner = signers[3].address;
@@ -1512,6 +1512,239 @@ describe("ServiceRegistry", function () {
             expect(subComponents.numUnitIds).to.equal(3);
             for (let i = 0; i < subComponents.numUnitIds; i++) {
                 expect(subComponents.unitIds[i]).to.equal(i + 1);
+            }
+        });
+
+        it("Get the list of service subcomponents for 4 components and 3 agents", async function () {
+            const mechManager = signers[0];
+            const serviceManager = signers[2];
+            const owner = signers[3].address;
+            const operator = signers[4].address;
+            const agentInstances = [signers[5].address, signers[6].address, signers[7].address];
+
+            let salt = "0x";
+            let hash = ethers.utils.keccak256(salt);
+            // Create 10 components (one is already created in the beforeEach()) and 3 agents based on them
+            await componentRegistry.changeManager(mechManager.address);
+            // c2
+            await componentRegistry.create(owner, description, hash, [1]);
+            // c3
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [1, 2]);
+            // c4
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [1, 3]);
+            // c5
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [1, 3, 4]);
+            // c6
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [2, 4, 5]);
+            // c7
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, []);
+            // c8
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [4]);
+            // c9
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [3, 4, 6]);
+            // c10
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [6, 8, 9]);
+
+            await agentRegistry.changeManager(mechManager.address);
+            // a1
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await agentRegistry.create(owner, description, hash, [5, 6]);
+            // a2
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await agentRegistry.create(owner, description, hash, [5, 9]);
+            // a3
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await agentRegistry.create(owner, description, hash, [6, 9, 10]);
+
+            // Create 1 service consisting of all three agents
+            const agentIds = [1, 2, 3];
+            const agentParams = [[1, regBond], [1, regBond], [1, regBond]];
+            const threshold = 3;
+            await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistry.connect(serviceManager).create(owner, description, configHash, agentIds,
+                agentParams, threshold);
+
+            // Register agent instances
+            await serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit});
+            await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId,
+                [agentInstances[0], agentInstances[1], agentInstances[2]], agentIds, {value: 3 * regBond});
+
+            // Deploy the service
+            await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+            const multisig = await serviceRegistry.connect(serviceManager).deploy(owner, serviceId,
+                gnosisSafeMultisig.address, payload);
+            // Check that the multisig is created and does not have a zero address
+            const result = await multisig.wait();
+            const proxyAddress = result.events[0].address;
+            expect(proxyAddress).to.not.equal(AddressZero);
+
+            // 0 is component, 1 is agent
+            let subComponents = await serviceRegistry.getUnitIdsOfService(0, serviceId);
+            // subcomponents for the service 1:
+            // agent1 => [5, 6] |=> [1, 3, 4, 5], [2, 4, 5, 6] |=>
+            // [1, [1, 2], [1, 2, 3], [1, 3, 4], 5], [[1, 2], [1, 3, 4], [1, 3, 4, 5], 6] |=> ... |=> [1, 2, 3, 4, 5, 6]
+            // agent 2 => [5, 9] |=> [1, 3, 4, 5], [3, 4, 6, 9] |=>
+            // [1, [1, 2, 3], [1, 3, 4], 5], [[1, 2, 3], [1, 3, 4], [2, 4, 5, 6], 9]] |=> ... |=> [1 - 6, 9]
+            // agent 2 => [6, 9, 10] |=> [2, 4, 5, 6], [3, 4, 6, 9], [6, 8, 9, 10] |=>
+            // [[1, 2], [1, 3, 4], [1, 3, 4, 5], 6], [[1, 2, 3], [1, 3, 4], [2, 4, 5, 6], 9]],
+            // [[2, 4, 5, 6], [4, 8], [3, 4, 6, 9], 10] |=> ... |=> [1 - 6, 8, 9, 10]
+            expect(subComponents.numUnitIds).to.equal(9);
+            for (let i = 0; i < 6; i++) {
+                expect(subComponents.unitIds[i]).to.equal(i + 1);
+            }
+            for (let i = 6; i < 9; i++) {
+                expect(subComponents.unitIds[i]).to.equal(i + 2);
+            }
+            // Check agent ids
+            let subAgents = await serviceRegistry.getUnitIdsOfService(1, serviceId);
+            // subagents for the service: agent1, agent2, agent3 => [1, 2, 3]
+            expect(subAgents.numUnitIds).to.equal(3);
+            for (let i = 0; i < subAgents.numUnitIds; i++) {
+                expect(subAgents.unitIds[i]).to.equal(i + 1);
+            }
+        });
+
+        it.only("Subcomponents production case simulation", async function () {
+            const mechManager = signers[0];
+            const serviceManager = signers[2];
+            const owner = signers[3].address;
+            const operator = signers[4].address;
+            const agentInstances = [signers[5].address, signers[6].address, signers[7].address];
+
+            let salt = "0x";
+            let hash = ethers.utils.keccak256(salt);
+            // Create 11 components (one is already created in the beforeEach()) and 3 agents based on them
+            await componentRegistry.changeManager(mechManager.address);
+            // c2
+            await componentRegistry.create(owner, description, hash, []);
+            // c3
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [1]);
+            // c4
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [2, 3]);
+            // c5
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [3]);
+            // c6
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [3]);
+            // c7
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [3]);
+            // c8
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [3]);
+            // c9
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [3]);
+            // c10
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [3]);
+            // c11
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await componentRegistry.create(owner, description, hash, [2, 3, 6, 7, 8, 9, 10]);
+
+            await agentRegistry.changeManager(mechManager.address);
+            // a1
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await agentRegistry.create(owner, description, hash, [4]);
+            // a2
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await agentRegistry.create(owner, description, hash, [5]);
+            // a3
+            salt += "00";
+            hash = ethers.utils.keccak256(salt);
+            await agentRegistry.create(owner, description, hash, [11]);
+
+            // Create 3 services consisting of one agent each
+            const agentIds = [1, 2, 3];
+            const agentParams = [[1, regBond], [1, regBond], [1, regBond]];
+            const threshold = 1;
+            await serviceRegistry.changeManager(serviceManager.address);
+            for (let i = 0; i < 3; i++) {
+                await serviceRegistry.connect(serviceManager).create(owner, description, configHash, [agentIds[i]],
+                    [agentParams[i]], threshold);
+            }
+
+            // Register agent instances
+            for (let i = 0; i < 3; i++) {
+                await serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId + i, {value: regDeposit});
+                await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId + i,
+                    [agentInstances[i]], [agentIds[i]], {value: regBond});
+            }
+
+            // Deploy services
+            await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+            for (let i = 0; i < 3; i++) {
+                const multisig = await serviceRegistry.connect(serviceManager).deploy(owner, serviceId + i,
+                    gnosisSafeMultisig.address, payload);
+                // Check that the multisig is created and does not have a zero address
+                const result = await multisig.wait();
+                const proxyAddress = result.events[0].address;
+                expect(proxyAddress).to.not.equal(AddressZero);
+            }
+
+            // Checking subcomponents of service 1
+            // 0 is component, 1 is agent
+            let subComponents = await serviceRegistry.getUnitIdsOfService(0, serviceId);
+            // subcomponents for the service 1:
+            // agent1 => [4] |=> [2, 3, 4] |=> [[2], [1, 3], 4] |=> [[2], [1, [1], 3], 4] |=> [1, 2, 3, 4]
+            expect(subComponents.numUnitIds).to.equal(4);
+            for (let i = 0; i < subComponents.numUnitIds; i++) {
+                expect(subComponents.unitIds[i]).to.equal(i + 1);
+            }
+
+            // Checking subcomponents of service 2
+            subComponents = await serviceRegistry.getUnitIdsOfService(0, serviceId + 1);
+            // subcomponents for the service 2:
+            // agent1 => [5] |=> [3, 5] |=> [[1, 3], 5] |=> [[1, [1], 3], 5] |=> [1, 3, 5]
+            expect(subComponents.numUnitIds).to.equal(3);
+            expect(subComponents.unitIds[0]).to.equal(1);
+            expect(subComponents.unitIds[1]).to.equal(3);
+            expect(subComponents.unitIds[2]).to.equal(5);
+
+            // Checking subcomponents of service 3
+            subComponents = await serviceRegistry.getUnitIdsOfService(0, serviceId + 2);
+            // subcomponents for the service 3:
+            // agent1 => [11] |=> [[2, 3, 6, 7, 8, 9, 10], 11] |=> ... |=> [1, 2, 3, 6, 7, 8, 9, 10, 11]
+            expect(subComponents.numUnitIds).to.equal(9);
+            console.log(subComponents.unitIds);
+            for (let i = 0; i < 3; i++) {
+                expect(subComponents.unitIds[i]).to.equal(i + 1);
+            }
+            for (let i = 3; i < 9; i++) {
+                expect(subComponents.unitIds[i]).to.equal(i + 3);
             }
         });
     });
