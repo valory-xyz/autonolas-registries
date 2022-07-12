@@ -1623,7 +1623,7 @@ describe("ServiceRegistry", function () {
             }
         });
 
-        it.only("Subcomponents production case simulation", async function () {
+        it("Subcomponents production case simulation", async function () {
             const mechManager = signers[0];
             const serviceManager = signers[2];
             const owner = signers[3].address;
