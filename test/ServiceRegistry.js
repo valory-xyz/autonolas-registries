@@ -8,6 +8,7 @@ describe("ServiceRegistry", function () {
     let agentRegistry;
     let serviceRegistry;
     let gnosisSafeMultisig;
+    let reentrancyAttacker;
     let signers;
     const description = ethers.utils.formatBytes32String("unit description");
     const configHash = "0x" + "5".repeat(64);
@@ -58,6 +59,10 @@ describe("ServiceRegistry", function () {
         const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
         gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafeL2.address, gnosisSafeProxyFactory.address);
         await gnosisSafeMultisig.deployed();
+
+        const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
+        reentrancyAttacker = await ReentrancyAttacker.deploy(componentRegistry.address, serviceRegistry.address);
+        await reentrancyAttacker.deployed();
 
         signers = await ethers.getSigners();
 
@@ -1739,13 +1744,145 @@ describe("ServiceRegistry", function () {
             // subcomponents for the service 3:
             // agent1 => [11] |=> [[2, 3, 6, 7, 8, 9, 10], 11] |=> ... |=> [1, 2, 3, 6, 7, 8, 9, 10, 11]
             expect(subComponents.numUnitIds).to.equal(9);
-            console.log(subComponents.unitIds);
             for (let i = 0; i < 3; i++) {
                 expect(subComponents.unitIds[i]).to.equal(i + 1);
             }
             for (let i = 3; i < 9; i++) {
                 expect(subComponents.unitIds[i]).to.equal(i + 3);
             }
+        });
+    });
+
+    context("Attacks", async function () {
+        it("Reentrancy attack by the manager during the service creation", async function () {
+            const mechManager = signers[0];
+            const owner = signers[1].address;
+
+            // Create two agents
+            await agentRegistry.changeManager(mechManager.address);
+            await agentRegistry.create(owner, description, agentHash, [1]);
+            await agentRegistry.create(owner, description, agentHash1, [1]);
+
+            // Change the manager to the attacker contract address
+            await serviceRegistry.changeManager(reentrancyAttacker.address);
+
+            // Simulate the reentrancy attack
+            await reentrancyAttacker.setAttackOnCreate(true);
+            await expect(
+                reentrancyAttacker.createBadService(reentrancyAttacker.address, description, configHash, agentIds,
+                    agentParams, maxThreshold)
+            ).to.be.revertedWith("ReentrancyGuard");
+        });
+
+        it("Reentrancy attack by the manager during the service deployment", async function () {
+            const mechManager = signers[0];
+            const serviceManager = signers[1];
+            const owner = signers[2].address;
+            const operator = signers[3].address;
+            const agentInstances = [signers[7]];
+            const maxThreshold = 1;
+
+            // Create an agents
+            await agentRegistry.changeManager(mechManager.address);
+            await agentRegistry.create(owner, description, agentHash, [1]);
+
+            // Create services and activate the agent instance registration
+            await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistry.connect(serviceManager).create(reentrancyAttacker.address, description, configHash, [1],
+                [[1, regBond]], maxThreshold);
+
+            await serviceRegistry.connect(serviceManager).activateRegistration(reentrancyAttacker.address,
+                serviceId, {value: regDeposit});
+
+            /// Register agent instance
+            await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId,
+                [agentInstances[0].address], [agentId], {value: regBond});
+
+            // Whitelist attacker multisig implementation
+            await serviceRegistry.changeMultisigPermission(reentrancyAttacker.address, true);
+
+            // Service manager is compromised with a multisig implementation attacker address
+            await serviceRegistry.changeManager(reentrancyAttacker.address);
+
+            // Calling deployment by the attacker
+            await expect(
+                reentrancyAttacker.deployBadMultisig(reentrancyAttacker.address, serviceId, reentrancyAttacker.address, payload)
+            ).to.be.revertedWith("ReentrancyGuard");
+        });
+
+        it("Reentrancy attack by the manager during the service termination", async function () {
+            const mechManager = signers[0];
+            const serviceManager = signers[1];
+            const owner = signers[2].address;
+            const agentInstances = [signers[7]];
+            const maxThreshold = 1;
+
+            // Create an agents
+            await agentRegistry.changeManager(mechManager.address);
+            await agentRegistry.create(owner, description, agentHash, [1]);
+
+            // Create services and activate the agent instance registration
+            await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistry.connect(serviceManager).create(reentrancyAttacker.address, description, configHash, [1],
+                [[1, regBond]], maxThreshold);
+
+            await serviceRegistry.connect(serviceManager).activateRegistration(reentrancyAttacker.address,
+                serviceId, {value: regDeposit});
+
+            /// Register agent instance with the malicious operator
+            await serviceRegistry.connect(serviceManager).registerAgents(reentrancyAttacker.address, serviceId,
+                [agentInstances[0].address], [agentId], {value: regBond});
+
+            // Deploy the service
+            await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+            await serviceRegistry.connect(serviceManager).deploy(reentrancyAttacker.address, serviceId,
+                gnosisSafeMultisig.address, payload);
+
+            // Attacker manages to become the manager tries to call a malicious terminate() function
+            await serviceRegistry.changeManager(reentrancyAttacker.address);
+            // Reentrancy guard revert failed the attacker receive() function that returned as "TransferFailed"
+            await expect(
+                reentrancyAttacker.terminateBadRefund(reentrancyAttacker.address, serviceId)
+            ).to.be.revertedWith("TransferFailed");
+        });
+
+        it("Reentrancy attack by the manager during the service unbond", async function () {
+            const mechManager = signers[0];
+            const serviceManager = signers[1];
+            const owner = signers[2].address;
+            const agentInstances = [signers[7]];
+            const maxThreshold = 1;
+
+            // Create an agents
+            await agentRegistry.changeManager(mechManager.address);
+            await agentRegistry.create(owner, description, agentHash, [1]);
+
+            // Create services and activate the agent instance registration
+            await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistry.connect(serviceManager).create(owner, description, configHash, [1],
+                [[1, regBond]], maxThreshold);
+
+            await serviceRegistry.connect(serviceManager).activateRegistration(owner,
+                serviceId, {value: regDeposit});
+
+            /// Register agent instance with the malicious operator
+            await serviceRegistry.connect(serviceManager).registerAgents(reentrancyAttacker.address, serviceId,
+                [agentInstances[0].address], [agentId], {value: regBond});
+
+            // Deploy the service
+            await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+            await serviceRegistry.connect(serviceManager).deploy(owner, serviceId,
+                gnosisSafeMultisig.address, payload);
+
+            // Terminate service
+            await serviceRegistry.connect(serviceManager).terminate(owner, serviceId);
+
+            // Now become a manager and try to call a bad unbond() function
+            await serviceRegistry.changeManager(reentrancyAttacker.address);
+            // Reentrancy guard revert failed the attacker receive() function that returned as "TransferFailed"
+            await expect(
+                reentrancyAttacker.unbondBadOperator(reentrancyAttacker.address, serviceId)
+            ).to.be.revertedWith("TransferFailed");
         });
     });
 });

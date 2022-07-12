@@ -5,6 +5,7 @@ const { ethers } = require("hardhat");
 
 describe("ComponentRegistry", function () {
     let componentRegistry;
+    let reentrancyAttacker;
     let signers;
     const description = ethers.utils.formatBytes32String("component description");
     const componentHash = "0x" + "9".repeat(64);
@@ -18,6 +19,11 @@ describe("ComponentRegistry", function () {
         componentRegistry = await ComponentRegistry.deploy("agent components", "MECHCOMP",
             "https://localhost/component/");
         await componentRegistry.deployed();
+
+        const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
+        reentrancyAttacker = await ReentrancyAttacker.deploy(componentRegistry.address, AddressZero);
+        await reentrancyAttacker.deployed();
+
         signers = await ethers.getSigners();
     });
 
@@ -354,6 +360,19 @@ describe("ComponentRegistry", function () {
 
             // Checking the new owner
             expect(await componentRegistry.ownerOf(1)).to.equal(user2.address);
+        });
+    });
+
+    context("Reentrancy attack", async function () {
+        it("Reentrancy attack by the manager during the service creation", async function () {
+            // Change the manager to the attacker contract address
+            await componentRegistry.changeManager(reentrancyAttacker.address);
+
+            // Simulate the reentrancy attack
+            await reentrancyAttacker.setAttackOnCreate(true);
+            await expect(
+                reentrancyAttacker.createBadComponent(reentrancyAttacker.address, description, componentHash, [])
+            ).to.be.revertedWith("ReentrancyGuard");
         });
     });
 });

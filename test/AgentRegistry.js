@@ -250,8 +250,6 @@ describe("AgentRegistry", function () {
                 hash = ethers.utils.keccak256(salt);
                 // Create a component based on a previously created component
                 await componentRegistry.create(user.address, description, hash, [i]);
-                let compSubComponents = await componentRegistry.getLocalSubComponents(i);
-                console.log(compSubComponents);
                 // Create an agent based on a previously created component
                 await agentRegistry.create(user.address, description, hash, [i + 1]);
                 // Check for the obtained subcomponents for a created component
