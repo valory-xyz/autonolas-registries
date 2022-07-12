@@ -232,4 +232,67 @@ describe("AgentRegistry", function () {
             expect(hashes.unitHashes[1]).to.equal(agentHash2);
         });
     });
+
+    context("Subcomponents", async function () {
+        it("Get the list of subcomponents for each created component dependent on exactly a previous one", async function () {
+            const mechManager = signers[0];
+            const user = signers[1];
+            await componentRegistry.changeManager(mechManager.address);
+            await agentRegistry.changeManager(mechManager.address);
+            // Maximum number of components
+            const numComponents = 20;
+            let salt = "0x";
+            let hash;
+            // For each component, create a new one based on all the previously created components
+            // Note that one component already exists (defined in beforeEach())
+            for (let i = 1; i < numComponents; i++) {
+                salt += "00";
+                hash = ethers.utils.keccak256(salt);
+                // Create a component based on a previously created component
+                await componentRegistry.create(user.address, description, hash, [i]);
+                // Create an agent based on a previously created component
+                await agentRegistry.create(user.address, description, hash, [i + 1]);
+                // Check for the obtained subcomponents for a created component
+                let regSubComponents = await agentRegistry.getLocalSubComponents(i);
+                expect(regSubComponents.numSubComponents).to.equal(i + 1);
+                // Check all the subcomponents
+                for (let j = 0; j < regSubComponents.numSubComponents; j++) {
+                    expect(regSubComponents.subComponentIds[j]).to.equal(j + 1);
+                }
+            }
+        });
+
+        it("Get the list of subcomponents for each two components dependent on a corresponding previous one", async function () {
+            const mechManager = signers[0];
+            const user = signers[1];
+            await componentRegistry.changeManager(mechManager.address);
+            await agentRegistry.changeManager(mechManager.address);
+            // Maximum number of components
+            const numComponents = 50;
+            let salt = "0x";
+            let hash = ethers.utils.keccak256(salt);
+            // Creating one more component without dependencies
+            // Note that one component already exists (defined in beforeEach())
+            await componentRegistry.create(user.address, description, hash, []);
+            // For each 2 components, create a new one based on all the correspondent previously created components
+            // c1 => [c1]; c2 => [c2]; c3 => [c1, c3]; c4 => [c2, c4]; etc
+            for (let i = 1; i < numComponents; i += 2) {
+                for (let j = 0; j < 2; j++) {
+                    salt += "00";
+                    hash = ethers.utils.keccak256(salt);
+                    // Create a component based on a previously created component
+                    await componentRegistry.create(user.address, description, hash, [i + j]);
+                    // Create an agent based on a previously created component
+                    await agentRegistry.create(user.address, description, hash, [i + j]);
+                    // Check for the obtained subcomponents for a created component
+                    let regSubComponents = await agentRegistry.getLocalSubComponents(i + j);
+                    expect(regSubComponents.numSubComponents).to.equal((i + 1) / 2);
+                    // Check all the subcomponents
+                    for (let k = 0; k < regSubComponents.numSubComponents; k++) {
+                        expect(regSubComponents.subComponentIds[k]).to.equal(2 * k + j + 1);
+                    }
+                }
+            }
+        });
+    });
 });

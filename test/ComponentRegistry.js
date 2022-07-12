@@ -5,6 +5,7 @@ const { ethers } = require("hardhat");
 
 describe("ComponentRegistry", function () {
     let componentRegistry;
+    let reentrancyAttacker;
     let signers;
     const description = ethers.utils.formatBytes32String("component description");
     const componentHash = "0x" + "9".repeat(64);
@@ -18,6 +19,11 @@ describe("ComponentRegistry", function () {
         componentRegistry = await ComponentRegistry.deploy("agent components", "MECHCOMP",
             "https://localhost/component/");
         await componentRegistry.deployed();
+
+        const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
+        reentrancyAttacker = await ReentrancyAttacker.deploy(componentRegistry.address, AddressZero);
+        await reentrancyAttacker.deployed();
+
         signers = await ethers.getSigners();
     });
 
@@ -284,6 +290,59 @@ describe("ComponentRegistry", function () {
                 expect(subComponents.subComponentIds[i]).to.equal(i + 1);
             }
         });
+
+        it("Get the list of subcomponents for each created component dependent on previous ones", async function () {
+            const mechManager = signers[0];
+            const user = signers[1];
+            await componentRegistry.changeManager(mechManager.address);
+            // Maximum number of components
+            const numComponents = 20;
+            let salt = "0x";
+            let hash;
+            // For each component, create a new one based on all the previously created components
+            for (let i = 0; i < numComponents; i++) {
+                salt += "00";
+                hash = ethers.utils.keccak256(salt);
+                // Get the array of consecutive integers from 1 to i
+                let origSubComponents = Array.from({length: i}, (_, j) => j + 1);
+                await componentRegistry.create(user.address, description, hash, origSubComponents);
+                // Check for the obtained subcomponents for a created component
+                let regSubComponents = await componentRegistry.getLocalSubComponents(i + 1);
+                expect(regSubComponents.numSubComponents).to.equal(i + 1);
+                // Check all the first subcomponents until the very last one (self)
+                for (let j = 0; j < regSubComponents.numSubComponents - 1; j++) {
+                    expect(regSubComponents.subComponentIds[j]).to.equal(origSubComponents[j]);
+                }
+                // Check the last subcomponent
+                expect(regSubComponents.subComponentIds[regSubComponents.numSubComponents - 1]).to.equal(regSubComponents.numSubComponents);
+            }
+        });
+
+        it("Get the list of subcomponents for each component dependent on exactly a previous one", async function () {
+            const mechManager = signers[0];
+            const user = signers[1];
+            await componentRegistry.changeManager(mechManager.address);
+            // Maximum number of components
+            const numComponents = 50;
+            let salt = "0x";
+            let hash = ethers.utils.keccak256(salt);
+            // Create a first component
+            await componentRegistry.create(user.address, description, hash, []);
+            // For each component, create a new one based on all the previously created components
+            for (let i = 1; i < numComponents; i++) {
+                salt += "00";
+                hash = ethers.utils.keccak256(salt);
+                // Create a component based on the previous one
+                await componentRegistry.create(user.address, description, hash, [i]);
+                // Check for the obtained subcomponents for a created component
+                let regSubComponents = await componentRegistry.getLocalSubComponents(i + 1);
+                expect(regSubComponents.numSubComponents).to.equal(i + 1);
+                // Check all the subcomponents
+                for (let j = 0; j < regSubComponents.numSubComponents; j++) {
+                    expect(regSubComponents.subComponentIds[j]).to.equal(j + 1);
+                }
+            }
+        });
     });
 
     context("ERC721 transfer", async function () {
@@ -301,6 +360,19 @@ describe("ComponentRegistry", function () {
 
             // Checking the new owner
             expect(await componentRegistry.ownerOf(1)).to.equal(user2.address);
+        });
+    });
+
+    context("Reentrancy attack", async function () {
+        it("Reentrancy attack by the manager during the service creation", async function () {
+            // Change the manager to the attacker contract address
+            await componentRegistry.changeManager(reentrancyAttacker.address);
+
+            // Simulate the reentrancy attack
+            await reentrancyAttacker.setAttackOnCreate(true);
+            await expect(
+                reentrancyAttacker.createBadComponent(reentrancyAttacker.address, description, componentHash, [])
+            ).to.be.revertedWith("ReentrancyGuard");
         });
     });
 });
