@@ -3,7 +3,6 @@ pragma solidity ^0.8.15;
 
 import "./GenericManager.sol";
 import "./interfaces/IRegistry.sol";
-import "./test/ReentrancyAttacker.sol";
 
 /// @title Registries Manager - Periphery smart contract for managing components and agents
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
