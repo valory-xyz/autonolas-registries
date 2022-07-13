@@ -3,21 +3,15 @@ pragma solidity ^0.8.15;
 
 import "./GenericManager.sol";
 import "./interfaces/IRegistry.sol";
+import "./test/ReentrancyAttacker.sol";
 
 /// @title Registries Manager - Periphery smart contract for managing components and agents
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 contract RegistriesManager is GenericManager {
-    enum UnitType {
-        Component,
-        Agent
-    }
-
     // Component registry address
     address public immutable componentRegistry;
     // Agent registry address
     address public immutable agentRegistry;
-    // Mint fee
-    uint256 private _creationFee;
 
     constructor(address _componentRegistry, address _agentRegistry) {
         componentRegistry = _componentRegistry;
@@ -33,7 +27,7 @@ contract RegistriesManager is GenericManager {
     /// @param dependencies Set of component dependencies in a sorted ascending order.
     /// @return unitId The id of a created component / agent.
     function create(
-        UnitType unitType,
+        IRegistry.UnitType unitType,
         address unitOwner,
         bytes32 description,
         bytes32 unitHash,
@@ -44,7 +38,7 @@ contract RegistriesManager is GenericManager {
         if (paused) {
             revert Paused();
         }
-        if (unitType == UnitType.Component) {
+        if (unitType == IRegistry.UnitType.Component) {
             unitId = IRegistry(componentRegistry).create(unitOwner, description, unitHash, dependencies);
         } else {
             unitId = IRegistry(agentRegistry).create(unitOwner, description, unitHash, dependencies);
@@ -56,8 +50,8 @@ contract RegistriesManager is GenericManager {
     /// @param unitId Agent Id.
     /// @param unitHash New IPFS hash of the component / agent.
     /// @return success True, if function executed successfully.
-    function updateHash(UnitType unitType, uint256 unitId, bytes32 unitHash) external returns (bool success) {
-        if (unitType == UnitType.Component) {
+    function updateHash(IRegistry.UnitType unitType, uint256 unitId, bytes32 unitHash) external returns (bool success) {
+        if (unitType == IRegistry.UnitType.Component) {
             success = IRegistry(componentRegistry).updateHash(msg.sender, unitId, unitHash);
         } else {
             success = IRegistry(agentRegistry).updateHash(msg.sender, unitId, unitHash);

@@ -451,17 +451,6 @@ describe("ServiceRegistry integration", function () {
     });
 
     context("Manipulations with payable set of functions or balance-related", async function () {
-        it("Should revert when calling fallback and receive", async function () {
-            const owner = signers[1];
-            await expect(
-                owner.sendTransaction({to: serviceManager.address, value: regBond})
-            ).to.be.revertedWith("WrongFunction");
-
-            await expect(
-                owner.sendTransaction({to: serviceManager.address, value: regBond, data: "0x12"})
-            ).to.be.revertedWith("WrongFunction");
-        });
-
         it("Create a service, then deploy, slash, unbond", async function () {
             const manager = signers[4];
             const owner = signers[5];
@@ -527,6 +516,14 @@ describe("ServiceRegistry integration", function () {
             // Check the balance of the contract - it must be the total minus the slashed fine minus the deposit
             const newContractBalance = Number(await ethers.provider.getBalance(serviceRegistry.address));
             expect(newContractBalance).to.equal(contractBalance - regFine - regDeposit);
+        });
+    });
+
+    context("Contract transfers", async function () {
+        it("Should fail when sending funds directly to the contract", async function () {
+            await expect(
+                signers[0].sendTransaction({to: serviceManager.address, value: ethers.utils.parseEther("1000"), data: "0x12"})
+            ).to.be.reverted;
         });
     });
 });

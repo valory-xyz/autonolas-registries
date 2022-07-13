@@ -1107,17 +1107,6 @@ describe("ServiceRegistry", function () {
     });
 
     context("Manipulations with payable set of functions or balance-related", async function () {
-        it("Should revert when calling fallback and receive", async function () {
-            const owner = signers[1];
-            await expect(
-                owner.sendTransaction({to: serviceRegistry.address, value: regBond})
-            ).to.be.revertedWith("WrongFunction");
-
-            await expect(
-                owner.sendTransaction({to: serviceRegistry.address, value: regBond, data: "0x12"})
-            ).to.be.revertedWith("WrongFunction");
-        });
-
         it("Should revert when trying to register an agent instance with a smaller amount", async function () {
             const mechManager = signers[3];
             const serviceManager = signers[4];
@@ -1520,7 +1509,7 @@ describe("ServiceRegistry", function () {
             }
         });
 
-        it("Get the list of service subcomponents for 4 components and 3 agents", async function () {
+        it("Get the list of service subcomponents for 10 components and 3 agents", async function () {
             const mechManager = signers[0];
             const serviceManager = signers[2];
             const owner = signers[3].address;
@@ -1883,6 +1872,14 @@ describe("ServiceRegistry", function () {
             await expect(
                 reentrancyAttacker.unbondBadOperator(reentrancyAttacker.address, serviceId)
             ).to.be.revertedWith("TransferFailed");
+        });
+    });
+
+    context("Contract transfers", async function () {
+        it("Should fail when sending funds directly to the contract", async function () {
+            await expect(
+                signers[0].sendTransaction({to: serviceRegistry.address, value: ethers.utils.parseEther("1000"), data: "0x12"})
+            ).to.be.reverted;
         });
     });
 });

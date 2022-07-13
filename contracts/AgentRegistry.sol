@@ -16,16 +16,17 @@ contract AgentRegistry is UnitRegistry {
     /// @param _baseURI Agent registry token base URI.
     /// @param _componentRegistry Component registry address.
     constructor(string memory _name, string memory _symbol, string memory _baseURI, address _componentRegistry)
-        ERC721(_name, _symbol) {
+        UnitRegistry(UnitType.Agent)
+        ERC721(_name, _symbol)
+    {
         baseURI = _baseURI;
         componentRegistry = _componentRegistry;
         owner = msg.sender;
-        unitType = UnitType.Agent;
     }
 
     /// @dev Checks provided component dependencies.
     /// @param dependencies Set of component dependencies.
-    function _checkDependencies(uint32[] memory dependencies, uint256) internal virtual override {
+    function _checkDependencies(uint32[] memory dependencies, uint32) internal virtual override {
         // Check that the agent has at least one component
         if (dependencies.length == 0) {
             revert ZeroValue();
@@ -33,7 +34,7 @@ contract AgentRegistry is UnitRegistry {
 
         // Get the components total supply
         uint256 componentTotalSupply = IRegistry(componentRegistry).totalSupply();
-        uint256 lastId;
+        uint32 lastId;
         for (uint256 iDep = 0; iDep < dependencies.length; ++iDep) {
             if (dependencies[iDep] < (lastId + 1) || dependencies[iDep] > componentTotalSupply) {
                 revert ComponentNotFound(dependencies[iDep]);

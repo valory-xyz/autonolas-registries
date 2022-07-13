@@ -110,16 +110,6 @@ contract ServiceRegistry is GenericRegistry {
         owner = msg.sender;
     }
 
-    /// @dev Fallback function
-    fallback() external payable {
-        revert WrongFunction();
-    }
-
-    /// @dev Receive function
-    receive() external payable {
-        revert WrongFunction();
-    }
-
     /// @dev Going through basic initial service checks.
     /// @param description Description of the service.
     /// @param configHash IPFS hash pointing to the config metadata.
@@ -258,7 +248,6 @@ contract ServiceRegistry is GenericRegistry {
         // Updating high-level data components of the service
         service.description = description;
         service.threshold = threshold;
-        service.maxNumAgentInstances = 0;
         // Assigning the initial hash
         service.configHash = configHash;
         // Set the initial service state
@@ -266,12 +255,12 @@ contract ServiceRegistry is GenericRegistry {
 
         // Set service data
         _setServiceData(service, agentIds, agentParams, agentIds.length, serviceId);
+        mapServices[serviceId] = service;
+        totalSupply = serviceId;
 
         // Mint the service instance to the service owner and record the service structure
         _safeMint(serviceOwner, serviceId);
-        mapServices[serviceId] = service;
 
-        totalSupply = serviceId;
         emit CreateService(serviceId);
 
         _locked = 1;
@@ -358,12 +347,6 @@ contract ServiceRegistry is GenericRegistry {
     /// @return success True, if function executed successfully.
     function activateRegistration(address serviceOwner, uint256 serviceId) external payable returns (bool success)
     {
-        // Reentrancy guard
-        if (_locked > 1) {
-            revert ReentrancyGuard();
-        }
-        _locked = 2;
-
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
@@ -391,8 +374,6 @@ contract ServiceRegistry is GenericRegistry {
 
         emit ActivateRegistration(serviceId);
         success = true;
-
-        _locked = 1;
     }
 
     /// @dev Registers agent instances.
@@ -408,12 +389,6 @@ contract ServiceRegistry is GenericRegistry {
         uint32[] memory agentIds
     ) external payable returns (bool success)
     {
-        // Reentrancy guard
-        if (_locked > 1) {
-            revert ReentrancyGuard();
-        }
-        _locked = 2;
-
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
@@ -501,8 +476,6 @@ contract ServiceRegistry is GenericRegistry {
 
         emit Deposit(operator, msg.value);
         success = true;
-
-        _locked = 1;
     }
 
     /// @dev Creates multisig instance controlled by the set of service agent instances and deploys the service.
@@ -704,7 +677,7 @@ contract ServiceRegistry is GenericRegistry {
             revert ZeroAddress();
         }
 
-        Service storage service = mapServices[serviceId];
+        Service memory service = mapServices[serviceId];
         // Service can only be in the terminated-bonded state or expired-registration in order to proceed
         if (service.state != ServiceState.TerminatedBonded) {
             revert WrongServiceState(uint256(service.state), serviceId);
@@ -727,9 +700,9 @@ contract ServiceRegistry is GenericRegistry {
         if (service.numAgentInstances == 0) {
             service.state = ServiceState.PreRegistration;
         }
+        mapServices[serviceId] = service;
 
         // Calculate registration refund and free all agent instances
-        refund = 0;
         for (uint256 i = 0; i < numAgentsUnbond; i++) {
             // serviceId occupies first 32 bits, agentId gets the next 32 bits
             uint256 serviceAgent = serviceId;

@@ -375,4 +375,12 @@ describe("ComponentRegistry", function () {
             ).to.be.revertedWith("ReentrancyGuard");
         });
     });
+
+    context("Contract transfers", async function () {
+        it("Should fail when sending funds directly to the contract", async function () {
+            await expect(
+                signers[0].sendTransaction({to: componentRegistry.address, value: ethers.utils.parseEther("1000"), data: "0x12"})
+            ).to.be.reverted;
+        });
+    });
 });
