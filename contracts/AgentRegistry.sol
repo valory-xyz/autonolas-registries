@@ -33,7 +33,7 @@ contract AgentRegistry is UnitRegistry {
         }
 
         // Get the components total supply
-        uint256 componentTotalSupply = IRegistry(componentRegistry).totalSupply();
+        uint32 componentTotalSupply = uint32(IRegistry(componentRegistry).totalSupply());
         uint32 lastId;
         for (uint256 iDep = 0; iDep < dependencies.length; ++iDep) {
             if (dependencies[iDep] < (lastId + 1) || dependencies[iDep] > componentTotalSupply) {
