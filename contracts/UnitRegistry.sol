@@ -93,8 +93,10 @@ abstract contract UnitRegistry is GenericRegistry {
         unitId++;
 
         // Initialize the unit and mint its token
-        Unit memory unit = Unit(description, unitHash, dependencies);
-        mapUnits[unitId] = unit;
+        Unit storage unit = mapUnits[unitId];
+        unit.description = description;
+        unit.unitHash = unitHash;
+        unit.dependencies = dependencies;
         mapHashUnitId[unitHash] = uint32(unitId);
 
         // Update the map of subcomponents with calculated subcomponents for the new unit Id

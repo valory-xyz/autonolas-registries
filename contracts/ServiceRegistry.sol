@@ -358,7 +358,7 @@ contract ServiceRegistry is GenericRegistry {
             revert OwnerOnly(serviceOwner, actualOwner);
         }
 
-        Service memory service = mapServices[serviceId];
+        Service storage service = mapServices[serviceId];
         // Service must be inactive
         if (service.state != ServiceState.PreRegistration) {
             revert ServiceMustBeInactive(serviceId);
@@ -370,7 +370,6 @@ contract ServiceRegistry is GenericRegistry {
 
         // Activate the agent instance registration
         service.state = ServiceState.ActiveRegistration;
-        mapServices[serviceId] = service;
 
         emit ActivateRegistration(serviceId);
         success = true;
@@ -399,7 +398,7 @@ contract ServiceRegistry is GenericRegistry {
             revert WrongArrayLength(agentInstances.length, agentIds.length);
         }
 
-        Service memory service = mapServices[serviceId];
+        Service storage service = mapServices[serviceId];
         // The service has to be active to register agents
         if (service.state != ServiceState.ActiveRegistration) {
             revert WrongServiceState(uint256(service.state), serviceId);
@@ -469,7 +468,6 @@ contract ServiceRegistry is GenericRegistry {
         if (service.numAgentInstances == service.maxNumAgentInstances) {
             service.state = ServiceState.FinishedRegistration;
         }
-        mapServices[serviceId] = service;
 
         // Update operator's bonding balance
         mapOperatorAndServiceIdOperatorBalances[operatorService] += uint96(msg.value);
@@ -513,7 +511,7 @@ contract ServiceRegistry is GenericRegistry {
             revert UnauthorizedMultisig(multisigImplementation);
         }
 
-        Service memory service = mapServices[serviceId];
+        Service storage service = mapServices[serviceId];
         if (service.state != ServiceState.FinishedRegistration) {
             revert WrongServiceState(uint256(service.state), serviceId);
         }
@@ -530,7 +528,6 @@ contract ServiceRegistry is GenericRegistry {
 
         service.multisig = multisig;
         service.state = ServiceState.Deployed;
-        mapServices[serviceId] = service;
 
         emit CreateMultisigWithAgents(serviceId, multisig);
         emit DeployService(serviceId);
@@ -617,7 +614,7 @@ contract ServiceRegistry is GenericRegistry {
             revert OwnerOnly(serviceOwner, actualOwner);
         }
 
-        Service memory service = mapServices[serviceId];
+        Service storage service = mapServices[serviceId];
         // Check if the service is already terminated
         if (service.state == ServiceState.PreRegistration || service.state == ServiceState.TerminatedBonded) {
             revert WrongServiceState(uint256(service.state), serviceId);
@@ -628,7 +625,6 @@ contract ServiceRegistry is GenericRegistry {
         } else {
             service.state = ServiceState.PreRegistration;
         }
-        mapServices[serviceId] = service;
         
         // Delete the sensitive data
         delete mapServiceIdSetComponentIds[serviceId];
@@ -677,7 +673,7 @@ contract ServiceRegistry is GenericRegistry {
             revert ZeroAddress();
         }
 
-        Service memory service = mapServices[serviceId];
+        Service storage service = mapServices[serviceId];
         // Service can only be in the terminated-bonded state or expired-registration in order to proceed
         if (service.state != ServiceState.TerminatedBonded) {
             revert WrongServiceState(uint256(service.state), serviceId);
@@ -700,7 +696,6 @@ contract ServiceRegistry is GenericRegistry {
         if (service.numAgentInstances == 0) {
             service.state = ServiceState.PreRegistration;
         }
-        mapServices[serviceId] = service;
 
         // Calculate registration refund and free all agent instances
         for (uint256 i = 0; i < numAgentsUnbond; i++) {
