@@ -10,13 +10,11 @@ interface IRegistry {
 
     /// @dev Creates component / agent.
     /// @param unitOwner Owner of the component / agent.
-    /// @param description Description of the component / agent.
     /// @param unitHash IPFS hash of the component / agent.
     /// @param dependencies Set of component dependencies in a sorted ascending order.
     /// @return The id of a minted component / agent.
     function create(
         address unitOwner,
-        bytes32 description,
         bytes32 unitHash,
         uint32[] memory dependencies
     ) external returns (uint256);

@@ -8,7 +8,6 @@ describe("RegistriesManager", function () {
     let agentRegistry;
     let registriesManager;
     let signers;
-    const description = ethers.utils.formatBytes32String("unit description");
     const componentHashes = ["0x" + "9".repeat(64), "0x" + "1".repeat(64), "0x" + "2".repeat(64)];
     const agentHashes = ["0x" + "5".repeat(64), "0x" + "6".repeat(64), "0x" + "7".repeat(64)];
     const dependencies = [];
@@ -50,11 +49,11 @@ describe("RegistriesManager", function () {
             // Try minting when paused
             // 0 is component, 1 is agent
             await expect(
-                registriesManager.create(0, user.address, description, componentHashes[0], dependencies)
+                registriesManager.create(0, user.address, componentHashes[0], dependencies)
             ).to.be.revertedWith("Paused");
 
             await expect(
-                registriesManager.create(1, user.address, description, componentHashes[0], dependencies)
+                registriesManager.create(1, user.address, componentHashes[0], dependencies)
             ).to.be.revertedWith("Paused");
 
             // Try to unpause not from the owner of the service manager
@@ -69,8 +68,8 @@ describe("RegistriesManager", function () {
             await componentRegistry.changeManager(registriesManager.address);
             await agentRegistry.changeManager(registriesManager.address);
             // 0 is component, 1 is agent
-            await registriesManager.create(0, user.address, description, componentHashes[0], dependencies);
-            await registriesManager.create(1, user.address, description, componentHashes[1], [1]);
+            await registriesManager.create(0, user.address, componentHashes[0], dependencies);
+            await registriesManager.create(1, user.address, componentHashes[1], [1]);
         });
     });
 
@@ -80,13 +79,13 @@ describe("RegistriesManager", function () {
             await componentRegistry.changeManager(registriesManager.address);
             await agentRegistry.changeManager(registriesManager.address);
             // 0 is component, 1 is agent
-            await registriesManager.create(0, user.address, description, componentHashes[0],
+            await registriesManager.create(0, user.address, componentHashes[0],
                 dependencies);
             await registriesManager.connect(user).updateHash(0, 1, componentHashes[1]);
             await registriesManager.connect(user).updateHash(0, 1, componentHashes[2]);
 
             // 0 is component, 1 is agent
-            await registriesManager.create(1, user.address, agentHashes[0], description, [1]);
+            await registriesManager.create(1, user.address, agentHashes[0], [1]);
             await registriesManager.connect(user).updateHash(1, 1, agentHashes[1]);
             await registriesManager.connect(user).updateHash(1, 1, agentHashes[2]);
 

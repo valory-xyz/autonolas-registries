@@ -21,14 +21,12 @@ contract RegistriesManager is GenericManager {
     /// @dev Creates component / agent.
     /// @param unitType Unit type (component or agent).
     /// @param unitOwner Owner of the component / agent.
-    /// @param description Description of the component / agent.
     /// @param unitHash IPFS hash of the component / agent.
     /// @param dependencies Set of component dependencies in a sorted ascending order.
     /// @return unitId The id of a created component / agent.
     function create(
         IRegistry.UnitType unitType,
         address unitOwner,
-        bytes32 description,
         bytes32 unitHash,
         uint32[] memory dependencies
     ) external returns (uint256 unitId)
@@ -38,9 +36,9 @@ contract RegistriesManager is GenericManager {
             revert Paused();
         }
         if (unitType == IRegistry.UnitType.Component) {
-            unitId = IRegistry(componentRegistry).create(unitOwner, description, unitHash, dependencies);
+            unitId = IRegistry(componentRegistry).create(unitOwner, unitHash, dependencies);
         } else {
-            unitId = IRegistry(agentRegistry).create(unitOwner, description, unitHash, dependencies);
+            unitId = IRegistry(agentRegistry).create(unitOwner, unitHash, dependencies);
         }
     }
 

@@ -52,8 +52,6 @@ contract ServiceRegistry is GenericRegistry {
         uint96 securityDeposit;
         // Multisig address for agent instances
         address multisig;
-        // Service description
-        bytes32 description;
         // IPFS hashes pointing to the config metadata
         bytes32 configHash;
         // Agent instance signers threshold: must no less than ceil((n * 2 + 1) / 3) of all the agent instances combined
@@ -111,22 +109,15 @@ contract ServiceRegistry is GenericRegistry {
     }
 
     /// @dev Going through basic initial service checks.
-    /// @param description Description of the service.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids.
     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
     function _initialChecks(
-        bytes32 description,
         bytes32 configHash,
         uint32[] memory agentIds,
         AgentParams[] memory agentParams
     ) private view
     {
-        // Checks for non-empty description
-        if(description == 0) {
-            revert ZeroValue();
-        }
-
         // Check for the non-zero hash value
         if (configHash == 0) {
             revert ZeroValue();
@@ -198,7 +189,6 @@ contract ServiceRegistry is GenericRegistry {
 
     /// @dev Creates a new service.
     /// @param serviceOwner Individual that creates and controls a service.
-    /// @param description Description of the service.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids in a sorted ascending order.
     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
@@ -206,7 +196,6 @@ contract ServiceRegistry is GenericRegistry {
     /// @return serviceId Created service Id.
     function create(
         address serviceOwner,
-        bytes32 description,
         bytes32 configHash,
         uint32[] memory agentIds,
         AgentParams[] memory agentParams,
@@ -230,7 +219,7 @@ contract ServiceRegistry is GenericRegistry {
         }
 
         // Execute initial checks
-        _initialChecks(description, configHash, agentIds, agentParams);
+        _initialChecks(configHash, agentIds, agentParams);
 
         // Check that there are no zero number of slots for a specific canonical agent id and no zero registration bond
         for (uint256 i = 0; i < agentIds.length; i++) {
@@ -246,7 +235,6 @@ contract ServiceRegistry is GenericRegistry {
         // Set high-level data components of the service instance
         Service memory service;
         // Updating high-level data components of the service
-        service.description = description;
         service.threshold = threshold;
         // Assigning the initial hash
         service.configHash = configHash;
@@ -268,7 +256,6 @@ contract ServiceRegistry is GenericRegistry {
 
     /// @dev Updates a service in a CRUD way.
     /// @param serviceOwner Individual that creates and controls a service.
-    /// @param description Description of the service.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids in a sorted ascending order.
     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
@@ -277,7 +264,6 @@ contract ServiceRegistry is GenericRegistry {
     /// @return success True, if function executed successfully.
     function update(
         address serviceOwner,
-        bytes32 description,
         bytes32 configHash,
         uint32[] memory agentIds,
         AgentParams[] memory agentParams,
@@ -302,10 +288,9 @@ contract ServiceRegistry is GenericRegistry {
         }
 
         // Execute initial checks
-        _initialChecks(description, configHash, agentIds, agentParams);
+        _initialChecks(configHash, agentIds, agentParams);
 
         // Updating high-level data components of the service
-        service.description = description;
         service.threshold = threshold;
         service.maxNumAgentInstances = 0;
 
