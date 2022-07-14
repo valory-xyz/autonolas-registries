@@ -26,21 +26,22 @@ Parameters of the `globals.json` file:
 - `providerName`: a network type (see `hardhat.config.js` for the network configurations);
 - `timelockAddress`: a Timelock contract address deployed during the `autonolas-governance` deployment.
 
+The Gnosis Safe contracts are also provided in order to deploy a Gnosis Safe multisig implementation contract.
 Other values are related to the registries. The deployed contract addresses will be added / updated during the scripts run.
 
 The script file name identifies the number of deployment steps taken from / to the number in the file name. For example:
-- `deploy_01_component_registries.js` will complete steps 1 from [deployment.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deployment.md);
-- `deploy_10_14_change_ownership.js` will complete steps 10 to 14.
+- `deploy_01_component_registry.js` will complete steps 1 from [deployment.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deployment.md);
+- `deploy_07_14_change_ownerships.js` will complete steps 7 to 14.
 
 NOTE: All the scripts MUST be strictly run in the sequential order from smallest to biggest numbers.
 
 To run the script, use the following command:
 `npx hardhat run scripts/deployment/script_name --network network_type`,
-where `script_name` is a script name, i.e. `deploy_01_component_registries.js`, `network_type` is a network type corresponding to the `hardhat.config.js` network configuration.
+where `script_name` is a script name, i.e. `deploy_01_component_registry.js`, `network_type` is a network type corresponding to the `hardhat.config.js` network configuration.
 
 ## Validity checks and contract verification
 Each script controls the obtained values by checking them against the expected ones. Also, each script has a contract verification procedure.
-If a contract is deployed with arguments, these arguments are taken from the corresponding `verify_number_and_name` file, where `number_and_name` corresponds to the deployment script number and name.
+If a contract is deployed with arguments, these arguments are taken from the corresponding `verify_number` file, where `number` corresponds to the deployment script number.
 
 
 
