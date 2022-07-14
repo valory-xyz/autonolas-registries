@@ -42,14 +42,14 @@ async function main() {
     // Transaction signing and execution
     // 7. EOA to change the manager of ComponentRegistry and AgentRegistry to RegistriesManager via `changeManager(RegistriesManager)`;
     console.log("You are signing the following transaction: componentRegistry.connect(EOA).changeManager()");
-    await componentRegistry.connect(EOA).changeManager(registriesManager.address);
+    let result = await componentRegistry.connect(EOA).changeManager(registriesManager.address);
     // Transaction details
     console.log("Contract deployment: ComponentRegistry");
     console.log("Contract address:", componentRegistryAddress);
     console.log("Transaction:", result.hash);
 
     console.log("You are signing the following transaction: agentRegistry.connect(EOA).changeManager()");
-    let result = await agentRegistry.connect(EOA).changeManager(registriesManager.address);
+    result = await agentRegistry.connect(EOA).changeManager(registriesManager.address);
     // Transaction details
     console.log("Contract deployment: AgentRegistry");
     console.log("Contract address:", agentRegistryAddress);

@@ -47,6 +47,8 @@ async function main() {
     expect(await serviceRegistry.owner()).to.equal(timelockAddress);
     expect(await registriesManager.owner()).to.equal(timelockAddress);
     expect(await serviceManager.owner()).to.equal(timelockAddress);
+
+    console.log("Successful verification");
 }
 
 main()
