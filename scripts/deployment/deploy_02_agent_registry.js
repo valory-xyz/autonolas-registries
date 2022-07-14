@@ -42,7 +42,7 @@ async function main() {
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/verify_02.js --network " + providerName + " " + agentRegistry.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/verify_02_agent_registry.js --network " + providerName + " " + agentRegistry.address, { encoding: "utf-8" });
     }
 
     // Writing updated parameters back to the JSON file

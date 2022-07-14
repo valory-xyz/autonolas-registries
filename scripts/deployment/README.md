@@ -41,7 +41,7 @@ where `script_name` is a script name, i.e. `deploy_01_component_registry.js`, `n
 
 ## Validity checks and contract verification
 Each script controls the obtained values by checking them against the expected ones. Also, each script has a contract verification procedure.
-If a contract is deployed with arguments, these arguments are taken from the corresponding `verify_number` file, where `number` corresponds to the deployment script number.
+If a contract is deployed with arguments, these arguments are taken from the corresponding `verify_number_and_name` file, where `number_and_name` corresponds to the deployment script number and name.
 
 
 
