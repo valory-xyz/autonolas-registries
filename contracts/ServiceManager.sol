@@ -8,7 +8,6 @@ import "./interfaces/IService.sol";
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 contract ServiceManager is GenericManager {
     event CreateMultisig(address indexed multisig);
-    event RewardService(uint256 serviceId, uint256 amount);
 
     // Service registry address
     address public immutable serviceRegistry;
@@ -16,16 +15,6 @@ contract ServiceManager is GenericManager {
     constructor(address _serviceRegistry) {
         serviceRegistry = _serviceRegistry;
         owner = msg.sender;
-    }
-
-    /// @dev Fallback function
-    fallback() external payable {
-        revert WrongFunction();
-    }
-
-    /// @dev Receive function
-    receive() external payable {
-        revert WrongFunction();
     }
 
     /// @dev Creates a new service.

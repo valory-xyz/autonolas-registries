@@ -26,7 +26,7 @@ abstract contract UnitRegistry is GenericRegistry {
     }
 
     // Type of the unit: component or unit
-    UnitType public unitType;
+    UnitType public immutable unitType;
     // Map of unit Id => set of updated IPFS hashes
     mapping(uint256 => bytes32[]) public mapUnitIdHashes;
     // Map of IPFS hash => unit Id
@@ -36,10 +36,14 @@ abstract contract UnitRegistry is GenericRegistry {
     // Map of unit Id => unit
     mapping(uint256 => Unit) public mapUnits;
 
+    constructor(UnitType _unitType) {
+        unitType = _unitType;
+    }
+
     /// @dev Checks the provided component dependencies.
     /// @param dependencies Set of component dependencies.
     /// @param maxUnitId Maximum unit Id.
-    function _checkDependencies(uint32[] memory dependencies, uint256 maxUnitId) internal virtual;
+    function _checkDependencies(uint32[] memory dependencies, uint32 maxUnitId) internal virtual;
 
     /// @dev Creates unit.
     /// @param unitOwner Owner of the unit.
@@ -83,14 +87,16 @@ abstract contract UnitRegistry is GenericRegistry {
         
         // Check for dependencies validity: must be already allocated, must not repeat
         unitId = totalSupply;
-        _checkDependencies(dependencies, unitId);
+        _checkDependencies(dependencies, uint32(unitId));
 
         // Unit with Id = 0 is left empty not to do additional checks for the index zero
         unitId++;
 
         // Initialize the unit and mint its token
-        Unit memory unit = Unit(description, unitHash, dependencies);
-        mapUnits[unitId] = unit;
+        Unit storage unit = mapUnits[unitId];
+        unit.description = description;
+        unit.unitHash = unitHash;
+        unit.dependencies = dependencies;
         mapHashUnitId[unitHash] = uint32(unitId);
 
         // Update the map of subcomponents with calculated subcomponents for the new unit Id
@@ -113,9 +119,10 @@ abstract contract UnitRegistry is GenericRegistry {
         }
         mapSubComponents[unitId] = subComponentIds;
 
+        // Set total supply to the unit Id number
+        totalSupply = unitId;
         // Safe mint is needed since contracts can create units as well
         _safeMint(unitOwner, unitId);
-        totalSupply = unitId;
 
         emit CreateUnit(unitId, unitType, unitHash);
         _locked = 1;
@@ -270,6 +277,7 @@ abstract contract UnitRegistry is GenericRegistry {
             }
         }
 
+        // Return the exact set of found subcomponents with the counter length
         subComponentIds = new uint32[](counter);
         for (uint32 i = 0; i < counter; ++i) {
             subComponentIds[i] = allComponents[i];

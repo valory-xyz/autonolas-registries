@@ -10,17 +10,19 @@ contract ComponentRegistry is UnitRegistry {
     /// @param _name Component registry contract name.
     /// @param _symbol Component registry contract symbol.
     /// @param _baseURI Component registry token base URI.
-    constructor(string memory _name, string memory _symbol, string memory _baseURI) ERC721(_name, _symbol) {
+    constructor(string memory _name, string memory _symbol, string memory _baseURI)
+        UnitRegistry(UnitType.Component)
+        ERC721(_name, _symbol)
+    {
         baseURI = _baseURI;
         owner = msg.sender;
-        unitType = UnitType.Component;
     }
 
     /// @dev Checks provided component dependencies.
     /// @param dependencies Set of component dependencies.
     /// @param maxComponentId Maximum component Id.
-    function _checkDependencies(uint32[] memory dependencies, uint256 maxComponentId) internal virtual override {
-        uint256 lastId;
+    function _checkDependencies(uint32[] memory dependencies, uint32 maxComponentId) internal virtual override {
+        uint32 lastId;
         for (uint256 iDep = 0; iDep < dependencies.length; ++iDep) {
             if (dependencies[iDep] < (lastId + 1) || dependencies[iDep] > maxComponentId) {
                 revert ComponentNotFound(dependencies[iDep]);

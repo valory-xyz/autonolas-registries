@@ -90,9 +90,6 @@ interface IErrorsRegistries {
     /// @param serviceId Service Id.
     error OnlyOwnServiceMultisig(address provided, address expected, uint256 serviceId);
 
-    /// @dev Fallback or receive function.
-    error WrongFunction();
-
     /// @dev Multisig is not whitelisted.
     /// @param multisig Address of a multisig implementation.
     error UnauthorizedMultisig(address multisig);
