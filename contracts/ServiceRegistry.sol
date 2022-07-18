@@ -24,7 +24,7 @@ struct AgentInstance {
 /// @title Service Registry - Smart contract for registering services
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 contract ServiceRegistry is GenericRegistry {
-    event DrainererUpdated(address indexed drainer);
+    event DrainerUpdated(address indexed drainer);
     event Deposit(address indexed sender, uint256 amount);
     event Refund(address indexed receiver, uint256 amount);
     event CreateService(uint256 indexed serviceId);
@@ -125,7 +125,7 @@ contract ServiceRegistry is GenericRegistry {
         }
 
         drainer = newDrainer;
-        emit DrainererUpdated(newDrainer);
+        emit DrainerUpdated(newDrainer);
     }
 
     /// @dev Going through basic initial service checks.
@@ -332,7 +332,7 @@ contract ServiceRegistry is GenericRegistry {
             }
         }
         // Check if the previous hash is the same / hash was not updated
-            bytes32 lastConfigHash = service.configHash;
+        bytes32 lastConfigHash = service.configHash;
         if (lastConfigHash != configHash) {
             mapConfigHashes[serviceId].push(lastConfigHash);
             service.configHash = configHash;
