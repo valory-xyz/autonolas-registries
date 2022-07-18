@@ -12,7 +12,6 @@ interface IService{
 
     /// @dev Creates a new service.
     /// @param serviceOwner Individual that creates and controls a service.
-    /// @param description Description of the service.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids in a sorted ascending order.
     /// @param agentParams Number of agent instances and required bond to register an instance in the service.
@@ -20,7 +19,6 @@ interface IService{
     /// @return serviceId Created service Id.
     function create(
         address serviceOwner,
-        bytes32 description,
         bytes32 configHash,
         uint32[] memory agentIds,
         AgentParams[] memory agentParams,
@@ -29,7 +27,6 @@ interface IService{
 
     /// @dev Updates a service in a CRUD way.
     /// @param serviceOwner Individual that creates and controls a service.
-    /// @param description Description of the service.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids in a sorted ascending order.
     /// @param agentParams Number of agent instances and required bond to register an instance in the service.
@@ -38,7 +35,6 @@ interface IService{
     /// @return success True, if function executed successfully.
     function update(
         address serviceOwner,
-        bytes32 description,
         bytes32 configHash,
         uint32[] memory agentIds,
         AgentParams[] memory agentParams,

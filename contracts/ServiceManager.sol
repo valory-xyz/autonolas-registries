@@ -19,14 +19,12 @@ contract ServiceManager is GenericManager {
 
     /// @dev Creates a new service.
     /// @param serviceOwner Individual that creates and controls a service.
-    /// @param description Description of the service.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids.
     /// @param agentParams Number of agent instances and required bond to register an instance in the service.
     /// @param threshold Threshold for a multisig composed by agents.
     function create(
         address serviceOwner,
-        bytes32 description,
         bytes32 configHash,
         uint32[] memory agentIds,
         IService.AgentParams[] memory agentParams,
@@ -37,12 +35,11 @@ contract ServiceManager is GenericManager {
         if (paused) {
             revert Paused();
         }
-        return IService(serviceRegistry).create(serviceOwner, description, configHash, agentIds, agentParams,
+        return IService(serviceRegistry).create(serviceOwner, configHash, agentIds, agentParams,
             threshold);
     }
 
     /// @dev Updates a service in a CRUD way.
-    /// @param description Description of the service.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids.
     /// @param agentParams Number of agent instances and required bond to register an instance in the service.
@@ -50,7 +47,6 @@ contract ServiceManager is GenericManager {
     /// @param serviceId Service Id to be updated.
     /// @return success True, if function executed successfully.
     function update(
-        bytes32 description,
         bytes32 configHash,
         uint32[] memory agentIds,
         IService.AgentParams[] memory agentParams,
@@ -58,7 +54,7 @@ contract ServiceManager is GenericManager {
         uint256 serviceId
     ) external returns (bool)
     {
-        return IService(serviceRegistry).update(msg.sender, description, configHash, agentIds, agentParams,
+        return IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams,
             threshold, serviceId);
     }
 

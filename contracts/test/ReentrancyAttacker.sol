@@ -6,7 +6,6 @@ import "../../lib/solmate/src/tokens/ERC721.sol";
 interface IServiceRegistry {
     /// @dev Creates a new service.
     /// @param serviceOwner Individual that creates and controls a service.
-    /// @param description Description of the service.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids in a sorted ascending order.
     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
@@ -14,7 +13,6 @@ interface IServiceRegistry {
     /// @return serviceId Created service Id.
     function create(
         address serviceOwner,
-        bytes32 description,
         bytes32 configHash,
         uint32[] memory agentIds,
         AgentParams[] memory agentParams,
@@ -52,11 +50,10 @@ interface IServiceRegistry {
 interface IUnitRegistry {
     /// @dev Creates unit.
     /// @param unitOwner Owner of the unit.
-    /// @param description Description of the unit.
     /// @param unitHash IPFS CID hash of the unit.
     /// @param dependencies Set of unit dependencies in a sorted ascending order (unit Ids).
     /// @return unitId The id of a minted unit.
-    function create(address unitOwner, bytes32 description, bytes32 unitHash, uint32[] memory dependencies)
+    function create(address unitOwner, bytes32 unitHash, uint32[] memory dependencies)
         external returns (uint256 unitId);
 }
 
@@ -74,7 +71,6 @@ contract ReentrancyAttacker is ERC721TokenReceiver {
     address public immutable serviceRegistry;
 
     address public serviceOwner;
-    bytes32 public description;
     bytes32 public configHash;
     uint32[] public agentIds;
     AgentParams[] public agentParams;
@@ -102,18 +98,16 @@ contract ReentrancyAttacker is ERC721TokenReceiver {
     /// @dev Lets attacker call create a component with onERC721Receive during the token mint.
     function createBadComponent(
         address _unitOwner,
-        bytes32 _description,
         bytes32 _unitHash,
         uint32[] memory _dependencies
     ) external returns (uint256 unitId)
     {
-        unitId = IUnitRegistry(componentRegistry).create(_unitOwner, _description, _unitHash, _dependencies);
+        unitId = IUnitRegistry(componentRegistry).create(_unitOwner, _unitHash, _dependencies);
     }
 
     /// @dev Lets attacker call create a service with onERC721Receive during the token mint.
     function createBadService(
         address _serviceOwner,
-        bytes32 _description,
         bytes32 _configHash,
         uint32[] memory _agentIds,
         AgentParams[] memory _agentParams,
@@ -127,9 +121,8 @@ contract ReentrancyAttacker is ERC721TokenReceiver {
             agentParams.push(_agentParams[i]);
         }
         serviceOwner = _serviceOwner;
-        description = _description;
         configHash = _configHash;
-        serviceId = IServiceRegistry(serviceRegistry).create(_serviceOwner, _description, _configHash, _agentIds,
+        serviceId = IServiceRegistry(serviceRegistry).create(_serviceOwner, _configHash, _agentIds,
             _agentParams, _threshold);
     }
 
@@ -144,9 +137,9 @@ contract ReentrancyAttacker is ERC721TokenReceiver {
             uint256 unitId;
             if (serviceRegistry == address(0)) {
                 uint32[] memory dependencies = new uint32[](1);
-                unitId = IUnitRegistry(componentRegistry).create(address(this), description, configHash, dependencies);
+                unitId = IUnitRegistry(componentRegistry).create(address(this), configHash, dependencies);
             } else {
-                unitId = IServiceRegistry(serviceRegistry).create(address(this), description, configHash, agentIds, agentParams, 6);
+                unitId = IServiceRegistry(serviceRegistry).create(address(this), configHash, agentIds, agentParams, 6);
             }
             badAction = true;
         }

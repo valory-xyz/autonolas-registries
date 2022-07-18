@@ -16,8 +16,6 @@ abstract contract UnitRegistry is GenericRegistry {
 
     // Unit parameters
     struct Unit {
-        // Description of the unit
-        bytes32 description;
         // Primary IPFS hash of the unit
         bytes32 unitHash;
         // Set of component dependencies (agents are also based on components)
@@ -29,8 +27,6 @@ abstract contract UnitRegistry is GenericRegistry {
     UnitType public immutable unitType;
     // Map of unit Id => set of updated IPFS hashes
     mapping(uint256 => bytes32[]) public mapUnitIdHashes;
-    // Map of IPFS hash => unit Id
-    mapping(bytes32 => uint32) public mapHashUnitId;
     // Map of unit Id => set of subcomponents (possible to derive from any registry)
     mapping(uint256 => uint32[]) public mapSubComponents;
     // Map of unit Id => unit
@@ -47,11 +43,10 @@ abstract contract UnitRegistry is GenericRegistry {
 
     /// @dev Creates unit.
     /// @param unitOwner Owner of the unit.
-    /// @param description Description of the unit.
     /// @param unitHash IPFS CID hash of the unit.
     /// @param dependencies Set of unit dependencies in a sorted ascending order (unit Ids).
     /// @return unitId The id of a minted unit.
-    function create(address unitOwner, bytes32 description, bytes32 unitHash, uint32[] memory dependencies)
+    function create(address unitOwner, bytes32 unitHash, uint32[] memory dependencies)
         external virtual returns (uint256 unitId)
     {
         // Reentrancy guard
@@ -74,16 +69,6 @@ abstract contract UnitRegistry is GenericRegistry {
         if (unitHash == 0) {
             revert ZeroValue();
         }
-
-        // Check for the existent IPFS hashes
-        if (mapHashUnitId[unitHash] > 0) {
-            revert HashExists();
-        }
-
-        // Checks for non-empty description and unit dependency
-        if (description == 0) {
-            revert ZeroValue();
-        }
         
         // Check for dependencies validity: must be already allocated, must not repeat
         unitId = totalSupply;
@@ -94,10 +79,8 @@ abstract contract UnitRegistry is GenericRegistry {
 
         // Initialize the unit and mint its token
         Unit storage unit = mapUnits[unitId];
-        unit.description = description;
         unit.unitHash = unitHash;
         unit.dependencies = dependencies;
-        mapHashUnitId[unitHash] = uint32(unitId);
 
         // Update the map of subcomponents with calculated subcomponents for the new unit Id
         // In order to get the correct set of subcomponents, we need to differentiate between the callers of this function
@@ -153,11 +136,6 @@ abstract contract UnitRegistry is GenericRegistry {
         // Check for the hash value
         if (unitHash == 0) {
             revert ZeroValue();
-        }
-
-        // Check for the existent IPFS hashes
-        if (mapHashUnitId[unitHash] > 0) {
-            revert HashExists();
         }
 
         mapUnitIdHashes[unitId].push(unitHash);

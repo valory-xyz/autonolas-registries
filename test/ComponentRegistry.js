@@ -7,7 +7,6 @@ describe("ComponentRegistry", function () {
     let componentRegistry;
     let reentrancyAttacker;
     let signers;
-    const description = ethers.utils.formatBytes32String("component description");
     const componentHash = "0x" + "9".repeat(64);
     const componentHash1 = "0x" + "1".repeat(64);
     const componentHash2 = "0x" + "2".repeat(64);
@@ -55,7 +54,7 @@ describe("ComponentRegistry", function () {
         it("Should fail when creating a component without a mechManager", async function () {
             const user = signers[2];
             await expect(
-                componentRegistry.create(user.address, description, componentHash, dependencies)
+                componentRegistry.create(user.address, componentHash, dependencies)
             ).to.be.revertedWith("ManagerOnly");
         });
 
@@ -63,18 +62,8 @@ describe("ComponentRegistry", function () {
             const mechManager = signers[1];
             await componentRegistry.changeManager(mechManager.address);
             await expect(
-                componentRegistry.connect(mechManager).create(AddressZero, description, componentHash, dependencies)
+                componentRegistry.connect(mechManager).create(AddressZero, componentHash, dependencies)
             ).to.be.revertedWith("ZeroAddress");
-        });
-
-        it("Should fail when creating a component with an empty description", async function () {
-            const mechManager = signers[1];
-            const user = signers[2];
-            await componentRegistry.changeManager(mechManager.address);
-            await expect(
-                componentRegistry.connect(mechManager).create(user.address, "0x" + "0".repeat(64), componentHash,
-                    dependencies)
-            ).to.be.revertedWith("ZeroValue");
         });
 
         it("Should fail when creating a component with an empty hash", async function () {
@@ -82,19 +71,9 @@ describe("ComponentRegistry", function () {
             const user = signers[2];
             await componentRegistry.changeManager(mechManager.address);
             await expect(
-                componentRegistry.connect(mechManager).create(user.address, description, "0x" + "0".repeat(64),
+                componentRegistry.connect(mechManager).create(user.address, "0x" + "0".repeat(64),
                     dependencies)
             ).to.be.revertedWith("ZeroValue");
-        });
-
-        it("Should fail when creating a second component with the same hash", async function () {
-            const mechManager = signers[1];
-            const user = signers[2];
-            await componentRegistry.changeManager(mechManager.address);
-            await componentRegistry.connect(mechManager).create(user.address, description, componentHash, dependencies);
-            await expect(
-                componentRegistry.connect(mechManager).create(user.address, description, componentHash, dependencies)
-            ).to.be.revertedWith("HashExists");
         });
 
         it("Should fail when creating a non-existent component dependency", async function () {
@@ -102,10 +81,10 @@ describe("ComponentRegistry", function () {
             const user = signers[2];
             await componentRegistry.changeManager(mechManager.address);
             await expect(
-                componentRegistry.connect(mechManager).create(user.address, description, componentHash, [0])
+                componentRegistry.connect(mechManager).create(user.address, componentHash, [0])
             ).to.be.revertedWith("ComponentNotFound");
             await expect(
-                componentRegistry.connect(mechManager).create(user.address, description, componentHash, [1])
+                componentRegistry.connect(mechManager).create(user.address, componentHash, [1])
             ).to.be.revertedWith("ComponentNotFound");
         });
 
@@ -113,13 +92,13 @@ describe("ComponentRegistry", function () {
             const mechManager = signers[1];
             const user = signers[2];
             await componentRegistry.changeManager(mechManager.address);
-            await componentRegistry.connect(mechManager).create(user.address, description, componentHash, []);
-            await componentRegistry.connect(mechManager).create(user.address, description, componentHash1, [1]);
+            await componentRegistry.connect(mechManager).create(user.address, componentHash, []);
+            await componentRegistry.connect(mechManager).create(user.address, componentHash1, [1]);
             await expect(
-                componentRegistry.connect(mechManager).create(user.address, description, componentHash2, [1, 1, 1])
+                componentRegistry.connect(mechManager).create(user.address, componentHash2, [1, 1, 1])
             ).to.be.revertedWith("ComponentNotFound");
             await expect(
-                componentRegistry.connect(mechManager).create(user.address, description, componentHash2, [2, 1, 2, 1, 1, 1, 2])
+                componentRegistry.connect(mechManager).create(user.address, componentHash2, [2, 1, 2, 1, 1, 1, 2])
             ).to.be.revertedWith("ComponentNotFound");
         });
 
@@ -128,7 +107,7 @@ describe("ComponentRegistry", function () {
             const user = signers[2];
             const tokenId = 1;
             await componentRegistry.changeManager(mechManager.address);
-            await componentRegistry.connect(mechManager).create(user.address, description, componentHash, dependencies);
+            await componentRegistry.connect(mechManager).create(user.address, componentHash, dependencies);
             expect(await componentRegistry.balanceOf(user.address)).to.equal(1);
             expect(await componentRegistry.exists(tokenId)).to.equal(true);
         });
@@ -138,7 +117,7 @@ describe("ComponentRegistry", function () {
             const user = signers[2];
             await componentRegistry.changeManager(mechManager.address);
             const component = await componentRegistry.connect(mechManager).create(user.address,
-                description, componentHash, dependencies);
+                componentHash, dependencies);
             const result = await component.wait();
             expect(result.events[0].event).to.equal("Transfer");
         });
@@ -149,14 +128,12 @@ describe("ComponentRegistry", function () {
             const tokenId = 3;
             const lastDependencies = [1, 2];
             await componentRegistry.changeManager(mechManager.address);
-            await componentRegistry.connect(mechManager).create(user.address, description, componentHash, dependencies);
-            await componentRegistry.connect(mechManager).create(user.address, description, componentHash1, dependencies);
-            const description2 = ethers.utils.id("component description2");
-            await componentRegistry.connect(mechManager).create(user.address, description2, componentHash2, lastDependencies);
+            await componentRegistry.connect(mechManager).create(user.address, componentHash, dependencies);
+            await componentRegistry.connect(mechManager).create(user.address, componentHash1, dependencies);
+            await componentRegistry.connect(mechManager).create(user.address, componentHash2, lastDependencies);
 
             expect(await componentRegistry.ownerOf(tokenId)).to.equal(user.address);
             let compInstance = await componentRegistry.getUnit(tokenId);
-            expect(compInstance.description).to.equal(description2);
             expect(compInstance.unitHash).to.equal(componentHash2);
             expect(compInstance.dependencies.length).to.equal(lastDependencies.length);
             for (let i = 0; i < lastDependencies.length; i++) {
@@ -174,7 +151,6 @@ describe("ComponentRegistry", function () {
                 componentRegistry.ownerOf(tokenId + 1)
             ).to.be.revertedWith("NOT_MINTED");
             compInstance = await componentRegistry.getUnit(tokenId + 1);
-            expect(compInstance.description).to.equal("0x" + "0".repeat(64));
             expect(compInstance.unitHash).to.equal("0x" + "0".repeat(64));
             expect(compInstance.dependencies.length).to.equal(0);
             componentDependencies = await componentRegistry.getDependencies(tokenId + 1);
@@ -188,8 +164,8 @@ describe("ComponentRegistry", function () {
             const user = signers[2];
             const user2 = signers[3];
             await componentRegistry.changeManager(mechManager.address);
-            await componentRegistry.connect(mechManager).create(user.address, description, componentHash, dependencies);
-            await componentRegistry.connect(mechManager).create(user2.address, description, componentHash1, dependencies);
+            await componentRegistry.connect(mechManager).create(user.address, componentHash, dependencies);
+            await componentRegistry.connect(mechManager).create(user2.address, componentHash1, dependencies);
             await expect(
                 componentRegistry.connect(mechManager).updateHash(user2.address, 1, componentHash2)
             ).to.be.revertedWith("ComponentNotFound");
@@ -199,25 +175,11 @@ describe("ComponentRegistry", function () {
             await componentRegistry.connect(mechManager).updateHash(user.address, 1, componentHash2);
         });
 
-        it("Should fail when the updated hash already exists", async function () {
-            const mechManager = signers[1];
-            const user = signers[2];
-            const user2 = signers[3];
-            await componentRegistry.changeManager(mechManager.address);
-            await componentRegistry.connect(mechManager).create(user.address,
-                description, componentHash, dependencies);
-            await componentRegistry.connect(mechManager).create(user2.address, description, componentHash1, dependencies);
-            await expect(
-                componentRegistry.connect(mechManager).updateHash(user.address, 1, componentHash1)
-            ).to.be.revertedWith("HashExists");
-            await componentRegistry.connect(mechManager).updateHash(user.address, 1, componentHash2);
-        });
-
         it("Should return zeros when getting hashes of non-existent component", async function () {
             const mechManager = signers[1];
             const user = signers[2];
             await componentRegistry.changeManager(mechManager.address);
-            await componentRegistry.connect(mechManager).create(user.address, description, componentHash, dependencies);
+            await componentRegistry.connect(mechManager).create(user.address, componentHash, dependencies);
 
             const hashes = await componentRegistry.getUpdatedHashes(2);
             expect(hashes.numHashes).to.equal(0);
@@ -227,7 +189,7 @@ describe("ComponentRegistry", function () {
             const mechManager = signers[1];
             const user = signers[2];
             await componentRegistry.changeManager(mechManager.address);
-            await componentRegistry.connect(mechManager).create(user.address, description, componentHash, dependencies);
+            await componentRegistry.connect(mechManager).create(user.address, componentHash, dependencies);
 
             // Try to update hash not via a manager
             await expect(
@@ -259,31 +221,31 @@ describe("ComponentRegistry", function () {
             // Component 1 (c1)
             salt += "00";
             let hash = ethers.utils.keccak256(salt);
-            await componentRegistry.create(user.address, description, hash, []);
+            await componentRegistry.create(user.address, hash, []);
             let subComponents = await componentRegistry.getLocalSubComponents(1);
             expect(subComponents.numSubComponents).to.equal(1);
             // c2
             salt += "00";
             hash = ethers.utils.keccak256(salt);
-            await componentRegistry.create(user.address, description, hash, []);
+            await componentRegistry.create(user.address, hash, []);
             subComponents = await componentRegistry.getLocalSubComponents(2);
             expect(subComponents.numSubComponents).to.equal(1);
             // c3
             salt += "00";
             hash = ethers.utils.keccak256(salt);
-            await componentRegistry.create(user.address, description, hash, [1]);
+            await componentRegistry.create(user.address, hash, [1]);
             subComponents = await componentRegistry.getLocalSubComponents(3);
             expect(subComponents.numSubComponents).to.equal(2);
             // c4
             salt += "00";
             hash = ethers.utils.keccak256(salt);
-            await componentRegistry.create(user.address, description, hash, [2]);
+            await componentRegistry.create(user.address, hash, [2]);
             subComponents = await componentRegistry.getLocalSubComponents(4);
             expect(subComponents.numSubComponents).to.equal(2);
             // c5
             salt += "00";
             hash = ethers.utils.keccak256(salt);
-            await componentRegistry.create(user.address, description, hash, [3, 4]);
+            await componentRegistry.create(user.address, hash, [3, 4]);
             subComponents = await componentRegistry.getLocalSubComponents(5);
             expect(subComponents.numSubComponents).to.equal(5);
             for (let i = 0; i < subComponents.numSubComponents; i++) {
@@ -305,7 +267,7 @@ describe("ComponentRegistry", function () {
                 hash = ethers.utils.keccak256(salt);
                 // Get the array of consecutive integers from 1 to i
                 let origSubComponents = Array.from({length: i}, (_, j) => j + 1);
-                await componentRegistry.create(user.address, description, hash, origSubComponents);
+                await componentRegistry.create(user.address, hash, origSubComponents);
                 // Check for the obtained subcomponents for a created component
                 let regSubComponents = await componentRegistry.getLocalSubComponents(i + 1);
                 expect(regSubComponents.numSubComponents).to.equal(i + 1);
@@ -327,13 +289,13 @@ describe("ComponentRegistry", function () {
             let salt = "0x";
             let hash = ethers.utils.keccak256(salt);
             // Create a first component
-            await componentRegistry.create(user.address, description, hash, []);
+            await componentRegistry.create(user.address, hash, []);
             // For each component, create a new one based on all the previously created components
             for (let i = 1; i < numComponents; i++) {
                 salt += "00";
                 hash = ethers.utils.keccak256(salt);
                 // Create a component based on the previous one
-                await componentRegistry.create(user.address, description, hash, [i]);
+                await componentRegistry.create(user.address, hash, [i]);
                 // Check for the obtained subcomponents for a created component
                 let regSubComponents = await componentRegistry.getLocalSubComponents(i + 1);
                 expect(regSubComponents.numSubComponents).to.equal(i + 1);
@@ -353,7 +315,7 @@ describe("ComponentRegistry", function () {
             await componentRegistry.changeManager(mechManager.address);
 
             // Create a component with user1 being its owner
-            await componentRegistry.connect(mechManager).create(user1.address, description, componentHash, dependencies);
+            await componentRegistry.connect(mechManager).create(user1.address, componentHash, dependencies);
 
             // Transfer a component to user2
             await componentRegistry.connect(user1).transferFrom(user1.address, user2.address, 1);
@@ -371,7 +333,7 @@ describe("ComponentRegistry", function () {
             // Simulate the reentrancy attack
             await reentrancyAttacker.setAttackOnCreate(true);
             await expect(
-                reentrancyAttacker.createBadComponent(reentrancyAttacker.address, description, componentHash, [])
+                reentrancyAttacker.createBadComponent(reentrancyAttacker.address, componentHash, [])
             ).to.be.revertedWith("ReentrancyGuard");
         });
     });
