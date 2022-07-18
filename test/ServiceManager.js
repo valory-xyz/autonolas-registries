@@ -3,10 +3,10 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("ServiceRegistry integration", function () {
+describe("ServiceManager", function () {
     let componentRegistry;
     let agentRegistry;
-    let gnosisSafeL2;
+    let gnosisSafe;
     let gnosisSafeProxyFactory;
     let serviceRegistry;
     let serviceManager;
@@ -38,9 +38,9 @@ describe("ServiceRegistry integration", function () {
             componentRegistry.address);
         await agentRegistry.deployed();
 
-        const GnosisSafeL2 = await ethers.getContractFactory("GnosisSafeL2");
-        gnosisSafeL2 = await GnosisSafeL2.deploy();
-        await gnosisSafeL2.deployed();
+        const GnosisSafe = await ethers.getContractFactory("GnosisSafe");
+        gnosisSafe = await GnosisSafe.deploy();
+        await gnosisSafe.deployed();
 
         const GnosisSafeProxyFactory = await ethers.getContractFactory("GnosisSafeProxyFactory");
         gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deploy();
@@ -52,7 +52,7 @@ describe("ServiceRegistry integration", function () {
         await serviceRegistry.deployed();
 
         const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
-        gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafeL2.address, gnosisSafeProxyFactory.address);
+        gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
         await gnosisSafeMultisig.deployed();
 
         const ServiceManager = await ethers.getContractFactory("ServiceManager");
@@ -327,7 +327,7 @@ describe("ServiceRegistry integration", function () {
             const proxyAddress = result.events[0].address;
 
             // Verify the deployment of the created Safe: checking threshold and owners
-            const proxyContract = await ethers.getContractAt("GnosisSafeL2", proxyAddress);
+            const proxyContract = await ethers.getContractAt("GnosisSafe", proxyAddress);
             if (await proxyContract.getThreshold() != newMaxThreshold) {
                 throw new Error("incorrect threshold");
             }
@@ -488,7 +488,7 @@ describe("ServiceRegistry integration", function () {
             expect(balanceOperator).to.equal(regBond);
 
             // Get all the necessary info about multisig and slash the operator
-            const multisig = await ethers.getContractAt("GnosisSafeL2", proxyAddress);
+            const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
             const safeContracts = require("@gnosis.pm/safe-contracts");
             const nonce = await multisig.nonce();
             const txHashData = await safeContracts.buildContractCall(serviceRegistry, "slash",

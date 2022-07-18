@@ -17,9 +17,15 @@ Since auotonolas-registries assumes its users follow the requirements of using t
 it consumes only the multihash content address of 32 bytes in a `bytes32` variable. In the example above, this value would be as follows:
 ```0xc4cd970d30af2ca0257ef8e4c613a399368ba13eb0a3ee4b4c15c105cd2c9a35```.
 
-- `Agent Component`: a piece of code + configuration in the agent. In the context of the [`open-aea`](https://github.com/valory-xyz/open-aea)
+A hash passed during the unit creation contains a link to the `JSON` metadata with all the relevant unit information.
+In order to support the optimistic design of component / agent / service hash updates, all the units have the functionality of updating a hash.
+Previously used hashes are then moved to the correspondent historical set of hashes. Note that updated hashes are not checked for duplicates, since
+it would be relatively easy to simulate a different hash by a single character of metadata modification. Thus, this verification is somewhat redundant
+and allows to save on gas cost.
+
+- `Agent Component` or simply `Component`: a piece of code + configuration in the agent. In the context of the [`open-aea`](https://github.com/valory-xyz/open-aea)
 framework, it is a skill, connection, protocol or contract. Each component is identified by its IPFS hash.
-- `Canonical Agent`: a configuration and optionally code making up the agent. In the context of the [`open-aea`](https://github.com/valory-xyz/open-aea)
+- `Canonical Agent` or simply `Agent`: a configuration and optionally code making up the agent. In the context of the [`open-aea`](https://github.com/valory-xyz/open-aea)
 framework, this is the agent config file which points to various agent components. The agent code and config are
 identified by its IPFS hash.
 - `Agent Instance`: an instance of a canonical agent. Each agent instance must have, at a minimum, a single

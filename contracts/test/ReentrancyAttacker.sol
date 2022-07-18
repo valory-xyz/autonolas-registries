@@ -45,6 +45,10 @@ interface IServiceRegistry {
     /// @return success True, if function executed successfully.
     /// @return refund The amount of refund returned to the operator.
     function unbond(address operator, uint256 serviceId) external returns (bool success, uint256 refund);
+
+    /// @dev Drains slashed funds.
+    /// @return amount Drained amount.
+    function drain() external returns (uint256 amount);
 }
 
 interface IUnitRegistry {
@@ -78,6 +82,7 @@ contract ReentrancyAttacker is ERC721TokenReceiver {
     bool public badAction;
     bool public attackOnCreate;
     bool public attackOnTerminate;
+    bool public attackOnUnbond;
 
     constructor(address _componentRegistry, address _serviceRegistry) {
         componentRegistry = _componentRegistry;
@@ -88,10 +93,13 @@ contract ReentrancyAttacker is ERC721TokenReceiver {
     receive() external payable {
         if (attackOnTerminate) {
             IServiceRegistry(serviceRegistry).terminate(address(this), 0);
-        } else {
+        } else if (attackOnUnbond) {
             IServiceRegistry(serviceRegistry).unbond(address(this), 0);
+        } else {
+            IServiceRegistry(serviceRegistry).drain();
         }
         attackOnTerminate = false;
+        attackOnUnbond = false;
         badAction = true;
     }
 
@@ -177,6 +185,12 @@ contract ReentrancyAttacker is ERC721TokenReceiver {
 
     /// @dev Lets the attacker call back its contract to get back to the unbond() function.
     function unbondBadOperator(address operator, uint256 serviceId) external returns (bool, uint256) {
+        attackOnUnbond = true;
         return IServiceRegistry(serviceRegistry).unbond(operator, serviceId);
+    }
+
+    /// @dev Lets the attacker call back its contract to get back to the drain() function.
+    function drainFromBadAddress() external returns (uint256) {
+        return IServiceRegistry(serviceRegistry).drain();
     }
 }

@@ -93,11 +93,13 @@ abstract contract UnitRegistry is GenericRegistry {
         // it would have [c1, c2, c3] right away instead of adding c3 manually and then (for services) checking
         // if another agent also has c3 as a component dependency. The latter will consume additional computation.
         if (unitType == UnitType.Component) {
-            uint32[] memory addSubComponentIds = new uint32[](subComponentIds.length + 1);
-            for (uint256 i = 0; i < subComponentIds.length; ++i) {
+            uint256 numSubComponents = subComponentIds.length;
+            uint32[] memory addSubComponentIds = new uint32[](numSubComponents + 1);
+            for (uint256 i = 0; i < numSubComponents; ++i) {
                 addSubComponentIds[i] = subComponentIds[i];
             }
-            addSubComponentIds[subComponentIds.length] = uint32(unitId);
+            // Adding self component Id
+            addSubComponentIds[numSubComponents] = uint32(unitId);
             subComponentIds = addSubComponentIds;
         }
         mapSubComponents[unitId] = subComponentIds;
@@ -114,7 +116,7 @@ abstract contract UnitRegistry is GenericRegistry {
     /// @dev Updates the unit hash.
     /// @param unitOwner Owner of the unit.
     /// @param unitId Unit Id.
-    /// @param unitHash New IPFS hash of the unit.
+    /// @param unitHash Updated IPFS hash of the unit.
     /// @return success True, if function executed successfully.
     function updateHash(address unitOwner, uint256 unitId, bytes32 unitHash) external virtual
         returns (bool success)

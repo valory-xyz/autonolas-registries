@@ -1,0 +1,149 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IRegistry",
+  "sourceName": "contracts/interfaces/IRegistry.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint32[]",
+          "name": "unitIds",
+          "type": "uint32[]"
+        }
+      ],
+      "name": "calculateSubComponents",
+      "outputs": [
+        {
+          "internalType": "uint32[]",
+          "name": "subComponentIds",
+          "type": "uint32[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "unitOwner",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "unitHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint32[]",
+          "name": "dependencies",
+          "type": "uint32[]"
+        }
+      ],
+      "name": "create",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "unitId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getLocalSubComponents",
+      "outputs": [
+        {
+          "internalType": "uint32[]",
+          "name": "subComponentIds",
+          "type": "uint32[]"
+        },
+        {
+          "internalType": "uint256",
+          "name": "numSubComponents",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "unitId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getUpdatedHashes",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "numHashes",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32[]",
+          "name": "unitHashes",
+          "type": "bytes32[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalSupply",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "unitId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "unitHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "updateHash",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "success",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

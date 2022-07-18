@@ -14,6 +14,8 @@ service deployment `operators` supply agent instances to a specific service via 
 agent instances are provided by operators, the service can be deployed forming a multisig contract governed by
 a group of agent instances.
 
+In order to generalize `components` / `agents` / `services`, they are referred sometimes as `units`.
+
 A graphical overview of the whole on-chain architecture is available here:
 
 ![architecture](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/On-chain_architecture_v3.drawio.png?raw=true)

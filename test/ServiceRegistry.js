@@ -42,9 +42,9 @@ describe("ServiceRegistry", function () {
             componentRegistry.address);
         await agentRegistry.deployed();
 
-        const GnosisSafeL2 = await ethers.getContractFactory("GnosisSafeL2");
-        const gnosisSafeL2 = await GnosisSafeL2.deploy();
-        await gnosisSafeL2.deployed();
+        const GnosisSafe = await ethers.getContractFactory("GnosisSafe");
+        const gnosisSafe = await GnosisSafe.deploy();
+        await gnosisSafe.deployed();
 
         const GnosisSafeProxyFactory = await ethers.getContractFactory("GnosisSafeProxyFactory");
         const gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deploy();
@@ -56,7 +56,7 @@ describe("ServiceRegistry", function () {
         await serviceRegistry.deployed();
 
         const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
-        gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafeL2.address, gnosisSafeProxyFactory.address);
+        gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
         await gnosisSafeMultisig.deployed();
 
         const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
@@ -91,6 +91,27 @@ describe("ServiceRegistry", function () {
             await expect(
                 serviceRegistry.connect(owner).changeOwner(owner.address)
             ).to.be.revertedWith("OwnerOnly");
+        });
+
+        it("Changing drainer", async function () {
+            const owner = signers[0];
+            const account = signers[1];
+
+            // Trying to change owner from a non-owner account address
+            await expect(
+                serviceRegistry.connect(account).changeDrainer(account.address)
+            ).to.be.revertedWith("OwnerOnly");
+
+            // Trying to change owner for the zero address
+            await expect(
+                serviceRegistry.connect(owner).changeDrainer(AddressZero)
+            ).to.be.revertedWith("ZeroAddress");
+
+            // Changing the owner
+            await serviceRegistry.connect(owner).changeDrainer(account.address);
+
+            // Verifying the drainer address
+            expect(await serviceRegistry.drainer()).to.equal(account.address);
         });
 
         it("Should fail when checking for the service id existence", async function () {
@@ -1223,7 +1244,7 @@ describe("ServiceRegistry", function () {
             ).to.be.revertedWith("OnlyOwnServiceMultisig");
 
             // Getting a real multisig address and calling slashing method with it
-            const multisig = await ethers.getContractAt("GnosisSafeL2", proxyAddress);
+            const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
             const safeContracts = require("@gnosis.pm/safe-contracts");
             const nonce = await multisig.nonce();
             const txHashData = await safeContracts.buildContractCall(serviceRegistry, "slash",
@@ -1240,6 +1261,82 @@ describe("ServiceRegistry", function () {
             // The overall slashing balance must be equal to regFine
             const slashedFunds = Number(await serviceRegistry.slashedFunds());
             expect(slashedFunds).to.equal(regFine);
+        });
+
+        it("Drain slashed funds", async function () {
+            const drainer = signers[2];
+            const mechManager = signers[3];
+            const serviceManager = signers[4];
+            const owner = signers[5].address;
+            const operator = signers[6].address;
+            const agentInstance = signers[7];
+            const maxThreshold = 1;
+
+            // Create agents
+            await agentRegistry.changeManager(mechManager.address);
+            await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
+
+            // Whitelist gnosis multisig implementation
+            await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+
+            // Create services and activate the agent instance registration
+            let serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.state).to.equal(0);
+            await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistry.connect(serviceManager).create(owner, configHash, [1],
+                [[1, regBond]], maxThreshold);
+
+            await serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit});
+
+            /// Register agent instance
+            await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstance.address], [agentId], {value: regBond});
+
+            // Create multisig
+            const safe = await serviceRegistry.connect(serviceManager).deploy(owner, serviceId,
+                gnosisSafeMultisig.address, payload);
+            const result = await safe.wait();
+            const proxyAddress = result.events[0].address;
+
+            // Getting a real multisig address and calling slashing method with it
+            const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
+            const safeContracts = require("@gnosis.pm/safe-contracts");
+            const nonce = await multisig.nonce();
+            const txHashData = await safeContracts.buildContractCall(serviceRegistry, "slash",
+                [[agentInstance.address], [regFine], serviceId], nonce, 0, 0);
+            const signMessageData = await safeContracts.safeSignMessage(agentInstance, multisig, txHashData, 0);
+
+            // Slash the agent instance operator with the correct multisig
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // After slashing the operator balance must be the difference between the regBond and regFine
+            const balanceOperator = Number(await serviceRegistry.getOperatorBalance(operator, serviceId));
+            expect(balanceOperator).to.equal(regBond - regFine);
+
+            // The overall slashing balance must be equal to regFine
+            const slashedFunds = Number(await serviceRegistry.slashedFunds());
+            expect(slashedFunds).to.equal(regFine);
+
+            // Drain slashed funds by the drainer
+            await serviceRegistry.changeDrainer(drainer.address);
+            // Trying to drain by the operator
+            await expect(
+                serviceRegistry.connect(signers[6]).drain()
+            ).to.be.revertedWith("ManagerOnly");
+
+            // Get the slashed funds transferred to the drainer address
+            const amount = await serviceRegistry.connect(drainer).callStatic.drain();
+            expect(amount).to.equal(regFine);
+
+            // Check that slashed funds are zeroed
+            await serviceRegistry.connect(drainer).drain();
+            expect(await serviceRegistry.slashedFunds()).to.equal(0);
+
+            // Try to drain again
+            // First one to check the drained amount to be zero with a static call
+            expect(await serviceRegistry.connect(drainer).callStatic.drain()).to.equal(0);
+            // Then do the real drain and make sure nothing has changed or failed
+            await serviceRegistry.connect(drainer).drain();
+            expect(await serviceRegistry.slashedFunds()).to.equal(0);
         });
 
         it("Slashing the operator of agent instances twice and getting the slashed deposit", async function () {
@@ -1282,7 +1379,7 @@ describe("ServiceRegistry", function () {
             const proxyAddress = result.events[0].address;
 
             // Getting a real multisig address and calling slashing method with it
-            const multisig = await ethers.getContractAt("GnosisSafeL2", proxyAddress);
+            const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
             const safeContracts = require("@gnosis.pm/safe-contracts");
             let nonce = await multisig.nonce();
             let txHashData = await safeContracts.buildContractCall(serviceRegistry, "slash",
@@ -1858,6 +1955,66 @@ describe("ServiceRegistry", function () {
             // Reentrancy guard revert failed the attacker receive() function that returned as "TransferFailed"
             await expect(
                 reentrancyAttacker.unbondBadOperator(reentrancyAttacker.address, serviceId)
+            ).to.be.revertedWith("TransferFailed");
+        });
+
+        it("Reentrancy attack by the bad drainer", async function () {
+            const mechManager = signers[3];
+            const serviceManager = signers[4];
+            const owner = signers[5].address;
+            const operator = signers[6].address;
+            const agentInstance = signers[7];
+            const maxThreshold = 1;
+
+            // Create agents
+            await agentRegistry.changeManager(mechManager.address);
+            await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
+
+            // Whitelist gnosis multisig implementation
+            await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+
+            // Create services and activate the agent instance registration
+            let serviceInstance = await serviceRegistry.getService(serviceId);
+            expect(serviceInstance.state).to.equal(0);
+            await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistry.connect(serviceManager).create(owner, configHash, [1],
+                [[1, regBond]], maxThreshold);
+
+            await serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit});
+
+            /// Register agent instance
+            await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstance.address], [agentId], {value: regBond});
+
+            // Create multisig
+            const safe = await serviceRegistry.connect(serviceManager).deploy(owner, serviceId,
+                gnosisSafeMultisig.address, payload);
+            const result = await safe.wait();
+            const proxyAddress = result.events[0].address;
+
+            // Getting a real multisig address and calling slashing method with it
+            const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
+            const safeContracts = require("@gnosis.pm/safe-contracts");
+            const nonce = await multisig.nonce();
+            const txHashData = await safeContracts.buildContractCall(serviceRegistry, "slash",
+                [[agentInstance.address], [regFine], serviceId], nonce, 0, 0);
+            const signMessageData = await safeContracts.safeSignMessage(agentInstance, multisig, txHashData, 0);
+
+            // Slash the agent instance operator with the correct multisig
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // After slashing the operator balance must be the difference between the regBond and regFine
+            const balanceOperator = Number(await serviceRegistry.getOperatorBalance(operator, serviceId));
+            expect(balanceOperator).to.equal(regBond - regFine);
+
+            // The overall slashing balance must be equal to regFine
+            const slashedFunds = Number(await serviceRegistry.slashedFunds());
+            expect(slashedFunds).to.equal(regFine);
+
+            // Drain slashed funds by the drainer
+            await serviceRegistry.changeDrainer(reentrancyAttacker.address);
+            // Trying to drain by the attacker who got the drain access
+            await expect(
+                reentrancyAttacker.drainFromBadAddress()
             ).to.be.revertedWith("TransferFailed");
         });
     });

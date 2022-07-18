@@ -24,6 +24,7 @@ struct AgentInstance {
 /// @title Service Registry - Smart contract for registering services
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 contract ServiceRegistry is GenericRegistry {
+    event DrainerUpdated(address indexed drainer);
     event Deposit(address indexed sender, uint256 amount);
     event Refund(address indexed receiver, uint256 amount);
     event CreateService(uint256 indexed serviceId);
@@ -35,6 +36,7 @@ contract ServiceRegistry is GenericRegistry {
     event OperatorSlashed(uint256 amount, address indexed operator, uint256 indexed serviceId);
     event OperatorUnbond(address indexed operator, uint256 indexed serviceId);
     event DeployService(uint256 indexed serviceId);
+    event Drain(address indexed drainer, uint256 amount);
 
     enum ServiceState {
         NonExistent,
@@ -67,10 +69,12 @@ contract ServiceRegistry is GenericRegistry {
         uint32[] agentIds;
     }
 
-    // Agent Registry
+    // Agent Registry address
     address public immutable agentRegistry;
     // The amount of funds slashed. This is enough for 1b+ ETH or 1e27
     uint96 public slashedFunds;
+    // Drainer address: set by the government and is allowed to drain ETH funds accumulated in this contract
+    address public drainer;
     // Service registry version number
     string public constant VERSION = "1.0.0";
     // Map of service Id => set of IPFS hashes pointing to the config metadata
@@ -106,6 +110,22 @@ contract ServiceRegistry is GenericRegistry {
         baseURI = _baseURI;
         agentRegistry = _agentRegistry;
         owner = msg.sender;
+    }
+
+    /// @dev Changes the drainer.
+    /// @param newDrainer Address of a drainer.
+    function changeDrainer(address newDrainer) external {
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for the zero address
+        if (newDrainer == address(0)) {
+            revert ZeroAddress();
+        }
+
+        drainer = newDrainer;
+        emit DrainerUpdated(newDrainer);
     }
 
     /// @dev Going through basic initial service checks.
@@ -561,7 +581,7 @@ contract ServiceRegistry is GenericRegistry {
             // Slash the balance of the operator, make sure it does not go below zero
             uint96 balance = mapOperatorAndServiceIdOperatorBalances[operatorService];
             if ((amounts[i] + 1) > balance) {
-                // We can't add to the slashed amount more than the balance
+                // We cannot add to the slashed amount more than the balance of the operator
                 slashedFunds += balance;
                 balance = 0;
             } else {
@@ -678,9 +698,13 @@ contract ServiceRegistry is GenericRegistry {
 
         // Subtract number of unbonded agent instances
         service.numAgentInstances -= uint32(numAgentsUnbond);
+        // When number of instances is equal to zero, all the operators have unbonded and the service is moved into
+        // the PreRegistration state, from where it can be updated / start registration / get deployed again
         if (service.numAgentInstances == 0) {
             service.state = ServiceState.PreRegistration;
         }
+        // else condition is redundant here, since the service is either in the TerminatedBonded state, or moved
+        // into the PreRegistration state and unbonding is not possible before the new TerminatedBonded state is reached
 
         // Calculate registration refund and free all agent instances
         for (uint256 i = 0; i < numAgentsUnbond; i++) {
@@ -845,5 +869,34 @@ contract ServiceRegistry is GenericRegistry {
         }
         mapMultisigs[multisig] = permission;
         success = true;
+    }
+
+    /// @dev Drains slashed funds.
+    /// @return amount Drained amount.
+    function drain() external returns (uint256 amount) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
+        // Check for the drainer address
+        if (msg.sender != drainer) {
+            revert ManagerOnly(msg.sender, drainer);
+        }
+
+        // Drain the slashed funds
+        amount = slashedFunds;
+        if (amount > 0) {
+            slashedFunds = 0;
+            // Send the refund
+            (bool result, ) = msg.sender.call{value: amount}("");
+            if (!result) {
+                revert TransferFailed(address(0), address(this), msg.sender, amount);
+            }
+            emit Drain(msg.sender, amount);
+        }
+
+        _locked = 1;
     }
 }
