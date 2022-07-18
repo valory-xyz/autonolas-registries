@@ -40,7 +40,6 @@ A more detailed set of registries definitions are provided [here](https://github
 
 Services are based on a deployment of agents via the means of multisigs using the generic multisig interface.
 One of the most well-known multisigs is Gnosis Safe. The Gnosis interface implementation of a generic multisig interface is provided here:
-
 - [GnosisSafeMultisig](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/multisigs/GnosisSafeMultisig.sol)
 
 As more multisigs come into play, their underlying implementation of the generic multisig will be added.
