@@ -11,7 +11,7 @@ async function main() {
     const useLedger = parsedData.useLedger;
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
-    const gnosisSafeL2Address = parsedData.gnosisSafeL2Address;
+    const gnosisSafeAddress = parsedData.gnosisSafeAddress;
     const gnosisSafeProxyFactoryAddress = parsedData.gnosisSafeProxyFactoryAddress;
     let EOA;
 
@@ -31,7 +31,7 @@ async function main() {
     console.log("6. EOA to deploy GnosisSafeMultisig");
     const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
     console.log("You are signing the following transaction: GnosisSafeMultisig.connect(EOA).deploy()");
-    const gnosisSafeMultisig = await GnosisSafeMultisig.connect(EOA).deploy(gnosisSafeL2Address,
+    const gnosisSafeMultisig = await GnosisSafeMultisig.connect(EOA).deploy(gnosisSafeAddress,
         gnosisSafeProxyFactoryAddress);
     const result = await gnosisSafeMultisig.deployed();
 
