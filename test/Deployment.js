@@ -13,9 +13,9 @@ describe("Deployment", function () {
             const timelock = signers[1];
 
             // Deployment of Gnosis Safe contracts (already deployed on various networks)
-            const GnosisSafeL2 = await ethers.getContractFactory("GnosisSafeL2");
-            const gnosisSafeL2 = await GnosisSafeL2.deploy();
-            await gnosisSafeL2.deployed();
+            const GnosisSafe = await ethers.getContractFactory("GnosisSafe");
+            const gnosisSafe = await GnosisSafe.deploy();
+            await gnosisSafe.deployed();
 
             const GnosisSafeProxyFactory = await ethers.getContractFactory("GnosisSafeProxyFactory");
             const gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deploy();
@@ -51,7 +51,7 @@ describe("Deployment", function () {
 
             // 6. EOA to deploy GnosisSafeMultisig;
             const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
-            const gnosisSafeMultisig = await GnosisSafeMultisig.connect(EOA).deploy(gnosisSafeL2.address,
+            const gnosisSafeMultisig = await GnosisSafeMultisig.connect(EOA).deploy(gnosisSafe.address,
                 gnosisSafeProxyFactory.address);
             await gnosisSafeMultisig.deployed();
 
