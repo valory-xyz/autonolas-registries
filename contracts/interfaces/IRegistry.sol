@@ -22,7 +22,7 @@ interface IRegistry {
     /// @dev Updates the component / agent hash.
     /// @param owner Owner of the component / agent.
     /// @param unitId Unit Id.
-    /// @param unitHash New IPFS hash of the component / agent.
+    /// @param unitHash Updated IPFS hash of the component / agent.
     /// @return success True, if function executed successfully.
     function updateHash(address owner, uint256 unitId, bytes32 unitHash) external returns (bool success);
 

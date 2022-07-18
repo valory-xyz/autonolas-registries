@@ -45,7 +45,7 @@ contract RegistriesManager is GenericManager {
     /// @dev Updates the component / agent hash.
     /// @param unitType Unit type (component or agent).
     /// @param unitId Agent Id.
-    /// @param unitHash New IPFS hash of the component / agent.
+    /// @param unitHash Updated IPFS hash of the component / agent.
     /// @return success True, if function executed successfully.
     function updateHash(IRegistry.UnitType unitType, uint256 unitId, bytes32 unitHash) external returns (bool success) {
         if (unitType == IRegistry.UnitType.Component) {

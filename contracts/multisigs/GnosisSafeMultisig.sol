@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.15;
 
 import "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxy.sol";
 import "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol";
@@ -10,12 +10,15 @@ contract GnosisSafeMultisig {
     // Selector of the Gnosis Safe setup function
     bytes4 internal constant _GNOSIS_SAFE_SETUP_SELECTOR = 0xb63e800d;
     // Gnosis Safe
-    address payable public immutable gnosisSafeL2;
+    address payable public immutable gnosisSafe;
     // Gnosis Safe Factory
     address public immutable gnosisSafeProxyFactory;
 
-    constructor (address payable _gnosisSafeL2, address _gnosisSafeProxyFactory) {
-        gnosisSafeL2 = _gnosisSafeL2;
+    /// @dev GnosisSafeMultisig constructor.
+    /// @param _gnosisSafe Gnosis Safe address.
+    /// @param _gnosisSafeProxyFactory Gnosis Safe proxy factory address.
+    constructor (address payable _gnosisSafe, address _gnosisSafeProxyFactory) {
+        gnosisSafe = _gnosisSafe;
         gnosisSafeProxyFactory = _gnosisSafeProxyFactory;
     }
 
@@ -71,7 +74,7 @@ contract GnosisSafeMultisig {
 
         // Create a gnosis safe multisig via the proxy factory
         GnosisSafeProxyFactory gFactory = GnosisSafeProxyFactory(gnosisSafeProxyFactory);
-        GnosisSafeProxy gProxy = gFactory.createProxyWithNonce(gnosisSafeL2, safeParams, nonce);
+        GnosisSafeProxy gProxy = gFactory.createProxyWithNonce(gnosisSafe, safeParams, nonce);
         multisig = address(gProxy);
     }
 }
