@@ -2,10 +2,13 @@
 - [`Multihash`](https://multiformats.io/multihash/): a self-describing hash, a protocol for differentiating outputs
 from various well-established hash functions. Multihash is a hashing standard for [`IPFS`](https://docs.ipfs.io/concepts/what-is-ipfs/),
 a distributed system for storing and accessing files, websites, applications, and data. As stated in the original IPFS [`documentation`](https://docs.ipfs.io/concepts/content-addressing/),
-the CID v1 is the preferred multibase encoding. Please note that the default CID v1 of is built with the
-`sha2-256 - 256 bits` as their hashing function and a `base32` multibase prefix. However, the default multicodec for the CID v1 is `raw` 
+the CID v1 is the preferred multibase encoding. 
 
-In order to supply autonolas-registries with the multihash content address part of the IPFS hash and support backward compatibility with CID v0 IPFS hashes,
+To better understand the CID anatomy, please refer to the [CID Anatomy](https://proto.school/anatomy-of-a-cid).
+
+Please note that the default CID v1 of is built with the `sha2-256 - 256 bits` as their hashing function and a `base32` multibase prefix. Also, the default multicodec for the CID v1 is `raw`.
+
+In order to supply `autonolas-registries` with the multihash content address part of the IPFS hash and support backward compatibility with CID v0 IPFS hashes,
 please create your hashes with a `dag-pb` multicodec and a `base16` multibase prefix.
 One can easily convert already existent v1 (or v0) CID of matching codec into the `base16` variant with the following command:
 ```ipfs cid format -v 1 -b base16 your_ipfs_hash```

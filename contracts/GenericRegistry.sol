@@ -21,7 +21,15 @@ abstract contract GenericRegistry is IErrorsRegistries, ERC721 {
     uint256 public totalSupply;
     // Reentrancy lock
     uint256 internal _locked = 1;
-    // base16 multibase CID prefix to complement the IPFS hash header that follows the base URI
+    // To better understand the CID anatomy, please refer to: https://proto.school/anatomy-of-a-cid/05
+    // CID = <multibase_encoding>multibase_encoding(<cid-version><multicodec><multihash-algorithm><multihash-length><multihash-hash>)
+    // CID prefix = <multibase_encoding>multibase_encoding(<cid-version><multicodec><multihash-algorithm><multihash-length>)
+    // to complement the multibase_encoding(<multihash-hash>)
+    // multibase_encoding = base16 = "f"
+    // cid-version = version 1 = "0x01"
+    // multicodec = dag-pb = "0x70"
+    // multihash-algorithm = sha2-256 = "0x12"
+    // multihash-length = 256 bits = "0x20"
     string public constant CID_PREFIX = "f01701220";
 
     /// @dev Changes the owner address.

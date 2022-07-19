@@ -162,6 +162,40 @@ describe("ComponentRegistry", function () {
             await componentRegistry.setBaseURI(baseURI);
             expect(await componentRegistry.tokenURI(1)).to.equal(baseURI + cidPrefix + "5".repeat(64));
             expect(await componentRegistry.tokenURI(2)).to.equal(baseURI + cidPrefix + "a".repeat(64));
+            expect(await componentRegistry.tokenURI(3)).to.equal(baseURI + cidPrefix + "2".repeat(64));
+
+            const etherscanHash1 = "0xb78ce02d6ccebb1bfd206da0f79e91ff39981592d4a36e8d2900ad46017cae35";
+            await componentRegistry.connect(mechManager).create(user.address, etherscanHash1, dependencies);
+            expect(await componentRegistry.tokenURI(4)).to.equal(baseURI + cidPrefix + "b78ce02d6ccebb1bfd206da0f79e91ff39981592d4a36e8d2900ad46017cae35");
+
+            const etherscanHash2 = "0xaa501c4339842b489298e8548b1a5595bddb41ad7710a307c56fdc3947646ced";
+            await componentRegistry.connect(mechManager).create(user.address, etherscanHash2, dependencies);
+            expect(await componentRegistry.tokenURI(5)).to.equal(baseURI + cidPrefix + "aa501c4339842b489298e8548b1a5595bddb41ad7710a307c56fdc3947646ced");
+
+            const etherscanHash3 = "0x10f31eb1b13df79ccccee77d7ed36d312474681dd99f8932adabe3aaaff74885";
+            await componentRegistry.connect(mechManager).create(user.address, etherscanHash3, dependencies);
+            expect(await componentRegistry.tokenURI(6)).to.equal(baseURI + cidPrefix + "10f31eb1b13df79ccccee77d7ed36d312474681dd99f8932adabe3aaaff74885");
+
+            const extremeHash1 = "0x" + "0".repeat(63) + "1";
+            await componentRegistry.connect(mechManager).create(user.address, extremeHash1, dependencies);
+            expect(await componentRegistry.tokenURI(7)).to.equal(baseURI + cidPrefix + "0".repeat(63) + "1");
+
+            const extremeHash2 = "0x" + "f".repeat(64);
+            await componentRegistry.connect(mechManager).create(user.address, extremeHash2, dependencies);
+            expect(await componentRegistry.tokenURI(8)).to.equal(baseURI + cidPrefix + "f".repeat(64));
+
+            // Compare several hashes with the test contract
+            const ComponentRegistryTest = await ethers.getContractFactory("ComponentRegistryTest");
+            componentRegistryTest = await ComponentRegistryTest.deploy("Components Test", "MECHCOMPTEST",
+                "https://localhost/test/");
+            await componentRegistryTest.deployed();
+            await componentRegistryTest.changeManager(mechManager.address);
+            await componentRegistryTest.connect(mechManager).create(user.address, componentHash, dependencies);
+            await componentRegistryTest.checkTokenURI(1);
+            await componentRegistryTest.connect(mechManager).create(user.address, componentHash1, dependencies);
+            await componentRegistryTest.checkTokenURI(2);
+            await componentRegistryTest.connect(mechManager).create(user.address, componentHash2, lastDependencies);
+            await componentRegistryTest.checkTokenURI(3);
         });
     });
 
