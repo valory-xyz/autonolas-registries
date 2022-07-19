@@ -21,7 +21,7 @@ abstract contract GenericRegistry is IErrorsRegistries, ERC721 {
     uint256 public totalSupply;
     // Reentrancy lock
     uint256 internal _locked = 1;
-    // base16 multibase CID prefix to complement the base URI
+    // base16 multibase CID prefix to complement the IPFS hash header that follows the base URI
     string public constant CID_PREFIX = "f01701220";
 
     /// @dev Changes the owner address.
