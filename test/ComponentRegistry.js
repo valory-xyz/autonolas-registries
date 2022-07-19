@@ -7,8 +7,8 @@ describe("ComponentRegistry", function () {
     let componentRegistry;
     let reentrancyAttacker;
     let signers;
-    const componentHash = "0x" + "9".repeat(64);
-    const componentHash1 = "0x" + "1".repeat(64);
+    const componentHash = "0x" + "5".repeat(64);
+    const componentHash1 = "0x" + "a".repeat(64);
     const componentHash2 = "0x" + "2".repeat(64);
     const dependencies = [];
     const AddressZero = "0x" + "0".repeat(40);
@@ -155,6 +155,13 @@ describe("ComponentRegistry", function () {
             expect(compInstance.dependencies.length).to.equal(0);
             componentDependencies = await componentRegistry.getDependencies(tokenId + 1);
             expect(componentDependencies.numDependencies).to.equal(0);
+
+            // Check the token URI
+            const baseURI = "https://localhost/ipfs/";
+            const cidPrefix = "f01701220";
+            await componentRegistry.setBaseURI(baseURI);
+            expect(await componentRegistry.tokenURI(1)).to.equal(baseURI + cidPrefix + "5".repeat(64));
+            expect(await componentRegistry.tokenURI(2)).to.equal(baseURI + cidPrefix + "a".repeat(64));
         });
     });
 

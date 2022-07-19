@@ -2,14 +2,11 @@
 pragma solidity ^0.8.15;
 
 import "../lib/solmate/src/tokens/ERC721.sol";
-import "../lib/solmate/src/utils/LibString.sol";
 import "./interfaces/IErrorsRegistries.sol";
 
 /// @title Generic Registry - Smart contract for generic registry template
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 abstract contract GenericRegistry is IErrorsRegistries, ERC721 {
-    using LibString for uint256;
-
     event OwnerUpdated(address indexed owner);
     event ManagerUpdated(address indexed manager);
     event BaseURIChanged(string baseURI);
@@ -24,6 +21,8 @@ abstract contract GenericRegistry is IErrorsRegistries, ERC721 {
     uint256 public totalSupply;
     // Reentrancy lock
     uint256 internal _locked = 1;
+    // base16 multibase CID prefix to complement the base URI
+    string public constant CID_PREFIX = "f01701220";
 
     /// @dev Changes the owner address.
     /// @param newOwner Address of a new owner.
@@ -65,13 +64,6 @@ abstract contract GenericRegistry is IErrorsRegistries, ERC721 {
     function exists(uint256 unitId) external view virtual returns (bool) {
         return unitId > 0 && unitId < (totalSupply + 1);
     }
-
-    /// @dev Returns unit token URI.
-    /// @param unitId Unit Id.
-    /// @return Unit token URI string.
-    function tokenURI(uint256 unitId) public view virtual override returns (string memory) {
-        return string.concat(baseURI, unitId.toString());
-    }
     
     /// @dev Sets unit base URI.
     /// @param bURI Base URI string.
@@ -99,5 +91,26 @@ abstract contract GenericRegistry is IErrorsRegistries, ERC721 {
         if (unitId > totalSupply) {
             revert Overflow(unitId, totalSupply);
         }
+    }
+
+    /// @dev Converts bytes16 input data to hex16.
+    /// @notice This method converts bytes into the same bytes-character hex16 representation.
+    /// @param data bytes16 input data.
+    /// @return result hex16 conversion from the input bytes16 data.
+    function _toHex16(bytes16 data) internal pure returns (bytes32 result) {
+        result = bytes32 (data) & 0xFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000 |
+        (bytes32 (data) & 0x0000000000000000FFFFFFFFFFFFFFFF00000000000000000000000000000000) >> 64;
+        result = result & 0xFFFFFFFF000000000000000000000000FFFFFFFF000000000000000000000000 |
+        (result & 0x00000000FFFFFFFF000000000000000000000000FFFFFFFF0000000000000000) >> 32;
+        result = result & 0xFFFF000000000000FFFF000000000000FFFF000000000000FFFF000000000000 |
+        (result & 0x0000FFFF000000000000FFFF000000000000FFFF000000000000FFFF00000000) >> 16;
+        result = result & 0xFF000000FF000000FF000000FF000000FF000000FF000000FF000000FF000000 |
+        (result & 0x00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0000) >> 8;
+        result = (result & 0xF000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000) >> 4 |
+        (result & 0x0F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F00) >> 8;
+        result = bytes32 (0x3030303030303030303030303030303030303030303030303030303030303030 +
+        uint256 (result) +
+            (uint256 (result) + 0x0606060606060606060606060606060606060606060606060606060606060606 >> 4 &
+            0x0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F) * 39);
     }
 }

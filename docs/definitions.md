@@ -3,17 +3,18 @@
 from various well-established hash functions. Multihash is a hashing standard for [`IPFS`](https://docs.ipfs.io/concepts/what-is-ipfs/),
 a distributed system for storing and accessing files, websites, applications, and data. As stated in the original IPFS [`documentation`](https://docs.ipfs.io/concepts/content-addressing/),
 the CID v1 is the preferred multibase encoding. Please note that the default CID v1 of is built with the
-`sha2-256 - 256 bits` as their hashing function and a `base32` multibase prefix.
+`sha2-256 - 256 bits` as their hashing function and a `base32` multibase prefix. However, the default multicodec for the CID v1 is `raw` 
 
-In order to supply autonolas-registries with the multihash content address part of the IPFS hash, please create your hashes with a `base16` multibase prefix.
+In order to supply autonolas-registries with the multihash content address part of the IPFS hash and support backward compatibility with CID v0 IPFS hashes,
+please create your hashes with a `dag-pb` multicodec and a `base16` multibase prefix.
 One can easily convert already existent v1 (or v0) CID into the `base16` variant with the following command:
-```ipfs cid format -b base16 your_ipfs_hash```
+```ipfs cid format -v 1 -b base16 your_ipfs_hash```
 
 The hash then would look like this:
-```f01551220c4cd970d30af2ca0257ef8e4c613a399368ba13eb0a3ee4b4c15c105cd2c9a35```,
+```f01701220c4cd970d30af2ca0257ef8e4c613a399368ba13eb0a3ee4b4c15c105cd2c9a35```,
 where `f` corresponds to the `base16` multibase prefix. The rest of the hash is read as bytes in the following manner:
-`0x01` corresponds to the CID v1, `0x55` corresponds to the `raw` multicodec, `0x12` is `sha2-256`, and `0x20` (32 in decimal or 256 bits) is the length of the content address.
-Since auotonolas-registries assumes its users follow the requirements of using the default CID v1 IPFS hash creation with the `base16` prefix,
+`0x01` corresponds to the CID v1, `0x70` corresponds to the `dag-pb` multicodec, `0x12` is `sha2-256` hashing function, and `0x20` (32 in decimal or 256 bits) is the length of the content address.
+Since auotonolas-registries assumes its users follow the requirements of using the CID v1 IPFS hash creation with a `dag-pb` multicodec and a `base16` multibase prefix,
 it consumes only the multihash content address of 32 bytes in a `bytes32` variable. In the example above, this value would be as follows:
 ```0xc4cd970d30af2ca0257ef8e4c613a399368ba13eb0a3ee4b4c15c105cd2c9a35```.
 
