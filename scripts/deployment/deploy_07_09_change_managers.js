@@ -1,5 +1,6 @@
 /*global process*/
 
+const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { LedgerSigner } = require("@anders-t/ethers-ledger");
 
@@ -67,6 +68,9 @@ async function main() {
     console.log("Contract deployment: ServiceRegistry");
     console.log("Contract address:", serviceRegistryAddress);
     console.log("Transaction:", result.hash);
+
+    // Data verification
+    expect(await serviceRegistry.mapMultisigs(gnosisSafeMultisigImplementationAddress)).to.equal(true);
 }
 
 main()

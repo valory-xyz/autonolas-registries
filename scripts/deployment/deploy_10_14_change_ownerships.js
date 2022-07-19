@@ -1,5 +1,6 @@
 /*global process*/
 
+const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { LedgerSigner } = require("@anders-t/ethers-ledger");
 
@@ -78,6 +79,15 @@ async function main() {
     console.log("Contract deployment: ServiceManager");
     console.log("Contract address:", serviceManagerAddress);
     console.log("Transaction:", result.hash);
+
+    // Data verification
+    expect(await componentRegistry.owner()).to.equal(timelockAddress);
+    expect(await agentRegistry.owner()).to.equal(timelockAddress);
+    expect(await serviceRegistry.owner()).to.equal(timelockAddress);
+    expect(await registriesManager.owner()).to.equal(timelockAddress);
+    expect(await serviceManager.owner()).to.equal(timelockAddress);
+
+    console.log("Successful verification");
 }
 
 main()
