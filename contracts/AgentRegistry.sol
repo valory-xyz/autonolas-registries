@@ -9,6 +9,8 @@ import "./interfaces/IRegistry.sol";
 contract AgentRegistry is UnitRegistry {
     // Component registry
     address public immutable componentRegistry;
+    // Agent registry version number
+    string public constant VERSION = "1.0.0";
 
     /// @dev Agent registry constructor.
     /// @param _name Agent registry contract name.

@@ -6,6 +6,9 @@ import "./UnitRegistry.sol";
 /// @title Component Registry - Smart contract for registering components
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 contract ComponentRegistry is UnitRegistry {
+    // Component registry version number
+    string public constant VERSION = "1.0.0";
+
     /// @dev Component registry constructor.
     /// @param _name Component registry contract name.
     /// @param _symbol Component registry contract symbol.

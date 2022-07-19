@@ -1,3 +1,3 @@
 module.exports = {
-    skipFiles: ["test/GnosisSafeABICreator.sol", "test/ReentrancyAttacker.sol"]
+    skipFiles: ["test/ComponentRegistryTest.sol", "test/GnosisSafeABICreator.sol", "test/ReentrancyAttacker.sol"]
 };

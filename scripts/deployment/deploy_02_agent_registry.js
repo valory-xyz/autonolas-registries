@@ -13,7 +13,7 @@ async function main() {
     const providerName = parsedData.providerName;
     const agentRegistryName = parsedData.agentRegistryName;
     const agentRegistrySymbol = parsedData.agentRegistrySymbol;
-    const agentRegistryBaseURI = parsedData.agentRegistryBaseURI;
+    const baseURI = parsedData.baseURI;
     const componentRegistryAddress = parsedData.componentRegistryAddress;
     let EOA;
 
@@ -34,7 +34,7 @@ async function main() {
     const AgentRegistry = await ethers.getContractFactory("AgentRegistry");
     console.log("You are signing the following transaction: AgentRegistry.connect(EOA).deploy()");
     const agentRegistry = await AgentRegistry.connect(EOA).deploy(agentRegistryName, agentRegistrySymbol,
-        agentRegistryBaseURI, componentRegistryAddress);
+        baseURI, componentRegistryAddress);
     const result = await agentRegistry.deployed();
 
     // Transaction details

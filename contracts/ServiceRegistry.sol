@@ -899,4 +899,16 @@ contract ServiceRegistry is GenericRegistry {
 
         _locked = 1;
     }
+
+    /// @dev Returns service token URI.
+    /// @notice Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.
+    /// @param serviceId Service Id.
+    /// @return Service token URI string.
+    function tokenURI(uint256 serviceId) public view virtual override returns (string memory) {
+        bytes32 configHash = mapServices[serviceId].configHash;
+        // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
+        // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
+        return string(abi.encodePacked(baseURI, CID_PREFIX, _toHex16(bytes16(configHash)),
+            _toHex16(bytes16(configHash << 128))));
+    }
 }

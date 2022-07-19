@@ -305,7 +305,11 @@ describe("ServiceRegistry", function () {
             await serviceRegistry.changeManager(serviceManager.address);
             await serviceRegistry.connect(serviceManager).create(owner, configHash,
                 agentIds, agentParams, maxThreshold);
-            expect(await serviceRegistry.tokenURI(serviceId)).to.equal("https://localhost/service/1");
+
+            const baseURI = "https://localhost/ipfs/";
+            const cidPrefix = "f01701220";
+            await serviceRegistry.setBaseURI(baseURI);
+            expect(await serviceRegistry.tokenURI(1)).to.equal(baseURI + cidPrefix + "5".repeat(64));
         });
 
         it("Should fail when trying to get a service Id with the wrong token index", async function () {

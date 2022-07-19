@@ -4,10 +4,10 @@ const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
 const parsedData = JSON.parse(dataFromJSON);
 const componentRegistryName = parsedData.componentRegistryName;
 const componentRegistrySymbol = parsedData.componentRegistrySymbol;
-const componentRegistryBaseURI = parsedData.componentRegistryBaseURI;
+const baseURI = parsedData.baseURI;
 
 module.exports = [
     componentRegistryName,
     componentRegistrySymbol,
-    componentRegistryBaseURI
+    baseURI
 ];
