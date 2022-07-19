@@ -186,7 +186,7 @@ describe("ComponentRegistry", function () {
 
             // Compare several hashes with the test contract
             const ComponentRegistryTest = await ethers.getContractFactory("ComponentRegistryTest");
-            componentRegistryTest = await ComponentRegistryTest.deploy("Components Test", "MECHCOMPTEST",
+            const componentRegistryTest = await ComponentRegistryTest.deploy("Components Test", "MECHCOMPTEST",
                 "https://localhost/test/");
             await componentRegistryTest.deployed();
             await componentRegistryTest.changeManager(mechManager.address);
