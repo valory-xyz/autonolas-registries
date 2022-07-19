@@ -33,7 +33,7 @@ Other values in the `JSON` file are related to the registries. The deployed cont
 
 The script file name identifies the number of deployment steps taken from / to the number in the file name. For example:
 - `deploy_01_component_registry.js` will complete steps 1 from [deployment.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deployment.md);
-- `deploy_10_14_change_ownerships.js` will complete steps 7 to 14.
+- `deploy_10_14_change_ownerships.js` will complete steps 10 to 14.
 
 NOTE: All the scripts MUST be strictly run in the sequential order from smallest to biggest numbers.
 
