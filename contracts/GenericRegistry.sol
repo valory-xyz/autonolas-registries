@@ -93,6 +93,7 @@ abstract contract GenericRegistry is IErrorsRegistries, ERC721 {
         }
     }
 
+    // Open sourced from: https://stackoverflow.com/questions/67893318/solidity-how-to-represent-bytes32-as-string
     /// @dev Converts bytes16 input data to hex16.
     /// @notice This method converts bytes into the same bytes-character hex16 representation.
     /// @param data bytes16 input data.

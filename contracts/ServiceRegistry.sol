@@ -908,7 +908,7 @@ contract ServiceRegistry is GenericRegistry {
         bytes32 configHash = mapServices[serviceId].configHash;
         // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
         // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
-        return string(abi.encodePacked(string.concat(baseURI, CID_PREFIX), _toHex16(bytes16 (configHash)),
+        return string(abi.encodePacked(baseURI, CID_PREFIX, _toHex16(bytes16(configHash)),
             _toHex16(bytes16(configHash << 128))));
     }
 }

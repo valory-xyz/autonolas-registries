@@ -2,7 +2,6 @@
 pragma solidity ^0.8.15;
 
 import "./GenericRegistry.sol";
-import "hardhat/console.sol";
 
 /// @title Unit Registry - Smart contract for registering generalized units / units
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -273,7 +272,7 @@ abstract contract UnitRegistry is GenericRegistry {
         bytes32 unitHash = mapUnits[unitId].unitHash;
         // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
         // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
-        return string(abi.encodePacked(string.concat(baseURI, CID_PREFIX), _toHex16(bytes16 (unitHash)),
+        return string(abi.encodePacked(baseURI, CID_PREFIX, _toHex16(bytes16(unitHash)),
             _toHex16(bytes16(unitHash << 128))));
     }
 }

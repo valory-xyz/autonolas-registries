@@ -13,7 +13,7 @@ async function main() {
     const providerName = parsedData.providerName;
     const componentRegistryName = parsedData.componentRegistryName;
     const componentRegistrySymbol = parsedData.componentRegistrySymbol;
-    const componentRegistryBaseURI = parsedData.componentRegistryBaseURI;
+    const baseURI = parsedData.baseURI;
     let EOA;
 
     const provider = await ethers.providers.getDefaultProvider(providerName);
@@ -33,7 +33,7 @@ async function main() {
     const ComponentRegistry = await ethers.getContractFactory("ComponentRegistry");
     console.log("You are signing the following transaction: ComponentRegistry.connect(EOA).deploy()");
     const componentRegistry = await ComponentRegistry.connect(EOA).deploy(componentRegistryName, componentRegistrySymbol,
-        componentRegistryBaseURI);
+        baseURI);
     const result = await componentRegistry.deployed();
 
     // Transaction details
