@@ -122,4 +122,21 @@ abstract contract GenericRegistry is IErrorsRegistries, ERC721 {
             (uint256 (result) + 0x0606060606060606060606060606060606060606060606060606060606060606 >> 4 &
             0x0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F) * 39);
     }
+
+    /// @dev Gets the hash of the unit.
+    /// @param unitId Unit Id.
+    /// @return Unit hash.
+    function _getUnitHash(uint256 unitId) internal view virtual returns (bytes32);
+
+    /// @dev Returns unit token URI.
+    /// @notice Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.
+    /// @param unitId Unit Id.
+    /// @return Unit token URI string.
+    function tokenURI(uint256 unitId) public view virtual override returns (string memory) {
+        bytes32 unitHash = _getUnitHash(unitId);
+        // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
+        // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
+        return string(abi.encodePacked(baseURI, CID_PREFIX, _toHex16(bytes16(unitHash)),
+            _toHex16(bytes16(unitHash << 128))));
+    }
 }
