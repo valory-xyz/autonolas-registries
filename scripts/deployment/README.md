@@ -4,6 +4,7 @@ This folder contains the scripts to deploy Autonolas registries. These scripts c
 ## Observations
 - There are several files with global parameters based on the corresponding network. In order to work with the configuration, please copy `gobals_network.json` file to file the `gobals.json` one, where `network` is the corresponding network. For example: `cp gobals_goerli.json gobals.json`.
 - Please note: if you encounter the `Unknown Error 0x6b0c`, then it is likely because the ledger is not connected or logged in.
+- The script to change ownership of the registries to Timelock (`deploy_10_14_change_ownerships.js`) will be done after the DAO members voting.
 
 ## Steps to engage
 Make sure the project is installed with the
