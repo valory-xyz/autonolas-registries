@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
+// Gnosis Safe Proxy Factory interface extracted from the mainnet: https://etherscan.io/address/0xa6b71e26c5e0845f74c812102ca7114b6a896ab2#code#F2#L61
 interface IGnosisSafeProxyFactory {
     /// @dev Allows to create new proxy contact and execute a message call to the new proxy within one transaction.
     /// @param _singleton Address of singleton contract.
