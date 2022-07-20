@@ -79,15 +79,6 @@ Run the tests:
 npx hardhat test
 ```
 
-## Deployment
-The deployment of contracts to the test- and main-net is split into step-by-step series of scripts for more control and checkpoint convenience.
-The description of deployment procedure can be found here: [deployment](https://github.com/valory-xyz/autonolas-registries/blob/main/scripts/deployment).
-
-The finalized contract ABIs for deployment and their number of optimization passes are located here: [ABIs](https://github.com/valory-xyz/autonolas-registries/blob/main/abis).
-
-### Audits
-The audit is provided as development matures. The latest audit report can be found here: [audits](https://github.com/valory-xyz/autonolas-registries/blob/main/audits).
-
 ### Linters
 - [`ESLint`](https://eslint.org) is used for JS code.
 - [`solhint`](https://github.com/protofire/solhint) is used for Solidity linting.
@@ -100,6 +91,17 @@ several steps in order to be verified. Those include:
 - running linters
 - running tests
 
+## Deployment
+The deployment of contracts to the test- and main-net is split into step-by-step series of scripts for more control and checkpoint convenience.
+The description of deployment procedure can be found here: [deployment](https://github.com/valory-xyz/autonolas-registries/blob/main/scripts/deployment).
+
+The finalized contract ABIs for deployment and their number of optimization passes are located here: [ABIs](https://github.com/valory-xyz/autonolas-registries/blob/main/abis).
+
+### Audits
+The audit is provided as development matures. The latest audit report can be found here: [audits](https://github.com/valory-xyz/autonolas-registries/blob/main/audits).
+
+## Deployed Protocol
+The list of addresses can be found [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/mainnet_addresses.json).
 
 ## Acknowledgements
 The registries contracts were inspired and based on the following sources:
