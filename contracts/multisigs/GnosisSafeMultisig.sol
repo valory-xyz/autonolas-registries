@@ -1,8 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
-import "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxy.sol";
-import "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol";
+// Gnosis Safe Proxy Factory interface extracted from the mainnet: https://etherscan.io/address/0xa6b71e26c5e0845f74c812102ca7114b6a896ab2#code#F2#L61
+interface IGnosisSafeProxyFactory {
+    /// @dev Allows to create new proxy contact and execute a message call to the new proxy within one transaction.
+    /// @param _singleton Address of singleton contract.
+    /// @param initializer Payload for message call sent to new proxy contract.
+    /// @param saltNonce Nonce that will be used to generate the salt to calculate the address of the new proxy contract.
+    function createProxyWithNonce(
+        address _singleton,
+        bytes memory initializer,
+        uint256 saltNonce
+    ) external returns (address proxy);
+}
 
 /// @title Gnosis Safe - Smart contract for Gnosis Safe multisig implementation of a generic multisig interface
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -73,8 +83,6 @@ contract GnosisSafeMultisig {
             to, payload, fallbackHandler, paymentToken, payment, paymentReceiver);
 
         // Create a gnosis safe multisig via the proxy factory
-        GnosisSafeProxyFactory gFactory = GnosisSafeProxyFactory(gnosisSafeProxyFactory);
-        GnosisSafeProxy gProxy = gFactory.createProxyWithNonce(gnosisSafe, safeParams, nonce);
-        multisig = address(gProxy);
+        multisig = IGnosisSafeProxyFactory(gnosisSafeProxyFactory).createProxyWithNonce(gnosisSafe, safeParams, nonce);
     }
 }
