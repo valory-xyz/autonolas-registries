@@ -748,11 +748,14 @@ describe("ServiceRegistry", function () {
             serviceInstance = await serviceRegistry.getService(serviceId);
             expect(serviceInstance.state).to.equal(3);
 
-            // Create safe passing a specific salt / nonce and payload (won't be used)
-            const payload = ethers.utils.solidityPack(["address", "address", "address", "address", "uint256", "uint256", "bytes"],
-                [AddressZero, AddressZero, AddressZero, AddressZero, 0, serviceId, "0xabcd"]);
+            // Create safe passing a specific salt / nonce as a current date and a payload (won't be used)
+            const nonce = parseInt(Date.now() / 1000, 10);
+            const payload = "0xabcd";
+            // Pach the data for gnosis safe
+            const data = ethers.utils.solidityPack(["address", "address", "address", "address", "uint256", "uint256", "bytes"],
+                [AddressZero, AddressZero, AddressZero, AddressZero, 0, nonce, payload]);
             const safe = await serviceRegistry.connect(serviceManager).deploy(owner, serviceId,
-                gnosisSafeMultisig.address, payload);
+                gnosisSafeMultisig.address, data);
             const result = await safe.wait();
             expect(result.events[2].event).to.equal("CreateMultisigWithAgents");
             serviceInstance = await serviceRegistry.getService(serviceId);

@@ -14,11 +14,18 @@ interface IGnosisSafeProxyFactory {
     ) external returns (address proxy);
 }
 
+/// @dev Provided incorrect data length.
+/// @param expected Expected minimum data length.
+/// @param provided Provided data length.
+error IncorrectDataLength(uint256 expected, uint256 provided);
+
 /// @title Gnosis Safe - Smart contract for Gnosis Safe multisig implementation of a generic multisig interface
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 contract GnosisSafeMultisig {
     // Selector of the Gnosis Safe setup function
-    bytes4 internal constant _GNOSIS_SAFE_SETUP_SELECTOR = 0xb63e800d;
+    bytes4 public constant GNOSIS_SAFE_SETUP_SELECTOR = 0xb63e800d;
+    // Default data size to be parsed and passed to the Gnosis Safe Factory without payload
+    uint256 public constant DEFAULT_DATA_LENGTH = 144;
     // Gnosis Safe
     address payable public immutable gnosisSafe;
     // Gnosis Safe Factory
@@ -33,15 +40,22 @@ contract GnosisSafeMultisig {
     }
 
     /// @dev Parses (unpacks) the data to gnosis safe specific parameters.
+    /// @notice If the provided data is not empty, its length must be at least 144 bytes to be parsed correctly.
     /// @param data Packed data related to the creation of a gnosis safe multisig.
     function _parseData(bytes memory data) internal pure
         returns (address to, address fallbackHandler, address paymentToken, address payable paymentReceiver,
             uint256 payment, uint256 nonce, bytes memory payload)
     {
-        if (data.length > 0) {
-            uint256 dataSize = data.length;
+        uint256 dataLength = data.length;
+        if (dataLength > 0) {
+            // Check for the correct data length
+            if (dataLength < DEFAULT_DATA_LENGTH) {
+                revert IncorrectDataLength(DEFAULT_DATA_LENGTH, dataLength);
+            }
+
+            // Read the first 144 bytes of data
             assembly {
-                // Read all the addresses first
+                // Read all the addresses first (80 bytes)
                 let offset := 20
                 to := mload(add(data, offset))
                 offset := add(offset, 20)
@@ -51,14 +65,20 @@ contract GnosisSafeMultisig {
                 offset := add(offset, 20)
                 paymentReceiver := mload(add(data, offset))
 
-                // Read all the uints
+                // Read all the uints (64 more bytes, a total of 144 bytes)
                 offset := add(offset, 32)
                 payment := mload(add(data, offset))
                 offset := add(offset, 32)
                 nonce := mload(add(data, offset))
+            }
 
-                // Read the payload data
-                payload := mload(add(data, dataSize))
+            // Read the payload, if provided
+            if (dataLength > DEFAULT_DATA_LENGTH) {
+                uint256 payloadLength = dataLength - DEFAULT_DATA_LENGTH;
+                payload = new bytes(payloadLength);
+                for (uint256 i = 0; i < payloadLength; ++i) {
+                    payload[i] = data[i + DEFAULT_DATA_LENGTH];
+                }
             }
         }
     }
@@ -78,8 +98,8 @@ contract GnosisSafeMultisig {
         (address to, address fallbackHandler, address paymentToken, address payable paymentReceiver, uint256 payment,
             uint256 nonce, bytes memory payload) = _parseData(data);
 
-        // Encode the gmosis setup function parameters
-        bytes memory safeParams = abi.encodeWithSelector(_GNOSIS_SAFE_SETUP_SELECTOR, owners, threshold,
+        // Encode the gnosis setup function parameters
+        bytes memory safeParams = abi.encodeWithSelector(GNOSIS_SAFE_SETUP_SELECTOR, owners, threshold,
             to, payload, fallbackHandler, paymentToken, payment, paymentReceiver);
 
         // Create a gnosis safe multisig via the proxy factory
