@@ -68,7 +68,6 @@ describe("GnosisSafeMultisig", function () {
 
             // Get the safe multisig instance
             const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
-            const safeContracts = require("@gnosis.pm/safe-contracts");
 
             // Check the multisig owners and threshold
             const owners = await multisig.getOwners();
@@ -100,7 +99,6 @@ describe("GnosisSafeMultisig", function () {
 
             // Get the safe multisig instance
             const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
-            const safeContracts = require("@gnosis.pm/safe-contracts");
 
             // Check the multisig owners and threshold
             const owners = await multisig.getOwners();
@@ -126,7 +124,6 @@ describe("GnosisSafeMultisig", function () {
 
             // Get the safe multisig instance
             const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
-            const safeContracts = require("@gnosis.pm/safe-contracts");
 
             // Check the multisig owners and threshold
             const owners = await multisig.getOwners();
