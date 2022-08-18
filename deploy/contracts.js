@@ -7,7 +7,13 @@ module.exports = async () => {
     // Test address, IPFS hashes and descriptions for components and agents
     const compHs = ["0x" + "9".repeat(64), "0x" + "1".repeat(64), "0x" + "2".repeat(64)];
     const agentHs = ["0x" + "3".repeat(62) + "11", "0x" + "4".repeat(62) + "11"];
-    const configHash = "0x" + "5".repeat(62) + "22";
+
+    // Read configs from the JSON file
+    const fs = require("fs");
+    const globalsFile = "scripts/node_globals.json";
+    const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
+    const parsedData = JSON.parse(dataFromJSON);
+    const configHash = parsedData.configHash;
 
     // Safe related
     const safeThreshold = 7;
@@ -173,6 +179,6 @@ module.exports = async () => {
     };
 
     // Write the json file with the setup
-    let fs = require("fs");
-    fs.writeFileSync("initDeploy.json", JSON.stringify(initDeployJSON));
+    const initDeployFile = "initDeploy.json";
+    fs.writeFileSync(initDeployFile, JSON.stringify(initDeployJSON));
 };
