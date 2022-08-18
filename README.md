@@ -97,6 +97,8 @@ The description of deployment procedure can be found here: [deployment](https://
 
 The finalized contract ABIs for deployment and their number of optimization passes are located here: [ABIs](https://github.com/valory-xyz/autonolas-registries/blob/main/abis).
 
+For testing purposes, the hardhat node deployment script is located [here](https://github.com/valory-xyz/autonolas-registries/blob/main/deploy).
+
 ### Audits
 The audit is provided as development matures. The latest audit report can be found here: [audits](https://github.com/valory-xyz/autonolas-registries/blob/main/audits).
 
