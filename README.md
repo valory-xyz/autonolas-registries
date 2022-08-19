@@ -113,6 +113,8 @@ npx hardhat run scripts/mainnet_snapshot.js --network mainnet
 ```
 Please note that for the correct mainnet interaction the `ALCHEMY_API_KEY` needs to be exported as an environment variable.
 
+NOTE: whilst the snapshot does maintain the exact dependency structure between components, agents and services, it does not conserve the ownership structure.
+
 ## Acknowledgements
 The registries contracts were inspired and based on the following sources:
 - [Rari-Capital](https://github.com/Rari-Capital/solmate). Last known audited version: `a9e3ea26a2dc73bfa87f0cb189687d029028e0c5`;

@@ -113,7 +113,7 @@ module.exports = async () => {
     // Create and deploy services based on the snapshot
     const numServices = snapshotJSON["serviceRegistry"]["configHashes"].length;
     // Agent instances cannot repeat, so each of them must be a unique address
-    // TODO: With a bigger number of services, precalculate the number of agent instnaces first and allocate enough addresses for that
+    // TODO: With a bigger number of services, precalculate the number of agent instances first and allocate enough addresses for that
     let aCounter = 0;
     console.log("==========================================");
     for (let i = 0; i < numServices; i++) {
