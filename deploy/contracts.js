@@ -1,6 +1,5 @@
 /*global ethers*/
 
-const { ethers } = require("hardhat");
 const { expect } = require("chai");
 
 module.exports = async () => {

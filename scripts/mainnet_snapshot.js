@@ -1,4 +1,4 @@
-/*global ethers*/
+/*global process*/
 
 const { ethers } = require("hardhat");
 
@@ -11,26 +11,26 @@ async function main() {
 
     // Initialize the snapshot structure
     let snapshotJSON = {
-       "componentRegistry": {
-           "dependencies": [],
-           "hashes": []
-       },
-       "agentRegistry": {
-           "dependencies": [],
-           "hashes": []
-       },
-       "serviceRegistry": {
-           "securityDeposit": [],
-           "multisig": [],
-           "configHashes": [],
-           "threshold": [],
-           "maxNumAgentInstances": [],
-           "numAgentInstances": [],
-           "state": [],
-           "agentIds": [],
-           "agentParams": []
-       }
-   };
+        "componentRegistry": {
+            "dependencies": [],
+            "hashes": []
+        },
+        "agentRegistry": {
+            "dependencies": [],
+            "hashes": []
+        },
+        "serviceRegistry": {
+            "securityDeposit": [],
+            "multisig": [],
+            "configHashes": [],
+            "threshold": [],
+            "maxNumAgentInstances": [],
+            "numAgentInstances": [],
+            "state": [],
+            "agentIds": [],
+            "agentParams": []
+        }
+    };
 
     console.log("Pulling registries snapshot with the following numbers.");
     const numComponents = Number(await componentRegistry.totalSupply());
