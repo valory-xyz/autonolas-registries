@@ -1,24 +1,14 @@
 /*global ethers*/
 
+const { expect } = require("chai");
+
 module.exports = async () => {
-    // Common parameters
-    const AddressZero = "0x" + "0".repeat(40);
-
-    // Test address, IPFS hashes and descriptions for components and agents
-    const compHs = ["0x" + "9".repeat(64), "0x" + "1".repeat(64), "0x" + "2".repeat(64)];
-    const agentHs = ["0x" + "3".repeat(62) + "11", "0x" + "4".repeat(62) + "11"];
-
     // Read configs from the JSON file
     const fs = require("fs");
-    const globalsFile = "scripts/node_globals.json";
-    const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
-    const parsedData = JSON.parse(dataFromJSON);
-    const configHash = parsedData.configHash;
-
-    // Safe related
-    const safeThreshold = 7;
-    const nonce =  0;
-    const payload = "0x";
+    // Copy this file from scripts/mainnet_snapshot.json or construct one following the JSON defined structure
+    const snapshotFile = "snapshot.json";
+    const dataFromJSON = fs.readFileSync(snapshotFile, "utf8");
+    const snapshotJSON = JSON.parse(dataFromJSON);
 
     const signers = await ethers.getSigners();
     const deployer = signers[0];
@@ -30,6 +20,7 @@ module.exports = async () => {
         "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
         "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6",
     ];
+    const operatorPK = "0xf214f2b2cd398c806f84e317254e0f0b801d0643303237d97a22a48e01628897";
 
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
@@ -46,30 +37,34 @@ module.exports = async () => {
         "https://gateway.autonolas.tech/ipfs/", componentRegistry.address);
     await agentRegistry.deployed();
 
-    // Deploying minter
+    // Deploying component / agent manager
     const RegistriesManager = await ethers.getContractFactory("RegistriesManager");
     const registriesManager = await RegistriesManager.deploy(componentRegistry.address, agentRegistry.address);
     await registriesManager.deployed();
 
-    console.log("ComponentRegistry deployed to:", componentRegistry.address);
-    console.log("AgentRegistry deployed to:", agentRegistry.address);
-    console.log("RegistriesManager deployed to:", registriesManager.address);
+    // For simplicity, deployer is the manager for component and agent registries
+    await componentRegistry.changeManager(deployer.address);
+    await agentRegistry.changeManager(deployer.address);
 
-    // Whitelisting minter in component and agent registry
-    await componentRegistry.changeManager(registriesManager.address);
-    await agentRegistry.changeManager(registriesManager.address);
-    console.log("Whitelisted RegistriesManager addresses to both ComponentRegistry and AgentRegistry contract instances");
+    // Create components from the snapshot data
+    const numComponents = snapshotJSON["componentRegistry"]["hashes"].length;
+    for (let i = 0; i < numComponents; i++) {
+        await componentRegistry.connect(deployer).create(deployer.address,
+            snapshotJSON["componentRegistry"]["hashes"][i], snapshotJSON["componentRegistry"]["dependencies"][i]);
+    }
 
-    // Create 3 components and two agents based on defined component and agent hashes
-    // 0 for component, 1 for agent
-    await registriesManager.create(0, deployer.address, compHs[0], []);
-    await registriesManager.create(1, deployer.address, agentHs[0], [1]);
-    await registriesManager.create(0, deployer.address, compHs[1], [1]);
-    await registriesManager.create(0, deployer.address, compHs[2], [1, 2]);
-    await registriesManager.create(1, deployer.address, agentHs[1], [1, 2, 3]);
+    // Create agents from the snapshot data
+    const numAgents = snapshotJSON["agentRegistry"]["hashes"].length;
+    for (let i = 0; i < numAgents; i++) {
+        await agentRegistry.connect(deployer).create(deployer.address,
+            snapshotJSON["agentRegistry"]["hashes"][i], snapshotJSON["agentRegistry"]["dependencies"][i]);
+    }
+
     const componentBalance = await componentRegistry.balanceOf(deployer.address);
+    expect(componentBalance).to.equal(numComponents);
     const agentBalance = await agentRegistry.balanceOf(deployer.address);
-    console.log("Owner of minted components and agents:", deployer.address);
+    expect(agentBalance).to.equal(numAgents);
+    console.log("Owner of created components and agents:", deployer.address);
     console.log("Number of initial components:", Number(componentBalance));
     console.log("Number of initial agents:", Number(agentBalance));
 
@@ -85,83 +80,115 @@ module.exports = async () => {
     const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
     const gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
     await gnosisSafeMultisig.deployed();
-    console.log("Gnosis Safe Multisig deployed to:", gnosisSafeMultisig.address);
 
-    // Creating and updating a service
-    const regBond = 1000;
-    const regDeposit = 1000;
-    const agentIds = [1];
-    const agentParams = [[4, regBond]];
-    const maxThreshold = agentParams[0][0];
-    const serviceId = 1;
-
+    // Deploying service registry and service manager contracts
     const ServiceRegistry = await ethers.getContractFactory("ServiceRegistry");
     const serviceRegistry = await ServiceRegistry.deploy("Service Registry", "AUTONOLAS-SERVICE-V1",
         "https://gateway.autonolas.tech/ipfs/", agentRegistry.address);
     await serviceRegistry.deployed();
 
     const ServiceManager = await ethers.getContractFactory("ServiceManager");
-    // Treasury address is irrelevant at the moment
     const serviceManager = await ServiceManager.deploy(serviceRegistry.address);
     await serviceManager.deployed();
 
+    console.log("==========================================");
+    console.log("ComponentRegistry deployed to:", componentRegistry.address);
+    console.log("AgentRegistry deployed to:", agentRegistry.address);
+    console.log("RegistriesManager deployed to:", registriesManager.address);
     console.log("ServiceRegistry deployed to:", serviceRegistry.address);
     console.log("ServiceManager deployed to:", serviceManager.address);
+    console.log("Gnosis Safe Multisig deployed to:", gnosisSafeMultisig.address);
 
-    // Create a service
-    await serviceRegistry.changeManager(deployer.address);
-    await serviceRegistry.create(deployer.address, configHash, agentIds, agentParams, maxThreshold);
-    console.log("Service is created");
-
-    // Register agents
-    await serviceRegistry.activateRegistration(deployer.address, serviceId, {value: regDeposit});
-    // Owner / deployer is the operator of agent instances as well
-    await serviceRegistry.registerAgents(operator.address, serviceId, agentInstances, [1, 1, 1, 1], {value: 4 * regBond});
-
-    // Whitelist gnosis multisig implementation
+    // Whitelist gnosis multisig implementations
     await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
     // Also whitelist multisigs from goerli and mainnet
     // Goerli
     await serviceRegistry.changeMultisigPermission("0x63C2c53c09dE534Dd3bc0b7771bf976070936bAC", true);
     // Mainnet
     await serviceRegistry.changeMultisigPermission("0x46C0D07F55d4F9B5Eed2Fc9680B5953e5fd7b461", true);
-    // Deploy the service
-    const safe = await serviceRegistry.deploy(deployer.address, serviceId, gnosisSafeMultisig.address, payload);
-    const result = await safe.wait();
-    const multisig = result.events[0].address;
-    console.log("Service multisig deployed to:", multisig);
-    console.log("Number of agent instances:", agentInstances.length);
 
-    // Verify the deployment of the created Safe: checking threshold and owners
-    const proxyContract = await ethers.getContractAt("GnosisSafe", multisig);
-    if (await proxyContract.getThreshold() != maxThreshold) {
-        throw new Error("incorrect threshold");
-    }
-    for (const aInstance of agentInstances) {
-        const isOwner = await proxyContract.isOwner(aInstance);
-        if (!isOwner) {
-            throw new Error("incorrect agent instance");
+    // For simplicity, deployer is the manager for service registry
+    await serviceRegistry.changeManager(deployer.address);
+
+    // Create and deploy services based on the snapshot
+    const numServices = snapshotJSON["serviceRegistry"]["configHashes"].length;
+    // Agent instances cannot repeat, so each of them must be a unique address
+    // TODO: With a bigger number of services, precalculate the number of agent instances first and allocate enough addresses for that
+    let aCounter = 0;
+    console.log("==========================================");
+    for (let i = 0; i < numServices; i++) {
+        // Get the agent Ids related data
+        const agentIds = snapshotJSON["serviceRegistry"]["agentIds"][i];
+        //console.log("agentIds", agentIds);
+        let agentParams = [];
+        for (let j = 0; j < agentIds.length; j++) {
+            agentParams.push(snapshotJSON["serviceRegistry"]["agentParams"][i][j]);
         }
-    }
+        //console.log("agentParams", agentParams);
 
-    // Give service manager rights to the corresponding contract
+        // Create a service
+        const configHash = snapshotJSON["serviceRegistry"]["configHashes"][i];
+        const threshold = snapshotJSON["serviceRegistry"]["threshold"][i];
+        //console.log("configHash", configHash);
+        //console.log("threshold", threshold);
+        await serviceRegistry.create(deployer.address, configHash, agentIds, agentParams, threshold);
+
+        // Activate registration
+        const serviceId = i + 1;
+        console.log("Service Id:", serviceId);
+        await serviceRegistry.activateRegistration(deployer.address, serviceId,
+            {value: snapshotJSON["serviceRegistry"]["securityDeposit"][i]});
+
+        // Register agents with the operator
+        let sumValue = ethers.BigNumber.from(0);
+        let regAgentInstances = [];
+        let regAgentIds = [];
+        // Calculate all the agent instances and a sum of a bond value from the operator
+        for (let j = 0; j < agentIds.length; j++) {
+            const mult = ethers.BigNumber.from(agentParams[j][1]).mul(agentParams[j][0]);
+            sumValue = sumValue.add(mult);
+            for (let k = 0; k < agentParams[j][0]; k++) {
+                // Agent instances to register will be as many as agent Ids multiply by the number of slots
+                regAgentIds.push(agentIds[j]);
+                regAgentInstances.push(agentInstances[aCounter]);
+                aCounter++;
+            }
+        }
+        //console.log("regAgentInstances", regAgentInstances);
+        //console.log("regAgentIds", regAgentIds);
+        //console.log("sumValue", sumValue);
+        await serviceRegistry.registerAgents(operator.address, serviceId, regAgentInstances, regAgentIds, {value: sumValue});
+
+        // Deploy the service
+        const payload = "0x";
+        const safe = await serviceRegistry.deploy(deployer.address, serviceId, gnosisSafeMultisig.address, payload);
+        const result = await safe.wait();
+        const multisig = result.events[0].address;
+        console.log("Service multisig deployed to:", multisig);
+        console.log("Number of agent instances:", regAgentInstances.length);
+
+        // Verify the deployment of the created Safe: checking threshold and owners
+        const proxyContract = await ethers.getContractAt("GnosisSafe", multisig);
+        if (await proxyContract.getThreshold() != threshold) {
+            throw new Error("incorrect threshold");
+        }
+        for (const aInstance of regAgentInstances) {
+            const isOwner = await proxyContract.isOwner(aInstance);
+            if (!isOwner) {
+                throw new Error("incorrect agent instance");
+            }
+        }
+
+        console.log("==========================================");
+    }
+    console.log("Services are created and deployed");
+
+    // Change manager in component, agent and service registry to their corresponding manager contracts
+    await componentRegistry.changeManager(registriesManager.address);
+    await agentRegistry.changeManager(registriesManager.address);
+    console.log("RegistriesManager is now a manager of ComponentRegistry and AgentRegistry contracts");
     await serviceRegistry.changeManager(serviceManager.address);
-
-    // Deploy safe multisig for the governance
-    const safeSigners = signers.slice(11, 20).map(
-        function (currentElement) {
-            return currentElement.address;
-        }
-    );
-    const setupData = gnosisSafe.interface.encodeFunctionData(
-        "setup",
-        // signers, threshold, to_address, data, fallback_handler, payment_token, payment, payment_receiver
-        [safeSigners, safeThreshold, AddressZero, "0x", AddressZero, AddressZero, 0, AddressZero]
-    );
-    const safeContracts = require("@gnosis.pm/safe-contracts");
-    const proxyAddress = await safeContracts.calculateProxyAddress(gnosisSafeProxyFactory, gnosisSafe.address,
-        setupData, nonce);
-    await gnosisSafeProxyFactory.createProxyWithNonce(gnosisSafe.address, setupData, nonce).then((tx) => tx.wait());
+    console.log("ServiceManager is now a manager of ServiceRegistry contract");
 
     // Writing the JSON with the initial deployment data
     let initDeployJSON = {
@@ -171,8 +198,11 @@ module.exports = async () => {
         "serviceRegistry": serviceRegistry.address,
         "serviceManager": serviceManager.address,
         "Multisig implementation": gnosisSafeMultisig.address,
-        "Service multisig": multisig,
-        "agents": {
+        "operator": {
+            "address": operator.address,
+            "privateKey": operatorPK
+        },
+        "agentsInstances": {
             "addresses": [agentInstances[0], agentInstances[1], agentInstances[2], agentInstances[3]],
             "privateKeys": [agentInstancesPK[0], agentInstancesPK[1], agentInstancesPK[2], agentInstancesPK[3]]
         }
