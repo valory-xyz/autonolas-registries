@@ -105,6 +105,14 @@ The audit is provided as development matures. The latest audit report can be fou
 ## Deployed Protocol
 The list of addresses can be found [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/mainnet_addresses.json).
 
+### Mainnet snapshot of registries
+In order to get the current snapshot of all the registries, the following script is provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/scripts/mainnet_snapshot.js).
+The script can be run with the following command:
+```
+npx hardhat run scripts/mainnet_snapshot.js --network mainnet
+```
+Please note that for the correct mainnet interaction the `ALCHEMY_API_KEY` needs to be exported as an environment variable.
+
 ## Acknowledgements
 The registries contracts were inspired and based on the following sources:
 - [Rari-Capital](https://github.com/Rari-Capital/solmate). Last known audited version: `a9e3ea26a2dc73bfa87f0cb189687d029028e0c5`;
