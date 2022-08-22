@@ -34,16 +34,8 @@ error WrongOwner(address provided);
 /// @title Gnosis Safe Same Address - Smart contract for Gnosis Safe verification of an already existent multisig address.
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 contract GnosisSafeSameAddressMultisig {
-    // Default data size to be parsed as an address of a Gnosis Safe multisig
+    // Default data size to be parsed as an address of a Gnosis Safe multisig proxy address
     uint256 public constant DEFAULT_DATA_LENGTH = 20;
-    // Gnosis Safe
-    address payable public immutable gnosisSafe;
-
-    /// @dev GnosisSafeSameAddressMultisig constructor.
-    /// @param _gnosisSafe Gnosis Safe master copy address.
-    constructor (address payable _gnosisSafe) {
-        gnosisSafe = _gnosisSafe;
-    }
 
     /// @dev Verifies the existent gnosis safe multisig for changed owners and threshold.
     /// @notice The multisig was supposedly updated before reaching this step such that new multisig is not created.
@@ -62,7 +54,7 @@ contract GnosisSafeSameAddressMultisig {
             revert IncorrectDataLength(DEFAULT_DATA_LENGTH, data.length);
         }
 
-        // Read the multisig address (20 bytes)
+        // Read the proxy multisig address (20 bytes)
         assembly {
             multisig := mload(add(data, DEFAULT_DATA_LENGTH))
         }

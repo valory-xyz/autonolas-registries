@@ -52,7 +52,7 @@ describe("ServiceRegistry", function () {
         await gnosisSafeProxyFactory.deployed();
 
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy(gnosisSafe.address);
+        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
         await gnosisSafeSameAddressMultisig.deployed();
 
         const ServiceRegistry = await ethers.getContractFactory("ServiceRegistry");

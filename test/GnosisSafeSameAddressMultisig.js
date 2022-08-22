@@ -25,7 +25,7 @@ describe("GnosisSafeSameAddressMultisig", function () {
         await gnosisSafeProxyFactory.deployed();
 
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy(gnosisSafe.address);
+        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
         await gnosisSafeSameAddressMultisig.deployed();
 
         signers = await ethers.getSigners();
