@@ -71,9 +71,9 @@ contract GnosisSafeSameAddressMultisig {
         if (numOwners != checkOwners.length) {
             revert WrongNumOwners(checkOwners.length, numOwners);
         }
-        // The owners in the multisig itself are stored in reverse order compared to how they were added.
-        // Thus, the check must be carried out accordingly. Use the following code for reference:
+        // The owners in the multisig itself are stored in reverse order compared to how they were added:
         // https://etherscan.io/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552#code#F6#L56
+        // Thus, the check must be carried out accordingly.
         for (uint256 i = 0; i < numOwners; ++i) {
             if (owners[i] != checkOwners[numOwners - i - 1]) {
                 revert WrongOwner(owners[i]);
