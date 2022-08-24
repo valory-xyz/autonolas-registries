@@ -6,6 +6,7 @@ const { ethers } = require("hardhat");
 describe("GnosisSafeSameAddressMultisig", function () {
     let gnosisSafe;
     let gnosisSafeProxyFactory;
+    let multiSend;
     let gnosisSafeSameAddressMultisig;
     let signers;
     let initialOwner;
@@ -23,6 +24,10 @@ describe("GnosisSafeSameAddressMultisig", function () {
         const GnosisSafeProxyFactory = await ethers.getContractFactory("GnosisSafeProxyFactory");
         gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deploy();
         await gnosisSafeProxyFactory.deployed();
+
+        const MultiSend = await ethers.getContractFactory("MultiSendCallOnly");
+        multiSend = await MultiSend.deploy();
+        await multiSend.deployed();
 
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
         gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
@@ -99,6 +104,57 @@ describe("GnosisSafeSameAddressMultisig", function () {
 
             // Verify the new multisig data
             updatedMultisigAddress = await gnosisSafeSameAddressMultisig.create(newOwnerAddresses, newThreshold, data);
+            expect(multisig.address).to.equal(updatedMultisigAddress);
+        });
+
+        it("Create a multisig and change its owners and threshold via a multisend", async function () {
+            // Create an initial multisig with a salt being the max of uint256
+            const safeContracts = require("@gnosis.pm/safe-contracts");
+            const setupData = gnosisSafe.interface.encodeFunctionData(
+                "setup",
+                // signers, threshold, to_address, data, fallback_handler, payment_token, payment, payment_receiver
+                [[initialOwner.address], initialThreshold, AddressZero, "0x", AddressZero, AddressZero, 0, AddressZero]
+            );
+            const proxyAddress = await safeContracts.calculateProxyAddress(gnosisSafeProxyFactory, gnosisSafe.address,
+                setupData, maxUint256);
+            await gnosisSafeProxyFactory.createProxyWithNonce(gnosisSafe.address, setupData, maxUint256).then((tx) => tx.wait());
+            const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
+
+            // Swap the owner of the multisig to the deployer (initial owner to give up rights for the deployer)
+            const deployer = signers[0];
+            const sentinelOwners = "0x" + "0".repeat(39) + "1";
+            let nonce = await multisig.nonce();
+            const txHashData = await safeContracts.buildContractCall(multisig, "swapOwner",
+                [sentinelOwners, initialOwner.address, deployer.address], nonce, 0, 0);
+            const signMessageData = await safeContracts.safeSignMessage(initialOwner, multisig, txHashData, 0);
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Add all the new multisig owner addresses and remove the deployer
+            let callData = [];
+            let txs = [];
+            nonce = await multisig.nonce();
+            // Add the addresses, but keep the threshold the same
+            for (let i = 0; i < newOwnerAddresses.length; i++) {
+                callData[i] = multisig.interface.encodeFunctionData("addOwnerWithThreshold", [newOwnerAddresses[i], 1]);
+                txs[i] = safeContracts.buildSafeTransaction({to: multisig.address, data: callData[i], nonce: 0});
+            }
+            // Remove the original multisig owner and change the threshold
+            // Note that the prevOwner is the very first added address as it corresponds to the reverse order of added addresses
+            // The order in the gnosis safe multisig is as follows: sentinelOwners => newOwnerAddresses[last] => ... =>
+            // => newOwnerAddresses[0] => deployer
+            callData.push(multisig.interface.encodeFunctionData("removeOwner", [newOwnerAddresses[0], deployer.address,
+                newThreshold]));
+            txs.push(safeContracts.buildSafeTransaction({to: multisig.address, data: callData[callData.length - 1], nonce: 0}));
+            let safeTx = safeContracts.buildMultiSendSafeTx(multiSend, txs, nonce);
+            await expect(
+                safeContracts.executeTxWithSigners(multisig, safeTx, [deployer])
+            ).to.emit(multisig, "ExecutionSuccess");
+
+            // Pack the original multisig address
+            const data = ethers.utils.solidityPack(["address"], [multisig.address]);
+
+            // Verify the new multisig data
+            const updatedMultisigAddress = await gnosisSafeSameAddressMultisig.create(newOwnerAddresses, newThreshold, data);
             expect(multisig.address).to.equal(updatedMultisigAddress);
         });
     });
