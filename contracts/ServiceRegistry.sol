@@ -382,7 +382,7 @@ contract ServiceRegistry is GenericRegistry {
 
     /// @dev Registers agent instances.
     /// @param operator Address of the operator.
-    /// @param serviceId Service Id to be updated.
+    /// @param serviceId Service Id to register agent instances for.
     /// @param agentInstances Agent instance addresses.
     /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
     /// @return success True, if function executed successfully.

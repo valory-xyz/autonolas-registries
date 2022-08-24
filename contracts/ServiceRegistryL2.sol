@@ -23,6 +23,7 @@ struct AgentInstance {
 
 /// @title Service Registry L2 - Smart contract for registering services on L2 chains.
 /// @dev Underlying canonical agents and components are not checked for their validity since they are set up on the L1 mainnet.
+///      The architecture is optimistic, in the sense that service owners are assumed to reference existing and relevant agents.
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 contract ServiceRegistryL2 is GenericRegistry {
     event DrainerUpdated(address indexed drainer);
@@ -202,6 +203,7 @@ contract ServiceRegistryL2 is GenericRegistry {
     /// @param serviceOwner Individual that creates and controls a service.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids in a sorted ascending order.
+    /// @notice If agentIds are not sorted in ascending order then the function that executes initial checks gets reverted.
     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
     /// @param threshold Signers threshold for a multisig composed by agent instances.
     /// @return serviceId Created service Id.
@@ -269,6 +271,7 @@ contract ServiceRegistryL2 is GenericRegistry {
     /// @param serviceOwner Individual that creates and controls a service.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids in a sorted ascending order.
+    /// @notice If agentIds are not sorted in ascending order then the function that executes initial checks gets reverted.
     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
     /// @param threshold Signers threshold for a multisig composed by agent instances.
     /// @param serviceId Service Id to be updated.
@@ -373,7 +376,7 @@ contract ServiceRegistryL2 is GenericRegistry {
 
     /// @dev Registers agent instances.
     /// @param operator Address of the operator.
-    /// @param serviceId Service Id to be updated.
+    /// @param serviceId Service Id to register agent instances for.
     /// @param agentInstances Agent instance addresses.
     /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
     /// @return success True, if function executed successfully.
