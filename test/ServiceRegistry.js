@@ -84,6 +84,7 @@ describe("ServiceRegistry", function () {
     context("Initialization", async function () {
         serviceRegistryImplementations.forEach(async function (serviceRegistryImplementation) {
             it("Changing owner", async function () {
+                // Choose the service registry implementation: L1 or L2
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
@@ -268,6 +269,7 @@ describe("ServiceRegistry", function () {
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
+                // Components and agents can only be created on L1
                 if (serviceRegistryImplementation == "l1") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
