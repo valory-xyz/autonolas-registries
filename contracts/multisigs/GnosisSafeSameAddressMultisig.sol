@@ -38,11 +38,12 @@ contract GnosisSafeSameAddressMultisig {
     uint256 public constant DEFAULT_DATA_LENGTH = 20;
 
     /// @dev Verifies the existent gnosis safe multisig for changed owners and threshold.
-    /// @notice The multisig was supposedly updated before reaching this step such that new multisig is not created.
+    /// @notice The multisig is supposedly updated before reaching this step such that new multisig is not created.
+    ///         Note that the order of owners' addresses in the multisig is in reverse order, see comments below.
     /// @param owners Set of multisig owners.
     /// @param threshold Number of required confirmations for a multisig transaction.
     /// @param data Packed data containing address of an existent gnosis safe multisig.
-    /// @return multisig Address of a multisig.
+    /// @return multisig Address of a multisig (proxy).
     function create(
         address[] memory owners,
         uint256 threshold,
@@ -71,7 +72,7 @@ contract GnosisSafeSameAddressMultisig {
         if (numOwners != checkOwners.length) {
             revert WrongNumOwners(checkOwners.length, numOwners);
         }
-        // The owners in the multisig itself are stored in reverse order compared to how they were added:
+        // The owners' addresses in the multisig itself are stored in reverse order compared to how they were added:
         // https://etherscan.io/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552#code#F6#L56
         // Thus, the check must be carried out accordingly.
         for (uint256 i = 0; i < numOwners; ++i) {
