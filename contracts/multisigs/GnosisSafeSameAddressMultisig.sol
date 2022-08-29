@@ -3,15 +3,6 @@ pragma solidity ^0.8.15;
 
 // Gnosis Safe Master Copy interface extracted from the mainnet: https://etherscan.io/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552#code#F6#L126
 interface IGnosisSafe {
-    /// @dev Sends multiple transactions and reverts all if one fails.
-    /// @param transactions Encoded transactions. Each transaction is encoded as a packed bytes of
-    ///                     operation as a uint8 with 0 for a call or 1 for a delegatecall (=> 1 byte),
-    ///                     to as a address (=> 20 bytes),
-    ///                     value as a uint256 (=> 32 bytes),
-    ///                     data length as a uint256 (=> 32 bytes),
-    ///                     data as bytes.
-    function multiSend(bytes memory transactions) external payable;
-
     /// @dev Gets set of owners.
     /// @return Set of Safe owners.
     function getOwners() external view returns (address[] memory);
