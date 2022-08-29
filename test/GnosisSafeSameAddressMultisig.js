@@ -25,7 +25,7 @@ describe("GnosisSafeSameAddressMultisig", function () {
         gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deploy();
         await gnosisSafeProxyFactory.deployed();
 
-        const MultiSend = await ethers.getContractFactory("MultiSendCallOnly");
+        const MultiSend = await ethers.getContractFactory("MultiSend");
         multiSend = await MultiSend.deploy();
         await multiSend.deployed();
 
@@ -47,7 +47,7 @@ describe("GnosisSafeSameAddressMultisig", function () {
             const data = AddressZero + "55";
             await expect(
                 gnosisSafeSameAddressMultisig.create(newOwnerAddresses, initialThreshold, data)
-            ).to.be.revertedWith("IncorrectDataLength");
+            ).to.be.reverted;
         });
 
         it("Create a multisig and change its owners and threshold", async function () {
@@ -67,8 +67,12 @@ describe("GnosisSafeSameAddressMultisig", function () {
             const data = ethers.utils.solidityPack(["address"], [multisig.address]);
 
             // Update multisig with the same owners and threshold
-            let updatedMultisigAddress = await gnosisSafeSameAddressMultisig.create([initialOwner.address], initialThreshold, data);
+            // Static call to compare results
+            let updatedMultisigAddress = await gnosisSafeSameAddressMultisig.callStatic.create([initialOwner.address],
+                initialThreshold, data);
             expect(multisig.address).to.equal(updatedMultisigAddress);
+            // Real call
+            await gnosisSafeSameAddressMultisig.create([initialOwner.address], initialThreshold, data);
 
             // Try to verify incorrect multisig data
             // Threshold is incorrect
@@ -103,7 +107,7 @@ describe("GnosisSafeSameAddressMultisig", function () {
             await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
 
             // Verify the new multisig data
-            updatedMultisigAddress = await gnosisSafeSameAddressMultisig.create(newOwnerAddresses, newThreshold, data);
+            updatedMultisigAddress = await gnosisSafeSameAddressMultisig.callStatic.create(newOwnerAddresses, newThreshold, data);
             expect(multisig.address).to.equal(updatedMultisigAddress);
         });
 
@@ -154,7 +158,7 @@ describe("GnosisSafeSameAddressMultisig", function () {
             const data = ethers.utils.solidityPack(["address"], [multisig.address]);
 
             // Verify the new multisig data
-            const updatedMultisigAddress = await gnosisSafeSameAddressMultisig.create(newOwnerAddresses, newThreshold, data);
+            const updatedMultisigAddress = await gnosisSafeSameAddressMultisig.callStatic.create(newOwnerAddresses, newThreshold, data);
             expect(multisig.address).to.equal(updatedMultisigAddress);
         });
     });
