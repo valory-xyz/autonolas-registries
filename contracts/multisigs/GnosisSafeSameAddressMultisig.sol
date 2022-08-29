@@ -39,7 +39,8 @@ contract GnosisSafeSameAddressMultisig {
 
     /// @dev Verifies the existent gnosis safe multisig for changed owners and threshold.
     /// @notice The multisig is supposedly updated before reaching this step such that new multisig is not created.
-    ///         Note that the order of owners' addresses in the multisig is in reverse order, see comments below.
+    ///         The order of owners' addresses in the multisig is in reverse order compared to how they were added:
+    ///         https://etherscan.io/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552#code#F6#L56
     /// @param owners Set of multisig owners.
     /// @param threshold Number of required confirmations for a multisig transaction.
     /// @param data Packed data containing address of an existent gnosis safe multisig.
