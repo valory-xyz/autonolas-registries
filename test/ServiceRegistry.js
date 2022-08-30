@@ -7,8 +7,10 @@ describe("ServiceRegistry", function () {
     let componentRegistry;
     let agentRegistry;
     let serviceRegistry;
+    let gnosisSafe;
     let serviceRegistryL2;
     let gnosisSafeMultisig;
+    let multiSend;
     let gnosisSafeSameAddressMultisig;
     let reentrancyAttacker;
     let reentrancyAttackerL2;
@@ -48,7 +50,7 @@ describe("ServiceRegistry", function () {
         await agentRegistry.deployed();
 
         const GnosisSafe = await ethers.getContractFactory("GnosisSafe");
-        const gnosisSafe = await GnosisSafe.deploy();
+        gnosisSafe = await GnosisSafe.deploy();
         await gnosisSafe.deployed();
 
         const GnosisSafeProxyFactory = await ethers.getContractFactory("GnosisSafeProxyFactory");
@@ -58,6 +60,10 @@ describe("ServiceRegistry", function () {
         const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
         gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
         await gnosisSafeMultisig.deployed();
+
+        const MultiSend = await ethers.getContractFactory("MultiSend");
+        multiSend = await MultiSend.deploy();
+        await multiSend.deployed();
 
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
         gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
@@ -1067,6 +1073,10 @@ describe("ServiceRegistry", function () {
             });
 
             it("Changing number of agent instances of a service after deployment and redeploy via the same multisig", async function () {
+                if (serviceRegistryImplementation == "l2") {
+                    serviceRegistry = serviceRegistryL2;
+                }
+
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
@@ -1075,9 +1085,11 @@ describe("ServiceRegistry", function () {
                 const maxThreshold = 1;
                 const newMaxThreshold = 4;
 
-                // Create an agent
-                await agentRegistry.changeManager(mechManager.address);
-                await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
+                if (serviceRegistryImplementation == "l1") {
+                    // Create an agent
+                    await agentRegistry.changeManager(mechManager.address);
+                    await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
+                }
 
                 // Create services and activate the agent instance registration
                 await serviceRegistry.changeManager(serviceManager.address);
@@ -1142,6 +1154,263 @@ describe("ServiceRegistry", function () {
                 const data = ethers.utils.solidityPack(["address"], [multisig.address]);
                 // Redeploy the service using the newly updated multisig (same multisig address)
                 await serviceRegistry.connect(serviceManager).deploy(owner, serviceId, gnosisSafeSameAddressMultisig.address, data);
+
+                // Check that the service is deployed
+                const service = await serviceRegistry.getService(serviceId);
+                expect(service.state).to.equal(4);
+            });
+
+            it("Changing number of agent instances of a service after deployment and redeploy via the same multisig and a multisend", async function () {
+                if (serviceRegistryImplementation == "l2") {
+                    serviceRegistry = serviceRegistryL2;
+                }
+
+                const mechManager = signers[3];
+                const serviceManager = signers[4];
+                const serviceOwner = signers[5];
+                const serviceOwnerAddress = signers[5].address;
+                const operator = signers[6].address;
+                const agentInstances = [signers[7], signers[8], signers[9], signers[10]];
+                const maxThreshold = 1;
+                const newMaxThreshold = 4;
+
+                if (serviceRegistryImplementation == "l1") {
+                    // Create an agent
+                    await agentRegistry.changeManager(mechManager.address);
+                    await agentRegistry.connect(mechManager).create(serviceOwnerAddress, agentHash, [1]);
+                }
+
+                // Create services and activate the agent instance registration
+                await serviceRegistry.changeManager(serviceManager.address);
+                await serviceRegistry.connect(serviceManager).create(serviceOwnerAddress, configHash, [1],
+                    [[1, regBond]], maxThreshold);
+
+                // Activate agent instance registration
+                await serviceRegistry.connect(serviceManager).activateRegistration(serviceOwnerAddress, serviceId, {value: regDeposit});
+
+                /// Register agent instance
+                await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId,
+                    [agentInstances[0].address], [agentId], {value: regBond});
+
+                // Whitelist both gnosis multisig implementations
+                await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+                await serviceRegistry.changeMultisigPermission(gnosisSafeSameAddressMultisig.address, true);
+
+                // Deploy the service and create a multisig and get its address
+                const safe = await serviceRegistry.connect(serviceManager).deploy(serviceOwnerAddress, serviceId,
+                    gnosisSafeMultisig.address, payload);
+                const result = await safe.wait();
+                const proxyAddress = result.events[0].address;
+                // Getting a real multisig address
+                const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
+
+                // Terminate a service after some time since there's a need to add agent instances
+                await serviceRegistry.connect(serviceManager).terminate(serviceOwnerAddress, serviceId);
+
+                // Unbond the agent instance in order to update the service
+                await serviceRegistry.connect(serviceManager).unbond(operator, serviceId);
+
+                const safeContracts = require("@gnosis.pm/safe-contracts");
+                // At this point of time the agent instance gives the ownership rights to the service owner
+                // In other words, swap the owner of the multisig to the service owner (agent instance to give up rights for the service owner)
+                // Since there was only one agent instance, the previous multisig owner address is the sentinel one defined by gnosis (0x1)
+                const sentinelOwners = "0x" + "0".repeat(39) + "1";
+                let nonce = await multisig.nonce();
+                const txHashData = await safeContracts.buildContractCall(multisig, "swapOwner",
+                    [sentinelOwners, agentInstances[0].address, serviceOwnerAddress], nonce, 0, 0);
+                const signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+                await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+                // Updating a service
+                await serviceRegistry.connect(serviceManager).update(serviceOwnerAddress, configHash, [1], [[4, regBond]],
+                    newMaxThreshold, serviceId);
+
+                // Activate agent instance registration
+                await serviceRegistry.connect(serviceManager).activateRegistration(serviceOwnerAddress, serviceId, {value: regDeposit});
+
+                /// Register agent instance
+                await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId,
+                    [agentInstances[0].address, agentInstances[1].address, agentInstances[2].address, agentInstances[3].address],
+                    [agentId, agentId, agentId, agentId], {value: 4 * regBond});
+
+                // Change the existent multisig owners and threshold in a multisend transaction using the service owner access
+                let callData = [];
+                let txs = [];
+                nonce = await multisig.nonce();
+                // Add the addresses, but keep the threshold the same
+                for (let i = 0; i < agentInstances.length; i++) {
+                    callData[i] = multisig.interface.encodeFunctionData("addOwnerWithThreshold", [agentInstances[i].address, 1]);
+                    txs[i] = safeContracts.buildSafeTransaction({to: multisig.address, data: callData[i], nonce: 0});
+                }
+                // Remove the original multisig owner and change the threshold
+                // Note that the prevOwner is the very first added address as it corresponds to the reverse order of added addresses
+                // The order in the gnosis safe multisig is as follows: sentinelOwners => agentInstances[last].address => ... =>
+                // => newOwnerAddresses[0].address => serviceOwnerAddress
+                callData.push(multisig.interface.encodeFunctionData("removeOwner", [agentInstances[0].address, serviceOwnerAddress,
+                    newMaxThreshold]));
+                txs.push(safeContracts.buildSafeTransaction({to: multisig.address, data: callData[callData.length - 1], nonce: 0}));
+                let safeTx = safeContracts.buildMultiSendSafeTx(multiSend, txs, nonce);
+
+                await expect(
+                    safeContracts.executeTxWithSigners(multisig, safeTx, [serviceOwner])
+                ).to.emit(multisig, "ExecutionSuccess");
+
+                // Pack the original multisig address
+                const data = ethers.utils.solidityPack(["address"], [multisig.address]);
+                // Redeploy the service using the newly updated multisig (same multisig address)
+                await serviceRegistry.connect(serviceManager).deploy(serviceOwnerAddress, serviceId,
+                    gnosisSafeSameAddressMultisig.address, data);
+
+                // Check that the service is deployed
+                const service = await serviceRegistry.getService(serviceId);
+                expect(service.state).to.equal(4);
+            });
+
+            it.only("Changing multisig for its re-deployment in a service via multisend on a smart contract side", async function () {
+                if (serviceRegistryImplementation == "l2") {
+                    serviceRegistry = serviceRegistryL2;
+                }
+
+                const mechManager = signers[3];
+                const serviceManager = signers[4];
+                const serviceOwner = signers[5];
+                const serviceOwnerAddress = signers[5].address;
+                const operator = signers[6].address;
+                const agentInstances = [signers[7], signers[8], signers[9], signers[10]];
+                const maxThreshold = 1;
+                const newMaxThreshold = 4;
+
+                if (serviceRegistryImplementation == "l1") {
+                    // Create an agent
+                    await agentRegistry.changeManager(mechManager.address);
+                    await agentRegistry.connect(mechManager).create(serviceOwnerAddress, agentHash, [1]);
+                }
+
+                // Create services and activate the agent instance registration
+                await serviceRegistry.changeManager(serviceManager.address);
+                await serviceRegistry.connect(serviceManager).create(serviceOwnerAddress, configHash, [1],
+                    [[1, regBond]], maxThreshold);
+
+                // Activate agent instance registration
+                await serviceRegistry.connect(serviceManager).activateRegistration(serviceOwnerAddress, serviceId, {value: regDeposit});
+
+                /// Register agent instance
+                await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId,
+                    [agentInstances[0].address], [agentId], {value: regBond});
+
+                // Whitelist both gnosis multisig implementations
+                await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+                await serviceRegistry.changeMultisigPermission(gnosisSafeSameAddressMultisig.address, true);
+
+                // Deploy the service and create a multisig and get its address
+                const safe = await serviceRegistry.connect(serviceManager).deploy(serviceOwnerAddress, serviceId,
+                    gnosisSafeMultisig.address, payload);
+                const result = await safe.wait();
+                const proxyAddress = result.events[0].address;
+                // Getting a real multisig address
+                const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
+
+                // Terminate a service after some time since there's a need to add agent instances
+                await serviceRegistry.connect(serviceManager).terminate(serviceOwnerAddress, serviceId);
+
+                // Unbond the agent instance in order to update the service
+                await serviceRegistry.connect(serviceManager).unbond(operator, serviceId);
+
+                const safeContracts = require("@gnosis.pm/safe-contracts");
+                // At this point of time the agent instance gives the ownership rights to the service owner
+                // In other words, swap the owner of the multisig to the service owner (agent instance to give up rights for the service owner)
+                // Since there was only one agent instance, the previous multisig owner address is the sentinel one defined by gnosis (0x1)
+                const sentinelOwners = "0x" + "0".repeat(39) + "1";
+                let nonce = await multisig.nonce();
+                const txHashData = await safeContracts.buildContractCall(multisig, "swapOwner",
+                    [sentinelOwners, agentInstances[0].address, serviceOwnerAddress], nonce, 0, 0);
+                const signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+                await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+                // Updating a service
+                await serviceRegistry.connect(serviceManager).update(serviceOwnerAddress, configHash, [1], [[4, regBond]],
+                    newMaxThreshold, serviceId);
+
+                // Activate agent instance registration
+                await serviceRegistry.connect(serviceManager).activateRegistration(serviceOwnerAddress, serviceId, {value: regDeposit});
+
+                /// Register agent instance
+                await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId,
+                    [agentInstances[0].address, agentInstances[1].address, agentInstances[2].address, agentInstances[3].address],
+                    [agentId, agentId, agentId, agentId], {value: 4 * regBond});
+
+                // Change the existent multisig owners and threshold in a multisend transaction using the service owner access
+                let callData = [];
+                let txs = [];
+                nonce = await multisig.nonce();
+                // Add the addresses, but keep the threshold the same
+                for (let i = 0; i < agentInstances.length; i++) {
+                    callData[i] = multisig.interface.encodeFunctionData("addOwnerWithThreshold", [agentInstances[i].address, 1]);
+                    txs[i] = safeContracts.buildSafeTransaction({to: multisig.address, data: callData[i], nonce: 0});
+                }
+                // Remove the original multisig owner and change the threshold
+                // Note that the prevOwner is the very first added address as it corresponds to the reverse order of added addresses
+                // The order in the gnosis safe multisig is as follows: sentinelOwners => agentInstances[last].address => ... =>
+                // => newOwnerAddresses[0].address => serviceOwnerAddress
+                callData.push(multisig.interface.encodeFunctionData("removeOwner", [agentInstances[0].address, serviceOwnerAddress,
+                    newMaxThreshold]));
+                txs.push(safeContracts.buildSafeTransaction({to: multisig.address, data: callData[callData.length - 1], nonce: 0}));
+
+                // Build a multisend transaction to be executed by the multisig
+                const safeTx = safeContracts.buildMultiSendSafeTx(multiSend, txs, nonce);
+                const chainId = (await ethers.provider.getNetwork()).chainId;
+                const EIP712_SAFE_TX_TYPE = {
+                    // "SafeTx(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,uint256 nonce)"
+                    SafeTx: [
+                        { type: "address", name: "to" },
+                        { type: "uint256", name: "value" },
+                        { type: "bytes", name: "data" },
+                        { type: "uint8", name: "operation" },
+                        { type: "uint256", name: "safeTxGas" },
+                        { type: "uint256", name: "baseGas" },
+                        { type: "uint256", name: "gasPrice" },
+                        { type: "address", name: "gasToken" },
+                        { type: "address", name: "refundReceiver" },
+                        { type: "uint256", name: "nonce" },
+                    ]
+                };
+
+                // Get the signature of a multisend transaction
+                const signatureBytes = await serviceOwner._signTypedData({verifyingContract: multisig.address, chainId: chainId}, EIP712_SAFE_TX_TYPE, safeTx);
+
+                // Forming Gnosis Safe transaction bytes data: the multisig address itself plus the execTransaction() data
+                // that forms the multisend data with the signature bytes to be executed by the multisig proxy
+                const safeExecData = gnosisSafe.interface.encodeFunctionData("execTransaction", [safeTx.to, safeTx.value,
+                    safeTx.data, safeTx.operation, safeTx.safeTxGas, safeTx.baseGas, safeTx.gasPrice, safeTx.gasToken,
+                    safeTx.refundReceiver, signatureBytes]);
+
+                // Add the multisig address on top of the multisig exec transaction data
+                const packedData = ethers.utils.solidityPack(["address", "bytes"], [multisig.address, safeExecData]);
+
+                // Try to deploy when passing the incorrect payload of a multisend
+                let safeExecErrData = gnosisSafe.interface.encodeFunctionData("execTransaction", [safeTx.to, safeTx.value,
+                    "0xabcd", safeTx.operation, safeTx.safeTxGas, safeTx.baseGas, safeTx.gasPrice, safeTx.gasToken,
+                    safeTx.refundReceiver, signatureBytes]);
+                let packedErrData = ethers.utils.solidityPack(["address", "bytes"], [multisig.address, safeExecErrData]);
+                await expect(
+                    serviceRegistry.connect(serviceManager).deploy(serviceOwnerAddress, serviceId,
+                        gnosisSafeSameAddressMultisig.address, packedErrData)
+                ).to.be.revertedWith("MultisigExecFailed");
+
+                // Try to deploy when passing the incorrect tx signature
+                safeExecErrData = gnosisSafe.interface.encodeFunctionData("execTransaction", [safeTx.to, safeTx.value,
+                    safeTx.data, safeTx.operation, safeTx.safeTxGas, safeTx.baseGas, safeTx.gasPrice, safeTx.gasToken,
+                    safeTx.refundReceiver, "0xabcd"]);
+                packedErrData = ethers.utils.solidityPack(["address", "bytes"], [multisig.address, safeExecErrData]);
+                await expect(
+                    serviceRegistry.connect(serviceManager).deploy(serviceOwnerAddress, serviceId,
+                        gnosisSafeSameAddressMultisig.address, packedErrData)
+                ).to.be.revertedWith("MultisigExecFailed");
+
+
+                // Redeploy the service updating the multisig with new owners and threshold
+                await serviceRegistry.connect(serviceManager).deploy(serviceOwnerAddress, serviceId,
+                    gnosisSafeSameAddressMultisig.address, packedData);
 
                 // Check that the service is deployed
                 const service = await serviceRegistry.getService(serviceId);
