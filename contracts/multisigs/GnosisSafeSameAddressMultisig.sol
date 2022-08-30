@@ -42,11 +42,18 @@ contract GnosisSafeSameAddressMultisig {
     // This exact size suggests that all the changes to the multisig have been performed and only validation is needed
     uint256 public constant DEFAULT_DATA_LENGTH = 20;
 
-    /// @dev Updated and verifies the existent gnosis safe multisig for changed owners and threshold.
-    /// @notice The multisig could be updated before reaching this step such that new multisig is not created.
-    ///         If the multisig is not updated, then the data modifying it has to be provided.
+    /// @dev Updates and/or verifies the existent gnosis safe multisig for changed owners and threshold.
+    /// @notice This function operates with existent multisig proxy that is requested to be updated in terms of
+    ///         the set of owners' addresses and the threshold. There are two scenarios possible:
+    ///         1. The multisig proxy is already updated before reaching this function. Then the multisig address
+    ///            must be passed as a payload such that its owners and threshold are verified against those specified
+    ///            in the argument list.
+    ///         2. The multisig proxy is not yet updated. Then the multisig address must be passed in a packed bytes of
+    ///            data along with the Gnosis Safe `execTransaction()` function arguments packed payload. That payload
+    ///            is going to modify the mulsisig proxy as per its signed transaction. At the end, the updated multisig
+    ///            proxy is going to be verified with the provided set of owners' addresses and the threshold.
     ///         Note that the order of owners' addresses in the multisig is in reverse order, see comments below.
-    /// @param owners Set of updated multisig owners.
+    /// @param owners Set of updated multisig owners to verify against.
     /// @param threshold Updated number for multisig transaction confirmations.
     /// @param data Packed data containing address of an existent gnosis safe multisig and a payload to call the multisig with.
     /// @return multisig Address of a multisig (proxy).
@@ -67,11 +74,11 @@ contract GnosisSafeSameAddressMultisig {
             multisig := mload(add(data, DEFAULT_DATA_LENGTH))
         }
 
-        // Read the payload, if any, that is going to change the multisig ownership and threshold
-        bytes memory payload;
+        // If provided, read the payload that is going to change the multisig ownership and threshold
+        // The payload is expected to be the `execTransaction()` function call with all its arguments and signature(s)
         if (dataLength > DEFAULT_DATA_LENGTH) {
             uint256 payloadLength = dataLength - DEFAULT_DATA_LENGTH;
-            payload = new bytes(payloadLength);
+            bytes memory payload = new bytes(payloadLength);
             for (uint256 i = 0; i < payloadLength; ++i) {
                 payload[i] = data[i + DEFAULT_DATA_LENGTH];
             }
