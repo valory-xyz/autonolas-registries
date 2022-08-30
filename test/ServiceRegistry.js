@@ -1266,7 +1266,7 @@ describe("ServiceRegistry", function () {
                 expect(service.state).to.equal(4);
             });
 
-            it("Changing multisig for its re-deployment in a service via multisend on a smart contract side", async function () {
+            it.only("Changing multisig for its re-deployment in a service via multisend on a smart contract side", async function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
@@ -1386,6 +1386,27 @@ describe("ServiceRegistry", function () {
 
                 // Add the multisig address on top of the multisig exec transaction data
                 const packedData = ethers.utils.solidityPack(["address", "bytes"], [multisig.address, safeExecData]);
+
+                // Try to deploy when passing the incorrect payload of a multisend
+                let safeExecErrData = gnosisSafe.interface.encodeFunctionData("execTransaction", [safeTx.to, safeTx.value,
+                    "0xabcd", safeTx.operation, safeTx.safeTxGas, safeTx.baseGas, safeTx.gasPrice, safeTx.gasToken,
+                    safeTx.refundReceiver, signatureBytes]);
+                let packedErrData = ethers.utils.solidityPack(["address", "bytes"], [multisig.address, safeExecErrData]);
+                await expect(
+                    serviceRegistry.connect(serviceManager).deploy(serviceOwnerAddress, serviceId,
+                        gnosisSafeSameAddressMultisig.address, packedErrData)
+                ).to.be.revertedWith("MultisigExecFailed");
+
+                // Try to deploy when passing the incorrect tx signature
+                safeExecErrData = gnosisSafe.interface.encodeFunctionData("execTransaction", [safeTx.to, safeTx.value,
+                    safeTx.data, safeTx.operation, safeTx.safeTxGas, safeTx.baseGas, safeTx.gasPrice, safeTx.gasToken,
+                    safeTx.refundReceiver, "0xabcd"]);
+                packedErrData = ethers.utils.solidityPack(["address", "bytes"], [multisig.address, safeExecErrData]);
+                await expect(
+                    serviceRegistry.connect(serviceManager).deploy(serviceOwnerAddress, serviceId,
+                        gnosisSafeSameAddressMultisig.address, packedErrData)
+                ).to.be.revertedWith("MultisigExecFailed");
+
 
                 // Redeploy the service updating the multisig with new owners and threshold
                 await serviceRegistry.connect(serviceManager).deploy(serviceOwnerAddress, serviceId,
