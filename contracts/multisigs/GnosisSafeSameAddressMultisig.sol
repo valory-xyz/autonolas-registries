@@ -52,7 +52,8 @@ contract GnosisSafeSameAddressMultisig {
     ///            data along with the Gnosis Safe `execTransaction()` function arguments packed payload. That payload
     ///            is going to modify the mulsisig proxy as per its signed transaction. At the end, the updated multisig
     ///            proxy is going to be verified with the provided set of owners' addresses and the threshold.
-    ///         Note that the order of owners' addresses in the multisig is in reverse order, see comments below.
+    ///         Note that owners' addresses in the multisig are stored in reverse order compared to how they were added:
+    ///         https://etherscan.io/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552#code#F6#L56
     /// @param owners Set of updated multisig owners to verify against.
     /// @param threshold Updated number for multisig transaction confirmations.
     /// @param data Packed data containing address of an existent gnosis safe multisig and a payload to call the multisig with.
