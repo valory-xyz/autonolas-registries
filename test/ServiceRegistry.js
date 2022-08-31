@@ -1266,7 +1266,7 @@ describe("ServiceRegistry", function () {
                 expect(service.state).to.equal(4);
             });
 
-            it.only("Changing multisig for its re-deployment in a service via multisend on a smart contract side", async function () {
+            it("Changing multisig for its re-deployment in a service via multisend on a smart contract side", async function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
