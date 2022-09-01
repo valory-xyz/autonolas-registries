@@ -81,6 +81,10 @@ module.exports = async () => {
     const gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
     await gnosisSafeMultisig.deployed();
 
+    const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
+    const gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
+    await gnosisSafeSameAddressMultisig.deployed();
+
     // Deploying service registry and service manager contracts
     const ServiceRegistry = await ethers.getContractFactory("ServiceRegistry");
     const serviceRegistry = await ServiceRegistry.deploy("Service Registry", "AUTONOLAS-SERVICE-V1",
@@ -98,14 +102,24 @@ module.exports = async () => {
     console.log("ServiceRegistry deployed to:", serviceRegistry.address);
     console.log("ServiceManager deployed to:", serviceManager.address);
     console.log("Gnosis Safe Multisig deployed to:", gnosisSafeMultisig.address);
+    console.log("Gnosis Safe Multisig with same address deployed to:", gnosisSafeSameAddressMultisig.address);
 
     // Whitelist gnosis multisig implementations
     await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+    await serviceRegistry.changeMultisigPermission(gnosisSafeSameAddressMultisig.address, true);
     // Also whitelist multisigs from goerli and mainnet
+
     // Goerli
-    await serviceRegistry.changeMultisigPermission("0x63C2c53c09dE534Dd3bc0b7771bf976070936bAC", true);
+    // Multisig implementation that creates a new multisig
+    await serviceRegistry.changeMultisigPermission("0x65dD51b02049ad1B6FF7fa9Ea3322E1D2CAb1176", true);
+    // Multisig implementation that changes the existent multisig
+    await serviceRegistry.changeMultisigPermission("0x92499E80f50f06C4078794C179986907e7822Ea1", true);
+
     // Mainnet
+    // Multisig implementation that creates a new multisig
     await serviceRegistry.changeMultisigPermission("0x46C0D07F55d4F9B5Eed2Fc9680B5953e5fd7b461", true);
+    // Multisig implementation that changes the existent multisig
+    await serviceRegistry.changeMultisigPermission("0x26Ea2dC7ce1b41d0AD0E0521535655d7a94b684c", true);
 
     // For simplicity, deployer is the manager for service registry
     await serviceRegistry.changeManager(deployer.address);
@@ -198,6 +212,7 @@ module.exports = async () => {
         "serviceRegistry": serviceRegistry.address,
         "serviceManager": serviceManager.address,
         "Multisig implementation": gnosisSafeMultisig.address,
+        "Multisig implementation with same address": gnosisSafeSameAddressMultisig.address,
         "operator": {
             "address": operator.address,
             "privateKey": operatorPK
