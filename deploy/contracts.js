@@ -13,12 +13,13 @@ module.exports = async () => {
     const signers = await ethers.getSigners();
     const deployer = signers[0];
     const operator = signers[10];
-    const agentInstances = [signers[0].address, signers[1].address, signers[2].address, signers[3].address];
+    const agentInstances = [signers[0].address, signers[1].address, signers[2].address, signers[3].address, signers[4].address];
     const agentInstancesPK = [
         "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
         "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
         "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
         "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6",
+        "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a"
     ];
     const operatorPK = "0xf214f2b2cd398c806f84e317254e0f0b801d0643303237d97a22a48e01628897";
 
@@ -68,6 +69,16 @@ module.exports = async () => {
     console.log("Number of initial components:", Number(componentBalance));
     console.log("Number of initial agents:", Number(agentBalance));
 
+    // Deploying service registry and service manager contracts
+    const ServiceRegistry = await ethers.getContractFactory("ServiceRegistry");
+    const serviceRegistry = await ServiceRegistry.deploy("Service Registry", "AUTONOLAS-SERVICE-V1",
+        "https://gateway.autonolas.tech/ipfs/", agentRegistry.address);
+    await serviceRegistry.deployed();
+
+    const ServiceManager = await ethers.getContractFactory("ServiceManager");
+    const serviceManager = await ServiceManager.deploy(serviceRegistry.address);
+    await serviceManager.deployed();
+
     // Gnosis Safe deployment
     const GnosisSafe = await ethers.getContractFactory("GnosisSafe");
     const gnosisSafe = await GnosisSafe.deploy();
@@ -84,16 +95,6 @@ module.exports = async () => {
     const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
     const gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
     await gnosisSafeSameAddressMultisig.deployed();
-
-    // Deploying service registry and service manager contracts
-    const ServiceRegistry = await ethers.getContractFactory("ServiceRegistry");
-    const serviceRegistry = await ServiceRegistry.deploy("Service Registry", "AUTONOLAS-SERVICE-V1",
-        "https://gateway.autonolas.tech/ipfs/", agentRegistry.address);
-    await serviceRegistry.deployed();
-
-    const ServiceManager = await ethers.getContractFactory("ServiceManager");
-    const serviceManager = await ServiceManager.deploy(serviceRegistry.address);
-    await serviceManager.deployed();
 
     console.log("==========================================");
     console.log("ComponentRegistry deployed to:", componentRegistry.address);
@@ -124,11 +125,38 @@ module.exports = async () => {
     // For simplicity, deployer is the manager for service registry
     await serviceRegistry.changeManager(deployer.address);
 
+    // Create a first service with 4 agent instances
+    const defaultConfigHash = "0x" + "5".repeat(64);
+    const defaultAgentIds = [1];
+    const defaultBond = "10000000000000000";
+    const defaultBond4 = "40000000000000000";
+    const defaultAgentParams = [[4, defaultBond]];
+    const defaultThreshold = 3;
+    await serviceRegistry.create(deployer.address, defaultConfigHash, defaultAgentIds, defaultAgentParams, defaultThreshold);
+
+    // Activate registration
+    const defaultServiceId = 1;
+    await serviceRegistry.activateRegistration(deployer.address, defaultServiceId, {value: defaultBond});
+
+    // Register agents with the operator
+    await serviceRegistry.registerAgents(operator.address, defaultServiceId, agentInstances.slice(0, 4), [1, 1, 1, 1], {value: defaultBond4});
+
+    // Deploy the service
+    const defaultPayload = "0x";
+    const defaultServiceSafe = await serviceRegistry.deploy(deployer.address, defaultServiceId, gnosisSafeMultisig.address, defaultPayload);
+    const sResult = await defaultServiceSafe.wait();
+    const defaultServiceMultisig = sResult.events[0].address;
+
+    console.log("==========================================");
+    console.log("Service Id:", defaultServiceId);
+    console.log("Service multisig deployed to:", defaultServiceMultisig);
+    console.log("Number of agent instances:", 4);
+
     // Create and deploy services based on the snapshot
     const numServices = snapshotJSON["serviceRegistry"]["configHashes"].length;
     // Agent instances cannot repeat, so each of them must be a unique address
     // TODO: With a bigger number of services, precalculate the number of agent instances first and allocate enough addresses for that
-    let aCounter = 0;
+    let aCounter = 4;
     console.log("==========================================");
     for (let i = 0; i < numServices; i++) {
         // Get the agent Ids related data
@@ -148,7 +176,7 @@ module.exports = async () => {
         await serviceRegistry.create(deployer.address, configHash, agentIds, agentParams, threshold);
 
         // Activate registration
-        const serviceId = i + 1;
+        const serviceId = i + 2; // shift by 2 since the first service is created earlier (otherwise would be i + 1)
         console.log("Service Id:", serviceId);
         await serviceRegistry.activateRegistration(deployer.address, serviceId,
             {value: snapshotJSON["serviceRegistry"]["securityDeposit"][i]});
