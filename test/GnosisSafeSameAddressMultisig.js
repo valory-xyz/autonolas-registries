@@ -25,7 +25,7 @@ describe("GnosisSafeSameAddressMultisig", function () {
         gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deploy();
         await gnosisSafeProxyFactory.deployed();
 
-        const MultiSend = await ethers.getContractFactory("MultiSend");
+        const MultiSend = await ethers.getContractFactory("MultiSendCallOnly");
         multiSend = await MultiSend.deploy();
         await multiSend.deployed();
 

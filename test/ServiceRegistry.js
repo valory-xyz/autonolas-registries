@@ -61,7 +61,7 @@ describe("ServiceRegistry", function () {
         gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
         await gnosisSafeMultisig.deployed();
 
-        const MultiSend = await ethers.getContractFactory("MultiSend");
+        const MultiSend = await ethers.getContractFactory("MultiSendCallOnly");
         multiSend = await MultiSend.deploy();
         await multiSend.deployed();
 

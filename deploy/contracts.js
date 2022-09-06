@@ -96,14 +96,21 @@ module.exports = async () => {
     const gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
     await gnosisSafeSameAddressMultisig.deployed();
 
+    const MultiSend = await ethers.getContractFactory("MultiSendCallOnly");
+    const multiSend = await MultiSend.deploy();
+    await multiSend.deployed();
+
     console.log("==========================================");
     console.log("ComponentRegistry deployed to:", componentRegistry.address);
     console.log("AgentRegistry deployed to:", agentRegistry.address);
     console.log("RegistriesManager deployed to:", registriesManager.address);
     console.log("ServiceRegistry deployed to:", serviceRegistry.address);
     console.log("ServiceManager deployed to:", serviceManager.address);
+    console.log("Gnosis Safe master copy deployed to:", gnosisSafe.address);
+    console.log("Gnosis Safe proxy factory deployed to:", gnosisSafeProxyFactory.address);
     console.log("Gnosis Safe Multisig deployed to:", gnosisSafeMultisig.address);
     console.log("Gnosis Safe Multisig with same address deployed to:", gnosisSafeSameAddressMultisig.address);
+    console.log("Gnosis Safe Multisend deployed to:", multiSend.address);
 
     // Whitelist gnosis multisig implementations
     await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
@@ -239,8 +246,11 @@ module.exports = async () => {
         "registriesManager": registriesManager.address,
         "serviceRegistry": serviceRegistry.address,
         "serviceManager": serviceManager.address,
+        "gnosisSafe": gnosisSafe.address,
+        "gnosisSafeProxyFactory": gnosisSafeProxyFactory.address,
         "Multisig implementation": gnosisSafeMultisig.address,
         "Multisig implementation with same address": gnosisSafeSameAddressMultisig.address,
+        "multiSend": multiSend.address,
         "operator": {
             "address": operator.address,
             "privateKey": operatorPK
