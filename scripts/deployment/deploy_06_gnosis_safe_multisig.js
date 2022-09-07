@@ -27,27 +27,41 @@ async function main() {
     const deployer = await EOA.getAddress();
     console.log("EOA is:", deployer);
 
+    // Multisig implementation contract parameters supplied via multisigImplementation.json file
+    const multisigDataFromJSON = fs.readFileSync("multisigImplementation.json", "utf8");
+    const parsedMultisigData = JSON.parse(multisigDataFromJSON);
+    let multisigImplementationContractName = parsedMultisigData.multisigContractName;
+
     // Transaction signing and execution
-    console.log("6. EOA to deploy GnosisSafeMultisig");
-    const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
-    console.log("You are signing the following transaction: GnosisSafeMultisig.connect(EOA).deploy()");
-    const gnosisSafeMultisig = await GnosisSafeMultisig.connect(EOA).deploy(gnosisSafeAddress,
-        gnosisSafeProxyFactoryAddress);
+    console.log("6. EOA to deploy " + multisigImplementationContractName);
+    const GnosisSafeMultisig = await ethers.getContractFactory(multisigImplementationContractName);
+    console.log("You are signing the following transaction: " + multisigImplementationContractName + ".connect(EOA).deploy()");
+
+    // Verify the construct parameters and add them here, if needed
+    const gnosisSafeMultisig = await GnosisSafeMultisig.connect(EOA).deploy();
     const result = await gnosisSafeMultisig.deployed();
 
     // Transaction details
-    console.log("Contract deployment: GnosisSafeMultisig");
+    console.log("Contract deployment: " + multisigImplementationContractName);
     console.log("Contract address:", gnosisSafeMultisig.address);
     console.log("Transaction:", result.deployTransaction.hash);
 
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/verify_06_gnosis_safe_multisig.js --network " + providerName + " " + gnosisSafeMultisig.address, { encoding: "utf-8" });
+        let verifyString = "npx hardhat verify";
+        // Supply the verifyScript as a .js file name, if verification needs to account for constructor arguments
+        if (parsedMultisigData.verifyScript) {
+            verifyString += " --constructor-args " + parsedMultisigData.verifyScript;
+        }
+        verifyString += " --network " + providerName + " " + gnosisSafeMultisig.address;
+        execSync(verifyString, { encoding: "utf-8" });
     }
 
     // Writing updated parameters back to the JSON file
-    parsedData.gnosisSafeMultisigImplementationAddress = gnosisSafeMultisig.address;
+    let multisigJSONName = multisigImplementationContractName.charAt(0).toLowerCase() +
+        multisigImplementationContractName.slice(1) + "Address";
+    parsedData[multisigJSONName] = gnosisSafeMultisig.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
 }
 

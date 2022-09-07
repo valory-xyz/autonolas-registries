@@ -46,7 +46,9 @@ where `script_name` is a script name, i.e. `deploy_01_component_registry.js`, `n
 Each script controls the obtained values by checking them against the expected ones. Also, each script has a contract verification procedure.
 If a contract is deployed with arguments, these arguments are taken from the corresponding `verify_number_and_name` file, where `number_and_name` corresponds to the deployment script number and name.
 
-
+## Multisig implementation deployment
+The script to deploy multisig implementation (`verify_06_gnosis_safe_multisig.js`) utilizes information about the multisig read from the file `multisigImplementation.json`.
+Create this file or copy it from the one with pre-defined parameters (i.e., `scripts/deployment/gnosis_safe_multisig.json`).
 
 
 

@@ -44,6 +44,11 @@ Services are based on a deployment of agents via the means of multisigs using th
 One of the most well-known multisigs is Gnosis Safe. The Gnosis interface implementation of a generic multisig interface is provided here:
 - [GnosisSafeMultisig](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/multisigs/GnosisSafeMultisig.sol)
 
+Another multisig implementation accounts for already existent multisig, where the multisig owner can change its owners.
+This method allows to upgrade / downgrade the number of agent instances that govern the same multisig between different service re-deployments.
+The implementation of such multisig is provided here:
+- [GnosisSafeSameAddressMultisig](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/multisigs/GnosisSafeSameAddressMultisig.sol)
+
 As more multisigs come into play, their underlying implementation of the generic multisig will be added.
 
 ## Development
