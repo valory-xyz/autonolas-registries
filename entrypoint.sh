@@ -4,6 +4,7 @@
 cd /usr/src/app;
 
 # Run hardhat
+cp scripts/mainnet_snapshot.json snapshot.json
 yarn run hardhat node --port 8545
 
 # Keep node alive
