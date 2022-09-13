@@ -1,26 +1,14 @@
-FROM ubuntu:20.04
-RUN apt-get update && apt-get install -y sudo curl 
+FROM node:16.7.0 as builder
 
-RUN groupadd -r newuser && useradd -r -g newuser newuser
-RUN adduser newuser sudo
-RUN adduser --disabled-password \
---gecos '' docker
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> \
-/etc/sudoers
-RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
-RUN apt-get install -y nodejs
-RUN apt-get install -y gcc g++ make
-RUN curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | tee /usr/share/keyrings/yarnkey.gpg >/dev/null
-RUN echo "deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian stable main" | tee /etc/apt/sources.list.d/yarn.list
-RUN apt-get update && apt-get install -y yarn
-RUN apt-get install -y git
+RUN apt update && apt install jq
 
-COPY . /usr/src/app
+COPY . /usr/app
+WORKDIR /usr/app
+RUN yarn install
+RUN npx hardhat compile
+RUN cp scripts/mainnet_snapshot.json ./sanpshot.json
+ENV SERVICE_CONFIG_HASH="0xd913b5bf68193dfacb941538d5900466c449c9ec8121153f152de2e026fa7f3a"
 
-WORKDIR /usr/src/app
+ENTRYPOINT ["bash", "entrypoint.sh"]
 
-RUN yarn install --non-interactive  --frozen-lockfile --ignore-engines
-
-COPY $PWD/entrypoint.sh /usr/local/bin
-
-ENTRYPOINT ["/bin/sh", "/usr/local/bin/entrypoint.sh"]
+# TODO: introduce second stage (runner)
