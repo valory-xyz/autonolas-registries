@@ -84,6 +84,16 @@ Run the tests:
 npx hardhat test
 ```
 
+### Docker image
+
+```
+docker build . -t valory/autonolas-registries
+```
+
+```
+docker run -it -d -p 8545:8545 --name chain valory/autonolas-registries
+```
+
 ### Linters
 - [`ESLint`](https://eslint.org) is used for JS code.
 - [`solhint`](https://github.com/protofire/solhint) is used for Solidity linting.
