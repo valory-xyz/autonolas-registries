@@ -1,6 +1,6 @@
 FROM node:16.7.0 as builder
 
-RUN apt update && apt install jq
+RUN apt update -y && apt install jq -y
 
 COPY . /usr/app
 WORKDIR /usr/app
