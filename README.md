@@ -45,9 +45,11 @@ In order to deploy a service, its registered agent instances form a consensus me
 One of the most well-known multisigs is Gnosis Safe. The Gnosis interface implementation of a generic multisig interface is provided here:
 - [GnosisSafeMultisig](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/multisigs/GnosisSafeMultisig.sol)
 
-Another multisig implementation accounts for already existent Gnosis Safe multisig instance created from the initial service deployment.
-In order to use that option, the service owner must be the solve multisig owner such that they can change its owners for registered angent instances.
-This method allows to upgrade / downgrade the number of agent instances that govern the same multisig between different service re-deployments.
+Another multisig implementation allows to upgrade / downgrade the number of agent instances that govern the same Gnosis Safe multisig instance between different service re-deployments.
+Please note that the initial multisig instance must already exist from a previous service deployment.
+In order to use that option, registered agent instances forming a consensus are required to return the multisig instance ownership to the service owner.
+Then, the service owner must terminate the service, update the number of desired agent instances and move it into a new `active-registration` state.
+Once all agent instances are registered, the service owner re-deploys the service by giving up their ownership of the multisig with registered agent instances and by setting a new multisig instance threshold.
 The implementation of such multisig is provided here:
 - [GnosisSafeSameAddressMultisig](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/multisigs/GnosisSafeSameAddressMultisig.sol)
 
