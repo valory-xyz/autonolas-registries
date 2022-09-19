@@ -35,16 +35,18 @@ A more detailed set of registries definitions are provided [here](https://github
 - Core contracts:
   - [AgentRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/AgentRegistry.sol)
   - [ComponentRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ComponentRegistry.sol)
-  - [ServiceRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistry.sol)
+  - ServiceRegistry [L1](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistry.sol),
+    [L2](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistry2.sol)
 - Periphery contracts:
   - [RegistriesManager](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/RegistriesManager.sol)
   - [ServiceManager](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceManager.sol)
 
-Services are based on a deployment of agents via the means of multisigs using the generic multisig interface.
+In order to deploy a service, its registered agent instances form a consensus mechanism via the means of multisigs using the generic multisig interface.
 One of the most well-known multisigs is Gnosis Safe. The Gnosis interface implementation of a generic multisig interface is provided here:
 - [GnosisSafeMultisig](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/multisigs/GnosisSafeMultisig.sol)
 
-Another multisig implementation accounts for already existent multisig, where the multisig owner can change its owners.
+Another multisig implementation accounts for already existent Gnosis Safe multisig instance created from the initial service deployment.
+In order to use that option, the service owner must be the solve multisig owner such that they can change its owners for registered angent instances.
 This method allows to upgrade / downgrade the number of agent instances that govern the same multisig between different service re-deployments.
 The implementation of such multisig is provided here:
 - [GnosisSafeSameAddressMultisig](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/multisigs/GnosisSafeSameAddressMultisig.sol)
