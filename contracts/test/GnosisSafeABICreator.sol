@@ -5,3 +5,5 @@ pragma solidity ^0.8.15;
 import "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
 import "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol";
 import "@gnosis.pm/safe-contracts/contracts/libraries/MultiSendCallOnly.sol";
+import "@gnosis.pm/safe-contracts/contracts/handler/CompatibilityFallbackHandler.sol";
+import "@gnosis.pm/safe-contracts/contracts/examples/libraries/SignMessage.sol";
