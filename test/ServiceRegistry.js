@@ -11,9 +11,8 @@ describe("ServiceRegistry", function () {
     let serviceRegistryL2;
     let gnosisSafeMultisig;
     let gnosisSafeProxyFactory;
-    let compatibilityFallbackHandler;
+    let defaultCallbackHandler;
     let multiSend;
-    let signMessageLib;
     let gnosisSafeSameAddressMultisig;
     let reentrancyAttacker;
     let reentrancyAttackerL2;
@@ -64,17 +63,13 @@ describe("ServiceRegistry", function () {
         gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
         await gnosisSafeMultisig.deployed();
 
-        const CompatibilityFallbackHandler = await ethers.getContractFactory("CompatibilityFallbackHandler");
-        compatibilityFallbackHandler = await CompatibilityFallbackHandler.deploy();
-        await compatibilityFallbackHandler.deployed();
+        const DefaultCallbackHandler = await ethers.getContractFactory("DefaultCallbackHandler");
+        defaultCallbackHandler = await DefaultCallbackHandler.deploy();
+        await defaultCallbackHandler.deployed();
 
         const MultiSend = await ethers.getContractFactory("MultiSendCallOnly");
         multiSend = await MultiSend.deploy();
         await multiSend.deployed();
-
-        const SignMessageLib = await ethers.getContractFactory("SignMessageLib");
-        signMessageLib = await SignMessageLib.deploy();
-        await signMessageLib.deployed();
 
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
         gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
@@ -1448,8 +1443,9 @@ describe("ServiceRegistry", function () {
                 const setupData = gnosisSafe.interface.encodeFunctionData(
                     "setup",
                     // signers, threshold, to_address, data, fallback_handler, payment_token, payment, payment_receiver
+                    // defaultCallbackHandler is needed for the ERC721 support
                     [serviceOwnerOwnersAddresses, serviceOwnerThreshold, AddressZero, "0x",
-                        compatibilityFallbackHandler.address, AddressZero, 0, AddressZero]
+                        defaultCallbackHandler.address, AddressZero, 0, AddressZero]
                 );
                 let proxyAddress = await safeContracts.calculateProxyAddress(gnosisSafeProxyFactory, gnosisSafe.address,
                     setupData, 0);
@@ -1532,35 +1528,29 @@ describe("ServiceRegistry", function () {
                     newMaxThreshold]));
                 txs.push(safeContracts.buildSafeTransaction({to: multisig.address, data: callData[callData.length - 1], nonce: 0}));
 
-                // Build a multisend transaction to be executed by the multisig
+                // Build a multisend transaction to be executed by the service multisig
                 const safeTx = safeContracts.buildMultiSendSafeTx(multiSend, txs, nonce);
 
                 // Create a message data from the multisend transaction
-                const messageData = await multisig.encodeTransactionData(safeTx.to, safeTx.value, safeTx.data,
+                const messageHash = await multisig.getTransactionHash(safeTx.to, safeTx.value, safeTx.data,
                     safeTx.operation, safeTx.safeTxGas, safeTx.baseGas, safeTx.gasPrice, safeTx.gasToken,
                     safeTx.refundReceiver, nonce);
 
-                // Sign multisend message for the service owner multisig
-                await safeContracts.executeContractCallWithSigners(serviceOwnerMultisig, signMessageLib, "signMessage",
-                    [messageData], [serviceOwnerOwners[0], serviceOwnerOwners[1]], true);
-                // on the front-end something like: await signMessageLib.connect(serviceOwnerMultisig).signMessage(messageData);
+                // Approve hash for the multisend transaction in the service multisig by the service owner multisig
+                await safeContracts.executeContractCallWithSigners(serviceOwnerMultisig, multisig, "approveHash",
+                    [messageHash], [serviceOwnerOwners[0], serviceOwnerOwners[1]], false);
+                // on the front-end: await multisig.connect(serviceOwnerMultisig).approveHash(messageHash);
 
-                // Get the signature line
-                // Inspired by: https://github.com/safe-global/safe-contracts/pull/416/files
-                // 12 bytes of padding + 20 bytes of address + 32 bytes of s + 1 byte of v
-                const signatureLength = 65;
-                // Calculate the s part length in hex with leading zeros padding to be 32 bytes in total
-                const sPartPadded64 = (serviceOwnerThreshold * signatureLength).toString(16).padStart(64, "0"); // 65 in hex is 0x41
-                const staticPart = "0x000000000000000000000000" + serviceOwnerAddress.slice(2) + sPartPadded64 + "00"; // r, s, v
-                // Dynamic part consists of zero bytes of length equal to 65 bytes * threshold - first 65 initial ones + 32
-                const dynamicPart = "00".repeat(signatureLength * (serviceOwnerThreshold - 1) + 32);
-                const signatureBytes = staticPart + dynamicPart;
+                // Get the signature line. Since the hash is approved, it's enough to base one on the service owner address
+                const signatureBytes = "0x000000000000000000000000" + serviceOwnerAddress.slice(2) +
+                    "0000000000000000000000000000000000000000000000000000000000000000" + "01";
 
+                // Form the multisend execTransaction call in the service multisig
                 const safeExecData = gnosisSafe.interface.encodeFunctionData("execTransaction", [safeTx.to, safeTx.value,
                     safeTx.data, safeTx.operation, safeTx.safeTxGas, safeTx.baseGas, safeTx.gasPrice, safeTx.gasToken,
                     safeTx.refundReceiver, signatureBytes]);
 
-                // Add the multisig address on top of the multisig exec transaction data
+                // Add the service multisig address on top of the multisig exec transaction data
                 const packedData = ethers.utils.solidityPack(["address", "bytes"], [multisig.address, safeExecData]);
 
                 // Redeploy the service updating the multisig with new owners and threshold
@@ -1570,22 +1560,6 @@ describe("ServiceRegistry", function () {
                 // Check that the service is deployed
                 const service = await serviceRegistry.getService(serviceId);
                 expect(service.state).to.equal(4);
-
-                ///////////////////////////////////////// TO CONSIDER LATER
-                //                // Build multisend message data
-                //                const messageData = ethers.utils.solidityPack(["address", "uint256", "bytes", "uint8", "uint256", "uint256", "uint256", "uint256", "uint256", "uint256"],
-                //                    [safeTx.to, safeTx.value, safeTx.data, safeTx.operation, safeTx.safeTxGas, safeTx.baseGas, safeTx.gasPrice, safeTx.gasToken, safeTx.refundReceiver, nonce]);
-                //
-                //                // Sign multisend message via a signMessageLib
-                //                nonce = await serviceOwnerMultisig.nonce();
-                //                txHashData = await safeContracts.buildContractCall(signMessageLib, "signMessage",
-                //                    [messageData], nonce, 1, 0);
-                //                signMessageData = [await safeContracts.safeSignMessage(serviceOwnerOwners[0], serviceOwnerMultisig, txHashData, 0),
-                //                    await safeContracts.safeSignMessage(serviceOwnerOwners[1], serviceOwnerMultisig, txHashData, 0)];
-                //
-                //                // on the front-end: await signMessageLib.connect(serviceOwnerMultisig).signMessage(messageData);
-                //                await safeContracts.executeTx(serviceOwnerMultisig, txHashData, signMessageData, 0);
-                ////////////////////////////////////////////
             });
         });
     });

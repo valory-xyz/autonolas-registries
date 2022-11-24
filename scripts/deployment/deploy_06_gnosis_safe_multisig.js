@@ -11,8 +11,6 @@ async function main() {
     const useLedger = parsedData.useLedger;
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
-    const gnosisSafeAddress = parsedData.gnosisSafeAddress;
-    const gnosisSafeProxyFactoryAddress = parsedData.gnosisSafeProxyFactoryAddress;
     let EOA;
 
     const provider = await ethers.providers.getDefaultProvider(providerName);
