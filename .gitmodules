@@ -2,3 +2,6 @@
 	path = lib/solmate
 	url = https://github.com/Rari-Capital/solmate.git
 	branch = v7
+[submodule "lib/keep3r-notebooks"]
+	path = lib/keep3r-notebooks
+	url = git@github.com:defi-wonderland/keep3r-notebooks.git

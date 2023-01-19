@@ -1,12 +1,13 @@
 /*global process*/
 
-require("hardhat-deploy");
-require("hardhat-deploy-ethers");
+//require("hardhat-deploy");
+//require("hardhat-deploy-ethers");
 require("@nomiclabs/hardhat-waffle");
 require("solidity-coverage");
 require("hardhat-gas-reporter");
 require("hardhat-contract-sizer");
 require("@nomiclabs/hardhat-etherscan");
+require("@nomicfoundation/hardhat-network-helpers");
 
 const accounts = {
     // Generated with bip39
@@ -42,7 +43,11 @@ module.exports = {
             },
         },
         hardhat: {
-            allowUnlimitedContractSize: true
+            allowUnlimitedContractSize: true,
+            forking: {
+                url: "https://eth-mainnet.g.alchemy.com/v2/" + ALCHEMY_API_KEY,
+                blockNumber: 16442558
+            }
         },
     },
     etherscan: {
