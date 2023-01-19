@@ -9,22 +9,21 @@ To use custom smart contracts, first you'll have to define a custom deploy scrip
 
 const fs = require("fs");
 
-async function deployByArtifact(file_path) {
-  const dataFromJSON = fs.readFileSync(file_path, "utf8");
-  const artifact = JSON.parse(dataFromJSON);
+async function deployByArtifact(filePath) {
+    const dataFromJSON = fs.readFileSync(filePath, "utf8");
+    const artifact = JSON.parse(dataFromJSON);
 
-  const factory = await ethers.getContractFactoryFromArtifact(artifact);
-  const instance = await factory.deploy();
-  await instance.deployed();
+    const factory = await ethers.getContractFactoryFromArtifact(artifact);
+    const instance = await factory.deploy();
+    await instance.deployed();
 
-  console.log(`Deployed ${artifact.contractName} at: ${instance.address}`);
-  return instance;
+    console.log(`Deployed ${artifact.contractName} at: ${instance.address}`);
+    return instance;
 }
 
 module.exports = async () =>{
-    deployByArtifact("/custom/artifacts/contracts/CustomContract.sol/CustomContract.json")
-}
-
+    deployByArtifact("/custom/artifacts/contracts/CustomContract.sol/CustomContract.json");
+};
 ```
 
 Then you'll have to define a docker file using the format given in `Dockerfile.deploy` file in the root folder.
