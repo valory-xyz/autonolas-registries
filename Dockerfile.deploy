@@ -1,0 +1,9 @@
+FROM valory/autonolas-registries:v1.0.0
+
+RUN mkdir /custom
+COPY deploy/ /base/deploy/
+COPY artifacts/ /custom/artifacts/
+
+WORKDIR /base
+
+ENTRYPOINT ["bash", "entrypoint.sh"]
