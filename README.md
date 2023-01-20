@@ -118,6 +118,8 @@ The finalized contract ABIs for deployment and their number of optimization pass
 
 For testing purposes, the hardhat node deployment script is located [here](https://github.com/valory-xyz/autonolas-registries/blob/main/deploy).
 
+If you want to use custom contracts in the registry image, read [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/running_with_custom_contracts.md).
+
 ### Audits
 The audit is provided as development matures. The latest audit report can be found here: [audits](https://github.com/valory-xyz/autonolas-registries/blob/main/audits).
 A list of known vulnerabilities can be found here: [Vulnerabilities list #1](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/Vulnerabilities_list%231.pdf)
