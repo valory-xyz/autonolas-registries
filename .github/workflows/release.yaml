@@ -13,7 +13,10 @@ jobs:
         python-version: ["3.10"]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - name: Setup
       run: |
         echo export TAG=$(git describe --tags --abbrev=0) > env.sh
