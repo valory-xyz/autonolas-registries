@@ -21,7 +21,7 @@ jobs:
     - name: Build version tagged images
       run: |
         source env.sh
-        docker build -t valory/autonolas-registries:$TAG -f ./Dockerfile
+        docker build . -t valory/autonolas-registries:$TAG -f ./Dockerfile
     - name: Tag to latest
       run:  |
         source env.sh
