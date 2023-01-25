@@ -5,8 +5,7 @@ const { expect } = require("chai");
 module.exports = async () => {
     // Read configs from the JSON file
     const fs = require("fs");
-    // Copy this file from scripts/mainnet_snapshot.json or construct one following the JSON defined structure
-    const snapshotFile = "snapshot.json";
+    const snapshotFile = "/base/scripts/mainnet_snapshot.json";
     const dataFromJSON = fs.readFileSync(snapshotFile, "utf8");
     const snapshotJSON = JSON.parse(dataFromJSON);
 
