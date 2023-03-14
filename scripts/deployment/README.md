@@ -7,7 +7,9 @@ This folder contains the scripts to deploy Autonolas registries. These scripts c
 - The script to change ownership of the registries to Timelock (`deploy_10_14_change_ownerships.js`) will be done after the DAO members voting.
 
 ## Steps to engage
-Make sure the project is installed with the
+The project has submodules to get the dependencies. Make sure you run `git clone --recursive` or init the submodules yourself.
+The dependency list is managed by the `package.json` file, and the setup parameters are stored in the `hardhat.config.js` file.
+Simply run the following command to install the project:
 ```
 yarn install
 ```
@@ -33,7 +35,7 @@ accounts for the address of the Gnosis Safe master copy [v1.3.0](https://github.
 Other values in the `JSON` file are related to the registries. The deployed contract addresses will be added / updated during the scripts run.
 
 The script file name identifies the number of deployment steps taken from / to the number in the file name. For example:
-- `deploy_01_component_registry.js` will complete steps 1 from [deployment.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deployment.md);
+- `deploy_01_component_registry.js` will complete step 1 from [deployment.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deployment.md);
 - `deploy_10_14_change_ownerships.js` will complete steps 10 to 14.
 
 NOTE: All the scripts MUST be strictly run in the sequential order from smallest to biggest numbers.

@@ -102,6 +102,15 @@ List of next possible states:
 2. **Service is terminated-bonded**
     - Function call for this state: **terminate()**
 
+### Service is deployed
+Functions to call from this state:
+- **terminate()**
+
+
+List of next possible states:
+1. **Service is terminated-bonded**
+   - Function call for this state: **terminate()**
+
 ### Service is terminated-bonded
 Condition for this state: Service is terminated and some agents are bonded with agent instances.
 

@@ -18,7 +18,7 @@ In order to generalize `components` / `agents` / `services`, they are referred s
 
 A graphical overview of the whole on-chain architecture is available here:
 
-![architecture](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/On-chain_architecture_v3.drawio.png?raw=true)
+![architecture](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/On-chain_architecture_v4.png?raw=true)
 
 An overview of the design is provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/AgentServicesFunctionality.pdf?raw=true).
 
@@ -64,17 +64,17 @@ As more multisigs come into play, their underlying implementation of the generic
 
 ### Install the dependencies
 The project has submodules to get the dependencies. Make sure you run `git clone --recursive` or init the submodules yourself.
-The dependency list is managed by the `package.json` file,
-and the setup parameters are stored in the `hardhat.config.js` file.
+The dependency list is managed by the `package.json` file, and the setup parameters are stored in the `hardhat.config.js` file.
 Simply run the following command to install the project:
 ```
 yarn install
 ```
 
 ### Core components
-The contracts and tests are located in the following folders respectively:
+The contracts, deployment scripts and tests are located in the following folders respectively:
 ```
 contracts
+scripts
 test
 ```
 
