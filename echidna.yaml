@@ -4,4 +4,6 @@ corpusDir: echidna-corp
 stopOnFail: false
 # 0x6000 by default
 codeSize: 0xaaaa
+initialize: audits/internal/analysis/more_fuzzing/init.json
+coverage: true
 

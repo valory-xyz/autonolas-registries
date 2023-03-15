@@ -1,3 +1,14 @@
+# Preconditioned Fuzzing
+In order to precondition fuzzing to a specific state of contracts, the following workflow has been executed:
+- Install [Etheno](https://github.com/crytic/etheno) tool (`pip3 install --user etheno`);
+- Read the [E2E testing guide](https://github.com/crytic/building-secure-contracts/blob/master/program-analysis/echidna/advanced/end-to-end-testing.md);
+- Run the etheno node with setup JSON writing option (`etheno --ganache -x output_file.json`);
+- In a separate terminal, run the hardhat script test that gets all the contracts in the desired state connected to the node (`npx hardhat test test_file.js --network local`);
+- Add `initialize` field into the `echidna.yaml` file with the JSON produced after the script run;
+- Now echidna can start with the state of contracts from the point where the script run has terminated.
+
+
+
 ```sh
 echidna-test contracts/flatten/AgentRegistry-flatten.sol --contract AgentRegistryProxy --config echidna.yaml                                                                                                                                                                                   
                                                          

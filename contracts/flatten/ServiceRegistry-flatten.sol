@@ -1857,20 +1857,30 @@ contract ServiceRegistryF is GenericRegistry {
     }
 }
 
-contract ServiceRegistryProxy {    
-    AgentRegistryFS public iAgentRegistryF;
+contract ServiceRegistryProxy {
     ComponentRegistryFFS public iComponentRegistryFF;
+    AgentRegistryFS public iAgentRegistryF;
     ServiceRegistryF public iServiceRegistryF;
 
     constructor() {
         // Initialize Strategy.
         // "agent", "MECH", "https://localhost/agent/"
         // "agent components", "MECHCOMP","https://localhost/component/"
-        iComponentRegistryFF = new ComponentRegistryFFS("agent components","MECHCOMP","https://localhost/component/");
-        iAgentRegistryF = new AgentRegistryFS("agent","MECH","https://localhost/agent/",address(iComponentRegistryFF));
-        //         serviceRegistry = await ServiceRegistry.deploy("service registry", "SERVICE", "https://localhost/service/",
-        //    agentRegistry.address);
-        iServiceRegistryF = new ServiceRegistryF("service registry", "SERVICE", "https://localhost/service/",address(iAgentRegistryF));
+        iComponentRegistryFF = ComponentRegistryFFS(0x1dC4c1cEFEF38a777b15aA20260a54E584b16C48);
+        iAgentRegistryF = AgentRegistryFS(0x1D7022f5B17d2F8B695918FB48fa1089C9f85401);
+        iServiceRegistryF = ServiceRegistryF(0x1E2F9E10D02a6b8F8f69fcBf515e75039D2EA30d);
+    }
+
+    /// @dev Changes the owner address.
+    /// @param newOwner Address of a new owner.
+    function changeOwner(address newOwner) external {
+        iServiceRegistryF.changeOwner(newOwner);
+    }
+
+    /// @dev Changes the unit manager.
+    /// @param newManager Address of a new unit manager.
+    function changeManager(address newManager) external {
+        iServiceRegistryF.changeManager(newManager);
     }
 
     /// @dev Changes the drainer.
@@ -1954,7 +1964,7 @@ contract ServiceRegistryProxy {
         address multisigImplementation,
         bytes memory data
     ) external returns (address multisig) {
-        return iServiceRegistryF.deploy(serviceOwner, serviceId, multisigImplementation, data);
+        return iServiceRegistryF.deploy(serviceOwner, serviceId, 0x48BaCB9266a570d521063EF5dD96e61686DbE788, data);
     }
 
     /// @dev Slashes a specified agent instance.
@@ -2068,8 +2078,6 @@ contract ServiceRegistryProxy {
     function drain() external returns (uint256 amount) {
         return iServiceRegistryF.drain();
     }
-
-
 }
 
 
