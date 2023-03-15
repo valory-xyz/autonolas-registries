@@ -1860,6 +1860,7 @@ contract ServiceRegistryF is GenericRegistry {
 contract ServiceRegistryProxy {    
     AgentRegistryFS public iAgentRegistryF;
     ComponentRegistryFFS public iComponentRegistryFF;
+    ServiceRegistryF public iServiceRegistryF;
 
     constructor() {
         // Initialize Strategy.
@@ -1867,7 +1868,56 @@ contract ServiceRegistryProxy {
         // "agent components", "MECHCOMP","https://localhost/component/"
         iComponentRegistryFF = new ComponentRegistryFFS("agent components","MECHCOMP","https://localhost/component/");
         iAgentRegistryF = new AgentRegistryFS("agent","MECH","https://localhost/agent/",address(iComponentRegistryFF));
+        //         serviceRegistry = await ServiceRegistry.deploy("service registry", "SERVICE", "https://localhost/service/",
+        //    agentRegistry.address);
+        iServiceRegistryF = new ServiceRegistryF("service registry", "SERVICE", "https://localhost/service/",address(iAgentRegistryF));
     }
+
+    /// @dev Changes the drainer.
+    /// @param newDrainer Address of a drainer.
+    function changeDrainer(address newDrainer) external {
+        iServiceRegistryF.changeDrainer(newDrainer);
+    }
+
+    /// @dev Creates a new service.
+    /// @param serviceOwner Individual that creates and controls a service.
+    /// @param configHash IPFS hash pointing to the config metadata.
+    /// @param agentIds Canonical agent Ids in a sorted ascending order.
+    /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
+    /// @param threshold Signers threshold for a multisig composed by agent instances.
+    /// @return serviceId Created service Id.
+    function create(
+        address serviceOwner,
+        bytes32 configHash,
+        uint32[] memory agentIds,
+        AgentParams[] memory agentParams,
+        uint32 threshold
+    ) external returns (uint256 serviceId)
+    {
+        return iServiceRegistryF.create(serviceOwner,configHash,agentIds,agentParams,threshold);    
+    }
+
+    /// @dev Updates a service in a CRUD way.
+    /// @param serviceOwner Individual that creates and controls a service.
+    /// @param configHash IPFS hash pointing to the config metadata.
+    /// @param agentIds Canonical agent Ids in a sorted ascending order.
+    /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
+    /// @param threshold Signers threshold for a multisig composed by agent instances.
+    /// @param serviceId Service Id to be updated.
+    /// @return success True, if function executed successfully.
+    function update(
+        address serviceOwner,
+        bytes32 configHash,
+        uint32[] memory agentIds,
+        AgentParams[] memory agentParams,
+        uint32 threshold,
+        uint256 serviceId
+    ) external returns (bool success)
+    {
+        return iServiceRegistryF.update(serviceOwner,configHash,agentIds,agentParams,threshold,serviceId);
+    }
+
+    
 }
 
 
