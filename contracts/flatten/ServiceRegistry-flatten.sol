@@ -1894,7 +1894,7 @@ contract ServiceRegistryProxy {
         uint32 threshold
     ) external returns (uint256 serviceId)
     {
-        return iServiceRegistryF.create(serviceOwner,configHash,agentIds,agentParams,threshold);    
+        return iServiceRegistryF.create(serviceOwner, configHash, agentIds, agentParams, threshold);    
     }
 
     /// @dev Updates a service in a CRUD way.
@@ -1914,10 +1914,173 @@ contract ServiceRegistryProxy {
         uint256 serviceId
     ) external returns (bool success)
     {
-        return iServiceRegistryF.update(serviceOwner,configHash,agentIds,agentParams,threshold,serviceId);
+        return iServiceRegistryF.update(serviceOwner, configHash, agentIds, agentParams, threshold, serviceId);
     }
 
-    
+    /// @dev Updates the unit hash.
+    /// @param unitOwner Owner of the unit.
+    /// @param unitId Unit Id.
+    /// @param unitHash Updated IPFS hash of the unit.
+    /// @return success True, if function executed successfully.
+    function updateHash(address unitOwner, uint256 unitId, bytes32 unitHash) external 
+        returns (bool success)
+    {
+        return iServiceRegistryF.updateHash(unitOwner, unitId, unitHash);
+    } 
+
+    /// @dev Activates the service.
+    /// @param serviceOwner Individual that creates and controls a service.
+    /// @param serviceId Correspondent service Id.
+    /// @return success True, if function executed successfully.
+    function activateRegistration(address serviceOwner, uint256 serviceId) external payable returns (bool success)
+    {
+        return iServiceRegistryF.activateRegistration{value: msg.value}(serviceOwner, serviceId);
+    }
+
+    /// @dev Registers agent instances.
+    /// @param operator Address of the operator.
+    /// @param serviceId Service Id to be updated.
+    /// @param agentInstances Agent instance addresses.
+    /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
+    /// @return success True, if function executed successfully.
+    function registerAgents(
+        address operator,
+        uint256 serviceId,
+        address[] memory agentInstances,
+        uint32[] memory agentIds
+    ) external payable returns (bool success)
+    {
+        return iServiceRegistryF.registerAgents{value: msg.value}(operator, serviceId, agentInstances, agentIds);
+    }
+
+    /// @dev Creates multisig instance controlled by the set of service agent instances and deploys the service.
+    /// @param serviceOwner Individual that creates and controls a service.
+    /// @param serviceId Correspondent service Id.
+    /// @param multisigImplementation Multisig implementation address.
+    /// @param data Data payload for the multisig creation.
+    /// @return multisig Address of the created multisig.
+    function deploy(
+        address serviceOwner,
+        uint256 serviceId,
+        address multisigImplementation,
+        bytes memory data
+    ) external returns (address multisig) {
+        return iServiceRegistryF.deploy(serviceOwner, serviceId, multisigImplementation, data);
+    }
+
+    /// @dev Slashes a specified agent instance.
+    /// @param agentInstances Agent instances to slash.
+    /// @param amounts Correspondent amounts to slash.
+    /// @param serviceId Service Id.
+    /// @return success True, if function executed successfully.
+    function slash(address[] memory agentInstances, uint96[] memory amounts, uint256 serviceId) external
+        returns (bool success)
+    {
+        return iServiceRegistryF.slash(agentInstances, amounts, serviceId);
+    }
+
+    /// @dev Terminates the service.
+    /// @param serviceOwner Owner of the service.
+    /// @param serviceId Service Id to be updated.
+    /// @return success True, if function executed successfully.
+    /// @return refund Refund to return to the service owner.
+    function terminate(address serviceOwner, uint256 serviceId) external returns (bool success, uint256 refund)
+    {
+        return iServiceRegistryF.terminate(serviceOwner, serviceId);
+    }
+
+    /// @dev Unbonds agent instances of the operator from the service.
+    /// @param operator Operator of agent instances.
+    /// @param serviceId Service Id.
+    /// @return success True, if function executed successfully.
+    /// @return refund The amount of refund returned to the operator.
+    function unbond(address operator, uint256 serviceId) external returns (bool success, uint256 refund) {
+        return iServiceRegistryF.unbond(operator, serviceId);
+    }
+
+    /// @dev Gets the service instance.
+    /// @param serviceId Service Id.
+    /// @return service Corresponding Service struct.
+    function getService(uint256 serviceId) external view returns (Service memory service) {
+        return iServiceRegistryF.getService(serviceId);
+    }
+
+    /// @dev Gets service agent parameters: number of agent instances (slots) and a bond amount.
+    /// @param serviceId Service Id.
+    /// @return numAgentIds Number of canonical agent Ids in the service.
+    /// @return agentParams Set of agent parameters for each canonical agent Id.
+    function getAgentParams(uint256 serviceId) external view
+        returns (uint256 numAgentIds, AgentParams[] memory agentParams)
+    {
+        return iServiceRegistryF.getAgentParams(serviceId);
+    }
+
+    /// @dev Lists all the instances of a given canonical agent Id if the service.
+    /// @param serviceId Service Id.
+    /// @param agentId Canonical agent Id.
+    /// @return numAgentInstances Number of agent instances.
+    /// @return agentInstances Set of agent instances for a specified canonical agent Id.
+    function getInstancesForAgentId(uint256 serviceId, uint256 agentId) external view
+        returns (uint256 numAgentInstances, address[] memory agentInstances) {
+        return iServiceRegistryF.getInstancesForAgentId(serviceId, agentId);
+    }
+
+
+    /// @dev Gets service agent instances.
+    /// @param serviceId ServiceId.
+    /// @return numAgentInstances Number of agent instances.
+    /// @return agentInstances Pre-allocated list of agent instance addresses.
+    function getAgentInstances(uint256 serviceId) external view
+        returns (uint256 numAgentInstances, address[] memory agentInstances)
+    {
+
+    }
+
+    /// @dev Gets previous service config hashes.
+    /// @param serviceId Service Id.
+    /// @return numHashes Number of hashes.
+    /// @return configHashes The list of previous component hashes (excluding the current one).
+    function getPreviousHashes(uint256 serviceId) external view
+        returns (uint256 numHashes, bytes32[] memory configHashes)
+    {
+
+    }
+
+    /// @dev Gets the full set of linearized components / canonical agent Ids for a specified service.
+    /// @notice The service must be / have been deployed in order to get the actual data.
+    /// @param serviceId Service Id.
+    /// @return numUnitIds Number of component / agent Ids.
+    /// @return unitIds Set of component / agent Ids.
+    function getUnitIdsOfService(IRegistry.UnitType unitType, uint256 serviceId) external view
+        returns (uint256 numUnitIds, uint32[] memory unitIds)
+    {
+
+    }
+
+    /// @dev Gets the operator's balance in a specific service.
+    /// @param operator Operator address.
+    /// @param serviceId Service Id.
+    /// @return balance The balance of the operator.
+    function getOperatorBalance(address operator, uint256 serviceId) external view returns (uint256 balance)
+    {
+
+    }
+
+    /// @dev Controls multisig implementation address permission.
+    /// @param multisig Address of a multisig implementation.
+    /// @param permission Grant or revoke permission.
+    /// @return success True, if function executed successfully.
+    function changeMultisigPermission(address multisig, bool permission) external returns (bool success) {
+
+    }
+
+    /// @dev Drains slashed funds.
+    /// @return amount Drained amount.
+    function drain() external returns (uint256 amount) {
+
+    }
+
+
 }
 
 
