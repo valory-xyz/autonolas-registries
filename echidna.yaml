@@ -1,5 +1,7 @@
-testMode: assertion
+# assertion, overflow, property
+testMode: overflow
 corpusDir: echidna-corp
 stopOnFail: false
-
+# 0x6000 by default
+codeSize: 0xaaaa
 
