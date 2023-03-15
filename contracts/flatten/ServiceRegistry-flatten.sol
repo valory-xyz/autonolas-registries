@@ -1917,17 +1917,6 @@ contract ServiceRegistryProxy {
         return iServiceRegistryF.update(serviceOwner, configHash, agentIds, agentParams, threshold, serviceId);
     }
 
-    /// @dev Updates the unit hash.
-    /// @param unitOwner Owner of the unit.
-    /// @param unitId Unit Id.
-    /// @param unitHash Updated IPFS hash of the unit.
-    /// @return success True, if function executed successfully.
-    function updateHash(address unitOwner, uint256 unitId, bytes32 unitHash) external 
-        returns (bool success)
-    {
-        return iServiceRegistryF.updateHash(unitOwner, unitId, unitHash);
-    } 
-
     /// @dev Activates the service.
     /// @param serviceOwner Individual that creates and controls a service.
     /// @param serviceId Correspondent service Id.
@@ -2001,7 +1990,7 @@ contract ServiceRegistryProxy {
     /// @dev Gets the service instance.
     /// @param serviceId Service Id.
     /// @return service Corresponding Service struct.
-    function getService(uint256 serviceId) external view returns (Service memory service) {
+    function getService(uint256 serviceId) external view returns (ServiceRegistryF.Service memory service) {
         return iServiceRegistryF.getService(serviceId);
     }
 
@@ -2033,7 +2022,7 @@ contract ServiceRegistryProxy {
     function getAgentInstances(uint256 serviceId) external view
         returns (uint256 numAgentInstances, address[] memory agentInstances)
     {
-
+        return iServiceRegistryF.getAgentInstances(serviceId);
     }
 
     /// @dev Gets previous service config hashes.
@@ -2043,7 +2032,7 @@ contract ServiceRegistryProxy {
     function getPreviousHashes(uint256 serviceId) external view
         returns (uint256 numHashes, bytes32[] memory configHashes)
     {
-
+        return iServiceRegistryF.getPreviousHashes(serviceId);
     }
 
     /// @dev Gets the full set of linearized components / canonical agent Ids for a specified service.
@@ -2054,7 +2043,7 @@ contract ServiceRegistryProxy {
     function getUnitIdsOfService(IRegistry.UnitType unitType, uint256 serviceId) external view
         returns (uint256 numUnitIds, uint32[] memory unitIds)
     {
-
+        return iServiceRegistryF.getUnitIdsOfService(unitType, serviceId);
     }
 
     /// @dev Gets the operator's balance in a specific service.
@@ -2063,7 +2052,7 @@ contract ServiceRegistryProxy {
     /// @return balance The balance of the operator.
     function getOperatorBalance(address operator, uint256 serviceId) external view returns (uint256 balance)
     {
-
+        return iServiceRegistryF.getOperatorBalance(operator, serviceId);
     }
 
     /// @dev Controls multisig implementation address permission.
@@ -2071,13 +2060,13 @@ contract ServiceRegistryProxy {
     /// @param permission Grant or revoke permission.
     /// @return success True, if function executed successfully.
     function changeMultisigPermission(address multisig, bool permission) external returns (bool success) {
-
+        return iServiceRegistryF.changeMultisigPermission(multisig, permission);
     }
 
     /// @dev Drains slashed funds.
     /// @return amount Drained amount.
     function drain() external returns (uint256 amount) {
-
+        return iServiceRegistryF.drain();
     }
 
 
