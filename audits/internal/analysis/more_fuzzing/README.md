@@ -10,89 +10,168 @@ In order to precondition fuzzing to a specific state of contracts, the following
 
 
 ```sh
-echidna-test contracts/flatten/AgentRegistry-flatten.sol --contract AgentRegistryProxy --config echidna.yaml                                                                                                                                                                                   
-                                                         
-                                                          ┌─────────────────────────────────────────────────────Echidna 2.0.5────────────────────────────────────────────────────┐                                                          
-                                                          │ Tests found: 1                                                                                                       │                                                          
-                                                          │ Seed: -1325617478790951267                                                                                           │                                                          
-                                                          │ Unique instructions: 1947                                                                                            │                                                          
-                                                          │ Unique codehashes: 2                                                                                                 │                                                          
-                                                          │ Corpus size: 2                                                                                                       │                                                          
-                                                          │─────────────────────────────────────────────────────────Tests────────────────────────────────────────────────────────│                                                          
-                                                          │ Integer (over/under)flow: PASSED!                                                                                    │                                                          
-                                                          └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  
+cat echidna.yaml      
+# assertion, overflow, property
+testMode: overflow
+corpusDir: echidna-corp
+stopOnFail: false
+# 0x6000 by default
+codeSize: 0xaaaa
+# only for ServiceRegistry
+# initialize: audits/internal/analysis/more_fuzzing/init.json
+coverage: true
 
-echidna-test contracts/flatten/AgentRegistry-flatten.sol --contract AgentRegistryProxy --config echidna.yaml 
-                                                          ┌─────────────────────────────────────────────────────Echidna 2.0.5────────────────────────────────────────────────────┐                                                          
-                                                          │ Tests found: 4                                                                                                       │                                                          
-                                                          │ Seed: 2056738752459694098                                                                                            │                                                          
-                                                          │ Unique instructions: 1947                                                                                            │                                                          
-                                                          │ Unique codehashes: 2                                                                                                 │                                                          
-                                                          │ Corpus size: 1                                                                                                       │                                                          
-                                                          │─────────────────────────────────────────────────────────Tests────────────────────────────────────────────────────────│                                                          
-                                                          │ AssertionFailed(..): PASSED!                                                                                         │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
+rm -rf crytic-export       
+rm -rf echidna-corp 
+echidna contracts/flatten/AgentRegistry-flatten.sol --contract AgentRegistryProxy --config echidna.yaml
+Analyzing contract: /home/andrey/valory/autonolas-registries/contracts/flatten/AgentRegistry-flatten.sol:AgentRegistryProxy
+                                                          ┌─────────────────────────────────────────────────────Echidna 2.1.0────────────────────────────────────────────────────┐                                                          
+                                                          │ Tests found: 1                                            │ Fetched contracts: 0/0                                   │                                                          
+                                                          │ Seed: 91746721545298545                                   │ Fetched slots: 0/0                                       │                                                          
+                                                          │ Unique instructions: 1947                                 │                                                          │                                                          
+                                                          │ Unique codehashes: 2                                      │                                                          │                                                          
+                                                          │ Corpus size: 2                                            │                                                          │                                                          
+                                                          ├─────────────────────────────────────────────────────────Tests────────────────────────────────────────────────────────┤                                                          
+                                                          │ Integer (over/under)flow: PASSED!                                                                                   ^│                                                          
+                                                          ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤                                                          
+                                                          │                                        Campaign complete, C-c or esc to exit                                         │                                                          
+                                                          └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                            
+--
+cat echidna.yaml      
+# assertion, overflow, property
+testMode: assertion
+corpusDir: echidna-corp
+stopOnFail: false
+# 0x6000 by default
+codeSize: 0xaaaa
+# only for ServiceRegistry
+# initialize: audits/internal/analysis/more_fuzzing/init.json
+coverage: true
+
+rm -rf crytic-export
+rm -rf echidna-corp
+echidna contracts/flatten/AgentRegistry-flatten.sol --contract AgentRegistryProxy --config echidna.yaml     
+Analyzing contract: /home/andrey/valory/autonolas-registries/contracts/flatten/AgentRegistry-flatten.sol:AgentRegistryProxy
+                                                          ┌─────────────────────────────────────────────────────Echidna 2.1.0────────────────────────────────────────────────────┐                                                          
+                                                          │ Tests found: 4                                            │ Fetched contracts: 0/0                                   │                                                          
+                                                          │ Seed: 1097601396562511153                                 │ Fetched slots: 0/0                                       │                                                          
+                                                          │ Unique instructions: 1947                                 │                                                          │                                                          
+                                                          │ Unique codehashes: 2                                      │                                                          │                                                          
+                                                          │ Corpus size: 2                                            │                                                          │                                                          
+                                                          ├─────────────────────────────────────────────────────────Tests────────────────────────────────────────────────────────┤                                                          
+                                                          │ AssertionFailed(..): PASSED!                                                                                        ^│                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
                                                           │ assertion in iComponentRegistryFF(): PASSED!                                                                         │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
                                                           │ assertion in iAgentRegistryF(): PASSED!                                                                              │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
                                                           │ assertion in calculateSubComponents(uint32[]): PASSED!                                                               │                                                          
-                                                          └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘                                                          
-                                                                                                   Campaign complete, C-c or esc to exit
-                                                                                                    
-echidna-test contracts/flatten/ServiceRegistry-flatten.sol --contract ServiceRegistryProxy --config echidna.yaml                                                                                                                                                                                    
-                                                          ┌─────────────────────────────────────────────────────Echidna 2.0.5────────────────────────────────────────────────────┐                                                          
-                                                          │ Tests found: 22                                                                                                      │                                                          
-                                                          │ Seed: -7513038944257559547                                                                                           │                                                          
-                                                          │ Unique instructions: 11784                                                                                           │                                                          
-                                                          │ Unique codehashes: 2                                                                                                 │                                                          
-                                                          │ Corpus size: 19                                                                                                      │                                                          
-                                                          │─────────────────────────────────────────────────────────Tests────────────────────────────────────────────────────────│                                                          
-                                                          │ AssertionFailed(..): PASSED!                                                                                         │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in deploy(address,uint256,address,bytes): PASSED!                                                          │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in getService(uint256): PASSED!                                                                            │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in activateRegistration(address,uint256): PASSED!                                                          │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in registerAgents(address,uint256,address[],uint32[]): PASSED!                                             │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in terminate(address,uint256): PASSED!                                                                     │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in create(address,bytes32,uint32[],(uint32,uint96)[],uint32): PASSED!                                      │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in getPreviousHashes(uint256): PASSED!                                                                     │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in unbond(address,uint256): PASSED!                                                                        │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in drain(): PASSED!                                                                                        │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in getUnitIdsOfService(uint8,uint256): PASSED!                                                             │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in getOperatorBalance(address,uint256): PASSED!                                                            │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in changeMultisigPermission(address,bool): PASSED!                                                         │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in slash(address[],uint96[],uint256): PASSED!                                                              │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in getAgentInstances(uint256): PASSED!                                                                     │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in iServiceRegistryF(): PASSED!                                                                            │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in iComponentRegistryFF(): PASSED!                                                                         │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in getInstancesForAgentId(uint256,uint256): PASSED!                                                        │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in getAgentParams(uint256): PASSED!                                                                        │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in iAgentRegistryF(): PASSED!                                                                              │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in changeDrainer(address): PASSED!                                                                         │                                                          
-                                                          │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│                                                          
-                                                          │ assertion in update(address,bytes32,uint32[],(uint32,uint96)[],uint32,uint256): PASSED!                              │                                                          
-                                                          └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘                                                          
-                                                                                                   Campaign complete, C-c or esc to exit                                                                                                    
-                                                                                                                                             
+                                                          │                                                                                                                      │                                                                                                                    ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤                                                          
+                                                          │                                        Campaign complete, C-c or esc to exit                                         │                                                       
+                                                          └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘      
 
+--
+cat echidna.yaml 
+# assertion, overflow, property
+testMode: overflow
+corpusDir: echidna-corp
+stopOnFail: false
+# 0x6000 by default
+codeSize: 0xaaaa
+initialize: audits/internal/analysis/more_fuzzing/init.json
+coverage: true
+
+echidna contracts/flatten/ServiceRegistry-flatten.sol --contract ServiceRegistryProxy --config echidna.yaml     
+Analyzing contract: /home/andrey/valory/autonolas-registries/contracts/flatten/ServiceRegistry-flatten.sol:ServiceRegistryProxy
+                                                          ┌─────────────────────────────────────────────────────Echidna 2.1.0────────────────────────────────────────────────────┐                                                          
+                                                          │ Tests found: 1                                            │ Fetched contracts: 0/0                                   │                                                          
+                                                          │ Seed: 7278998091794675560                                 │ Fetched slots: 0/0                                       │                                                          
+                                                          │ Unique instructions: 19332                                │                                                          │                                                          
+                                                          │ Unique codehashes: 9                                      │                                                          │                                                          
+                                                          │ Corpus size: 22                                           │                                                          │                                                          
+                                                          ├─────────────────────────────────────────────────────────Tests────────────────────────────────────────────────────────┤                                                          
+                                                          │ Integer (over/under)flow: PASSED!                                                                                   ^│                                                          
+                                                          │                                                                                                                      │                                                          
+                                                          ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤                                                          
+                                                          │                                        Campaign complete, C-c or esc to exit                                         │                                                          
+                                                          └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘                                                                                                                                                                                                       
+
+--
+cat echidna.yaml 
+# assertion, overflow, property
+testMode: assertion
+corpusDir: echidna-corp
+stopOnFail: false
+# 0x6000 by default
+codeSize: 0xaaaa
+# only for ServiceRegistry
+initialize: audits/internal/analysis/more_fuzzing/init.json
+coverage: true
+
+echidna contracts/flatten/ServiceRegistry-flatten.sol --contract ServiceRegistryProxy --config echidna.yaml
+Analyzing contract: /home/andrey/valory/autonolas-registries/contracts/flatten/ServiceRegistry-flatten.sol:ServiceRegistryProxy
+                                                          ┌─────────────────────────────────────────────────────Echidna 2.1.0────────────────────────────────────────────────────┐                                                          
+                                                          │ Tests found: 24                                           │ Fetched contracts: 0/0                                   │                                                          
+                                                          │ Seed: 7497953648602028681                                 │ Fetched slots: 0/0                                       │                                                          
+                                                          │ Unique instructions: 19332                                │                                                          │                                                          
+                                                          │ Unique codehashes: 9                                      │                                                          │                                                          
+                                                          │ Corpus size: 22                                           │                                                          │                                                          
+                                                          ├─────────────────────────────────────────────────────────Tests────────────────────────────────────────────────────────┤                                                          
+                                                          │ AssertionFailed(..): PASSED!                                                                                        ^│                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in deploy(address,uint256,address,bytes): PASSED!                                                          │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in getService(uint256): PASSED!                                                                            │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in activateRegistration(address,uint256): PASSED!                                                          │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in registerAgents(address,uint256,address[],uint32[]): PASSED!                                             │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in terminate(address,uint256): PASSED!                                                                     │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in create(address,bytes32,uint32[],(uint32,uint96)[],uint32): PASSED!                                      │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in changeOwner(address): PASSED!                                                                           │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in getPreviousHashes(uint256): PASSED!                                                                     │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in unbond(address,uint256): PASSED!                                                                        │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in changeManager(address): PASSED!                                                                         │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in drain(): PASSED!                                                                                        │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in getUnitIdsOfService(uint8,uint256): PASSED!                                                             │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in getOperatorBalance(address,uint256): PASSED!                                                            │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in changeMultisigPermission(address,bool): PASSED!                                                         │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in slash(address[],uint96[],uint256): PASSED!                                                              │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in getAgentInstances(uint256): PASSED!                                                                     │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in iServiceRegistryF(): PASSED!                                                                            │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in iComponentRegistryFF(): PASSED!                                                                         │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in getInstancesForAgentId(uint256,uint256): PASSED!                                                        │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in getAgentParams(uint256): PASSED!                                                                        │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in iAgentRegistryF(): PASSED!                                                                              │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in changeDrainer(address): PASSED!                                                                         │                                                          
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │                                                          
+                                                          │ assertion in update(address,bytes32,uint32[],(uint32,uint96)[],uint32,uint256): PASSED!                              │                                                          
+                                                          ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤                                                          
+                                                          │                                        Campaign complete, C-c or esc to exit                                         │                                                          
+                                                          └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘   
 ```
+
+## In-place testing with Scribble
+'''
+Add required rules as comments and run:
+./scripts/scribble.sh ServiceRegistry.sol
+'''

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
+/// 0.8.17 for compatibility with scribble tools
+pragma solidity 0.8.17;
 
 import "./GenericRegistry.sol";
 import "./interfaces/IMultisig.sol";
@@ -37,6 +38,10 @@ contract ServiceRegistry is GenericRegistry {
     event OperatorUnbond(address indexed operator, uint256 indexed serviceId);
     event DeployService(uint256 indexed serviceId);
     event Drain(address indexed drainer, uint256 amount);
+
+    // TODO: remove later. for troubleshooting only
+    // error UnknowBug(address x);
+    // error UnknowBug2(uint256 x, uint256 y);
 
     enum ServiceState {
         NonExistent,
@@ -214,6 +219,15 @@ contract ServiceRegistry is GenericRegistry {
     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
     /// @param threshold Signers threshold for a multisig composed by agent instances.
     /// @return serviceId Created service Id.
+    /// #if_succeeds {:msg "threshold"} mapServices[totalSupply].threshold <= mapServices[totalSupply].maxNumAgentInstances;
+    /// #if_succeeds {:msg "serviceId can only increase"} totalSupply == old(totalSupply) + 1;
+    /// #if_succeeds {:msg "state"} mapServices[totalSupply].state == ServiceState.PreRegistration;
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[totalSupply].securityDeposit > 0;
+    /// notes: discuss multisig field in state machine
+    /// #if_succeeds {:msg "multisig"} mapServices[totalSupply].multisig == address(0); 
+    /// #if_succeeds {:msg "configHash"} mapServices[totalSupply].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances" } mapServices[totalSupply].numAgentInstances <= mapServices[totalSupply].maxNumAgentInstances;
+    /// #if_succeeds {:msg "agentIds" } mapServices[totalSupply].agentIds.length == agentIds.length;
     function create(
         address serviceOwner,
         bytes32 configHash,
@@ -282,6 +296,15 @@ contract ServiceRegistry is GenericRegistry {
     /// @param threshold Signers threshold for a multisig composed by agent instances.
     /// @param serviceId Service Id to be updated.
     /// @return success True, if function executed successfully.
+    /// #if_succeeds {:msg "threshold"} mapServices[totalSupply].threshold <= mapServices[totalSupply].maxNumAgentInstances;
+    /// #if_succeeds {:msg "state"} mapServices[totalSupply].state == ServiceState.PreRegistration;
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[totalSupply].securityDeposit > 0;
+    /// notes: discuss multisig field in state machine. sometime mapServices[totalSupply].multisig != address(0)
+    /// if_succeeds {:msg "multisig"} mapServices[totalSupply].multisig == address(0); 
+    /// #if_succeeds {:msg "configHash"} mapServices[totalSupply].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances" } mapServices[totalSupply].numAgentInstances <= mapServices[totalSupply].maxNumAgentInstances;
+    /// notes: discuss. sometime mapServices[serviceId].agentIds.length != agentIds.length
+    /// if_succeeds {:msg "agentIds" } mapServices[serviceId].agentIds.length == agentIds.length;
     function update(
         address serviceOwner,
         bytes32 configHash,
@@ -344,12 +367,25 @@ contract ServiceRegistry is GenericRegistry {
 
         emit UpdateService(serviceId, configHash);
         success = true;
+        // TODO: remove later. for troubleshooting only
+        // notes: see above: reverted with custom error 'UnknowBug2(2, 3)'
+        // if(mapServices[serviceId].agentIds.length != agentIds.length) {
+        //    revert UnknowBug2(mapServices[serviceId].agentIds.length,agentIds.length);
+        // }
     }
 
     /// @dev Activates the service.
     /// @param serviceOwner Individual that creates and controls a service.
     /// @param serviceId Correspondent service Id.
     /// @return success True, if function executed successfully.
+    /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "state"} mapServices[serviceId].state == ServiceState.ActiveRegistration;
+    // TODO: more securityDeposit tests
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
+    /// notes: discuss multisig field in state machine. sometime mapServices[totalSupply].multisig != address(0)
+    /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig == address(0); 
+    /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances" } mapServices[serviceId].numAgentInstances <= mapServices[serviceId].maxNumAgentInstances;
     function activateRegistration(address serviceOwner, uint256 serviceId) external payable returns (bool success)
     {
         // Check for the manager privilege for a service management
