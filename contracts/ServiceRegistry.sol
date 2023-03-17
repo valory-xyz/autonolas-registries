@@ -422,6 +422,14 @@ contract ServiceRegistry is GenericRegistry {
     /// @param agentInstances Agent instance addresses.
     /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
     /// @return success True, if function executed successfully.
+    /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "state"} mapServices[serviceId].state == ServiceState.ActiveRegistration;
+    // TODO: more securityDeposit tests
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
+    /// notes: discuss multisig field in state machine. sometime mapServices[totalSupply].multisig != address(0)
+    /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig == address(0); 
+    /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances" } mapServices[serviceId].numAgentInstances <= mapServices[serviceId].maxNumAgentInstances;
     function registerAgents(
         address operator,
         uint256 serviceId,
@@ -523,6 +531,14 @@ contract ServiceRegistry is GenericRegistry {
     /// @param multisigImplementation Multisig implementation address.
     /// @param data Data payload for the multisig creation.
     /// @return multisig Address of the created multisig.
+    /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "state"} mapServices[serviceId].state == ServiceState.FinishedRegistration;
+    // TODO: more securityDeposit tests
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
+    /// notes: discuss multisig field in state machine. sometime mapServices[totalSupply].multisig != address(0)
+    /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig == address(0); 
+    /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances" } mapServices[serviceId].numAgentInstances <= mapServices[serviceId].maxNumAgentInstances;
     function deploy(
         address serviceOwner,
         uint256 serviceId,
@@ -581,6 +597,13 @@ contract ServiceRegistry is GenericRegistry {
     /// @param amounts Correspondent amounts to slash.
     /// @param serviceId Service Id.
     /// @return success True, if function executed successfully.
+    /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "state"} mapServices[serviceId].state == ServiceState.Deployed;
+    // TODO: more securityDeposit tests
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
+    /// #if_succeeds {:msg "multisig"} mapServices[serviceId].multisig != address(0); 
+    /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances" } mapServices[serviceId].numAgentInstances <= mapServices[serviceId].maxNumAgentInstances;
     function slash(address[] memory agentInstances, uint96[] memory amounts, uint256 serviceId) external
         returns (bool success)
     {
@@ -636,6 +659,15 @@ contract ServiceRegistry is GenericRegistry {
     /// @param serviceId Service Id to be updated.
     /// @return success True, if function executed successfully.
     /// @return refund Refund to return to the service owner.
+    /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "state"} mapServices[serviceId].state != ServiceState.PreRegistration || mapServices[serviceId].state != ServiceState.TerminatedBonded;
+    // TODO: more securityDeposit tests
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
+    /// notes: discuss multisig field in state machine. sometime mapServices[totalSupply].multisig != address(0)
+    /// notes: discuss multisig field in state machine. sometime mapServices[totalSupply].multisig == address(0)
+    /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig == address(0); 
+    /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances" } mapServices[serviceId].numAgentInstances <= mapServices[serviceId].maxNumAgentInstances;
     function terminate(address serviceOwner, uint256 serviceId) external returns (bool success, uint256 refund)
     {
         // Reentrancy guard
@@ -697,6 +729,15 @@ contract ServiceRegistry is GenericRegistry {
     /// @param serviceId Service Id.
     /// @return success True, if function executed successfully.
     /// @return refund The amount of refund returned to the operator.
+    /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "state"} mapServices[serviceId].state == ServiceState.TerminatedBonded;
+    // TODO: more securityDeposit tests
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
+    /// notes: discuss multisig field in state machine. sometime mapServices[totalSupply].multisig != address(0)
+    /// notes: discuss multisig field in state machine. sometime mapServices[totalSupply].multisig == address(0)
+    /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig != address(0); 
+    /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances" } mapServices[serviceId].numAgentInstances <= mapServices[serviceId].maxNumAgentInstances;
     function unbond(address operator, uint256 serviceId) external returns (bool success, uint256 refund) {
         // Reentrancy guard
         if (_locked > 1) {
@@ -909,6 +950,7 @@ contract ServiceRegistry is GenericRegistry {
 
     /// @dev Drains slashed funds.
     /// @return amount Drained amount.
+    /// #if_succeeds {:msg "balance"} old(address(this).balance >= slashedFunds);
     function drain() external returns (uint256 amount) {
         // Reentrancy guard
         if (_locked > 1) {
