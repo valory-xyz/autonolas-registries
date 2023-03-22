@@ -175,3 +175,12 @@ Analyzing contract: /home/andrey/valory/autonolas-registries/contracts/flatten/S
 Add required rules as comments and run:
 ./scripts/scribble.sh ServiceRegistry.sol
 '''
+
+
+## Scribble plus Echidna
+Here is the setup of testing:
+- Add scribble annotations to ServiceRegistry.sol;
+- Instrument the contract: `scribble contracts/ServiceRegistry.sol --output-mode files --arm`;
+- Run etheno in a different terminal window: `etheno --ganache -x instrumental.json`;
+- Run a predefined hardhat test (with `.only` from `audits/internal/analysis/more_fuzzing/ServiceRegistry.js`) on ehteno: `npx hardhat test --network local`;
+- Run echidna based on `instrumental.json`.

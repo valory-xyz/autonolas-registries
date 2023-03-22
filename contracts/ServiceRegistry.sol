@@ -297,6 +297,7 @@ contract ServiceRegistry is GenericRegistry {
     /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig == old(mapServices[serviceId].multisig);
     /// #if_succeeds {:msg "configHash"} mapServices[totalSupply].configHash != bytes32(0);
     /// #if_succeeds {:msg "numAgentInstances"} mapServices[totalSupply].numAgentInstances == 0;
+    /// if_succeeds {:msg "agentIds" } mapServices[serviceId].agentIds.length <= agentIds.length;
     function update(
         address serviceOwner,
         bytes32 configHash,
@@ -520,6 +521,7 @@ contract ServiceRegistry is GenericRegistry {
     /// @return multisig Address of the created multisig.
     /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
     /// #if_succeeds {:msg "state"} mapServices[serviceId].state == ServiceState.Deployed;
+    /// #if_succeeds {:msg "multisig"} mapServices[serviceId].multisig != address(0);
     // TODO: more securityDeposit tests
     /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
     /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
@@ -722,7 +724,7 @@ contract ServiceRegistry is GenericRegistry {
     /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
     /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig == old(mapServices[serviceId].multisig);
     /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
-    /// #if_succeeds {:msg "numAgentInstances"} mapServices[serviceId].numAgentInstances <= mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "numAgentInstances"} mapServices[serviceId].numAgentInstances < mapServices[serviceId].maxNumAgentInstances;
     /// #if_succeeds {:msg "agent instances diff"} mapServices[serviceId].numAgentInstances == old(mapServices[serviceId].numAgentInstances - mapOperatorAndServiceIdAgentInstances[uint256(uint160(operator)) | serviceId << 160].length);
     /// #if_succeeds {:msg "operator balance"} mapOperatorAndServiceIdOperatorBalances[uint256(uint160(operator)) | serviceId << 160] == 0;
     function unbond(address operator, uint256 serviceId) external returns (bool success, uint256 refund) {
