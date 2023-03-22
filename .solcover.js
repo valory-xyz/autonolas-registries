@@ -9,7 +9,9 @@ module.exports = {
         "flatten/RegistriesManager-flatten.sol",
         "flatten/ServiceManager-flatten.sol",
         "flatten/ServiceRegistry-flatten.sol",
+        "flatten/ServiceRegistry-flatten-generic.sol",
         "flatten/ServiceRegistryL2-flatten.sol",
-        "flatten/UnitRegistry-flatten.sol"
+        "flatten/UnitRegistry-flatten.sol",
+        "scribble/ServiceRegistryAnnotated.sol",
     ]
 };
