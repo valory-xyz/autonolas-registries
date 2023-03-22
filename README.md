@@ -91,7 +91,7 @@ npx hardhat test
 ### Test with instrumented code
 [Scribble](https://docs.scribble.codes/) annotated contracts are located in https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/scribble.
 
-In order to instrument the code, one needs to install Scribble:
+Install Scribble in order to instrument the code:
 ```
 npm install -g eth-scribble
 ```
@@ -100,6 +100,10 @@ Arm (instrument) the code, run tests and disarm the code:
 scribble contracts/scribble/ServiceRegistryAnnotated.sol --output-mode files --arm
 npx hardhat test
 scribble contracts/scribble/ServiceRegistryAnnotated.sol --disarm
+```
+Alternatively, run a simple scribble script:
+```
+./scripts/scribble.sh scribble/ServiceRegistryAnnotated.sol
 ```
 
 ### Docker image
