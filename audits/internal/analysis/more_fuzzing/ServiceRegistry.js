@@ -9,14 +9,11 @@ describe.only("ServiceRegistry", function () {
     let serviceRegistry;
     let serviceRegistryProxy;
     let gnosisSafe;
-    let serviceRegistryL2;
     let gnosisSafeMultisig;
     let gnosisSafeProxyFactory;
     let defaultCallbackHandler;
     let multiSend;
     let gnosisSafeSameAddressMultisig;
-    let reentrancyAttacker;
-    let reentrancyAttackerL2;
     let signers;
     const configHash = "0x" + "5".repeat(64);
     const regBond = 1000;
@@ -77,23 +74,11 @@ describe.only("ServiceRegistry", function () {
         gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
         await gnosisSafeSameAddressMultisig.deployed();
 
-        const ServiceRegistry = await ethers.getContractFactory("ServiceRegistry");
+        const ServiceRegistry = await ethers.getContractFactory("ServiceRegistryAnnotated");
         serviceRegistry = await ServiceRegistry.deploy("service registry", "SERVICE", "https://localhost/service/",
             agentRegistry.address);
         await serviceRegistry.deployed();
         console.log("serviceRegistry", serviceRegistry.address);
-
-        const ServiceRegistryL2 = await ethers.getContractFactory("ServiceRegistryL2");
-        serviceRegistryL2 = await ServiceRegistryL2.deploy("Service Registry L2", "SERVICE", "https://localhost/service/");
-        await serviceRegistryL2.deployed();
-
-        const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
-        reentrancyAttacker = await ReentrancyAttacker.deploy(componentRegistry.address, serviceRegistry.address);
-        await reentrancyAttacker.deployed();
-
-        const ReentrancyAttackerL2 = await ethers.getContractFactory("ReentrancyAttacker");
-        reentrancyAttackerL2 = await ReentrancyAttackerL2.deploy(componentRegistry.address, serviceRegistryL2.address);
-        await reentrancyAttackerL2.deployed();
 
         const ServiceRegistryProxy = await ethers.getContractFactory("ServiceRegistryProxy");
         serviceRegistryProxy = await ServiceRegistryProxy.deploy();

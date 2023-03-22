@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
-import "./GenericRegistry.sol";
-import "./interfaces/IMultisig.sol";
-import "./interfaces/IRegistry.sol";
+import "../GenericRegistry.sol";
+import "../interfaces/IMultisig.sol";
+import "../interfaces/IRegistry.sol";
 
 // This struct is 128 bits in total
 struct AgentParams {
@@ -23,7 +23,7 @@ struct AgentInstance {
 
 /// @title Service Registry - Smart contract for registering services
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-contract ServiceRegistry is GenericRegistry {
+contract ServiceRegistryAnnotated is GenericRegistry {
     event DrainerUpdated(address indexed drainer);
     event Deposit(address indexed sender, uint256 amount);
     event Refund(address indexed receiver, uint256 amount);
@@ -214,6 +214,14 @@ contract ServiceRegistry is GenericRegistry {
     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
     /// @param threshold Signers threshold for a multisig composed by agent instances.
     /// @return serviceId Created service Id.
+    /// #if_succeeds {:msg "threshold"} mapServices[totalSupply].threshold <= mapServices[totalSupply].maxNumAgentInstances;
+    /// #if_succeeds {:msg "serviceId can only increase"} totalSupply == old(totalSupply) + 1;
+    /// #if_succeeds {:msg "state"} mapServices[totalSupply].state == ServiceState.PreRegistration;
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[totalSupply].securityDeposit > 0;
+    /// #if_succeeds {:msg "multisig"} mapServices[totalSupply].multisig == address(0); 
+    /// #if_succeeds {:msg "configHash"} mapServices[totalSupply].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances"} mapServices[totalSupply].numAgentInstances == 0;
+    /// #if_succeeds {:msg "agentIds"} mapServices[totalSupply].agentIds.length == agentIds.length;
     function create(
         address serviceOwner,
         bytes32 configHash,
@@ -282,6 +290,13 @@ contract ServiceRegistry is GenericRegistry {
     /// @param threshold Signers threshold for a multisig composed by agent instances.
     /// @param serviceId Service Id to be updated.
     /// @return success True, if function executed successfully.
+    /// #if_succeeds {:msg "threshold"} mapServices[totalSupply].threshold <= mapServices[totalSupply].maxNumAgentInstances;
+    /// #if_succeeds {:msg "state"} mapServices[totalSupply].state == ServiceState.PreRegistration;
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[totalSupply].securityDeposit > 0;
+    /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig == old(mapServices[serviceId].multisig);
+    /// #if_succeeds {:msg "configHash"} mapServices[totalSupply].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances"} mapServices[totalSupply].numAgentInstances == 0;
+    /// if_succeeds {:msg "agentIds" } mapServices[serviceId].agentIds.length <= agentIds.length;
     function update(
         address serviceOwner,
         bytes32 configHash,
@@ -350,6 +365,12 @@ contract ServiceRegistry is GenericRegistry {
     /// @param serviceOwner Individual that creates and controls a service.
     /// @param serviceId Correspondent service Id.
     /// @return success True, if function executed successfully.
+    /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "state"} mapServices[serviceId].state == ServiceState.ActiveRegistration;
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
+    /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig == old(mapServices[serviceId].multisig);
+    /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances"} mapServices[serviceId].numAgentInstances <= mapServices[serviceId].maxNumAgentInstances;
     function activateRegistration(address serviceOwner, uint256 serviceId) external payable returns (bool success)
     {
         // Check for the manager privilege for a service management
@@ -386,6 +407,14 @@ contract ServiceRegistry is GenericRegistry {
     /// @param agentInstances Agent instance addresses.
     /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
     /// @return success True, if function executed successfully.
+    /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "state active registration"} mapServices[serviceId].numAgentInstances < mapServices[serviceId].maxNumAgentInstances ==> mapServices[serviceId].state == ServiceState.ActiveRegistration;
+    /// #if_succeeds {:msg "state finished registration"} mapServices[serviceId].numAgentInstances == mapServices[serviceId].maxNumAgentInstances ==> mapServices[serviceId].state == ServiceState.FinishedRegistration;
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
+    /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig == old(mapServices[serviceId].multisig);
+    /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances"} mapServices[serviceId].numAgentInstances <= mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "agent instances diff"} mapOperatorAndServiceIdAgentInstances[uint256(uint160(operator)) | serviceId << 160].length == agentInstances.length + old(mapOperatorAndServiceIdAgentInstances[uint256(uint160(operator)) | serviceId << 160].length);
     function registerAgents(
         address operator,
         uint256 serviceId,
@@ -487,6 +516,14 @@ contract ServiceRegistry is GenericRegistry {
     /// @param multisigImplementation Multisig implementation address.
     /// @param data Data payload for the multisig creation.
     /// @return multisig Address of the created multisig.
+    /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "state"} mapServices[serviceId].state == ServiceState.Deployed;
+    /// #if_succeeds {:msg "multisig"} mapServices[serviceId].multisig != address(0);
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
+    /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances"} mapServices[serviceId].numAgentInstances == mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "num agent Ids"} mapServiceIdSetAgentIds[serviceId].length > 0;
+    /// #if_succeeds {:msg "num component Ids"} mapServiceIdSetComponentIds[serviceId].length > 0;
     function deploy(
         address serviceOwner,
         uint256 serviceId,
@@ -545,6 +582,12 @@ contract ServiceRegistry is GenericRegistry {
     /// @param amounts Correspondent amounts to slash.
     /// @param serviceId Service Id.
     /// @return success True, if function executed successfully.
+    /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "state"} mapServices[serviceId].state == ServiceState.Deployed;
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
+    /// #if_succeeds {:msg "multisig"} mapServices[serviceId].multisig != address(0); 
+    /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances"} mapServices[serviceId].numAgentInstances == mapServices[serviceId].maxNumAgentInstances;
     function slash(address[] memory agentInstances, uint96[] memory amounts, uint256 serviceId) external
         returns (bool success)
     {
@@ -600,6 +643,13 @@ contract ServiceRegistry is GenericRegistry {
     /// @param serviceId Service Id to be updated.
     /// @return success True, if function executed successfully.
     /// @return refund Refund to return to the service owner.
+    /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "state bonded"} mapServices[serviceId].numAgentInstances > 0 ==> mapServices[serviceId].state == ServiceState.TerminatedBonded;
+    /// #if_succeeds {:msg "state pre-registration"} mapServices[serviceId].numAgentInstances == 0 ==> mapServices[serviceId].state == ServiceState.PreRegistration;
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
+    /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig == old(mapServices[serviceId].multisig);
+    /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances"} mapServices[serviceId].numAgentInstances <= mapServices[serviceId].maxNumAgentInstances;
     function terminate(address serviceOwner, uint256 serviceId) external returns (bool success, uint256 refund)
     {
         // Reentrancy guard
@@ -661,6 +711,15 @@ contract ServiceRegistry is GenericRegistry {
     /// @param serviceId Service Id.
     /// @return success True, if function executed successfully.
     /// @return refund The amount of refund returned to the operator.
+    /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "state bonded"} mapServices[serviceId].numAgentInstances > 0 ==> mapServices[serviceId].state == ServiceState.TerminatedBonded;
+    /// #if_succeeds {:msg "state pre-registration"} mapServices[serviceId].numAgentInstances == 0 ==> mapServices[serviceId].state == ServiceState.PreRegistration;
+    /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
+    /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig == old(mapServices[serviceId].multisig);
+    /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
+    /// #if_succeeds {:msg "numAgentInstances"} mapServices[serviceId].numAgentInstances < mapServices[serviceId].maxNumAgentInstances;
+    /// #if_succeeds {:msg "agent instances diff"} mapServices[serviceId].numAgentInstances == old(mapServices[serviceId].numAgentInstances - mapOperatorAndServiceIdAgentInstances[uint256(uint160(operator)) | serviceId << 160].length);
+    /// #if_succeeds {:msg "operator balance"} mapOperatorAndServiceIdOperatorBalances[uint256(uint160(operator)) | serviceId << 160] == 0;
     function unbond(address operator, uint256 serviceId) external returns (bool success, uint256 refund) {
         // Reentrancy guard
         if (_locked > 1) {
@@ -873,6 +932,7 @@ contract ServiceRegistry is GenericRegistry {
 
     /// @dev Drains slashed funds.
     /// @return amount Drained amount.
+    /// #if_succeeds {:msg "balance"} old(address(this).balance >= slashedFunds);
     function drain() external returns (uint256 amount) {
         // Reentrancy guard
         if (_locked > 1) {
