@@ -368,7 +368,6 @@ contract ServiceRegistry is GenericRegistry {
     /// @return success True, if function executed successfully.
     /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
     /// #if_succeeds {:msg "state"} mapServices[serviceId].state == ServiceState.ActiveRegistration;
-    // TODO: more securityDeposit tests
     /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
     /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig == old(mapServices[serviceId].multisig);
     /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
@@ -412,7 +411,6 @@ contract ServiceRegistry is GenericRegistry {
     /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
     /// #if_succeeds {:msg "state active registration"} mapServices[serviceId].numAgentInstances < mapServices[serviceId].maxNumAgentInstances ==> mapServices[serviceId].state == ServiceState.ActiveRegistration;
     /// #if_succeeds {:msg "state finished registration"} mapServices[serviceId].numAgentInstances == mapServices[serviceId].maxNumAgentInstances ==> mapServices[serviceId].state == ServiceState.FinishedRegistration;
-    // TODO: more securityDeposit tests
     /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
     /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig == old(mapServices[serviceId].multisig);
     /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
@@ -522,7 +520,6 @@ contract ServiceRegistry is GenericRegistry {
     /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
     /// #if_succeeds {:msg "state"} mapServices[serviceId].state == ServiceState.Deployed;
     /// #if_succeeds {:msg "multisig"} mapServices[serviceId].multisig != address(0);
-    // TODO: more securityDeposit tests
     /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
     /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
     /// #if_succeeds {:msg "numAgentInstances"} mapServices[serviceId].numAgentInstances == mapServices[serviceId].maxNumAgentInstances;
@@ -588,7 +585,6 @@ contract ServiceRegistry is GenericRegistry {
     /// @return success True, if function executed successfully.
     /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
     /// #if_succeeds {:msg "state"} mapServices[serviceId].state == ServiceState.Deployed;
-    // TODO: more securityDeposit tests
     /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
     /// #if_succeeds {:msg "multisig"} mapServices[serviceId].multisig != address(0); 
     /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
@@ -651,7 +647,6 @@ contract ServiceRegistry is GenericRegistry {
     /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
     /// #if_succeeds {:msg "state bonded"} mapServices[serviceId].numAgentInstances > 0 ==> mapServices[serviceId].state == ServiceState.TerminatedBonded;
     /// #if_succeeds {:msg "state pre-registration"} mapServices[serviceId].numAgentInstances == 0 ==> mapServices[serviceId].state == ServiceState.PreRegistration;
-    // TODO: more securityDeposit tests
     /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
     /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig == old(mapServices[serviceId].multisig);
     /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);
@@ -720,7 +715,6 @@ contract ServiceRegistry is GenericRegistry {
     /// #if_succeeds {:msg "threshold"} mapServices[serviceId].threshold <= mapServices[serviceId].maxNumAgentInstances;
     /// #if_succeeds {:msg "state bonded"} mapServices[serviceId].numAgentInstances > 0 ==> mapServices[serviceId].state == ServiceState.TerminatedBonded;
     /// #if_succeeds {:msg "state pre-registration"} mapServices[serviceId].numAgentInstances == 0 ==> mapServices[serviceId].state == ServiceState.PreRegistration;
-    // TODO: more securityDeposit tests
     /// #if_succeeds {:msg "securityDeposit"} mapServices[serviceId].securityDeposit > 0;
     /// if_succeeds {:msg "multisig"} mapServices[serviceId].multisig == old(mapServices[serviceId].multisig);
     /// #if_succeeds {:msg "configHash"} mapServices[serviceId].configHash != bytes32(0);

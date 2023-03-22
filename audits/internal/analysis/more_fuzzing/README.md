@@ -176,6 +176,22 @@ Add required rules as comments and run:
 ./scripts/scribble.sh ServiceRegistry.sol
 '''
 
+## Generic ServiceRegistry testing
+Consult the coverage at: [coverage](generic_coverage.txt).
+
+```
+cat echidna.yaml 
+# assertion, overflow, property
+testMode: assertion
+corpusDir: echidna-corp
+stopOnFail: false
+# 0x6000 by default
+codeSize: 0xaaaa
+coverage: true
+rm -rf echidna-corp crytic-export
+echidna contracts/flatten/ServiceRegistry-flatten-generic.sol --contract ServiceRegistryProxyGeneric --config echidna.yaml
+```
+
 
 ## Scribble plus Echidna
 ### Test 1: State of deployed service
