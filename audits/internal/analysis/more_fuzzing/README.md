@@ -290,3 +290,78 @@ Here is the setup of testing:
     - Use `.only` in `audits/internal/analysis/more_fuzzing/ServiceRegistry.js` for the second test;
     - The test runs until the service is deployed, terminated and unbonded;
 - Run echidna based on `instrumental2.json`.
+
+```
+cat echidna.yaml
+# assertion, overflow, property
+testMode: assertion
+corpusDir: echidna-corp
+stopOnFail: false
+# 0x6000 by default
+codeSize: 0xaaaa
+# only for ServiceRegistry
+initialize: audits/internal/analysis/more_fuzzing/instrumental2.json
+coverage: true
+rm -rf echidna-corp
+rm -rf crytic-export
+echidna contracts/flatten/ServiceRegistry-flatten.sol --contract ServiceRegistryProxy --config echidna.yaml
+Analyzing contract: /home/andrey/valory/autonolas-registries/contracts/flatten/ServiceRegistry-flatten.sol:ServiceRegistryProxy
+                                                          ┌─────────────────────────────────────────────────────Echidna 2.1.0────────────────────────────────────────────────────┐
+                                                          │ Tests found: 24                                           │ Fetched contracts: 0/0                                   │
+                                                          │ Seed: 9032281228957739964                                 │ Fetched slots: 0/0                                       │
+                                                          │ Unique instructions: 16168                                │                                                          │
+                                                          │ Unique codehashes: 6                                      │                                                          │
+                                                          │ Corpus size: 20                                           │                                                          │
+                                                          ├─────────────────────────────────────────────────────────Tests────────────────────────────────────────────────────────┤
+                                                          │ AssertionFailed(..): PASSED!                                                                                        ^│
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in deploy(address,uint256,address,bytes): PASSED!                                                          │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in getService(uint256): PASSED!                                                                            │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in activateRegistration(address,uint256): PASSED!                                                          │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in registerAgents(address,uint256,address[],uint32[]): PASSED!                                             │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in terminate(address,uint256): PASSED!                                                                     │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in create(address,bytes32,uint32[],(uint32,uint96)[],uint32): PASSED!                                      │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in changeOwner(address): PASSED!                                                                           │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in getPreviousHashes(uint256): PASSED!                                                                     │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in unbond(address,uint256): PASSED!                                                                        │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in changeManager(address): PASSED!                                                                         │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in drain(): PASSED!                                                                                        │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in getUnitIdsOfService(uint8,uint256): PASSED!                                                             │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in getOperatorBalance(address,uint256): PASSED!                                                            │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in changeMultisigPermission(address,bool): PASSED!                                                         │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in slash(address[],uint96[],uint256): PASSED!                                                              │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in getAgentInstances(uint256): PASSED!                                                                     │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in iServiceRegistryF(): PASSED!                                                                            │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in iComponentRegistryFF(): PASSED!                                                                         │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in getInstancesForAgentId(uint256,uint256): PASSED!                                                        │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in getAgentParams(uint256): PASSED!                                                                        │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in iAgentRegistryF(): PASSED!                                                                              │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in changeDrainer(address): PASSED!                                                                         │
+                                                          ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+                                                          │ assertion in update(address,bytes32,uint32[],(uint32,uint96)[],uint32,uint256): PASSED!                              │
+                                                          │                                                                                                                      │
+                                                          ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+                                                          │                                        Campaign complete, C-c or esc to exit                                         │
+                                                          └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
