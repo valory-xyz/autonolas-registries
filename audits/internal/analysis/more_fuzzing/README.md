@@ -178,11 +178,14 @@ Add required rules as comments and run:
 
 
 ## Scribble plus Echidna
+### Test 1: State of deployed service
 Here is the setup of testing:
 - Add scribble annotations to ServiceRegistry.sol;
 - Instrument the contract: `scribble contracts/ServiceRegistry.sol --output-mode files --arm`;
 - Run etheno in a different terminal window: `etheno --ganache -x instrumental.json`;
-- Run a predefined hardhat test (with `.only` from `audits/internal/analysis/more_fuzzing/ServiceRegistry.js`) on ehteno: `npx hardhat test --network local`;
+- Run a predefined hardhat test on ehteno: `npx hardhat test --network local`
+  - Use `.only` in `audits/internal/analysis/more_fuzzing/ServiceRegistry.js` for the first test;
+  - The test runs until the service is deployed;
 - Run echidna based on `instrumental.json`.
 
 ```
@@ -260,3 +263,14 @@ Analyzing contract: /home/andrey/valory/autonolas-registries/contracts/flatten/S
                                                           │                                        Campaign complete, C-c or esc to exit                                         │                                                          
                                                           └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘     
 ```
+
+
+### Test 2: State of deployed, terminated and unbonded service
+Here is the setup of testing:
+- Add scribble annotations to ServiceRegistry.sol;
+- Instrument the contract: `scribble contracts/ServiceRegistry.sol --output-mode files --arm`;
+- Run etheno in a different terminal window: `etheno --ganache -x instrumental2.json`;
+- Run a predefined hardhat test on ehteno: `npx hardhat test --network local`
+    - Use `.only` in `audits/internal/analysis/more_fuzzing/ServiceRegistry.js` for the second test;
+    - The test runs until the service is deployed, terminated and unbonded;
+- Run echidna based on `instrumental2.json`.
