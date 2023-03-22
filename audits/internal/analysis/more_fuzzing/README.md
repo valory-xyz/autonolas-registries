@@ -171,10 +171,10 @@ Analyzing contract: /home/andrey/valory/autonolas-registries/contracts/flatten/S
 ```
 
 ## In-place testing with Scribble
-'''
 Add required rules as comments and run:
-./scripts/scribble.sh ServiceRegistry.sol
-'''
+```
+./scripts/scribble.sh scribble/ServiceRegistryAnnotated.sol
+```
 
 ## Generic ServiceRegistry testing
 Consult the coverage at: [coverage](generic_coverage.txt).
@@ -268,7 +268,7 @@ echidna contracts/flatten/ServiceRegistry-flatten-generic.sol --contract Service
 ### Test 1: State of deployed service
 Here is the setup of testing:
 - Add scribble annotations to ServiceRegistry.sol;
-- Instrument the contract: `scribble contracts/ServiceRegistry.sol --output-mode files --arm`;
+- Instrument the contract: `scribble contracts/scribble/ServiceRegistryAnnotated.sol --output-mode files --arm`;
 - Run etheno in a different terminal window: `etheno --ganache -x instrumental.json`;
 - Run a predefined hardhat test on ehteno: `npx hardhat test --network local`
   - Use `.only` in `audits/internal/analysis/more_fuzzing/ServiceRegistry.js` for the first test;
@@ -355,7 +355,7 @@ Analyzing contract: /home/andrey/valory/autonolas-registries/contracts/flatten/S
 ### Test 2: State of deployed, terminated and unbonded service
 Here is the setup of testing:
 - Add scribble annotations to ServiceRegistry.sol;
-- Instrument the contract: `scribble contracts/ServiceRegistry.sol --output-mode files --arm`;
+- Instrument the contract: `scribble contracts/scribble/ServiceRegistryAnnotated.sol --output-mode files --arm`;
 - Run etheno in a different terminal window: `etheno --ganache -x instrumental2.json`;
 - Run a predefined hardhat test on ehteno: `npx hardhat test --network local`
     - Use `.only` in `audits/internal/analysis/more_fuzzing/ServiceRegistry.js` for the second test;
