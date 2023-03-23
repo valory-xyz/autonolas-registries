@@ -1,0 +1,10 @@
+# assertion, overflow, property
+testMode: assertion
+corpusDir: echidna-corp
+stopOnFail: false
+# 0x6000 by default
+codeSize: 0xaaaa
+# only for ServiceRegistry
+#initialize: audits/internal/analysis/more_fuzzing/instrumental2.json
+coverage: true
+

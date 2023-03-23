@@ -9,6 +9,7 @@ describe("ServiceRegistry", function () {
     let serviceRegistry;
     let gnosisSafe;
     let serviceRegistryL2;
+    let serviceRegistryAnnotated;
     let gnosisSafeMultisig;
     let gnosisSafeProxyFactory;
     let defaultCallbackHandler;
@@ -38,7 +39,7 @@ describe("ServiceRegistry", function () {
     const agentHash2 = "0x" + "9".repeat(64);
     const AddressZero = "0x" + "0".repeat(40);
     const payload = "0x";
-    const serviceRegistryImplementations = ["l1", "l2"];
+    const serviceRegistryImplementations = ["l1", "l2", "l1an"];
 
     beforeEach(async function () {
         const ComponentRegistry = await ethers.getContractFactory("ComponentRegistry");
@@ -84,6 +85,11 @@ describe("ServiceRegistry", function () {
         serviceRegistryL2 = await ServiceRegistryL2.deploy("Service Registry L2", "SERVICE", "https://localhost/service/");
         await serviceRegistryL2.deployed();
 
+        const ServiceRegistryAnnotated = await ethers.getContractFactory("ServiceRegistryAnnotated");
+        serviceRegistryAnnotated = await ServiceRegistryAnnotated.deploy("Service Registry Annotated", "SERVICE",
+            "https://localhost/service/", agentRegistry.address);
+        await serviceRegistryAnnotated.deployed();
+
         const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
         reentrancyAttacker = await ReentrancyAttacker.deploy(componentRegistry.address, serviceRegistry.address);
         await reentrancyAttacker.deployed();
@@ -105,6 +111,10 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
+
                 const owner = signers[0];
                 const account = signers[1];
 
@@ -131,6 +141,10 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
+
                 const owner = signers[0];
                 const account = signers[1];
 
@@ -155,6 +169,10 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
+
                 const tokenId = 0;
                 expect(await serviceRegistry.exists(tokenId)).to.equal(false);
             });
@@ -163,6 +181,10 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
+
                 await expect(
                     serviceRegistry.connect(signers[3]).changeManager(signers[3].address)
                 ).to.be.revertedWith("OwnerOnly");
@@ -172,6 +194,10 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
+
                 await expect(
                     serviceRegistry.connect(signers[1]).setBaseURI("https://localhost2/service/")
                 ).to.be.revertedWith("OwnerOnly");
@@ -192,6 +218,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const owner = signers[3].address;
                 await expect(
@@ -202,6 +231,9 @@ describe("ServiceRegistry", function () {
             it("Should fail when changing the owner and the manager to a zero address", async function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
+                }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
                 }
 
                 // Try to change the owner to the zero address
@@ -219,6 +251,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const serviceManager = signers[3];
                 await serviceRegistry.changeManager(serviceManager.address);
@@ -231,6 +266,9 @@ describe("ServiceRegistry", function () {
             it("Should fail when creating a service with a zero value config hash", async function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
+                }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
                 }
 
                 const serviceManager = signers[3];
@@ -245,6 +283,9 @@ describe("ServiceRegistry", function () {
             it("Should fail when creating a service with incorrect agent slots values", async function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
+                }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
                 }
 
                 const serviceManager = signers[3];
@@ -266,11 +307,14 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const serviceManager = signers[3];
                 const owner = signers[4].address;
                 await serviceRegistry.changeManager(serviceManager.address);
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await expect(
                         serviceRegistry.connect(serviceManager).create(owner, configHash, agentIds,
                             agentParams, threshold)
@@ -282,12 +326,15 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
                 // Components and agents can only be created on L1
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                 }
@@ -301,6 +348,9 @@ describe("ServiceRegistry", function () {
             it("Should fail when creating a service with incorrect input parameter", async function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
+                }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
                 }
 
                 const mechManager = signers[3];
@@ -322,11 +372,14 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -342,12 +395,15 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
                 const minThreshold = Math.floor(maxThreshold * 2 / 3 + 1);
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -371,11 +427,14 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -391,11 +450,14 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -410,11 +472,14 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -433,11 +498,14 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -459,6 +527,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const owner = signers[3].address;
                 await expect(
@@ -469,6 +540,9 @@ describe("ServiceRegistry", function () {
             it("Should fail when the owner of a service has a zero address during the update", async function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
+                }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
                 }
 
                 const serviceManager = signers[3];
@@ -482,6 +556,9 @@ describe("ServiceRegistry", function () {
             it("Should fail when trying to update a non-existent service", async function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
+                }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
                 }
 
                 const serviceManager = signers[3];
@@ -497,11 +574,14 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -521,13 +601,16 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
                 const operator = signers[6].address;
                 const agentInstance = signers[7].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -553,11 +636,14 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -588,6 +674,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const operator = signers[6].address;
                 const agentInstance = signers[7].address;
@@ -599,6 +688,9 @@ describe("ServiceRegistry", function () {
             it("Should fail when registering an agent instance with a non-existent service", async function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
+                }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
                 }
 
                 const serviceManager = signers[4];
@@ -614,6 +706,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -621,7 +716,7 @@ describe("ServiceRegistry", function () {
                 const operator = signers[6].address;
                 const agentInstance = signers[7].address;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -638,13 +733,16 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
                 const operator = signers[6].address;
                 const agentInstance = signers[7].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -663,13 +761,16 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
                 const operator = signers[6].address;
                 const agentInstance = signers[7].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -687,6 +788,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -694,7 +798,7 @@ describe("ServiceRegistry", function () {
                 const operator = signers[6].address;
                 const agentInstances = [signers[7].address, signers[8].address, signers[9].address, signers[10].address];
                 const regAgentIds = [agentId, agentId, agentId, agentId];
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -712,13 +816,16 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
                 const operator = signers[6].address;
                 const agentInstance = signers[7].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -737,13 +844,16 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
                 const operator = signers[6].address;
                 const agentInstance = [signers[7].address, signers[8].address, signers[9].address];
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -767,13 +877,16 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
                 const operator = signers[6].address;
                 const agentInstances = [signers[7].address, signers[8].address];
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -802,6 +915,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const serviceManager = signers[3];
                 const owner = signers[4].address;
@@ -815,11 +931,14 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -837,12 +956,15 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -860,11 +982,14 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -883,6 +1008,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -891,7 +1019,7 @@ describe("ServiceRegistry", function () {
                 const agentInstance = signers[7].address;
 
                 // Create agents and a service
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -930,13 +1058,16 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
                 const operator = signers[6].address;
                 const agentInstance = signers[7].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -956,6 +1087,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -965,7 +1099,7 @@ describe("ServiceRegistry", function () {
                 const regAgentIds = [agentId, agentId, agentId + 1];
                 const maxThreshold = 3;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create components
                     await componentRegistry.changeManager(mechManager.address);
                     await componentRegistry.connect(mechManager).create(owner, componentHash, []);
@@ -1012,7 +1146,7 @@ describe("ServiceRegistry", function () {
                 serviceInstance = await serviceRegistry.getService(serviceId);
                 expect(serviceInstance.state).to.equal(4);
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Check the service info
                     // 0 is component, 1 is agent
                     const componentIdsFromServiceId = await serviceRegistry.getUnitIdsOfService(0, serviceId);
@@ -1033,6 +1167,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -1041,7 +1178,7 @@ describe("ServiceRegistry", function () {
                 const agentInstances = [signers[7].address, signers[8].address, signers[9].address, signers[10].address];
                 const maxThreshold = 2;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create components
                     await componentRegistry.changeManager(mechManager.address);
                     await componentRegistry.connect(mechManager).create(owner, componentHash, []);
@@ -1082,6 +1219,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -1091,7 +1231,7 @@ describe("ServiceRegistry", function () {
                 const maxThreshold = 1;
                 const newMaxThreshold = 4;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
@@ -1170,6 +1310,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -1180,7 +1323,7 @@ describe("ServiceRegistry", function () {
                 const maxThreshold = 1;
                 const newMaxThreshold = 4;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(serviceOwnerAddress, agentHash, [1]);
@@ -1276,6 +1419,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -1286,7 +1432,7 @@ describe("ServiceRegistry", function () {
                 const maxThreshold = 1;
                 const newMaxThreshold = 4;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(serviceOwnerAddress, agentHash, [1]);
@@ -1427,6 +1573,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -1453,7 +1602,7 @@ describe("ServiceRegistry", function () {
                 const serviceOwnerMultisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
                 const serviceOwnerAddress = serviceOwnerMultisig.address;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(signers[0].address, agentHash, [1]);
@@ -1570,6 +1719,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const owner = signers[3].address;
                 expect(await serviceRegistry.balanceOf(owner)).to.equal(0);
@@ -1590,7 +1742,7 @@ describe("ServiceRegistry", function () {
                 const mechManager = signers[1];
                 const serviceManager = signers[2];
                 const owner = signers[3].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -1629,11 +1781,14 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[1];
                 const serviceManager = signers[2];
                 const owner = signers[3].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -1693,6 +1848,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -1701,7 +1859,7 @@ describe("ServiceRegistry", function () {
                 const agentInstances = [signers[7].address, signers[8].address];
                 const regAgentIds = [agentId, agentId];
                 const maxThreshold = 2;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                 }
@@ -1729,6 +1887,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const hashes = await serviceRegistry.getPreviousHashes(1);
                 expect(hashes.numHashes).to.equal(0);
@@ -1742,13 +1903,16 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
                 const maxThreshold = 2;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
@@ -1769,6 +1933,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -1777,7 +1944,7 @@ describe("ServiceRegistry", function () {
                 const operator = signers[7].address;
                 const maxThreshold = 2;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
@@ -1807,11 +1974,14 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -1834,6 +2004,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -1842,7 +2015,7 @@ describe("ServiceRegistry", function () {
                 const agentInstance = signers[7].address;
                 const maxThreshold = 2;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
@@ -1898,6 +2071,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -1905,7 +2081,7 @@ describe("ServiceRegistry", function () {
                 const operator = signers[6].address;
                 const maxThreshold = 2;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
@@ -1931,6 +2107,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -1939,7 +2118,7 @@ describe("ServiceRegistry", function () {
                 const agentInstance = signers[7].address;
                 const maxThreshold = 2;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
@@ -1962,13 +2141,16 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
                 const maxThreshold = 2;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
@@ -1989,6 +2171,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -1997,7 +2182,7 @@ describe("ServiceRegistry", function () {
                 const agentInstance = signers[7].address;
                 const wrongAgentInstance = signers[8].address;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
@@ -2038,6 +2223,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -2047,7 +2235,7 @@ describe("ServiceRegistry", function () {
                 const wrongMultisig = signers[9];
                 const maxThreshold = 1;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
@@ -2103,6 +2291,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const drainer = signers[2];
                 const mechManager = signers[3];
@@ -2112,7 +2303,7 @@ describe("ServiceRegistry", function () {
                 const agentInstance = signers[7];
                 const maxThreshold = 1;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
@@ -2185,6 +2376,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
@@ -2193,7 +2387,7 @@ describe("ServiceRegistry", function () {
                 const agentInstances = [signers[7], signers[8]];
                 const maxThreshold = 2;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
@@ -2273,12 +2467,15 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
                 const operator = signers[6].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -2323,13 +2520,16 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 const mechManager = signers[3];
                 const serviceManager = signers[4];
                 const owner = signers[5].address;
                 const nonOwner = signers[6].address;
                 const operator = signers[7].address;
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
                     await agentRegistry.connect(mechManager).create(owner, agentHash1, [1]);
@@ -2374,6 +2574,9 @@ describe("ServiceRegistry", function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
                 }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
+                }
 
                 await expect(
                     serviceRegistry.connect(signers[1]).changeMultisigPermission(AddressZero, true)
@@ -2391,6 +2594,9 @@ describe("ServiceRegistry", function () {
             it("Adding and removing multisig implementation addresses", async function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
+                }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
                 }
 
                 // Initially should be false
@@ -2709,7 +2915,7 @@ describe("ServiceRegistry", function () {
                 const mechManager = signers[0];
                 const owner = signers[1].address;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create two agents
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.create(owner, agentHash, [1]);
@@ -2740,7 +2946,7 @@ describe("ServiceRegistry", function () {
                 const agentInstances = [signers[7]];
                 const maxThreshold = 1;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.create(owner, agentHash, [1]);
@@ -2782,7 +2988,7 @@ describe("ServiceRegistry", function () {
                 const agentInstances = [signers[7]];
                 const maxThreshold = 1;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.create(owner, agentHash, [1]);
@@ -2825,7 +3031,7 @@ describe("ServiceRegistry", function () {
                 const agentInstances = [signers[7]];
                 const maxThreshold = 1;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.create(owner, agentHash, [1]);
@@ -2872,7 +3078,7 @@ describe("ServiceRegistry", function () {
                 const agentInstance = signers[7];
                 const maxThreshold = 1;
 
-                if (serviceRegistryImplementation == "l1") {
+                if (serviceRegistryImplementation == "l1" || serviceRegistryImplementation == "l1an") {
                     // Create an agent
                     await agentRegistry.changeManager(mechManager.address);
                     await agentRegistry.connect(mechManager).create(owner, agentHash, [1]);
@@ -2933,6 +3139,9 @@ describe("ServiceRegistry", function () {
             it("Should fail when sending funds directly to the contract", async function () {
                 if (serviceRegistryImplementation == "l2") {
                     serviceRegistry = serviceRegistryL2;
+                }
+                if (serviceRegistryImplementation == "l1an") {
+                    serviceRegistry = serviceRegistryAnnotated;
                 }
 
                 await expect(

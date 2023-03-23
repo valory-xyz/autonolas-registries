@@ -341,4 +341,7 @@ It is necessary to unify the type of variables to uint32.
 No tests included ERC721 *transferFrom. No understanding of side effects (for all contracts based on ERC721) after such operation.
 ```
 [fixed]
- 
+
+
+#### Update 22-04-23
+More fuzzing using Echidna, including preconditioned contracts at a specific deployment stage, are introduced here: [more_fuzzing](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal/analysis/more_fuzzing).

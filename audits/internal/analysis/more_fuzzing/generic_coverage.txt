@@ -1,0 +1,2084 @@
+/Users/kupermind/dev/autonolas-registries/contracts/flatten/ServiceRegistry-flatten-generic.sol
+    1 |     | // The following code is from flattening this file: ServiceRegistry.sol
+    2 |     | // SPDX-License-Identifier: MIT
+    3 |     | pragma solidity ^0.8.15;
+    4 |     | 
+    5 |     | // The following code is from flattening this import statement in: ServiceRegistry.sol
+    6 |     | // import "./GenericRegistry.sol";
+    7 |     | // The following code is from flattening this file: /home/andrey/valory/audit-process/projects/autonolas-registries/contracts/GenericRegistry.sol
+    8 |     | 
+    9 |     | 
+   10 |     | // The following code is from flattening this import statement in: /home/andrey/valory/audit-process/projects/autonolas-registries/contracts/GenericRegistry.sol
+   11 |     | // import "../lib/solmate/src/tokens/ERC721.sol";
+   12 |     | // The following code is from flattening this file: /home/andrey/valory/audit-process/projects/autonolas-registries/lib/solmate/src/tokens/ERC721.sol
+   13 |     | 
+   14 |     | /// @notice Modern, minimalist, and gas efficient ERC-721 implementation.
+   15 |     | /// @author Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/tokens/ERC721.sol)
+   16 |     | abstract contract ERC721 {
+   17 |     |     /*//////////////////////////////////////////////////////////////
+   18 |     |                                  EVENTS
+   19 |     |     //////////////////////////////////////////////////////////////*/
+   20 |     | 
+   21 |     |     event Transfer(address indexed from, address indexed to, uint256 indexed id);
+   22 |     | 
+   23 |     |     event Approval(address indexed owner, address indexed spender, uint256 indexed id);
+   24 |     | 
+   25 |     |     event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+   26 |     | 
+   27 |     |     /*//////////////////////////////////////////////////////////////
+   28 |     |                          METADATA STORAGE/LOGIC
+   29 |     |     //////////////////////////////////////////////////////////////*/
+   30 |     | 
+   31 |     |     string public name;
+   32 |     | 
+   33 |     |     string public symbol;
+   34 |     | 
+   35 |     |     function tokenURI(uint256 id) public view virtual returns (string memory);
+   36 |     | 
+   37 |     |     /*//////////////////////////////////////////////////////////////
+   38 |     |                       ERC721 BALANCE/OWNER STORAGE
+   39 |     |     //////////////////////////////////////////////////////////////*/
+   40 |     | 
+   41 |     |     mapping(uint256 => address) internal _ownerOf;
+   42 |     | 
+   43 |     |     mapping(address => uint256) internal _balanceOf;
+   44 |     | 
+   45 | r   |     function ownerOf(uint256 id) public view virtual returns (address owner) {
+   46 | r   |         require((owner = _ownerOf[id]) != address(0), "NOT_MINTED");
+   47 |     |     }
+   48 |     | 
+   49 |     |     function balanceOf(address owner) public view virtual returns (uint256) {
+   50 |     |         require(owner != address(0), "ZERO_ADDRESS");
+   51 |     | 
+   52 |     |         return _balanceOf[owner];
+   53 |     |     }
+   54 |     | 
+   55 |     |     /*//////////////////////////////////////////////////////////////
+   56 |     |                          ERC721 APPROVAL STORAGE
+   57 |     |     //////////////////////////////////////////////////////////////*/
+   58 |     | 
+   59 |     |     mapping(uint256 => address) public getApproved;
+   60 |     | 
+   61 |     |     mapping(address => mapping(address => bool)) public isApprovedForAll;
+   62 |     | 
+   63 |     |     /*//////////////////////////////////////////////////////////////
+   64 |     |                                CONSTRUCTOR
+   65 |     |     //////////////////////////////////////////////////////////////*/
+   66 |     | 
+   67 |     |     constructor(string memory _name, string memory _symbol) {
+   68 |     |         name = _name;
+   69 |     |         symbol = _symbol;
+   70 |     |     }
+   71 |     | 
+   72 |     |     /*//////////////////////////////////////////////////////////////
+   73 |     |                               ERC721 LOGIC
+   74 |     |     //////////////////////////////////////////////////////////////*/
+   75 |     | 
+   76 |     |     function approve(address spender, uint256 id) public virtual {
+   77 |     |         address owner = _ownerOf[id];
+   78 |     | 
+   79 |     |         require(msg.sender == owner || isApprovedForAll[owner][msg.sender], "NOT_AUTHORIZED");
+   80 |     | 
+   81 |     |         getApproved[id] = spender;
+   82 |     | 
+   83 |     |         emit Approval(owner, spender, id);
+   84 |     |     }
+   85 |     | 
+   86 |     |     function setApprovalForAll(address operator, bool approved) public virtual {
+   87 |     |         isApprovedForAll[msg.sender][operator] = approved;
+   88 |     | 
+   89 |     |         emit ApprovalForAll(msg.sender, operator, approved);
+   90 |     |     }
+   91 |     | 
+   92 |     |     function transferFrom(
+   93 |     |         address from,
+   94 |     |         address to,
+   95 |     |         uint256 id
+   96 |     |     ) public virtual {
+   97 |     |         require(from == _ownerOf[id], "WRONG_FROM");
+   98 |     | 
+   99 |     |         require(to != address(0), "INVALID_RECIPIENT");
+  100 |     | 
+  101 |     |         require(
+  102 |     |             msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],
+  103 |     |             "NOT_AUTHORIZED"
+  104 |     |         );
+  105 |     | 
+  106 |     |         // Underflow of the sender's balance is impossible because we check for
+  107 |     |         // ownership above and the recipient's balance can't realistically overflow.
+  108 |     |         unchecked {
+  109 |     |             _balanceOf[from]--;
+  110 |     | 
+  111 |     |             _balanceOf[to]++;
+  112 |     |         }
+  113 |     | 
+  114 |     |         _ownerOf[id] = to;
+  115 |     | 
+  116 |     |         delete getApproved[id];
+  117 |     | 
+  118 |     |         emit Transfer(from, to, id);
+  119 |     |     }
+  120 |     | 
+  121 |     |     function safeTransferFrom(
+  122 |     |         address from,
+  123 |     |         address to,
+  124 |     |         uint256 id
+  125 |     |     ) public virtual {
+  126 |     |         transferFrom(from, to, id);
+  127 |     | 
+  128 |     |         if (to.code.length != 0)
+  129 |     |             require(
+  130 |     |                 ERC721TokenReceiver(to).onERC721Received(msg.sender, from, id, "") ==
+  131 |     |                     ERC721TokenReceiver.onERC721Received.selector,
+  132 |     |                 "UNSAFE_RECIPIENT"
+  133 |     |             );
+  134 |     |     }
+  135 |     | 
+  136 |     |     function safeTransferFrom(
+  137 |     |         address from,
+  138 |     |         address to,
+  139 |     |         uint256 id,
+  140 |     |         bytes calldata data
+  141 |     |     ) public virtual {
+  142 |     |         transferFrom(from, to, id);
+  143 |     | 
+  144 |     |         if (to.code.length != 0)
+  145 |     |             require(
+  146 |     |                 ERC721TokenReceiver(to).onERC721Received(msg.sender, from, id, data) ==
+  147 |     |                     ERC721TokenReceiver.onERC721Received.selector,
+  148 |     |                 "UNSAFE_RECIPIENT"
+  149 |     |             );
+  150 |     |     }
+  151 |     | 
+  152 |     |     /*//////////////////////////////////////////////////////////////
+  153 |     |                               ERC165 LOGIC
+  154 |     |     //////////////////////////////////////////////////////////////*/
+  155 |     | 
+  156 |     |     function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) {
+  157 |     |         return
+  158 |     |             interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
+  159 |     |             interfaceId == 0x80ac58cd || // ERC165 Interface ID for ERC721
+  160 |     |             interfaceId == 0x5b5e139f; // ERC165 Interface ID for ERC721Metadata
+  161 |     |     }
+  162 |     | 
+  163 |     |     /*//////////////////////////////////////////////////////////////
+  164 |     |                         INTERNAL MINT/BURN LOGIC
+  165 |     |     //////////////////////////////////////////////////////////////*/
+  166 |     | 
+  167 |     |     function _mint(address to, uint256 id) internal virtual {
+  168 |     |         require(to != address(0), "INVALID_RECIPIENT");
+  169 |     | 
+  170 |     |         require(_ownerOf[id] == address(0), "ALREADY_MINTED");
+  171 |     | 
+  172 |     |         // Counter overflow is incredibly unrealistic.
+  173 |     |         unchecked {
+  174 |     |             _balanceOf[to]++;
+  175 |     |         }
+  176 |     | 
+  177 |     |         _ownerOf[id] = to;
+  178 |     | 
+  179 |     |         emit Transfer(address(0), to, id);
+  180 |     |     }
+  181 |     | 
+  182 |     |     function _burn(uint256 id) internal virtual {
+  183 |     |         address owner = _ownerOf[id];
+  184 |     | 
+  185 |     |         require(owner != address(0), "NOT_MINTED");
+  186 |     | 
+  187 |     |         // Ownership check above ensures no underflow.
+  188 |     |         unchecked {
+  189 |     |             _balanceOf[owner]--;
+  190 |     |         }
+  191 |     | 
+  192 |     |         delete _ownerOf[id];
+  193 |     | 
+  194 |     |         delete getApproved[id];
+  195 |     | 
+  196 |     |         emit Transfer(owner, address(0), id);
+  197 |     |     }
+  198 |     | 
+  199 |     |     /*//////////////////////////////////////////////////////////////
+  200 |     |                         INTERNAL SAFE MINT LOGIC
+  201 |     |     //////////////////////////////////////////////////////////////*/
+  202 |     | 
+  203 |     |     function _safeMint(address to, uint256 id) internal virtual {
+  204 |     |         _mint(to, id);
+  205 |     | 
+  206 |     |         if (to.code.length != 0)
+  207 |     |             require(
+  208 |     |                 ERC721TokenReceiver(to).onERC721Received(msg.sender, address(0), id, "") ==
+  209 |     |                     ERC721TokenReceiver.onERC721Received.selector,
+  210 |     |                 "UNSAFE_RECIPIENT"
+  211 |     |             );
+  212 |     |     }
+  213 |     | 
+  214 |     |     function _safeMint(
+  215 |     |         address to,
+  216 |     |         uint256 id,
+  217 |     |         bytes memory data
+  218 |     |     ) internal virtual {
+  219 |     |         _mint(to, id);
+  220 |     | 
+  221 |     |         if (to.code.length != 0)
+  222 |     |             require(
+  223 |     |                 ERC721TokenReceiver(to).onERC721Received(msg.sender, address(0), id, data) ==
+  224 |     |                     ERC721TokenReceiver.onERC721Received.selector,
+  225 |     |                 "UNSAFE_RECIPIENT"
+  226 |     |             );
+  227 |     |     }
+  228 |     | }
+  229 |     | 
+  230 |     | /// @notice A generic interface for a contract which properly accepts ERC721 tokens.
+  231 |     | /// @author Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/tokens/ERC721.sol)
+  232 |     | abstract contract ERC721TokenReceiver {
+  233 |     |     function onERC721Received(
+  234 |     |         address,
+  235 |     |         address,
+  236 |     |         uint256,
+  237 |     |         bytes calldata
+  238 |     |     ) external virtual returns (bytes4) {
+  239 |     |         return ERC721TokenReceiver.onERC721Received.selector;
+  240 |     |     }
+  241 |     | }
+  242 |     | 
+  243 |     | // The following code is from flattening this import statement in: /home/andrey/valory/audit-process/projects/autonolas-registries/contracts/GenericRegistry.sol
+  244 |     | // import "./interfaces/IErrorsRegistries.sol";
+  245 |     | // The following code is from flattening this file: /home/andrey/valory/audit-process/projects/autonolas-registries/contracts/interfaces/IErrorsRegistries.sol
+  246 |     | 
+  247 |     | 
+  248 |     | /// @dev Errors.
+  249 |     | interface IErrorsRegistries {
+  250 |     |     /// @dev Only `manager` has a privilege, but the `sender` was provided.
+  251 |     |     /// @param sender Sender address.
+  252 |     |     /// @param manager Required sender address as a manager.
+  253 |     |     error ManagerOnly(address sender, address manager);
+  254 |     | 
+  255 |     |     /// @dev Only `owner` has a privilege, but the `sender` was provided.
+  256 |     |     /// @param sender Sender address.
+  257 |     |     /// @param owner Required sender address as an owner.
+  258 |     |     error OwnerOnly(address sender, address owner);
+  259 |     | 
+  260 |     |     /// @dev Hash already exists in the records.
+  261 |     |     error HashExists();
+  262 |     | 
+  263 |     |     /// @dev Provided zero address.
+  264 |     |     error ZeroAddress();
+  265 |     | 
+  266 |     |     /// @dev Agent Id is not correctly provided for the current routine.
+  267 |     |     /// @param agentId Component Id.
+  268 |     |     error WrongAgentId(uint256 agentId);
+  269 |     | 
+  270 |     |     /// @dev Wrong length of two arrays.
+  271 |     |     /// @param numValues1 Number of values in a first array.
+  272 |     |     /// @param numValues2 Numberf of values in a second array.
+  273 |     |     error WrongArrayLength(uint256 numValues1, uint256 numValues2);
+  274 |     | 
+  275 |     |     /// @dev Canonical agent Id is not found.
+  276 |     |     /// @param agentId Canonical agent Id.
+  277 |     |     error AgentNotFound(uint256 agentId);
+  278 |     | 
+  279 |     |     /// @dev Component Id is not found.
+  280 |     |     /// @param componentId Component Id.
+  281 |     |     error ComponentNotFound(uint256 componentId);
+  282 |     | 
+  283 |     |     /// @dev Multisig threshold is out of bounds.
+  284 |     |     /// @param currentThreshold Current threshold value.
+  285 |     |     /// @param minThreshold Minimum possible threshold value.
+  286 |     |     /// @param maxThreshold Maximum possible threshold value.
+  287 |     |     error WrongThreshold(uint256 currentThreshold, uint256 minThreshold, uint256 maxThreshold);
+  288 |     | 
+  289 |     |     /// @dev Agent instance is already registered with a specified `operator`.
+  290 |     |     /// @param operator Operator that registered an instance.
+  291 |     |     error AgentInstanceRegistered(address operator);
+  292 |     | 
+  293 |     |     /// @dev Wrong operator is specified when interacting with a specified `serviceId`.
+  294 |     |     /// @param serviceId Service Id.
+  295 |     |     error WrongOperator(uint256 serviceId);
+  296 |     | 
+  297 |     |     /// @dev Operator has no registered instances in the service.
+  298 |     |     /// @param operator Operator address.
+  299 |     |     /// @param serviceId Service Id.
+  300 |     |     error OperatorHasNoInstances(address operator, uint256 serviceId);
+  301 |     | 
+  302 |     |     /// @dev Canonical `agentId` is not found as a part of `serviceId`.
+  303 |     |     /// @param agentId Canonical agent Id.
+  304 |     |     /// @param serviceId Service Id.
+  305 |     |     error AgentNotInService(uint256 agentId, uint256 serviceId);
+  306 |     | 
+  307 |     |     /// @dev The contract is paused.
+  308 |     |     error Paused();
+  309 |     | 
+  310 |     |     /// @dev Zero value when it has to be different from zero.
+  311 |     |     error ZeroValue();
+  312 |     | 
+  313 |     |     /// @dev Value overflow.
+  314 |     |     /// @param provided Overflow value.
+  315 |     |     /// @param max Maximum possible value.
+  316 |     |     error Overflow(uint256 provided, uint256 max);
+  317 |     | 
+  318 |     |     /// @dev Service must be inactive.
+  319 |     |     /// @param serviceId Service Id.
+  320 |     |     error ServiceMustBeInactive(uint256 serviceId);
+  321 |     | 
+  322 |     |     /// @dev All the agent instance slots for a specific `serviceId` are filled.
+  323 |     |     /// @param serviceId Service Id.
+  324 |     |     error AgentInstancesSlotsFilled(uint256 serviceId);
+  325 |     | 
+  326 |     |     /// @dev Wrong state of a service.
+  327 |     |     /// @param state Service state.
+  328 |     |     /// @param serviceId Service Id.
+  329 |     |     error WrongServiceState(uint256 state, uint256 serviceId);
+  330 |     | 
+  331 |     |     /// @dev Only own service multisig is allowed.
+  332 |     |     /// @param provided Provided address.
+  333 |     |     /// @param expected Expected multisig address.
+  334 |     |     /// @param serviceId Service Id.
+  335 |     |     error OnlyOwnServiceMultisig(address provided, address expected, uint256 serviceId);
+  336 |     | 
+  337 |     |     /// @dev Multisig is not whitelisted.
+  338 |     |     /// @param multisig Address of a multisig implementation.
+  339 |     |     error UnauthorizedMultisig(address multisig);
+  340 |     | 
+  341 |     |     /// @dev Incorrect deposit provided for the registration activation.
+  342 |     |     /// @param sent Sent amount.
+  343 |     |     /// @param expected Expected amount.
+  344 |     |     /// @param serviceId Service Id.
+  345 |     |     error IncorrectRegistrationDepositValue(uint256 sent, uint256 expected, uint256 serviceId);
+  346 |     | 
+  347 |     |     /// @dev Insufficient value provided for the agent instance bonding.
+  348 |     |     /// @param sent Sent amount.
+  349 |     |     /// @param expected Expected amount.
+  350 |     |     /// @param serviceId Service Id.
+  351 |     |     error IncorrectAgentBondingValue(uint256 sent, uint256 expected, uint256 serviceId);
+  352 |     | 
+  353 |     |     /// @dev Failure of a transfer.
+  354 |     |     /// @param token Address of a token.
+  355 |     |     /// @param from Address `from`.
+  356 |     |     /// @param to Address `to`.
+  357 |     |     /// @param value Value.
+  358 |     |     error TransferFailed(address token, address from, address to, uint256 value);
+  359 |     | 
+  360 |     |     /// @dev Caught reentrancy violation.
+  361 |     |     error ReentrancyGuard();
+  362 |     | }
+  363 |     | 
+  364 |     | 
+  365 |     | /// @title Generic Registry - Smart contract for generic registry template
+  366 |     | /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
+  367 |     | abstract contract GenericRegistry is IErrorsRegistries, ERC721 {
+  368 |     |     event OwnerUpdated(address indexed owner);
+  369 |     |     event ManagerUpdated(address indexed manager);
+  370 |     |     event BaseURIChanged(string baseURI);
+  371 |     | 
+  372 |     |     // Owner address
+  373 |     |     address public owner;
+  374 |     |     // Unit manager
+  375 |     |     address public manager;
+  376 |     |     // Base URI
+  377 |     |     string public baseURI;
+  378 |     |     // Unit counter
+  379 | r   |     uint256 public totalSupply;
+  380 |     |     // Reentrancy lock
+  381 |     |     uint256 internal _locked = 1;
+  382 |     |     // To better understand the CID anatomy, please refer to: https://proto.school/anatomy-of-a-cid/05
+  383 |     |     // CID = <multibase_encoding>multibase_encoding(<cid-version><multicodec><multihash-algorithm><multihash-length><multihash-hash>)
+  384 |     |     // CID prefix = <multibase_encoding>multibase_encoding(<cid-version><multicodec><multihash-algorithm><multihash-length>)
+  385 |     |     // to complement the multibase_encoding(<multihash-hash>)
+  386 |     |     // multibase_encoding = base16 = "f"
+  387 |     |     // cid-version = version 1 = "0x01"
+  388 |     |     // multicodec = dag-pb = "0x70"
+  389 |     |     // multihash-algorithm = sha2-256 = "0x12"
+  390 |     |     // multihash-length = 256 bits = "0x20"
+  391 |     |     string public constant CID_PREFIX = "f01701220";
+  392 |     | 
+  393 |     |     /// @dev Changes the owner address.
+  394 |     |     /// @param newOwner Address of a new owner.
+  395 | *r  |     function changeOwner(address newOwner) external virtual {
+  396 |     |         // Check for the ownership
+  397 | *r  |         if (msg.sender != owner) {
+  398 | r   |             revert OwnerOnly(msg.sender, owner);
+  399 |     |         }
+  400 |     | 
+  401 |     |         // Check for the zero address
+  402 | *r  |         if (newOwner == address(0)) {
+  403 | r   |             revert ZeroAddress();
+  404 |     |         }
+  405 |     | 
+  406 | *   |         owner = newOwner;
+  407 | *   |         emit OwnerUpdated(newOwner);
+  408 |     |     }
+  409 |     | 
+  410 |     |     /// @dev Changes the unit manager.
+  411 |     |     /// @param newManager Address of a new unit manager.
+  412 | *r  |     function changeManager(address newManager) external virtual {
+  413 | *r  |         if (msg.sender != owner) {
+  414 | r   |             revert OwnerOnly(msg.sender, owner);
+  415 |     |         }
+  416 |     | 
+  417 |     |         // Check for the zero address
+  418 | *r  |         if (newManager == address(0)) {
+  419 | r   |             revert ZeroAddress();
+  420 |     |         }
+  421 |     | 
+  422 | *   |         manager = newManager;
+  423 | *   |         emit ManagerUpdated(newManager);
+  424 |     |     }
+  425 |     | 
+  426 |     |     /// @dev Checks for the unit existence.
+  427 |     |     /// @notice Unit counter starts from 1.
+  428 |     |     /// @param unitId Unit Id.
+  429 |     |     /// @return true if the unit exists, false otherwise.
+  430 |     |     function exists(uint256 unitId) external view virtual returns (bool) {
+  431 |     |         return unitId > 0 && unitId < (totalSupply + 1);
+  432 |     |     }
+  433 |     |     
+  434 |     |     /// @dev Sets unit base URI.
+  435 |     |     /// @param bURI Base URI string.
+  436 |     |     function setBaseURI(string memory bURI) external virtual {
+  437 |     |         // Check for the ownership
+  438 |     |         if (msg.sender != owner) {
+  439 |     |             revert OwnerOnly(msg.sender, owner);
+  440 |     |         }
+  441 |     | 
+  442 |     |         // Check for the zero value
+  443 |     |         if (bytes(bURI).length == 0) {
+  444 |     |             revert ZeroValue();
+  445 |     |         }
+  446 |     | 
+  447 |     |         baseURI = bURI;
+  448 |     |         emit BaseURIChanged(bURI);
+  449 |     |     }
+  450 |     | 
+  451 |     |     /// @dev Gets the valid unit Id from the provided index.
+  452 |     |     /// @notice Unit counter starts from 1.
+  453 |     |     /// @param id Unit counter.
+  454 |     |     /// @return unitId Unit Id.
+  455 |     |     function tokenByIndex(uint256 id) external view virtual returns (uint256 unitId) {
+  456 |     |         unitId = id + 1;
+  457 |     |         if (unitId > totalSupply) {
+  458 |     |             revert Overflow(unitId, totalSupply);
+  459 |     |         }
+  460 |     |     }
+  461 |     | 
+  462 |     |     // Open sourced from: https://stackoverflow.com/questions/67893318/solidity-how-to-represent-bytes32-as-string
+  463 |     |     /// @dev Converts bytes16 input data to hex16.
+  464 |     |     /// @notice This method converts bytes into the same bytes-character hex16 representation.
+  465 |     |     /// @param data bytes16 input data.
+  466 |     |     /// @return result hex16 conversion from the input bytes16 data.
+  467 |     |     function _toHex16(bytes16 data) internal pure returns (bytes32 result) {
+  468 |     |         result = bytes32 (data) & 0xFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000 |
+  469 |     |         (bytes32 (data) & 0x0000000000000000FFFFFFFFFFFFFFFF00000000000000000000000000000000) >> 64;
+  470 |     |         result = result & 0xFFFFFFFF000000000000000000000000FFFFFFFF000000000000000000000000 |
+  471 |     |         (result & 0x00000000FFFFFFFF000000000000000000000000FFFFFFFF0000000000000000) >> 32;
+  472 |     |         result = result & 0xFFFF000000000000FFFF000000000000FFFF000000000000FFFF000000000000 |
+  473 |     |         (result & 0x0000FFFF000000000000FFFF000000000000FFFF000000000000FFFF00000000) >> 16;
+  474 |     |         result = result & 0xFF000000FF000000FF000000FF000000FF000000FF000000FF000000FF000000 |
+  475 |     |         (result & 0x00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0000) >> 8;
+  476 |     |         result = (result & 0xF000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000) >> 4 |
+  477 |     |         (result & 0x0F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F00) >> 8;
+  478 |     |         result = bytes32 (0x3030303030303030303030303030303030303030303030303030303030303030 +
+  479 |     |         uint256 (result) +
+  480 |     |             (uint256 (result) + 0x0606060606060606060606060606060606060606060606060606060606060606 >> 4 &
+  481 |     |             0x0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F) * 39);
+  482 |     |     }
+  483 |     | 
+  484 |     |     /// @dev Gets the hash of the unit.
+  485 |     |     /// @param unitId Unit Id.
+  486 |     |     /// @return Unit hash.
+  487 |     |     function _getUnitHash(uint256 unitId) internal view virtual returns (bytes32);
+  488 |     | 
+  489 |     |     /// @dev Returns unit token URI.
+  490 |     |     /// @notice Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.
+  491 |     |     /// @param unitId Unit Id.
+  492 |     |     /// @return Unit token URI string.
+  493 |     |     function tokenURI(uint256 unitId) public view virtual override returns (string memory) {
+  494 |     |         bytes32 unitHash = _getUnitHash(unitId);
+  495 |     |         // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
+  496 |     |         // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
+  497 |     |         return string(abi.encodePacked(baseURI, CID_PREFIX, _toHex16(bytes16(unitHash)),
+  498 |     |             _toHex16(bytes16(unitHash << 128))));
+  499 |     |     }
+  500 |     | }
+  501 |     | 
+  502 |     | // The following code is from flattening this import statement in: ServiceRegistry.sol
+  503 |     | // import "./interfaces/IMultisig.sol";
+  504 |     | // The following code is from flattening this file: /home/andrey/valory/audit-process/projects/autonolas-registries/contracts/interfaces/IMultisig.sol
+  505 |     | 
+  506 |     | /// @title Unit Registry - Smart contract for registering generalized units / units
+  507 |     | /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
+  508 |     | abstract contract UnitRegistry is GenericRegistry {
+  509 |     |     event CreateUnit(uint256 unitId, UnitType uType, bytes32 unitHash);
+  510 |     |     event UpdateUnitHash(uint256 unitId, UnitType uType, bytes32 unitHash);
+  511 |     | 
+  512 |     |     enum UnitType {
+  513 |     |         Component,
+  514 |     |         Agent
+  515 |     |     }
+  516 |     | 
+  517 |     |     // Unit parameters
+  518 |     |     struct Unit {
+  519 |     |         // Primary IPFS hash of the unit
+  520 |     |         bytes32 unitHash;
+  521 |     |         // Set of component dependencies (agents are also based on components)
+  522 |     |         // We assume that the system is expected to support no more than 2^32-1 components
+  523 |     |         uint32[] dependencies;
+  524 |     |     }
+  525 |     | 
+  526 |     |     // Type of the unit: component or unit
+  527 |     |     UnitType public immutable unitType;
+  528 |     |     // Map of unit Id => set of updated IPFS hashes
+  529 |     |     mapping(uint256 => bytes32[]) public mapUnitIdHashes;
+  530 |     |     // Map of unit Id => set of subcomponents (possible to derive from any registry)
+  531 |     |     mapping(uint256 => uint32[]) public mapSubComponents;
+  532 |     |     // Map of unit Id => unit
+  533 |     |     mapping(uint256 => Unit) public mapUnits;
+  534 |     | 
+  535 |     |     constructor(UnitType _unitType) {
+  536 |     |         unitType = _unitType;
+  537 |     |     }
+  538 |     | 
+  539 |     |     /// @dev Checks the provided component dependencies.
+  540 |     |     /// @param dependencies Set of component dependencies.
+  541 |     |     /// @param maxUnitId Maximum unit Id.
+  542 |     |     function _checkDependencies(uint32[] memory dependencies, uint32 maxUnitId) internal virtual;
+  543 |     | 
+  544 |     |     /// @dev Creates unit.
+  545 |     |     /// @param unitOwner Owner of the unit.
+  546 |     |     /// @param unitHash IPFS CID hash of the unit.
+  547 |     |     /// @param dependencies Set of unit dependencies in a sorted ascending order (unit Ids).
+  548 |     |     /// @return unitId The id of a minted unit.
+  549 |     |     function create(address unitOwner, bytes32 unitHash, uint32[] memory dependencies)
+  550 |     |         external virtual returns (uint256 unitId)
+  551 |     |     {
+  552 |     |         // Reentrancy guard
+  553 |     |         if (_locked > 1) {
+  554 |     |             revert ReentrancyGuard();
+  555 |     |         }
+  556 |     |         _locked = 2;
+  557 |     | 
+  558 |     |         // Check for the manager privilege for a unit creation
+  559 |     |         if (manager != msg.sender) {
+  560 |     |             revert ManagerOnly(msg.sender, manager);
+  561 |     |         }
+  562 |     | 
+  563 |     |         // Checks for a non-zero owner address
+  564 |     |         if(unitOwner == address(0)) {
+  565 |     |             revert ZeroAddress();
+  566 |     |         }
+  567 |     | 
+  568 |     |         // Check for the non-zero hash value
+  569 |     |         if (unitHash == 0) {
+  570 |     |             revert ZeroValue();
+  571 |     |         }
+  572 |     |         
+  573 |     |         // Check for dependencies validity: must be already allocated, must not repeat
+  574 |     |         unitId = totalSupply;
+  575 |     |         _checkDependencies(dependencies, uint32(unitId));
+  576 |     | 
+  577 |     |         // Unit with Id = 0 is left empty not to do additional checks for the index zero
+  578 |     |         unitId++;
+  579 |     | 
+  580 |     |         // Initialize the unit and mint its token
+  581 |     |         Unit storage unit = mapUnits[unitId];
+  582 |     |         unit.unitHash = unitHash;
+  583 |     |         unit.dependencies = dependencies;
+  584 |     | 
+  585 |     |         // Update the map of subcomponents with calculated subcomponents for the new unit Id
+  586 |     |         // In order to get the correct set of subcomponents, we need to differentiate between the callers of this function
+  587 |     |         // Self contract (unit registry) can only call subcomponents calculation from the component level
+  588 |     |         uint32[] memory subComponentIds = _calculateSubComponents(UnitType.Component, dependencies);
+  589 |     |         // We need to add a current component Id to the set of subcomponents if the unit is a component
+  590 |     |         // For example, if component 3 (c3) has dependencies of [c1, c2], then the subcomponents will return [c1, c2].
+  591 |     |         // The resulting set will be [c1, c2, c3]. So we write into the map of component subcomponents: c3=>[c1, c2, c3].
+  592 |     |         // This is done such that the subcomponents start getting explored, and when the agent calls its subcomponents,
+  593 |     |         // it would have [c1, c2, c3] right away instead of adding c3 manually and then (for services) checking
+  594 |     |         // if another agent also has c3 as a component dependency. The latter will consume additional computation.
+  595 |     |         if (unitType == UnitType.Component) {
+  596 |     |             uint256 numSubComponents = subComponentIds.length;
+  597 |     |             uint32[] memory addSubComponentIds = new uint32[](numSubComponents + 1);
+  598 |     |             for (uint256 i = 0; i < numSubComponents; ++i) {
+  599 |     |                 addSubComponentIds[i] = subComponentIds[i];
+  600 |     |             }
+  601 |     |             // Adding self component Id
+  602 |     |             addSubComponentIds[numSubComponents] = uint32(unitId);
+  603 |     |             subComponentIds = addSubComponentIds;
+  604 |     |         }
+  605 |     |         mapSubComponents[unitId] = subComponentIds;
+  606 |     | 
+  607 |     |         // Set total supply to the unit Id number
+  608 |     |         totalSupply = unitId;
+  609 |     |         // Safe mint is needed since contracts can create units as well
+  610 |     |         _safeMint(unitOwner, unitId);
+  611 |     | 
+  612 |     |         emit CreateUnit(unitId, unitType, unitHash);
+  613 |     |         _locked = 1;
+  614 |     |     }
+  615 |     | 
+  616 |     |     /// @dev Updates the unit hash.
+  617 |     |     /// @param unitOwner Owner of the unit.
+  618 |     |     /// @param unitId Unit Id.
+  619 |     |     /// @param unitHash Updated IPFS hash of the unit.
+  620 |     |     /// @return success True, if function executed successfully.
+  621 |     |     function updateHash(address unitOwner, uint256 unitId, bytes32 unitHash) external virtual
+  622 |     |         returns (bool success)
+  623 |     |     {
+  624 |     |         // Check the manager privilege for a unit modification
+  625 |     |         if (manager != msg.sender) {
+  626 |     |             revert ManagerOnly(msg.sender, manager);
+  627 |     |         }
+  628 |     | 
+  629 |     |         // Checking the unit ownership
+  630 |     |         if (ownerOf(unitId) != unitOwner) {
+  631 |     |             if (unitType == UnitType.Component) {
+  632 |     |                 revert ComponentNotFound(unitId);
+  633 |     |             } else {
+  634 |     |                 revert AgentNotFound(unitId);
+  635 |     |             }
+  636 |     |         }
+  637 |     | 
+  638 |     |         // Check for the hash value
+  639 |     |         if (unitHash == 0) {
+  640 |     |             revert ZeroValue();
+  641 |     |         }
+  642 |     | 
+  643 |     |         mapUnitIdHashes[unitId].push(unitHash);
+  644 |     |         success = true;
+  645 |     | 
+  646 |     |         emit UpdateUnitHash(unitId, unitType, unitHash);
+  647 |     |     }
+  648 |     | 
+  649 |     |     /// @dev Gets the unit instance.
+  650 |     |     /// @param unitId Unit Id.
+  651 |     |     /// @return unit Corresponding Unit struct.
+  652 |     |     function getUnit(uint256 unitId) external view virtual returns (Unit memory unit) {
+  653 |     |         unit = mapUnits[unitId];
+  654 |     |     }
+  655 |     | 
+  656 |     |     /// @dev Gets unit dependencies.
+  657 |     |     /// @param unitId Unit Id.
+  658 |     |     /// @return numDependencies The number of units in the dependency list.
+  659 |     |     /// @return dependencies The list of unit dependencies.
+  660 |     |     function getDependencies(uint256 unitId) external view virtual
+  661 |     |         returns (uint256 numDependencies, uint32[] memory dependencies)
+  662 |     |     {
+  663 |     |         Unit memory unit = mapUnits[unitId];
+  664 |     |         return (unit.dependencies.length, unit.dependencies);
+  665 |     |     }
+  666 |     | 
+  667 |     |     /// @dev Gets updated unit hashes.
+  668 |     |     /// @param unitId Unit Id.
+  669 |     |     /// @return numHashes Number of hashes.
+  670 |     |     /// @return unitHashes The list of updated unit hashes (without the primary one).
+  671 |     |     function getUpdatedHashes(uint256 unitId) external view virtual
+  672 |     |         returns (uint256 numHashes, bytes32[] memory unitHashes)
+  673 |     |     {
+  674 |     |         unitHashes = mapUnitIdHashes[unitId];
+  675 |     |         return (unitHashes.length, unitHashes);
+  676 |     |     }
+  677 |     | 
+  678 |     |     /// @dev Gets the set of subcomponent Ids from a local map of subcomponent.
+  679 |     |     /// @param unitId Component Id.
+  680 |     |     /// @return subComponentIds Set of subcomponent Ids.
+  681 |     |     /// @return numSubComponents Number of subcomponents.
+  682 |     |     function getLocalSubComponents(uint256 unitId) external view
+  683 |     |         returns (uint32[] memory subComponentIds, uint256 numSubComponents)
+  684 |     |     {
+  685 |     |         subComponentIds = mapSubComponents[uint256(unitId)];
+  686 |     |         numSubComponents = subComponentIds.length;
+  687 |     |     }
+  688 |     | 
+  689 |     |     /// @dev Gets subcomponents of a provided unit Id.
+  690 |     |     /// @param subcomponentsFromType Type of the unit: component or agent.
+  691 |     |     /// @param unitId Unit Id.
+  692 |     |     /// @return subComponentIds Set of subcomponents.
+  693 |     |     function _getSubComponents(UnitType subcomponentsFromType, uint32 unitId) internal view virtual
+  694 |     |         returns (uint32[] memory subComponentIds);
+  695 |     | 
+  696 |     |     /// @dev Calculates the set of subcomponent Ids.
+  697 |     |     /// @param subcomponentsFromType Type of the unit: component or agent.
+  698 |     |     /// @param unitIds Unit Ids.
+  699 |     |     /// @return subComponentIds Subcomponent Ids.
+  700 |     |     function _calculateSubComponents(UnitType subcomponentsFromType, uint32[] memory unitIds) internal view virtual
+  701 |     |         returns (uint32[] memory subComponentIds)
+  702 |     |     {
+  703 |     |         uint32 numUnits = uint32(unitIds.length);
+  704 |     |         // Array of numbers of components per each unit Id
+  705 |     |         uint32[] memory numComponents = new uint32[](numUnits);
+  706 |     |         // 2D array of all the sets of components per each unit Id
+  707 |     |         uint32[][] memory components = new uint32[][](numUnits);
+  708 |     | 
+  709 |     |         // Get total possible number of components and lists of components
+  710 |     |         uint32 maxNumComponents;
+  711 |     |         for (uint32 i = 0; i < numUnits; ++i) {
+  712 |     |             // Get subcomponents for each unit Id based on the subcomponentsFromType
+  713 |     |             components[i] = _getSubComponents(subcomponentsFromType, unitIds[i]);
+  714 |     |             numComponents[i] = uint32(components[i].length);
+  715 |     |             maxNumComponents += numComponents[i];
+  716 |     |         }
+  717 |     | 
+  718 |     |         // Lists of components are sorted, take unique values in ascending order
+  719 |     |         uint32[] memory allComponents = new uint32[](maxNumComponents);
+  720 |     |         // Processed component counter
+  721 |     |         uint32[] memory processedComponents = new uint32[](numUnits);
+  722 |     |         // Minimal component Id
+  723 |     |         uint32 minComponent;
+  724 |     |         // Overall component counter
+  725 |     |         uint32 counter;
+  726 |     |         // Iterate until we process all components, at the maximum of the sum of all the components in all units
+  727 |     |         for (counter = 0; counter < maxNumComponents; ++counter) {
+  728 |     |             // Index of a minimal component
+  729 |     |             uint32 minIdxComponent;
+  730 |     |             // Amount of components identified as the next minimal component number
+  731 |     |             uint32 numComponentsCheck;
+  732 |     |             uint32 tryMinComponent = type(uint32).max;
+  733 |     |             // Assemble an array of all first components from each component array
+  734 |     |             for (uint32 i = 0; i < numUnits; ++i) {
+  735 |     |                 // Either get a component that has a higher id than the last one ore reach the end of the processed Ids
+  736 |     |                 for (; processedComponents[i] < numComponents[i]; ++processedComponents[i]) {
+  737 |     |                     if (minComponent < components[i][processedComponents[i]]) {
+  738 |     |                         // Out of those component Ids that are higher than the last one, pick the minimal one
+  739 |     |                         if (components[i][processedComponents[i]] < tryMinComponent) {
+  740 |     |                             tryMinComponent = components[i][processedComponents[i]];
+  741 |     |                             minIdxComponent = i;
+  742 |     |                         }
+  743 |     |                         // If we found a minimal component Id, we increase the counter and break to start the search again
+  744 |     |                         numComponentsCheck++;
+  745 |     |                         break;
+  746 |     |                     }
+  747 |     |                 }
+  748 |     |             }
+  749 |     |             minComponent = tryMinComponent;
+  750 |     | 
+  751 |     |             // If minimal component Id is greater than the last one, it should be added, otherwise we reached the end
+  752 |     |             if (numComponentsCheck > 0) {
+  753 |     |                 allComponents[counter] = minComponent;
+  754 |     |                 processedComponents[minIdxComponent]++;
+  755 |     |             } else {
+  756 |     |                 break;
+  757 |     |             }
+  758 |     |         }
+  759 |     | 
+  760 |     |         // Return the exact set of found subcomponents with the counter length
+  761 |     |         subComponentIds = new uint32[](counter);
+  762 |     |         for (uint32 i = 0; i < counter; ++i) {
+  763 |     |             subComponentIds[i] = allComponents[i];
+  764 |     |         }
+  765 |     |     }
+  766 |     | 
+  767 |     |     /// @dev Gets the hash of the unit.
+  768 |     |     /// @param unitId Unit Id.
+  769 |     |     /// @return Unit hash.
+  770 |     |     function _getUnitHash(uint256 unitId) internal view override returns (bytes32) {
+  771 |     |         return mapUnits[unitId].unitHash;
+  772 |     |     }
+  773 |     | }
+  774 |     | 
+  775 |     | 
+  776 |     | /// @dev Generic multisig.
+  777 |     | interface IMultisig {
+  778 |     |     /// @dev Creates a multisig.
+  779 |     |     /// @param owners Set of multisig owners.
+  780 |     |     /// @param threshold Number of required confirmations for a multisig transaction.
+  781 |     |     /// @param data Packed data related to the creation of a chosen multisig.
+  782 |     |     /// @return multisig Address of a created multisig.
+  783 |     |     function create(
+  784 |     |         address[] memory owners,
+  785 |     |         uint256 threshold,
+  786 |     |         bytes memory data
+  787 |     |     ) external returns (address multisig);
+  788 |     | }
+  789 |     | // The following code is from flattening this import statement in: ServiceRegistry.sol
+  790 |     | // import "./interfaces/IRegistry.sol";
+  791 |     | // The following code is from flattening this file: /home/andrey/valory/audit-process/projects/autonolas-registries/contracts/interfaces/IRegistry.sol
+  792 |     | 
+  793 |     | 
+  794 |     | /// @dev Required interface for the component / agent manipulation.
+  795 |     | interface IRegistry {
+  796 |     |     enum UnitType {
+  797 |     |         Component,
+  798 |     |         Agent
+  799 |     |     }
+  800 |     | 
+  801 |     |     /// @dev Creates component / agent.
+  802 |     |     /// @param unitOwner Owner of the component / agent.
+  803 |     |     /// @param unitHash IPFS hash of the component / agent.
+  804 |     |     /// @param dependencies Set of component dependencies in a sorted ascending order.
+  805 |     |     /// @return The id of a minted component / agent.
+  806 |     |     function create(
+  807 |     |         address unitOwner,
+  808 |     |         bytes32 unitHash,
+  809 |     |         uint32[] memory dependencies
+  810 |     |     ) external returns (uint256);
+  811 |     | 
+  812 |     |     /// @dev Updates the component / agent hash.
+  813 |     |     /// @param owner Owner of the component / agent.
+  814 |     |     /// @param unitId Unit Id.
+  815 |     |     /// @param unitHash Updated IPFS hash of the component / agent.
+  816 |     |     /// @return success True, if function executed successfully.
+  817 |     |     function updateHash(address owner, uint256 unitId, bytes32 unitHash) external returns (bool success);
+  818 |     | 
+  819 |     |     /// @dev Gets subcomponents of a provided unit Id from a local public map.
+  820 |     |     /// @param unitId Unit Id.
+  821 |     |     /// @return subComponentIds Set of subcomponents.
+  822 |     |     /// @return numSubComponents Number of subcomponents.
+  823 |     |     function getLocalSubComponents(uint256 unitId) external view returns (uint32[] memory subComponentIds, uint256 numSubComponents);
+  824 |     | 
+  825 |     |     /// @dev Calculates the set of subcomponent Ids.
+  826 |     |     /// @param unitIds Set of unit Ids.
+  827 |     |     /// @return subComponentIds Subcomponent Ids.
+  828 |     |     function calculateSubComponents(uint32[] memory unitIds) external view returns (uint32[] memory subComponentIds);
+  829 |     | 
+  830 |     |     /// @dev Gets updated component / agent hashes.
+  831 |     |     /// @param unitId Unit Id.
+  832 |     |     /// @return numHashes Number of hashes.
+  833 |     |     /// @return unitHashes The list of component / agent hashes.
+  834 |     |     function getUpdatedHashes(uint256 unitId) external view returns (uint256 numHashes, bytes32[] memory unitHashes);
+  835 |     | 
+  836 |     |     /// @dev Gets the total supply of components / agents.
+  837 |     |     /// @return Total supply.
+  838 |     |     function totalSupply() external view returns (uint256);
+  839 |     | }
+  840 |     | 
+  841 |     | 
+  842 |     | // This struct is 128 bits in total
+  843 |     | struct AgentParams {
+  844 |     |     // Number of agent instances. This number is limited by the number of agent instances
+  845 |     |     uint32 slots;
+  846 |     |     // Bond per agent instance. This is enough for 1b+ ETH or 1e27
+  847 |     |     uint96 bond;
+  848 |     | }
+  849 |     | 
+  850 |     | // This struct is 192 bits in total
+  851 |     | struct AgentInstance {
+  852 |     |     // Address of an agent instance
+  853 |     |     address instance;
+  854 |     |     // Canonical agent Id. This number is limited by the max number of agent Ids (see UnitRegistry contract)
+  855 |     |     uint32 agentId;
+  856 |     | }
+  857 |     | 
+  858 |     | 
+  859 |     | /// @title Component Registry - Smart contract for registering components
+  860 |     | /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
+  861 |     | contract ComponentRegistryFFS is UnitRegistry {
+  862 |     |     // Component registry version number
+  863 |     |     string public constant VERSION = "1.0.0";
+  864 |     | 
+  865 |     |     /// @dev Component registry constructor.
+  866 |     |     /// @param _name Component registry contract name.
+  867 |     |     /// @param _symbol Component registry contract symbol.
+  868 |     |     /// @param _baseURI Component registry token base URI.
+  869 |     |     constructor(string memory _name, string memory _symbol, string memory _baseURI)
+  870 |     |         UnitRegistry(UnitType.Component)
+  871 |     |         ERC721(_name, _symbol)
+  872 |     |     {
+  873 |     |         baseURI = _baseURI;
+  874 |     |         owner = msg.sender;
+  875 |     |     }
+  876 |     | 
+  877 |     |     /// @dev Checks provided component dependencies.
+  878 |     |     /// @param dependencies Set of component dependencies.
+  879 |     |     /// @param maxComponentId Maximum component Id.
+  880 |     |     function _checkDependencies(uint32[] memory dependencies, uint32 maxComponentId) internal virtual override {
+  881 |     |         uint32 lastId;
+  882 |     |         for (uint256 iDep = 0; iDep < dependencies.length; ++iDep) {
+  883 |     |             if (dependencies[iDep] < (lastId + 1) || dependencies[iDep] > maxComponentId) {
+  884 |     |                 revert ComponentNotFound(dependencies[iDep]);
+  885 |     |             }
+  886 |     |             lastId = dependencies[iDep];
+  887 |     |         }
+  888 |     |     }
+  889 |     | 
+  890 |     |     /// @dev Gets subcomponents of a provided component Id.
+  891 |     |     /// @notice For components this means getting the linearized map of components from the local map of subcomponents.
+  892 |     |     /// @param componentId Component Id.
+  893 |     |     /// @return subComponentIds Set of subcomponents.
+  894 |     |     function _getSubComponents(UnitType, uint32 componentId) internal view virtual override
+  895 |     |         returns (uint32[] memory subComponentIds)
+  896 |     |     {
+  897 |     |         subComponentIds = mapSubComponents[uint256(componentId)];
+  898 |     |     }
+  899 |     | }
+  900 |     | 
+  901 |     | 
+  902 |     | 
+  903 |     | /// @title Agent Registry - Smart contract for registering agents
+  904 | r   | /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
+  905 |     | contract AgentRegistryFS is UnitRegistry {
+  906 |     |     // Component registry
+  907 |     |     address public immutable componentRegistry;
+  908 |     |     // Agent registry version number
+  909 |     |     string public constant VERSION = "1.0.0";
+  910 |     | 
+  911 |     |     /// @dev Agent registry constructor.
+  912 |     |     /// @param _name Agent registry contract name.
+  913 |     |     /// @param _symbol Agent registry contract symbol.
+  914 |     |     /// @param _baseURI Agent registry token base URI.
+  915 |     |     /// @param _componentRegistry Component registry address.
+  916 |     |     constructor(string memory _name, string memory _symbol, string memory _baseURI, address _componentRegistry)
+  917 |     |         UnitRegistry(UnitType.Agent)
+  918 |     |         ERC721(_name, _symbol)
+  919 |     |     {
+  920 |     |         baseURI = _baseURI;
+  921 |     |         componentRegistry = _componentRegistry;
+  922 |     |         owner = msg.sender;
+  923 |     |     }
+  924 |     | 
+  925 |     |     /// @dev Checks provided component dependencies.
+  926 |     |     /// @param dependencies Set of component dependencies.
+  927 |     |     function _checkDependencies(uint32[] memory dependencies, uint32) internal virtual override {
+  928 |     |         // Check that the agent has at least one component
+  929 |     |         if (dependencies.length == 0) {
+  930 |     |             revert ZeroValue();
+  931 |     |         }
+  932 |     | 
+  933 |     |         // Get the components total supply
+  934 |     |         uint32 componentTotalSupply = uint32(IRegistry(componentRegistry).totalSupply());
+  935 |     |         uint32 lastId;
+  936 |     |         for (uint256 iDep = 0; iDep < dependencies.length; ++iDep) {
+  937 |     |             if (dependencies[iDep] < (lastId + 1) || dependencies[iDep] > componentTotalSupply) {
+  938 |     |                 revert ComponentNotFound(dependencies[iDep]);
+  939 |     |             }
+  940 |     |             lastId = dependencies[iDep];
+  941 |     |         }
+  942 |     |     }
+  943 |     | 
+  944 |     |     /// @dev Gets linearized set of subcomponents of a provided unit Id and a type of a component.
+  945 |     |     /// @notice (0) For components this means getting the linearized map of components from the componentRegistry contract.
+  946 |     |     /// @notice (1) For agents this means getting the linearized map of components from the local map of subcomponents.
+  947 |     |     /// @param subcomponentsFromType Type of the unit: component or agent.
+  948 |     |     /// @param unitId Component Id.
+  949 |     |     /// @return subComponentIds Set of subcomponents.
+  950 |     |     function _getSubComponents(UnitType subcomponentsFromType, uint32 unitId) internal view virtual override
+  951 |     |         returns (uint32[] memory subComponentIds)
+  952 |     |     {
+  953 |     |         // Self contract (agent registry) can only call subcomponents calculation from the component level (0)
+  954 |     |         // Otherwise, the subcomponents are already written into the corresponding subcomponents map
+  955 |     |         if (subcomponentsFromType == UnitType.Component) {
+  956 |     |             (subComponentIds, ) = IRegistry(componentRegistry).getLocalSubComponents(uint256(unitId));
+  957 |     |         } else {
+  958 |     |             subComponentIds = mapSubComponents[uint256(unitId)];
+  959 |     |         }
+  960 |     |     }
+  961 |     | 
+  962 |     |     /// @dev Calculates the set of subcomponent Ids.
+  963 |     |     /// @notice We assume that the external callers calculate subcomponents from the higher unit hierarchy level: agents.
+  964 |     |     /// @param unitIds Unit Ids.
+  965 |     |     /// @return subComponentIds Subcomponent Ids.
+  966 |     |     function calculateSubComponents(uint32[] memory unitIds) external view returns (uint32[] memory subComponentIds)
+  967 |     |     {
+  968 |     |         subComponentIds = _calculateSubComponents(UnitType.Agent, unitIds);
+  969 |     |     }
+  970 |     | }
+  971 |     | 
+  972 |     | 
+  973 |     | /// @title Service Registry - Smart contract for registering services
+  974 | *r  | /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
+  975 |     | contract ServiceRegistryF is GenericRegistry {
+  976 |     |     event DrainerUpdated(address indexed drainer);
+  977 |     |     event Deposit(address indexed sender, uint256 amount);
+  978 |     |     event Refund(address indexed receiver, uint256 amount);
+  979 |     |     event CreateService(uint256 indexed serviceId);
+  980 |     |     event UpdateService(uint256 indexed serviceId, bytes32 configHash);
+  981 |     |     event RegisterInstance(address indexed operator, uint256 indexed serviceId, address indexed agentInstance, uint256 agentId);
+  982 |     |     event CreateMultisigWithAgents(uint256 indexed serviceId, address indexed multisig);
+  983 |     |     event ActivateRegistration(uint256 indexed serviceId);
+  984 |     |     event TerminateService(uint256 indexed serviceId);
+  985 |     |     event OperatorSlashed(uint256 amount, address indexed operator, uint256 indexed serviceId);
+  986 |     |     event OperatorUnbond(address indexed operator, uint256 indexed serviceId);
+  987 |     |     event DeployService(uint256 indexed serviceId);
+  988 |     |     event Drain(address indexed drainer, uint256 amount);
+  989 |     | 
+  990 |     |     enum ServiceState {
+  991 |     |         NonExistent,
+  992 |     |         PreRegistration,
+  993 |     |         ActiveRegistration,
+  994 |     |         FinishedRegistration,
+  995 |     |         Deployed,
+  996 |     |         TerminatedBonded
+  997 |     |     }
+  998 |     | 
+  999 |     |     // Service parameters
+ 1000 |     |     struct Service {
+ 1001 |     |         // Registration activation deposit
+ 1002 |     |         // This is enough for 1b+ ETH or 1e27
+ 1003 |     |         uint96 securityDeposit;
+ 1004 |     |         // Multisig address for agent instances
+ 1005 |     |         address multisig;
+ 1006 |     |         // IPFS hashes pointing to the config metadata
+ 1007 |     |         bytes32 configHash;
+ 1008 |     |         // Agent instance signers threshold: must no less than ceil((n * 2 + 1) / 3) of all the agent instances combined
+ 1009 |     |         // This number will be enough to have ((2^32 - 1) * 3 - 1) / 2, which is bigger than 6.44b
+ 1010 |     |         uint32 threshold;
+ 1011 |     |         // Total number of agent instances. We assume that the number of instances is bounded by 2^32 - 1
+ 1012 |     |         uint32 maxNumAgentInstances;
+ 1013 |     |         // Actual number of agent instances. This number is less or equal to maxNumAgentInstances
+ 1014 |     |         uint32 numAgentInstances;
+ 1015 |     |         // Service state
+ 1016 |     |         ServiceState state;
+ 1017 |     |         // Canonical agent Ids for the service. Individual agent Id is bounded by the max number of agent Id
+ 1018 |     |         uint32[] agentIds;
+ 1019 |     |     }
+ 1020 |     | 
+ 1021 |     |     // Agent Registry address
+ 1022 |     |     address public immutable agentRegistry;
+ 1023 |     |     // The amount of funds slashed. This is enough for 1b+ ETH or 1e27
+ 1024 |     |     uint96 public slashedFunds;
+ 1025 |     |     // Drainer address: set by the government and is allowed to drain ETH funds accumulated in this contract
+ 1026 |     |     address public drainer;
+ 1027 |     |     // Service registry version number
+ 1028 |     |     string public constant VERSION = "1.0.0";
+ 1029 |     |     // Map of service Id => set of IPFS hashes pointing to the config metadata
+ 1030 |     |     mapping (uint256 => bytes32[]) public mapConfigHashes;
+ 1031 |     |     // Map of operator address and serviceId => set of registered agent instance addresses
+ 1032 |     |     mapping(uint256 => AgentInstance[]) public mapOperatorAndServiceIdAgentInstances;
+ 1033 |     |     // Service Id and canonical agent Id => number of agent instances and correspondent instance registration bond
+ 1034 |     |     mapping(uint256 => AgentParams) public mapServiceAndAgentIdAgentParams;
+ 1035 |     |     // Actual agent instance addresses. Service Id and canonical agent Id => Set of agent instance addresses.
+ 1036 |     |     mapping(uint256 => address[]) public mapServiceAndAgentIdAgentInstances;
+ 1037 |     |     // Map of operator address and serviceId => agent instance bonding / escrow balance
+ 1038 |     |     mapping(uint256 => uint96) public mapOperatorAndServiceIdOperatorBalances;
+ 1039 |     |     // Map of agent instance address => service id it is registered with and operator address that supplied the instance
+ 1040 |     |     mapping (address => address) public mapAgentInstanceOperators;
+ 1041 |     |     // Map of service Id => set of unique component Ids
+ 1042 |     |     // Updated during the service deployment via deploy() function
+ 1043 |     |     mapping (uint256 => uint32[]) public mapServiceIdSetComponentIds;
+ 1044 |     |     // Map of service Id => set of unique agent Ids
+ 1045 |     |     mapping (uint256 => uint32[]) public mapServiceIdSetAgentIds;
+ 1046 |     |     // Map of policy for multisig implementations
+ 1047 |     |     mapping (address => bool) public mapMultisigs;
+ 1048 |     |     // Map of service counter => service
+ 1049 |     |     mapping (uint256 => Service) public mapServices;
+ 1050 |     | 
+ 1051 |     |     /// @dev Service registry constructor.
+ 1052 |     |     /// @param _name Service contract name.
+ 1053 |     |     /// @param _symbol Agent contract symbol.
+ 1054 |     |     /// @param _baseURI Agent registry token base URI.
+ 1055 |     |     /// @param _agentRegistry Agent registry address.
+ 1056 |     |     constructor(string memory _name, string memory _symbol, string memory _baseURI, address _agentRegistry)
+ 1057 |     |         ERC721(_name, _symbol)
+ 1058 |     |     {
+ 1059 |     |         baseURI = _baseURI;
+ 1060 |     |         agentRegistry = _agentRegistry;
+ 1061 |     |         owner = msg.sender;
+ 1062 |     |     }
+ 1063 |     | 
+ 1064 |     |     /// @dev Changes the drainer.
+ 1065 |     |     /// @param newDrainer Address of a drainer.
+ 1066 | *r  |     function changeDrainer(address newDrainer) external {
+ 1067 | *r  |         if (msg.sender != owner) {
+ 1068 | r   |             revert OwnerOnly(msg.sender, owner);
+ 1069 |     |         }
+ 1070 |     | 
+ 1071 |     |         // Check for the zero address
+ 1072 | *r  |         if (newDrainer == address(0)) {
+ 1073 | r   |             revert ZeroAddress();
+ 1074 |     |         }
+ 1075 |     | 
+ 1076 | *   |         drainer = newDrainer;
+ 1077 | *   |         emit DrainerUpdated(newDrainer);
+ 1078 |     |     }
+ 1079 |     | 
+ 1080 |     |     /// @dev Going through basic initial service checks.
+ 1081 |     |     /// @param configHash IPFS hash pointing to the config metadata.
+ 1082 |     |     /// @param agentIds Canonical agent Ids.
+ 1083 |     |     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
+ 1084 | r   |     function _initialChecks(
+ 1085 |     |         bytes32 configHash,
+ 1086 |     |         uint32[] memory agentIds,
+ 1087 |     |         AgentParams[] memory agentParams
+ 1088 |     |     ) private view
+ 1089 |     |     {
+ 1090 |     |         // Check for the non-zero hash value
+ 1091 | r   |         if (configHash == 0) {
+ 1092 | r   |             revert ZeroValue();
+ 1093 |     |         }
+ 1094 |     | 
+ 1095 |     |         // Checking for non-empty arrays and correct number of values in them
+ 1096 | r   |         if (agentIds.length == 0 || agentIds.length != agentParams.length) {
+ 1097 | r   |             revert WrongArrayLength(agentIds.length, agentParams.length);
+ 1098 |     |         }
+ 1099 |     | 
+ 1100 |     |         // Check for duplicate canonical agent Ids
+ 1101 | r   |         uint256 agentTotalSupply = IRegistry(agentRegistry).totalSupply();
+ 1102 | r   |         uint256 lastId;
+ 1103 | r   |         for (uint256 i = 0; i < agentIds.length; i++) {
+ 1104 | r   |             if (agentIds[i] < (lastId + 1) || agentIds[i] > agentTotalSupply) {
+ 1105 | r   |                 revert WrongAgentId(agentIds[i]);
+ 1106 |     |             }
+ 1107 |     |             lastId = agentIds[i];
+ 1108 |     |         }
+ 1109 |     |     }
+ 1110 |     | 
+ 1111 |     |     /// @dev Sets the service data.
+ 1112 |     |     /// @param service A service instance to fill the data for.
+ 1113 |     |     /// @param agentIds Canonical agent Ids.
+ 1114 |     |     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
+ 1115 |     |     /// @param size Size of a canonical agent ids set.
+ 1116 |     |     /// @param serviceId ServiceId.
+ 1117 |     |     function _setServiceData(
+ 1118 |     |         Service memory service,
+ 1119 |     |         uint32[] memory agentIds,
+ 1120 |     |         AgentParams[] memory agentParams,
+ 1121 |     |         uint256 size,
+ 1122 |     |         uint256 serviceId
+ 1123 |     |     ) private
+ 1124 |     |     {
+ 1125 |     |         // Security deposit
+ 1126 |     |         uint96 securityDeposit;
+ 1127 |     |         // Add canonical agent Ids for the service and the slots map
+ 1128 |     |         service.agentIds = new uint32[](size);
+ 1129 |     |         for (uint256 i = 0; i < size; i++) {
+ 1130 |     |             service.agentIds[i] = agentIds[i];
+ 1131 |     |             // Push a pair of key defining variables into one key. Service or agent Ids are not enough by themselves
+ 1132 |     |             // As with other units, we assume that the system is not expected to support more than than 2^32-1 services
+ 1133 |     |             // Need to carefully check pairings, since it's hard to find if something is incorrectly misplaced bitwise
+ 1134 |     |             // serviceId occupies first 32 bits
+ 1135 |     |             uint256 serviceAgent = serviceId;
+ 1136 |     |             // agentId takes the second 32 bits
+ 1137 |     |             serviceAgent |= uint256(agentIds[i]) << 32;
+ 1138 |     |             mapServiceAndAgentIdAgentParams[serviceAgent] = agentParams[i];
+ 1139 |     |             service.maxNumAgentInstances += agentParams[i].slots;
+ 1140 |     |             // Security deposit is the maximum of the canonical agent registration bond
+ 1141 |     |             if (agentParams[i].bond > securityDeposit) {
+ 1142 |     |                 securityDeposit = agentParams[i].bond;
+ 1143 |     |             }
+ 1144 |     |         }
+ 1145 |     |         service.securityDeposit = securityDeposit;
+ 1146 |     | 
+ 1147 |     |         // Check for the correct threshold: no less than ceil((n * 2 + 1) / 3) of all the agent instances combined
+ 1148 |     |         uint256 checkThreshold = uint256(service.maxNumAgentInstances * 2 + 1);
+ 1149 |     |         if (checkThreshold % 3 == 0) {
+ 1150 |     |             checkThreshold = checkThreshold / 3;
+ 1151 |     |         } else {
+ 1152 |     |             checkThreshold = checkThreshold / 3 + 1;
+ 1153 |     |         }
+ 1154 |     |         if (service.threshold < checkThreshold || service.threshold > service.maxNumAgentInstances) {
+ 1155 |     |             revert WrongThreshold(service.threshold, checkThreshold, service.maxNumAgentInstances);
+ 1156 |     |         }
+ 1157 |     |     }
+ 1158 |     | 
+ 1159 |     |     /// @dev Creates a new service.
+ 1160 |     |     /// @param serviceOwner Individual that creates and controls a service.
+ 1161 |     |     /// @param configHash IPFS hash pointing to the config metadata.
+ 1162 |     |     /// @param agentIds Canonical agent Ids in a sorted ascending order.
+ 1163 |     |     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
+ 1164 |     |     /// @param threshold Signers threshold for a multisig composed by agent instances.
+ 1165 |     |     /// @return serviceId Created service Id.
+ 1166 | r   |     function create(
+ 1167 |     |         address serviceOwner,
+ 1168 |     |         bytes32 configHash,
+ 1169 |     |         uint32[] memory agentIds,
+ 1170 |     |         AgentParams[] memory agentParams,
+ 1171 |     |         uint32 threshold
+ 1172 | r   |     ) external returns (uint256 serviceId)
+ 1173 |     |     {
+ 1174 |     |         // Reentrancy guard
+ 1175 | r   |         if (_locked > 1) {
+ 1176 |     |             revert ReentrancyGuard();
+ 1177 |     |         }
+ 1178 | r   |         _locked = 2;
+ 1179 |     | 
+ 1180 |     |         // Check for the manager privilege for a service management
+ 1181 | r   |         if (manager != msg.sender) {
+ 1182 | r   |             revert ManagerOnly(msg.sender, manager);
+ 1183 |     |         }
+ 1184 |     | 
+ 1185 |     |         // Check for the non-empty service owner address
+ 1186 | r   |         if (serviceOwner == address(0)) {
+ 1187 | r   |             revert ZeroAddress();
+ 1188 |     |         }
+ 1189 |     | 
+ 1190 |     |         // Execute initial checks
+ 1191 | r   |         _initialChecks(configHash, agentIds, agentParams);
+ 1192 |     | 
+ 1193 |     |         // Check that there are no zero number of slots for a specific canonical agent id and no zero registration bond
+ 1194 |     |         for (uint256 i = 0; i < agentIds.length; i++) {
+ 1195 |     |             if (agentParams[i].slots == 0 || agentParams[i].bond == 0) {
+ 1196 |     |                 revert ZeroValue();
+ 1197 |     |             }
+ 1198 |     |         }
+ 1199 |     | 
+ 1200 |     |         // Create a new service Id
+ 1201 |     |         serviceId = totalSupply;
+ 1202 |     |         serviceId++;
+ 1203 |     | 
+ 1204 |     |         // Set high-level data components of the service instance
+ 1205 |     |         Service memory service;
+ 1206 |     |         // Updating high-level data components of the service
+ 1207 |     |         service.threshold = threshold;
+ 1208 |     |         // Assigning the initial hash
+ 1209 |     |         service.configHash = configHash;
+ 1210 |     |         // Set the initial service state
+ 1211 |     |         service.state = ServiceState.PreRegistration;
+ 1212 |     | 
+ 1213 |     |         // Set service data
+ 1214 |     |         _setServiceData(service, agentIds, agentParams, agentIds.length, serviceId);
+ 1215 |     |         mapServices[serviceId] = service;
+ 1216 |     |         totalSupply = serviceId;
+ 1217 |     | 
+ 1218 |     |         // Mint the service instance to the service owner and record the service structure
+ 1219 |     |         _safeMint(serviceOwner, serviceId);
+ 1220 |     | 
+ 1221 |     |         emit CreateService(serviceId);
+ 1222 |     | 
+ 1223 |     |         _locked = 1;
+ 1224 |     |     }
+ 1225 |     | 
+ 1226 |     |     /// @dev Updates a service in a CRUD way.
+ 1227 |     |     /// @param serviceOwner Individual that creates and controls a service.
+ 1228 |     |     /// @param configHash IPFS hash pointing to the config metadata.
+ 1229 |     |     /// @param agentIds Canonical agent Ids in a sorted ascending order.
+ 1230 |     |     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
+ 1231 |     |     /// @param threshold Signers threshold for a multisig composed by agent instances.
+ 1232 |     |     /// @param serviceId Service Id to be updated.
+ 1233 |     |     /// @return success True, if function executed successfully.
+ 1234 | r   |     function update(
+ 1235 |     |         address serviceOwner,
+ 1236 |     |         bytes32 configHash,
+ 1237 |     |         uint32[] memory agentIds,
+ 1238 |     |         AgentParams[] memory agentParams,
+ 1239 |     |         uint32 threshold,
+ 1240 |     |         uint256 serviceId
+ 1241 | r   |     ) external returns (bool success)
+ 1242 |     |     {
+ 1243 |     |         // Check for the manager privilege for a service management
+ 1244 | r   |         if (manager != msg.sender) {
+ 1245 | r   |             revert ManagerOnly(msg.sender, manager);
+ 1246 |     |         }
+ 1247 |     | 
+ 1248 |     |         // Check for the service ownership
+ 1249 | r   |         address actualOwner = ownerOf(serviceId);
+ 1250 |     |         if (actualOwner != serviceOwner) {
+ 1251 |     |             revert OwnerOnly(serviceOwner, actualOwner);
+ 1252 |     |         }
+ 1253 |     | 
+ 1254 |     |         Service memory service = mapServices[serviceId];
+ 1255 |     |         if (service.state != ServiceState.PreRegistration) {
+ 1256 |     |             revert WrongServiceState(uint256(service.state), serviceId);
+ 1257 |     |         }
+ 1258 |     | 
+ 1259 |     |         // Execute initial checks
+ 1260 |     |         _initialChecks(configHash, agentIds, agentParams);
+ 1261 |     | 
+ 1262 |     |         // Updating high-level data components of the service
+ 1263 |     |         service.threshold = threshold;
+ 1264 |     |         service.maxNumAgentInstances = 0;
+ 1265 |     | 
+ 1266 |     |         // Collect non-zero canonical agent ids and slots / costs, remove any canonical agent Ids from the params map
+ 1267 |     |         uint32[] memory newAgentIds = new uint32[](agentIds.length);
+ 1268 |     |         AgentParams[] memory newAgentParams = new AgentParams[](agentIds.length);
+ 1269 |     |         uint256 size;
+ 1270 |     |         for (uint256 i = 0; i < agentIds.length; i++) {
+ 1271 |     |             if (agentParams[i].slots == 0) {
+ 1272 |     |                 // Push a pair of key defining variables into one key. Service or agent Ids are not enough by themselves
+ 1273 |     |                 // serviceId occupies first 32 bits, agentId gets the next 32 bits
+ 1274 |     |                 uint256 serviceAgent = serviceId;
+ 1275 |     |                 serviceAgent |= uint256(agentIds[i]) << 32;
+ 1276 |     |                 delete mapServiceAndAgentIdAgentParams[serviceAgent];
+ 1277 |     |             } else {
+ 1278 |     |                 newAgentIds[size] = agentIds[i];
+ 1279 |     |                 newAgentParams[size] = agentParams[i];
+ 1280 |     |                 size++;
+ 1281 |     |             }
+ 1282 |     |         }
+ 1283 |     |         // Check if the previous hash is the same / hash was not updated
+ 1284 |     |         bytes32 lastConfigHash = service.configHash;
+ 1285 |     |         if (lastConfigHash != configHash) {
+ 1286 |     |             mapConfigHashes[serviceId].push(lastConfigHash);
+ 1287 |     |             service.configHash = configHash;
+ 1288 |     |         }
+ 1289 |     | 
+ 1290 |     |         // Set service data and record the modified service struct
+ 1291 |     |         _setServiceData(service, newAgentIds, newAgentParams, size, serviceId);
+ 1292 |     |         mapServices[serviceId] = service;
+ 1293 |     | 
+ 1294 |     |         emit UpdateService(serviceId, configHash);
+ 1295 |     |         success = true;
+ 1296 |     |     }
+ 1297 |     | 
+ 1298 |     |     /// @dev Activates the service.
+ 1299 |     |     /// @param serviceOwner Individual that creates and controls a service.
+ 1300 |     |     /// @param serviceId Correspondent service Id.
+ 1301 |     |     /// @return success True, if function executed successfully.
+ 1302 | r   |     function activateRegistration(address serviceOwner, uint256 serviceId) external payable returns (bool success)
+ 1303 |     |     {
+ 1304 |     |         // Check for the manager privilege for a service management
+ 1305 | r   |         if (manager != msg.sender) {
+ 1306 | r   |             revert ManagerOnly(msg.sender, manager);
+ 1307 |     |         }
+ 1308 |     | 
+ 1309 |     |         // Check for the service ownership
+ 1310 | r   |         address actualOwner = ownerOf(serviceId);
+ 1311 |     |         if (actualOwner != serviceOwner) {
+ 1312 |     |             revert OwnerOnly(serviceOwner, actualOwner);
+ 1313 |     |         }
+ 1314 |     | 
+ 1315 |     |         Service storage service = mapServices[serviceId];
+ 1316 |     |         // Service must be inactive
+ 1317 |     |         if (service.state != ServiceState.PreRegistration) {
+ 1318 |     |             revert ServiceMustBeInactive(serviceId);
+ 1319 |     |         }
+ 1320 |     | 
+ 1321 |     |         if (msg.value != service.securityDeposit) {
+ 1322 |     |             revert IncorrectRegistrationDepositValue(msg.value, service.securityDeposit, serviceId);
+ 1323 |     |         }
+ 1324 |     | 
+ 1325 |     |         // Activate the agent instance registration
+ 1326 |     |         service.state = ServiceState.ActiveRegistration;
+ 1327 |     | 
+ 1328 |     |         emit ActivateRegistration(serviceId);
+ 1329 |     |         success = true;
+ 1330 |     |     }
+ 1331 |     | 
+ 1332 |     |     /// @dev Registers agent instances.
+ 1333 |     |     /// @param operator Address of the operator.
+ 1334 |     |     /// @param serviceId Service Id to be updated.
+ 1335 |     |     /// @param agentInstances Agent instance addresses.
+ 1336 |     |     /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
+ 1337 |     |     /// @return success True, if function executed successfully.
+ 1338 | r   |     function registerAgents(
+ 1339 |     |         address operator,
+ 1340 |     |         uint256 serviceId,
+ 1341 |     |         address[] memory agentInstances,
+ 1342 |     |         uint32[] memory agentIds
+ 1343 | r   |     ) external payable returns (bool success)
+ 1344 |     |     {
+ 1345 |     |         // Check for the manager privilege for a service management
+ 1346 | r   |         if (manager != msg.sender) {
+ 1347 | r   |             revert ManagerOnly(msg.sender, manager);
+ 1348 |     |         }
+ 1349 |     | 
+ 1350 |     |         // Check if the length of canonical agent instance addresses array and ids array have the same length
+ 1351 | r   |         if (agentInstances.length != agentIds.length) {
+ 1352 | r   |             revert WrongArrayLength(agentInstances.length, agentIds.length);
+ 1353 |     |         }
+ 1354 |     | 
+ 1355 | r   |         Service storage service = mapServices[serviceId];
+ 1356 |     |         // The service has to be active to register agents
+ 1357 | r   |         if (service.state != ServiceState.ActiveRegistration) {
+ 1358 | r   |             revert WrongServiceState(uint256(service.state), serviceId);
+ 1359 |     |         }
+ 1360 |     | 
+ 1361 |     |         // Check for the sufficient amount of bond fee is provided
+ 1362 |     |         uint256 numAgents = agentInstances.length;
+ 1363 |     |         uint256 totalBond = 0;
+ 1364 |     |         for (uint256 i = 0; i < numAgents; ++i) {
+ 1365 |     |             // Check if canonical agent Id exists in the service
+ 1366 |     |             // Push a pair of key defining variables into one key. Service or agent Ids are not enough by themselves
+ 1367 |     |             // serviceId occupies first 32 bits, agentId gets the next 32 bits
+ 1368 |     |             uint256 serviceAgent = serviceId;
+ 1369 |     |             serviceAgent |= uint256(agentIds[i]) << 32;
+ 1370 |     |             AgentParams memory agentParams = mapServiceAndAgentIdAgentParams[serviceAgent];
+ 1371 |     |             if (agentParams.slots == 0) {
+ 1372 |     |                 revert AgentNotInService(agentIds[i], serviceId);
+ 1373 |     |             }
+ 1374 |     |             totalBond += agentParams.bond;
+ 1375 |     |         }
+ 1376 |     |         if (msg.value != totalBond) {
+ 1377 |     |             revert IncorrectAgentBondingValue(msg.value, totalBond, serviceId);
+ 1378 |     |         }
+ 1379 |     | 
+ 1380 |     |         // Operator address must not be used as an agent instance anywhere else
+ 1381 |     |         if (mapAgentInstanceOperators[operator] != address(0)) {
+ 1382 |     |             revert WrongOperator(serviceId);
+ 1383 |     |         }
+ 1384 |     | 
+ 1385 |     |         // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
+ 1386 |     |         // operator occupies first 160 bits
+ 1387 |     |         uint256 operatorService = uint256(uint160(operator));
+ 1388 |     |         // serviceId occupies next 32 bits assuming it is not greater than 2^32 - 1 in value
+ 1389 |     |         operatorService |= serviceId << 160;
+ 1390 |     |         for (uint256 i = 0; i < numAgents; ++i) {
+ 1391 |     |             address agentInstance = agentInstances[i];
+ 1392 |     |             uint32 agentId = agentIds[i];
+ 1393 |     | 
+ 1394 |     |             // Operator address must be different from agent instance one
+ 1395 |     |             if (operator == agentInstance) {
+ 1396 |     |                 revert WrongOperator(serviceId);
+ 1397 |     |             }
+ 1398 |     | 
+ 1399 |     |             // Check if the agent instance is already engaged with another service
+ 1400 |     |             if (mapAgentInstanceOperators[agentInstance] != address(0)) {
+ 1401 |     |                 revert AgentInstanceRegistered(mapAgentInstanceOperators[agentInstance]);
+ 1402 |     |             }
+ 1403 |     | 
+ 1404 |     |             // Check if there is an empty slot for the agent instance in this specific service
+ 1405 |     |             // serviceId occupies first 32 bits, agentId gets the next 32 bits
+ 1406 |     |             uint256 serviceAgent = serviceId;
+ 1407 |     |             serviceAgent |= uint256(agentIds[i]) << 32;
+ 1408 |     |             if (mapServiceAndAgentIdAgentInstances[serviceAgent].length == mapServiceAndAgentIdAgentParams[serviceAgent].slots) {
+ 1409 |     |                 revert AgentInstancesSlotsFilled(serviceId);
+ 1410 |     |             }
+ 1411 |     | 
+ 1412 |     |             // Add agent instance and operator and set the instance engagement
+ 1413 |     |             mapServiceAndAgentIdAgentInstances[serviceAgent].push(agentInstance);
+ 1414 |     |             mapOperatorAndServiceIdAgentInstances[operatorService].push(AgentInstance(agentInstance, agentId));
+ 1415 |     |             service.numAgentInstances++;
+ 1416 |     |             mapAgentInstanceOperators[agentInstance] = operator;
+ 1417 |     | 
+ 1418 |     |             emit RegisterInstance(operator, serviceId, agentInstance, agentId);
+ 1419 |     |         }
+ 1420 |     | 
+ 1421 |     |         // If the service agent instance capacity is reached, the service becomes finished-registration
+ 1422 |     |         if (service.numAgentInstances == service.maxNumAgentInstances) {
+ 1423 |     |             service.state = ServiceState.FinishedRegistration;
+ 1424 |     |         }
+ 1425 |     | 
+ 1426 |     |         // Update operator's bonding balance
+ 1427 |     |         mapOperatorAndServiceIdOperatorBalances[operatorService] += uint96(msg.value);
+ 1428 |     | 
+ 1429 |     |         emit Deposit(operator, msg.value);
+ 1430 |     |         success = true;
+ 1431 |     |     }
+ 1432 |     | 
+ 1433 |     |     /// @dev Creates multisig instance controlled by the set of service agent instances and deploys the service.
+ 1434 |     |     /// @param serviceOwner Individual that creates and controls a service.
+ 1435 |     |     /// @param serviceId Correspondent service Id.
+ 1436 |     |     /// @param multisigImplementation Multisig implementation address.
+ 1437 |     |     /// @param data Data payload for the multisig creation.
+ 1438 |     |     /// @return multisig Address of the created multisig.
+ 1439 | r   |     function deploy(
+ 1440 |     |         address serviceOwner,
+ 1441 |     |         uint256 serviceId,
+ 1442 |     |         address multisigImplementation,
+ 1443 |     |         bytes memory data
+ 1444 | r   |     ) external returns (address multisig)
+ 1445 |     |     {
+ 1446 |     |         // Reentrancy guard
+ 1447 | r   |         if (_locked > 1) {
+ 1448 |     |             revert ReentrancyGuard();
+ 1449 |     |         }
+ 1450 | r   |         _locked = 2;
+ 1451 |     | 
+ 1452 |     |         // Check for the manager privilege for a service management
+ 1453 | r   |         if (manager != msg.sender) {
+ 1454 | r   |             revert ManagerOnly(msg.sender, manager);
+ 1455 |     |         }
+ 1456 |     | 
+ 1457 |     |         // Check for the service ownership
+ 1458 | r   |         address actualOwner = ownerOf(serviceId);
+ 1459 |     |         if (actualOwner != serviceOwner) {
+ 1460 |     |             revert OwnerOnly(serviceOwner, actualOwner);
+ 1461 |     |         }
+ 1462 |     | 
+ 1463 |     |         // Check for the whitelisted multisig implementation
+ 1464 |     |         if (!mapMultisigs[multisigImplementation]) {
+ 1465 |     |             revert UnauthorizedMultisig(multisigImplementation);
+ 1466 |     |         }
+ 1467 |     | 
+ 1468 |     |         Service storage service = mapServices[serviceId];
+ 1469 |     |         if (service.state != ServiceState.FinishedRegistration) {
+ 1470 |     |             revert WrongServiceState(uint256(service.state), serviceId);
+ 1471 |     |         }
+ 1472 |     | 
+ 1473 |     |         // Get all agent instances for the multisig
+ 1474 |     |         address[] memory agentInstances = _getAgentInstances(service, serviceId);
+ 1475 |     | 
+ 1476 |     |         // Create a multisig with agent instances
+ 1477 |     |         multisig = IMultisig(multisigImplementation).create(agentInstances, service.threshold, data);
+ 1478 |     | 
+ 1479 |     |         // Update maps of service Id to subcomponent and agent Ids
+ 1480 |     |         mapServiceIdSetAgentIds[serviceId] = service.agentIds;
+ 1481 |     |         mapServiceIdSetComponentIds[serviceId] = IRegistry(agentRegistry).calculateSubComponents(service.agentIds);
+ 1482 |     | 
+ 1483 |     |         service.multisig = multisig;
+ 1484 |     |         service.state = ServiceState.Deployed;
+ 1485 |     | 
+ 1486 |     |         emit CreateMultisigWithAgents(serviceId, multisig);
+ 1487 |     |         emit DeployService(serviceId);
+ 1488 |     | 
+ 1489 |     |         _locked = 1;
+ 1490 |     |     }
+ 1491 |     | 
+ 1492 |     |     /// @dev Slashes a specified agent instance.
+ 1493 |     |     /// @param agentInstances Agent instances to slash.
+ 1494 |     |     /// @param amounts Correspondent amounts to slash.
+ 1495 |     |     /// @param serviceId Service Id.
+ 1496 |     |     /// @return success True, if function executed successfully.
+ 1497 | r   |     function slash(address[] memory agentInstances, uint96[] memory amounts, uint256 serviceId) external
+ 1498 | r   |         returns (bool success)
+ 1499 |     |     {
+ 1500 |     |         // Check if the service is deployed
+ 1501 |     |         // Since we do not kill (burn) services, we want this check to happen in a right service state.
+ 1502 |     |         // If the service is deployed, it definitely exists and is running. We do not want this function to be abused
+ 1503 |     |         // when the service was deployed, then terminated, then in a sleep mode or before next deployment somebody
+ 1504 |     |         // could use this function and try to slash operators.
+ 1505 | r   |         Service memory service = mapServices[serviceId];
+ 1506 | r   |         if (service.state != ServiceState.Deployed) {
+ 1507 | r   |             revert WrongServiceState(uint256(service.state), serviceId);
+ 1508 |     |         }
+ 1509 |     | 
+ 1510 |     |         // Check for the array size
+ 1511 |     |         if (agentInstances.length != amounts.length) {
+ 1512 |     |             revert WrongArrayLength(agentInstances.length, amounts.length);
+ 1513 |     |         }
+ 1514 |     | 
+ 1515 |     |         // Only the multisig of a correspondent address can slash its agent instances
+ 1516 |     |         if (msg.sender != service.multisig) {
+ 1517 |     |             revert OnlyOwnServiceMultisig(msg.sender, service.multisig, serviceId);
+ 1518 |     |         }
+ 1519 |     | 
+ 1520 |     |         // Loop over each agent instance
+ 1521 |     |         uint256 numInstancesToSlash = agentInstances.length;
+ 1522 |     |         for (uint256 i = 0; i < numInstancesToSlash; ++i) {
+ 1523 |     |             // Get the service Id from the agentInstance map
+ 1524 |     |             address operator = mapAgentInstanceOperators[agentInstances[i]];
+ 1525 |     |             // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
+ 1526 |     |             // operator occupies first 160 bits
+ 1527 |     |             uint256 operatorService = uint256(uint160(operator));
+ 1528 |     |             // serviceId occupies next 32 bits
+ 1529 |     |             operatorService |= serviceId << 160;
+ 1530 |     |             // Slash the balance of the operator, make sure it does not go below zero
+ 1531 |     |             uint96 balance = mapOperatorAndServiceIdOperatorBalances[operatorService];
+ 1532 |     |             if ((amounts[i] + 1) > balance) {
+ 1533 |     |                 // We cannot add to the slashed amount more than the balance of the operator
+ 1534 |     |                 slashedFunds += balance;
+ 1535 |     |                 balance = 0;
+ 1536 |     |             } else {
+ 1537 |     |                 slashedFunds += amounts[i];
+ 1538 |     |                 balance -= amounts[i];
+ 1539 |     |             }
+ 1540 |     |             mapOperatorAndServiceIdOperatorBalances[operatorService] = balance;
+ 1541 |     | 
+ 1542 |     |             emit OperatorSlashed(amounts[i], operator, serviceId);
+ 1543 |     |         }
+ 1544 |     |         success = true;
+ 1545 |     |     }
+ 1546 |     | 
+ 1547 |     |     /// @dev Terminates the service.
+ 1548 |     |     /// @param serviceOwner Owner of the service.
+ 1549 |     |     /// @param serviceId Service Id to be updated.
+ 1550 |     |     /// @return success True, if function executed successfully.
+ 1551 |     |     /// @return refund Refund to return to the service owner.
+ 1552 | r   |     function terminate(address serviceOwner, uint256 serviceId) external returns (bool success, uint256 refund)
+ 1553 |     |     {
+ 1554 |     |         // Reentrancy guard
+ 1555 | r   |         if (_locked > 1) {
+ 1556 |     |             revert ReentrancyGuard();
+ 1557 |     |         }
+ 1558 | r   |         _locked = 2;
+ 1559 |     | 
+ 1560 |     |         // Check for the manager privilege for a service management
+ 1561 | r   |         if (manager != msg.sender) {
+ 1562 | r   |             revert ManagerOnly(msg.sender, manager);
+ 1563 |     |         }
+ 1564 |     | 
+ 1565 |     |         // Check for the service ownership
+ 1566 | r   |         address actualOwner = ownerOf(serviceId);
+ 1567 |     |         if (actualOwner != serviceOwner) {
+ 1568 |     |             revert OwnerOnly(serviceOwner, actualOwner);
+ 1569 |     |         }
+ 1570 |     | 
+ 1571 |     |         Service storage service = mapServices[serviceId];
+ 1572 |     |         // Check if the service is already terminated
+ 1573 |     |         if (service.state == ServiceState.PreRegistration || service.state == ServiceState.TerminatedBonded) {
+ 1574 |     |             revert WrongServiceState(uint256(service.state), serviceId);
+ 1575 |     |         }
+ 1576 |     |         // Define the state of the service depending on the number of bonded agent instances
+ 1577 |     |         if (service.numAgentInstances > 0) {
+ 1578 |     |             service.state = ServiceState.TerminatedBonded;
+ 1579 |     |         } else {
+ 1580 |     |             service.state = ServiceState.PreRegistration;
+ 1581 |     |         }
+ 1582 |     |         
+ 1583 |     |         // Delete the sensitive data
+ 1584 |     |         delete mapServiceIdSetComponentIds[serviceId];
+ 1585 |     |         delete mapServiceIdSetAgentIds[serviceId];
+ 1586 |     |         for (uint256 i = 0; i < service.agentIds.length; ++i) {
+ 1587 |     |             // serviceId occupies first 32 bits, agentId gets the next 32 bits
+ 1588 |     |             uint256 serviceAgent = serviceId;
+ 1589 |     |             serviceAgent |= uint256(service.agentIds[i]) << 32;
+ 1590 |     |             delete mapServiceAndAgentIdAgentInstances[serviceAgent];
+ 1591 |     |         }
+ 1592 |     | 
+ 1593 |     |         // Return registration deposit back to the service owner
+ 1594 |     |         refund = service.securityDeposit;
+ 1595 |     |         // By design, the refund is always a non-zero value, so no check is needed here fo that
+ 1596 |     |         (bool result, ) = serviceOwner.call{value: refund}("");
+ 1597 |     |         if (!result) {
+ 1598 |     |             revert TransferFailed(address(0), address(this), serviceOwner, refund);
+ 1599 |     |         }
+ 1600 |     | 
+ 1601 |     |         emit Refund(serviceOwner, refund);
+ 1602 |     |         emit TerminateService(serviceId);
+ 1603 |     |         success = true;
+ 1604 |     | 
+ 1605 |     |         _locked = 1;
+ 1606 |     |     }
+ 1607 |     | 
+ 1608 |     |     /// @dev Unbonds agent instances of the operator from the service.
+ 1609 |     |     /// @param operator Operator of agent instances.
+ 1610 |     |     /// @param serviceId Service Id.
+ 1611 |     |     /// @return success True, if function executed successfully.
+ 1612 |     |     /// @return refund The amount of refund returned to the operator.
+ 1613 | r   |     function unbond(address operator, uint256 serviceId) external returns (bool success, uint256 refund) {
+ 1614 |     |         // Reentrancy guard
+ 1615 | r   |         if (_locked > 1) {
+ 1616 |     |             revert ReentrancyGuard();
+ 1617 |     |         }
+ 1618 | r   |         _locked = 2;
+ 1619 |     | 
+ 1620 |     |         // Check for the manager privilege for a service management
+ 1621 | r   |         if (manager != msg.sender) {
+ 1622 | r   |             revert ManagerOnly(msg.sender, manager);
+ 1623 |     |         }
+ 1624 |     | 
+ 1625 |     |         // Checks if the operator address is not zero
+ 1626 | r   |         if (operator == address(0)) {
+ 1627 | r   |             revert ZeroAddress();
+ 1628 |     |         }
+ 1629 |     | 
+ 1630 | r   |         Service storage service = mapServices[serviceId];
+ 1631 |     |         // Service can only be in the terminated-bonded state or expired-registration in order to proceed
+ 1632 | r   |         if (service.state != ServiceState.TerminatedBonded) {
+ 1633 | r   |             revert WrongServiceState(uint256(service.state), serviceId);
+ 1634 |     |         }
+ 1635 |     | 
+ 1636 |     |         // Check for the operator and unbond all its agent instances
+ 1637 |     |         // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
+ 1638 |     |         // operator occupies first 160 bits
+ 1639 |     |         uint256 operatorService = uint256(uint160(operator));
+ 1640 |     |         // serviceId occupies next 32 bits
+ 1641 |     |         operatorService |= serviceId << 160;
+ 1642 |     |         AgentInstance[] memory agentInstances = mapOperatorAndServiceIdAgentInstances[operatorService];
+ 1643 |     |         uint256 numAgentsUnbond = agentInstances.length;
+ 1644 |     |         if (numAgentsUnbond == 0) {
+ 1645 |     |             revert OperatorHasNoInstances(operator, serviceId);
+ 1646 |     |         }
+ 1647 |     | 
+ 1648 |     |         // Subtract number of unbonded agent instances
+ 1649 |     |         service.numAgentInstances -= uint32(numAgentsUnbond);
+ 1650 |     |         // When number of instances is equal to zero, all the operators have unbonded and the service is moved into
+ 1651 |     |         // the PreRegistration state, from where it can be updated / start registration / get deployed again
+ 1652 |     |         if (service.numAgentInstances == 0) {
+ 1653 |     |             service.state = ServiceState.PreRegistration;
+ 1654 |     |         }
+ 1655 |     |         // else condition is redundant here, since the service is either in the TerminatedBonded state, or moved
+ 1656 |     |         // into the PreRegistration state and unbonding is not possible before the new TerminatedBonded state is reached
+ 1657 |     | 
+ 1658 |     |         // Calculate registration refund and free all agent instances
+ 1659 |     |         for (uint256 i = 0; i < numAgentsUnbond; i++) {
+ 1660 |     |             // serviceId occupies first 32 bits, agentId gets the next 32 bits
+ 1661 |     |             uint256 serviceAgent = serviceId;
+ 1662 |     |             serviceAgent |= uint256(agentInstances[i].agentId) << 32;
+ 1663 |     |             refund += mapServiceAndAgentIdAgentParams[serviceAgent].bond;
+ 1664 |     |             // Clean-up the sensitive data such that it is not reused later
+ 1665 |     |             delete mapAgentInstanceOperators[agentInstances[i].instance];
+ 1666 |     |         }
+ 1667 |     |         // Clean all the operator agent instances records for this service
+ 1668 |     |         delete mapOperatorAndServiceIdAgentInstances[operatorService];
+ 1669 |     | 
+ 1670 |     |         // Calculate the refund
+ 1671 |     |         uint96 balance = mapOperatorAndServiceIdOperatorBalances[operatorService];
+ 1672 |     |         // This situation is possible if the operator was slashed for the agent instance misbehavior
+ 1673 |     |         if (refund > balance) {
+ 1674 |     |             refund = balance;
+ 1675 |     |         }
+ 1676 |     | 
+ 1677 |     |         // Refund the operator
+ 1678 |     |         if (refund > 0) {
+ 1679 |     |             // Operator's balance is essentially zero after the refund
+ 1680 |     |             mapOperatorAndServiceIdOperatorBalances[operatorService] = 0;
+ 1681 |     |             // Send the refund
+ 1682 |     |             (bool result, ) = operator.call{value: refund}("");
+ 1683 |     |             if (!result) {
+ 1684 |     |                 revert TransferFailed(address(0), address(this), operator, refund);
+ 1685 |     |             }
+ 1686 |     |             emit Refund(operator, refund);
+ 1687 |     |         }
+ 1688 |     | 
+ 1689 |     |         emit OperatorUnbond(operator, serviceId);
+ 1690 |     |         success = true;
+ 1691 |     | 
+ 1692 |     |         _locked = 1;
+ 1693 |     |     }
+ 1694 |     | 
+ 1695 |     |     /// @dev Gets the service instance.
+ 1696 |     |     /// @param serviceId Service Id.
+ 1697 |     |     /// @return service Corresponding Service struct.
+ 1698 | *   |     function getService(uint256 serviceId) external view returns (Service memory service) {
+ 1699 | *   |         service = mapServices[serviceId];
+ 1700 |     |     }
+ 1701 |     | 
+ 1702 |     |     /// @dev Gets service agent parameters: number of agent instances (slots) and a bond amount.
+ 1703 |     |     /// @param serviceId Service Id.
+ 1704 |     |     /// @return numAgentIds Number of canonical agent Ids in the service.
+ 1705 |     |     /// @return agentParams Set of agent parameters for each canonical agent Id.
+ 1706 |     |     function getAgentParams(uint256 serviceId) external view
+ 1707 |     |         returns (uint256 numAgentIds, AgentParams[] memory agentParams)
+ 1708 |     |     {
+ 1709 |     |         Service memory service = mapServices[serviceId];
+ 1710 |     |         numAgentIds = service.agentIds.length;
+ 1711 |     |         agentParams = new AgentParams[](numAgentIds);
+ 1712 |     |         for (uint256 i = 0; i < numAgentIds; ++i) {
+ 1713 |     |             uint256 serviceAgent = serviceId;
+ 1714 |     |             serviceAgent |= uint256(service.agentIds[i]) << 32;
+ 1715 |     |             agentParams[i] = mapServiceAndAgentIdAgentParams[serviceAgent];
+ 1716 |     |         }
+ 1717 |     |     }
+ 1718 |     | 
+ 1719 |     |     /// @dev Lists all the instances of a given canonical agent Id if the service.
+ 1720 |     |     /// @param serviceId Service Id.
+ 1721 |     |     /// @param agentId Canonical agent Id.
+ 1722 |     |     /// @return numAgentInstances Number of agent instances.
+ 1723 |     |     /// @return agentInstances Set of agent instances for a specified canonical agent Id.
+ 1724 | *   |     function getInstancesForAgentId(uint256 serviceId, uint256 agentId) external view
+ 1725 | *   |         returns (uint256 numAgentInstances, address[] memory agentInstances)
+ 1726 | *   |     {
+ 1727 | *   |         uint256 serviceAgent = serviceId;
+ 1728 | *   |         serviceAgent |= agentId << 32;
+ 1729 | *   |         numAgentInstances = mapServiceAndAgentIdAgentInstances[serviceAgent].length;
+ 1730 | *   |         agentInstances = new address[](numAgentInstances);
+ 1731 | *   |         for (uint256 i = 0; i < numAgentInstances; i++) {
+ 1732 |     |             agentInstances[i] = mapServiceAndAgentIdAgentInstances[serviceAgent][i];
+ 1733 |     |         }
+ 1734 |     |     }
+ 1735 |     | 
+ 1736 |     |     /// @dev Gets all agent instances.
+ 1737 |     |     /// @param service Service instance.
+ 1738 |     |     /// @param serviceId ServiceId.
+ 1739 |     |     /// @return agentInstances Pre-allocated list of agent instance addresses.
+ 1740 |     |     function _getAgentInstances(Service memory service, uint256 serviceId) private view
+ 1741 |     |         returns (address[] memory agentInstances)
+ 1742 |     |     {
+ 1743 |     |         agentInstances = new address[](service.numAgentInstances);
+ 1744 |     |         uint256 count;
+ 1745 |     |         for (uint256 i = 0; i < service.agentIds.length; i++) {
+ 1746 |     |             // serviceId occupies first 32 bits, agentId gets the next 32 bits
+ 1747 |     |             uint256 serviceAgent = serviceId;
+ 1748 |     |             serviceAgent |= uint256(service.agentIds[i]) << 32;
+ 1749 |     |             for (uint256 j = 0; j < mapServiceAndAgentIdAgentInstances[serviceAgent].length; j++) {
+ 1750 |     |                 agentInstances[count] = mapServiceAndAgentIdAgentInstances[serviceAgent][j];
+ 1751 |     |                 count++;
+ 1752 |     |             }
+ 1753 |     |         }
+ 1754 |     |     }
+ 1755 |     | 
+ 1756 |     |     /// @dev Gets service agent instances.
+ 1757 |     |     /// @param serviceId ServiceId.
+ 1758 |     |     /// @return numAgentInstances Number of agent instances.
+ 1759 |     |     /// @return agentInstances Pre-allocated list of agent instance addresses.
+ 1760 |     |     function getAgentInstances(uint256 serviceId) external view
+ 1761 |     |         returns (uint256 numAgentInstances, address[] memory agentInstances)
+ 1762 |     |     {
+ 1763 |     |         Service memory service = mapServices[serviceId];
+ 1764 |     |         agentInstances = _getAgentInstances(service, serviceId);
+ 1765 |     |         numAgentInstances = agentInstances.length;
+ 1766 |     |     }
+ 1767 |     | 
+ 1768 |     |     /// @dev Gets previous service config hashes.
+ 1769 |     |     /// @param serviceId Service Id.
+ 1770 |     |     /// @return numHashes Number of hashes.
+ 1771 |     |     /// @return configHashes The list of previous component hashes (excluding the current one).
+ 1772 | *   |     function getPreviousHashes(uint256 serviceId) external view
+ 1773 | *   |         returns (uint256 numHashes, bytes32[] memory configHashes)
+ 1774 |     |     {
+ 1775 | *   |         configHashes = mapConfigHashes[serviceId];
+ 1776 | *   |         numHashes = configHashes.length;
+ 1777 |     |     }
+ 1778 |     | 
+ 1779 |     |     /// @dev Gets the full set of linearized components / canonical agent Ids for a specified service.
+ 1780 |     |     /// @notice The service must be / have been deployed in order to get the actual data.
+ 1781 |     |     /// @param serviceId Service Id.
+ 1782 |     |     /// @return numUnitIds Number of component / agent Ids.
+ 1783 |     |     /// @return unitIds Set of component / agent Ids.
+ 1784 | *   |     function getUnitIdsOfService(IRegistry.UnitType unitType, uint256 serviceId) external view
+ 1785 | *   |         returns (uint256 numUnitIds, uint32[] memory unitIds)
+ 1786 |     |     {
+ 1787 | *   |         if (unitType == IRegistry.UnitType.Component) {
+ 1788 | *   |             unitIds = mapServiceIdSetComponentIds[serviceId];
+ 1789 |     |         } else {
+ 1790 |     |             unitIds = mapServiceIdSetAgentIds[serviceId];
+ 1791 |     |         }
+ 1792 | *   |         numUnitIds = unitIds.length;
+ 1793 |     |     }
+ 1794 |     | 
+ 1795 |     |     /// @dev Gets the operator's balance in a specific service.
+ 1796 |     |     /// @param operator Operator address.
+ 1797 |     |     /// @param serviceId Service Id.
+ 1798 |     |     /// @return balance The balance of the operator.
+ 1799 | *   |     function getOperatorBalance(address operator, uint256 serviceId) external view returns (uint256 balance)
+ 1800 | *   |     {
+ 1801 | *   |         uint256 operatorService = uint256(uint160(operator));
+ 1802 | *   |         operatorService |= serviceId << 160;
+ 1803 | *   |         balance = mapOperatorAndServiceIdOperatorBalances[operatorService];
+ 1804 |     |     }
+ 1805 |     | 
+ 1806 |     |     /// @dev Controls multisig implementation address permission.
+ 1807 |     |     /// @param multisig Address of a multisig implementation.
+ 1808 |     |     /// @param permission Grant or revoke permission.
+ 1809 |     |     /// @return success True, if function executed successfully.
+ 1810 | *r  |     function changeMultisigPermission(address multisig, bool permission) external returns (bool success) {
+ 1811 |     |         // Check for the contract ownership
+ 1812 | *r  |         if (msg.sender != owner) {
+ 1813 | r   |             revert OwnerOnly(msg.sender, owner);
+ 1814 |     |         }
+ 1815 |     | 
+ 1816 | *r  |         if (multisig == address(0)) {
+ 1817 | r   |             revert ZeroAddress();
+ 1818 |     |         }
+ 1819 | *   |         mapMultisigs[multisig] = permission;
+ 1820 | *   |         success = true;
+ 1821 |     |     }
+ 1822 |     | 
+ 1823 |     |     /// @dev Drains slashed funds.
+ 1824 |     |     /// @return amount Drained amount.
+ 1825 | *r  |     function drain() external returns (uint256 amount) {
+ 1826 |     |         // Reentrancy guard
+ 1827 | *r  |         if (_locked > 1) {
+ 1828 |     |             revert ReentrancyGuard();
+ 1829 |     |         }
+ 1830 | *r  |         _locked = 2;
+ 1831 |     | 
+ 1832 |     |         // Check for the drainer address
+ 1833 | *r  |         if (msg.sender != drainer) {
+ 1834 | r   |             revert ManagerOnly(msg.sender, drainer);
+ 1835 |     |         }
+ 1836 |     | 
+ 1837 |     |         // Drain the slashed funds
+ 1838 | *   |         amount = slashedFunds;
+ 1839 | *   |         if (amount > 0) {
+ 1840 |     |             slashedFunds = 0;
+ 1841 |     |             // Send the refund
+ 1842 |     |             (bool result, ) = msg.sender.call{value: amount}("");
+ 1843 |     |             if (!result) {
+ 1844 |     |                 revert TransferFailed(address(0), address(this), msg.sender, amount);
+ 1845 |     |             }
+ 1846 |     |             emit Drain(msg.sender, amount);
+ 1847 |     |         }
+ 1848 |     | 
+ 1849 | *   |         _locked = 1;
+ 1850 |     |     }
+ 1851 |     | 
+ 1852 |     |     /// @dev Gets the hash of the service.
+ 1853 |     |     /// @param serviceId Service Id.
+ 1854 |     |     /// @return Service hash.
+ 1855 |     |     function _getUnitHash(uint256 serviceId) internal view override returns (bytes32) {
+ 1856 |     |         return mapServices[serviceId].configHash;
+ 1857 |     |     }
+ 1858 |     | }
+ 1859 | *r  | 
+ 1860 |     | contract ServiceRegistryProxyGeneric {
+ 1861 | *   |     ComponentRegistryFFS public iComponentRegistryFF;
+ 1862 | *   |     AgentRegistryFS public iAgentRegistryF;
+ 1863 | *   |     ServiceRegistryF public iServiceRegistryF;
+ 1864 |     | 
+ 1865 |     |     constructor() {
+ 1866 |     |         // Initialize Strategy.
+ 1867 |     |         iComponentRegistryFF = new ComponentRegistryFFS("agent components","MECHCOMP","https://localhost/component/");
+ 1868 |     |         iAgentRegistryF = new AgentRegistryFS("agent","MECH","https://localhost/agent/",address(iComponentRegistryFF));
+ 1869 |     |         iServiceRegistryF = new ServiceRegistryF("service registry", "SERVICE", "https://localhost/service/",address(iAgentRegistryF));
+ 1870 |     |     }
+ 1871 |     | 
+ 1872 |     |     /// @dev Changes the owner address.
+ 1873 |     |     /// @param newOwner Address of a new owner.
+ 1874 | *r  |     function changeOwner(address newOwner) external {
+ 1875 | *r  |         iServiceRegistryF.changeOwner(newOwner);
+ 1876 |     |     }
+ 1877 |     | 
+ 1878 |     |     /// @dev Changes the unit manager.
+ 1879 |     |     /// @param newManager Address of a new unit manager.
+ 1880 | *r  |     function changeManager(address newManager) external {
+ 1881 | *r  |         iServiceRegistryF.changeManager(newManager);
+ 1882 |     |     }
+ 1883 |     | 
+ 1884 |     |     /// @dev Changes the drainer.
+ 1885 |     |     /// @param newDrainer Address of a drainer.
+ 1886 | *r  |     function changeDrainer(address newDrainer) external {
+ 1887 | *r  |         iServiceRegistryF.changeDrainer(newDrainer);
+ 1888 |     |     }
+ 1889 |     | 
+ 1890 |     |     /// @dev Creates a new service.
+ 1891 |     |     /// @param serviceOwner Individual that creates and controls a service.
+ 1892 |     |     /// @param configHash IPFS hash pointing to the config metadata.
+ 1893 |     |     /// @param agentIds Canonical agent Ids in a sorted ascending order.
+ 1894 |     |     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
+ 1895 |     |     /// @param threshold Signers threshold for a multisig composed by agent instances.
+ 1896 |     |     /// @return serviceId Created service Id.
+ 1897 | r   |     function create(
+ 1898 |     |         address serviceOwner,
+ 1899 |     |         bytes32 configHash,
+ 1900 |     |         uint32[] memory agentIds,
+ 1901 |     |         AgentParams[] memory agentParams,
+ 1902 |     |         uint32 threshold
+ 1903 | r   |     ) external returns (uint256 serviceId)
+ 1904 |     |     {
+ 1905 | r   |         return iServiceRegistryF.create(serviceOwner, configHash, agentIds, agentParams, threshold);    
+ 1906 |     |     }
+ 1907 |     | 
+ 1908 |     |     /// @dev Updates a service in a CRUD way.
+ 1909 |     |     /// @param serviceOwner Individual that creates and controls a service.
+ 1910 |     |     /// @param configHash IPFS hash pointing to the config metadata.
+ 1911 |     |     /// @param agentIds Canonical agent Ids in a sorted ascending order.
+ 1912 |     |     /// @param agentParams Number of agent instances and required required bond to register an instance in the service.
+ 1913 |     |     /// @param threshold Signers threshold for a multisig composed by agent instances.
+ 1914 |     |     /// @param serviceId Service Id to be updated.
+ 1915 |     |     /// @return success True, if function executed successfully.
+ 1916 | r   |     function update(
+ 1917 |     |         address serviceOwner,
+ 1918 |     |         bytes32 configHash,
+ 1919 |     |         uint32[] memory agentIds,
+ 1920 |     |         AgentParams[] memory agentParams,
+ 1921 |     |         uint32 threshold,
+ 1922 |     |         uint256 serviceId
+ 1923 | r   |     ) external returns (bool success)
+ 1924 |     |     {
+ 1925 | r   |         return iServiceRegistryF.update(serviceOwner, configHash, agentIds, agentParams, threshold, serviceId);
+ 1926 |     |     }
+ 1927 |     | 
+ 1928 |     |     /// @dev Activates the service.
+ 1929 |     |     /// @param serviceOwner Individual that creates and controls a service.
+ 1930 |     |     /// @param serviceId Correspondent service Id.
+ 1931 |     |     /// @return success True, if function executed successfully.
+ 1932 | r   |     function activateRegistration(address serviceOwner, uint256 serviceId) external payable returns (bool success)
+ 1933 |     |     {
+ 1934 | r   |         return iServiceRegistryF.activateRegistration{value: msg.value}(serviceOwner, serviceId);
+ 1935 |     |     }
+ 1936 |     | 
+ 1937 |     |     /// @dev Registers agent instances.
+ 1938 |     |     /// @param operator Address of the operator.
+ 1939 |     |     /// @param serviceId Service Id to be updated.
+ 1940 |     |     /// @param agentInstances Agent instance addresses.
+ 1941 |     |     /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
+ 1942 |     |     /// @return success True, if function executed successfully.
+ 1943 | r   |     function registerAgents(
+ 1944 |     |         address operator,
+ 1945 |     |         uint256 serviceId,
+ 1946 |     |         address[] memory agentInstances,
+ 1947 |     |         uint32[] memory agentIds
+ 1948 | r   |     ) external payable returns (bool success)
+ 1949 |     |     {
+ 1950 | r   |         return iServiceRegistryF.registerAgents{value: msg.value}(operator, serviceId, agentInstances, agentIds);
+ 1951 |     |     }
+ 1952 |     | 
+ 1953 |     |     /// @dev Creates multisig instance controlled by the set of service agent instances and deploys the service.
+ 1954 |     |     /// @param serviceOwner Individual that creates and controls a service.
+ 1955 |     |     /// @param serviceId Correspondent service Id.
+ 1956 |     |     /// @param multisigImplementation Multisig implementation address.
+ 1957 |     |     /// @param data Data payload for the multisig creation.
+ 1958 |     |     /// @return multisig Address of the created multisig.
+ 1959 | r   |     function deploy(
+ 1960 |     |         address serviceOwner,
+ 1961 |     |         uint256 serviceId,
+ 1962 |     |         address multisigImplementation,
+ 1963 |     |         bytes memory data
+ 1964 | r   |     ) external returns (address multisig) {
+ 1965 | r   |         return iServiceRegistryF.deploy(serviceOwner, serviceId, multisigImplementation, data);
+ 1966 |     |     }
+ 1967 |     | 
+ 1968 |     |     /// @dev Slashes a specified agent instance.
+ 1969 |     |     /// @param agentInstances Agent instances to slash.
+ 1970 |     |     /// @param amounts Correspondent amounts to slash.
+ 1971 |     |     /// @param serviceId Service Id.
+ 1972 |     |     /// @return success True, if function executed successfully.
+ 1973 | r   |     function slash(address[] memory agentInstances, uint96[] memory amounts, uint256 serviceId) external
+ 1974 | r   |         returns (bool success)
+ 1975 |     |     {
+ 1976 | r   |         return iServiceRegistryF.slash(agentInstances, amounts, serviceId);
+ 1977 |     |     }
+ 1978 |     | 
+ 1979 |     |     /// @dev Terminates the service.
+ 1980 |     |     /// @param serviceOwner Owner of the service.
+ 1981 |     |     /// @param serviceId Service Id to be updated.
+ 1982 |     |     /// @return success True, if function executed successfully.
+ 1983 |     |     /// @return refund Refund to return to the service owner.
+ 1984 | r   |     function terminate(address serviceOwner, uint256 serviceId) external returns (bool success, uint256 refund)
+ 1985 |     |     {
+ 1986 | r   |         return iServiceRegistryF.terminate(serviceOwner, serviceId);
+ 1987 |     |     }
+ 1988 |     | 
+ 1989 |     |     /// @dev Unbonds agent instances of the operator from the service.
+ 1990 |     |     /// @param operator Operator of agent instances.
+ 1991 |     |     /// @param serviceId Service Id.
+ 1992 |     |     /// @return success True, if function executed successfully.
+ 1993 |     |     /// @return refund The amount of refund returned to the operator.
+ 1994 | r   |     function unbond(address operator, uint256 serviceId) external returns (bool success, uint256 refund) {
+ 1995 | r   |         return iServiceRegistryF.unbond(operator, serviceId);
+ 1996 |     |     }
+ 1997 |     | 
+ 1998 |     |     /// @dev Gets the service instance.
+ 1999 |     |     /// @param serviceId Service Id.
+ 2000 |     |     /// @return service Corresponding Service struct.
+ 2001 | *   |     function getService(uint256 serviceId) external view returns (ServiceRegistryF.Service memory service) {
+ 2002 | *   |         return iServiceRegistryF.getService(serviceId);
+ 2003 |     |     }
+ 2004 |     | 
+ 2005 |     |     /// @dev Gets service agent parameters: number of agent instances (slots) and a bond amount.
+ 2006 |     |     /// @param serviceId Service Id.
+ 2007 |     |     /// @return numAgentIds Number of canonical agent Ids in the service.
+ 2008 |     |     /// @return agentParams Set of agent parameters for each canonical agent Id.
+ 2009 |     |     function getAgentParams(uint256 serviceId) external view
+ 2010 |     |         returns (uint256 numAgentIds, AgentParams[] memory agentParams)
+ 2011 |     |     {
+ 2012 |     |         return iServiceRegistryF.getAgentParams(serviceId);
+ 2013 |     |     }
+ 2014 |     | 
+ 2015 |     |     /// @dev Lists all the instances of a given canonical agent Id if the service.
+ 2016 |     |     /// @param serviceId Service Id.
+ 2017 |     |     /// @param agentId Canonical agent Id.
+ 2018 |     |     /// @return numAgentInstances Number of agent instances.
+ 2019 |     |     /// @return agentInstances Set of agent instances for a specified canonical agent Id.
+ 2020 | *   |     function getInstancesForAgentId(uint256 serviceId, uint256 agentId) external view
+ 2021 | *   |         returns (uint256 numAgentInstances, address[] memory agentInstances) {
+ 2022 | *   |         return iServiceRegistryF.getInstancesForAgentId(serviceId, agentId);
+ 2023 |     |     }
+ 2024 |     | 
+ 2025 |     | 
+ 2026 |     |     /// @dev Gets service agent instances.
+ 2027 |     |     /// @param serviceId ServiceId.
+ 2028 |     |     /// @return numAgentInstances Number of agent instances.
+ 2029 |     |     /// @return agentInstances Pre-allocated list of agent instance addresses.
+ 2030 |     |     function getAgentInstances(uint256 serviceId) external view
+ 2031 |     |         returns (uint256 numAgentInstances, address[] memory agentInstances)
+ 2032 |     |     {
+ 2033 |     |         return iServiceRegistryF.getAgentInstances(serviceId);
+ 2034 |     |     }
+ 2035 |     | 
+ 2036 |     |     /// @dev Gets previous service config hashes.
+ 2037 |     |     /// @param serviceId Service Id.
+ 2038 |     |     /// @return numHashes Number of hashes.
+ 2039 |     |     /// @return configHashes The list of previous component hashes (excluding the current one).
+ 2040 | *   |     function getPreviousHashes(uint256 serviceId) external view
+ 2041 | *   |         returns (uint256 numHashes, bytes32[] memory configHashes)
+ 2042 |     |     {
+ 2043 | *   |         return iServiceRegistryF.getPreviousHashes(serviceId);
+ 2044 |     |     }
+ 2045 |     | 
+ 2046 |     |     /// @dev Gets the full set of linearized components / canonical agent Ids for a specified service.
+ 2047 |     |     /// @notice The service must be / have been deployed in order to get the actual data.
+ 2048 |     |     /// @param serviceId Service Id.
+ 2049 |     |     /// @return numUnitIds Number of component / agent Ids.
+ 2050 |     |     /// @return unitIds Set of component / agent Ids.
+ 2051 | *r  |     function getUnitIdsOfService(IRegistry.UnitType unitType, uint256 serviceId) external view
+ 2052 | *   |         returns (uint256 numUnitIds, uint32[] memory unitIds)
+ 2053 |     |     {
+ 2054 | *   |         return iServiceRegistryF.getUnitIdsOfService(unitType, serviceId);
+ 2055 |     |     }
+ 2056 |     | 
+ 2057 |     |     /// @dev Gets the operator's balance in a specific service.
+ 2058 |     |     /// @param operator Operator address.
+ 2059 |     |     /// @param serviceId Service Id.
+ 2060 |     |     /// @return balance The balance of the operator.
+ 2061 | *   |     function getOperatorBalance(address operator, uint256 serviceId) external view returns (uint256 balance)
+ 2062 |     |     {
+ 2063 | *   |         return iServiceRegistryF.getOperatorBalance(operator, serviceId);
+ 2064 |     |     }
+ 2065 |     | 
+ 2066 |     |     /// @dev Controls multisig implementation address permission.
+ 2067 |     |     /// @param multisig Address of a multisig implementation.
+ 2068 |     |     /// @param permission Grant or revoke permission.
+ 2069 |     |     /// @return success True, if function executed successfully.
+ 2070 | *r  |     function changeMultisigPermission(address multisig, bool permission) external returns (bool success) {
+ 2071 | *r  |         return iServiceRegistryF.changeMultisigPermission(multisig, permission);
+ 2072 |     |     }
+ 2073 |     | 
+ 2074 |     |     /// @dev Drains slashed funds.
+ 2075 |     |     /// @return amount Drained amount.
+ 2076 | *r  |     function drain() external returns (uint256 amount) {
+ 2077 | *r  |         return iServiceRegistryF.drain();
+ 2078 |     |     }
+ 2079 |     | }
+ 2080 |     | 
+ 2081 |     | 
+ 2082 |     | 
+
