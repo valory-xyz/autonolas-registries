@@ -3,7 +3,6 @@ pragma solidity ^0.8.15;
 
 import "./GenericRegistry.sol";
 import "./interfaces/IMultisig.sol";
-import "./interfaces/IRegistry.sol";
 
 // This struct is 128 bits in total
 struct AgentParams {
@@ -29,7 +28,7 @@ contract ServiceRegistryL2 is GenericRegistry {
     event DrainerUpdated(address indexed drainer);
     event Deposit(address indexed sender, uint256 amount);
     event Refund(address indexed receiver, uint256 amount);
-    event CreateService(uint256 indexed serviceId);
+    event CreateService(uint256 indexed serviceId, bytes32 configHash);
     event UpdateService(uint256 indexed serviceId, bytes32 configHash);
     event RegisterInstance(address indexed operator, uint256 indexed serviceId, address indexed agentInstance, uint256 agentId);
     event CreateMultisigWithAgents(uint256 indexed serviceId, address indexed multisig);
@@ -262,7 +261,7 @@ contract ServiceRegistryL2 is GenericRegistry {
         // Mint the service instance to the service owner and record the service structure
         _safeMint(serviceOwner, serviceId);
 
-        emit CreateService(serviceId);
+        emit CreateService(serviceId, configHash);
 
         _locked = 1;
     }

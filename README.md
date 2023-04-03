@@ -143,7 +143,7 @@ The audit is provided as development matures. The latest audit report can be fou
 A list of known vulnerabilities can be found here: [Vulnerabilities list #1](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/Vulnerabilities_list%231.pdf)
 
 ## Deployed Protocol
-The list of addresses can be found [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/mainnet_addresses.json).
+The list of addresses can be found [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/mainnet_addresses).
 
 ### Mainnet snapshot of registries
 In order to get the current snapshot of all the registries, the following script is provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/scripts/mainnet_snapshot.js).
