@@ -29,7 +29,7 @@ async function main() {
     console.log("EOA is:", deployer);
 
     // Transaction signing and execution
-    console.log("1. EOA to deploy ServiceRegistry");
+    console.log("1. EOA to deploy ServiceRegistryL2");
     const ServiceRegistry = await ethers.getContractFactory("ServiceRegistryL2");
     console.log("You are signing the following transaction: ServiceRegistryL2.connect(EOA).deploy()");
     const serviceRegistry = await ServiceRegistry.connect(EOA).deploy(serviceRegistryName, serviceRegistrySymbol, baseURI);

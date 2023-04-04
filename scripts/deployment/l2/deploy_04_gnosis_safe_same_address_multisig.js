@@ -26,14 +26,14 @@ async function main() {
     console.log("EOA is:", deployer);
 
     // Transaction signing and execution
-    console.log("4. EOA to deploy GnosisSafeMultisig");
+    console.log("4. EOA to deploy GnosisSafeSameAddressMultisig");
     const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
     console.log("You are signing the following transaction: GnosisSafeSameAddressMultisig.connect(EOA).deploy()");
     const gnosisSafeMultisig = await GnosisSafeMultisig.connect(EOA).deploy();
     const result = await gnosisSafeMultisig.deployed();
 
     // Transaction details
-    console.log("Contract deployment: GnosisSafeMultisig");
+    console.log("Contract deployment: GnosisSafeSameAddressMultisig");
     console.log("Contract address:", gnosisSafeMultisig.address);
     console.log("Transaction:", result.deployTransaction.hash);
 
