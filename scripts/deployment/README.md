@@ -1,5 +1,7 @@
 # Deployment scripts
-This folder contains the scripts to deploy Autonolas registries. These scripts correspond to the steps in the full deployment procedure (as described in [deployment.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deployment.md)).
+This folder contains the scripts to deploy Autonolas registries. These scripts correspond to the steps specified in full deployment procedures
+as described in [deployment.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deployment.md) and
+in [deploymentL2.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deploymentL2.md) specifically for L2 networks.
 
 ## Observations
 - There are several files with global parameters based on the corresponding network. In order to work with the configuration, please copy `gobals_network.json` file to file the `gobals.json` one, where `network` is the corresponding network. For example: `cp gobals_goerli.json gobals.json`.
@@ -51,6 +53,10 @@ If a contract is deployed with arguments, these arguments are taken from the cor
 ## Multisig implementation deployment
 The script to deploy multisig implementation (`verify_06_gnosis_safe_multisig.js`) utilizes information about the multisig read from the file `multisigImplementation.json`.
 Create this file or copy it from the one with pre-defined parameters (i.e., `scripts/deployment/gnosis_safe_multisig.json`).
+
+## L2 deployment
+The L2 Light Protocol deployment procedure is described in [deploymentL2.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deploymentL2.md).
+The deployment scripts are located in the corresponding `scripts/deployment/l2` folder.
 
 
 

@@ -1955,13 +1955,12 @@ contract ServiceRegistryProxy {
     /// @dev Creates multisig instance controlled by the set of service agent instances and deploys the service.
     /// @param serviceOwner Individual that creates and controls a service.
     /// @param serviceId Correspondent service Id.
-    /// @param multisigImplementation Multisig implementation address.
     /// @param data Data payload for the multisig creation.
     /// @return multisig Address of the created multisig.
     function deploy(
         address serviceOwner,
         uint256 serviceId,
-        address multisigImplementation,
+        address,
         bytes memory data
     ) external returns (address multisig) {
         return iServiceRegistryF.deploy(serviceOwner, serviceId, 0x48BaCB9266a570d521063EF5dD96e61686DbE788, data);
