@@ -133,7 +133,7 @@ describe("GnosisSafeMultisig", function () {
             expect(await multisig.getThreshold()).to.equal(threshold);
         });
 
-        it("Setting a guard address", async function () {
+        it("Setting a guard contract address that guards transactions for not being able to transfer ETH funds", async function () {
             // Set up a guard contract with the last Safe owner being the guard owner
             const SafeGuard = await ethers.getContractFactory("SafeGuard");
             const safeGuard = await SafeGuard.deploy(defaultOwnerAddresses[2]);
