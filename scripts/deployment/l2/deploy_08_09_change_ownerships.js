@@ -46,14 +46,14 @@ async function main() {
     const serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerAddress);
 
     // Transaction signing and execution
-    // 8. EOA to transfer ownership rights of ServiceRegistry to Timelock calling `changeOwner(Timelock)`;
+    // 8. EOA to transfer ownership rights of ServiceRegistry to FxGovernorTunnel calling `changeOwner(FxGovernorTunnel)`;
     console.log("8. You are signing the following transaction: serviceRegistry.connect(EOA).changeOwner()");
     let result = await serviceRegistry.connect(EOA).changeOwner(fxGovernorTunnelAddress);
     // Transaction details
     console.log("Contract address:", serviceRegistryAddress);
     console.log("Transaction:", result.hash);
 
-    // 9. EOA to transfer ownership rights of ServiceManager to Timelock calling `changeOwner(Timelock)`.
+    // 9. EOA to transfer ownership rights of ServiceManager to FxGovernorTunnel calling `changeOwner(FxGovernorTunnel)`.
     console.log("9.You are signing the following transaction: serviceManager.connect(EOA).changeOwner()");
     result = await serviceManager.connect(EOA).changeOwner(fxGovernorTunnelAddress);
     // Transaction details
