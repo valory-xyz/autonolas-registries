@@ -1,6 +1,6 @@
 # L2 Deployment scripts
-This folder contains the scripts to deploy Autonolas registries for L2 networks and follow the same deployment workflow
-as the L1 one: [deployment](https://github.com/valory-xyz/autonolas-registries/blob/main/scripts/deployment).
+This folder contains the scripts to deploy Autonolas registries for L2 networks and follow the L2 deployment
+workflow: [deploymentL2.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deploymentL2.md).
 
 ## Observations
 - There are several files with global parameters based on the corresponding network. In order to work with the configuration,
@@ -29,7 +29,7 @@ Parameters of the `globals.json` file:
 - `useLedger`: a flag whether to use the hardware wallet (`true`) or proceed with the seed-phrase accounts (`false`);
 - `derivationPath`: a string with the derivation path;
 - `providerName`: a network type (see `hardhat.config.js` for the network configurations);
-- `fxGovernorTunnelAddress`: FxGovernorTunnelAddress contract address deployed during the `autonolas-governance` bridge-related deployment.
+- `fxGovernorTunnelAddress`: FxGovernorTunnelAddress contract address deployed for the L1-L2 bridge-related deployment.
 
 The Gnosis Safe contracts addresses are provided in order to deploy a Gnosis Safe multisig implementation contract. The deployment
 accounts for the address of the Gnosis Safe master copy [v1.3.0](https://github.com/safe-global/safe-deployments/blob/main/src/assets/v1.3.0/gnosis_safe.json).
