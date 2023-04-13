@@ -13,10 +13,23 @@ async function main() {
     const providerName = parsedData.providerName;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceManagerAddress = parsedData.serviceManagerAddress;
-    const timelockAddress = parsedData.timelockAddress;
+    const fxGovernorTunnelAddress = parsedData.fxGovernorTunnelAddress;
     let EOA;
 
-    const provider = await ethers.providers.getDefaultProvider(providerName);
+    let networkURL;
+    if (providerName === "polygon") {
+        if (!process.env.ALCHEMY_API_KEY_MATIC) {
+            console.log("set ALCHEMY_API_KEY_MATIC env variable");
+        }
+        networkURL = "https://polygon-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MATIC;
+    } else {
+        if (!process.env.ALCHEMY_API_KEY_MUMBAI) {
+            console.log("set ALCHEMY_API_KEY_MUMBAI env variable");
+            return;
+        }
+        networkURL = "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MUMBAI;
+    }
+    const provider = new ethers.providers.JsonRpcProvider(networkURL);
     const signers = await ethers.getSigners();
 
     if (useLedger) {
@@ -35,14 +48,14 @@ async function main() {
     // Transaction signing and execution
     // 8. EOA to transfer ownership rights of ServiceRegistry to Timelock calling `changeOwner(Timelock)`;
     console.log("8. You are signing the following transaction: serviceRegistry.connect(EOA).changeOwner()");
-    let result = await serviceRegistry.connect(EOA).changeOwner(timelockAddress);
+    let result = await serviceRegistry.connect(EOA).changeOwner(fxGovernorTunnelAddress);
     // Transaction details
     console.log("Contract address:", serviceRegistryAddress);
     console.log("Transaction:", result.hash);
 
     // 9. EOA to transfer ownership rights of ServiceManager to Timelock calling `changeOwner(Timelock)`.
     console.log("9.You are signing the following transaction: serviceManager.connect(EOA).changeOwner()");
-    result = await serviceManager.connect(EOA).changeOwner(timelockAddress);
+    result = await serviceManager.connect(EOA).changeOwner(fxGovernorTunnelAddress);
     // Transaction details
     console.log("Contract address:", serviceManagerAddress);
     console.log("Transaction:", result.hash);
