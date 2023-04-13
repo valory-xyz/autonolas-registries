@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 import "./SafeGuard.sol";
 
+// Safe Guard interface
 interface ISafeGuard {
     /// @dev Initializes the Safe Guard instance by setting its owner.
     /// @param _owner Safe Guard owner address.
