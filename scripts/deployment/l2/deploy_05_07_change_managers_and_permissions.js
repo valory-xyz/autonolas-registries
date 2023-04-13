@@ -17,7 +17,20 @@ async function main() {
     const gnosisSafeSameAddressMultisigImplementationAddress = parsedData.gnosisSafeSameAddressMultisigImplementationAddress;
     let EOA;
 
-    const provider = await ethers.providers.getDefaultProvider(providerName);
+    let networkURL;
+    if (providerName === "polygon") {
+        if (!process.env.ALCHEMY_API_KEY_MATIC) {
+            console.log("set ALCHEMY_API_KEY_MATIC env variable");
+        }
+        networkURL = "https://polygon-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MATIC;
+    } else {
+        if (!process.env.ALCHEMY_API_KEY_MUMBAI) {
+            console.log("set ALCHEMY_API_KEY_MUMBAI env variable");
+            return;
+        }
+        networkURL = "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MUMBAI;
+    }
+    const provider = new ethers.providers.JsonRpcProvider(networkURL);
     const signers = await ethers.getSigners();
 
     if (useLedger) {

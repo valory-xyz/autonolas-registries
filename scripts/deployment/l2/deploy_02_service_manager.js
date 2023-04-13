@@ -14,7 +14,20 @@ async function main() {
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     let EOA;
 
-    const provider = await ethers.providers.getDefaultProvider(providerName);
+    let networkURL;
+    if (providerName === "polygon") {
+        if (!process.env.ALCHEMY_API_KEY_MATIC) {
+            console.log("set ALCHEMY_API_KEY_MATIC env variable");
+        }
+        networkURL = "https://polygon-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MATIC;
+    } else {
+        if (!process.env.ALCHEMY_API_KEY_MUMBAI) {
+            console.log("set ALCHEMY_API_KEY_MUMBAI env variable");
+            return;
+        }
+        networkURL = "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MUMBAI;
+    }
+    const provider = new ethers.providers.JsonRpcProvider(networkURL);
     const signers = await ethers.getSigners();
 
     if (useLedger) {
@@ -37,6 +50,8 @@ async function main() {
     console.log("Contract deployment: ServiceManager");
     console.log("Contract address:", serviceManager.address);
     console.log("Transaction:", result.deployTransaction.hash);
+    // Wait half a minute for the transaction completion
+    await new Promise(r => setTimeout(r, 30000));
 
     // Writing updated parameters back to the JSON file
     parsedData.serviceManagerAddress = serviceManager.address;
@@ -45,7 +60,7 @@ async function main() {
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/verify_02_service_manager.js --network " + providerName + " " + serviceManager.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --contract contracts/ServiceManager.sol:ServiceManager --constructor-args scripts/deployment/l2/verify_02_service_manager.js --network " + providerName + " " + serviceManager.address, { encoding: "utf-8" });
     }
 }
 

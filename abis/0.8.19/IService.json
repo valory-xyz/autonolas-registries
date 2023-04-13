@@ -1,0 +1,268 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IService",
+  "sourceName": "contracts/interfaces/IService.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "serviceOwner",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "serviceId",
+          "type": "uint256"
+        }
+      ],
+      "name": "activateRegistration",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "success",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "serviceOwner",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "configHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint32[]",
+          "name": "agentIds",
+          "type": "uint32[]"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint32",
+              "name": "slots",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint96",
+              "name": "bond",
+              "type": "uint96"
+            }
+          ],
+          "internalType": "struct IService.AgentParams[]",
+          "name": "agentParams",
+          "type": "tuple[]"
+        },
+        {
+          "internalType": "uint32",
+          "name": "threshold",
+          "type": "uint32"
+        }
+      ],
+      "name": "create",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "serviceId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "serviceOwner",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "serviceId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "multisigImplementation",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes",
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "name": "deploy",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "multisig",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "operator",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "serviceId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address[]",
+          "name": "agentInstances",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint32[]",
+          "name": "agentIds",
+          "type": "uint32[]"
+        }
+      ],
+      "name": "registerAgents",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "success",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "serviceOwner",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "serviceId",
+          "type": "uint256"
+        }
+      ],
+      "name": "terminate",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "success",
+          "type": "bool"
+        },
+        {
+          "internalType": "uint256",
+          "name": "refund",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "operator",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "serviceId",
+          "type": "uint256"
+        }
+      ],
+      "name": "unbond",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "success",
+          "type": "bool"
+        },
+        {
+          "internalType": "uint256",
+          "name": "refund",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "serviceOwner",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "configHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint32[]",
+          "name": "agentIds",
+          "type": "uint32[]"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint32",
+              "name": "slots",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint96",
+              "name": "bond",
+              "type": "uint96"
+            }
+          ],
+          "internalType": "struct IService.AgentParams[]",
+          "name": "agentParams",
+          "type": "tuple[]"
+        },
+        {
+          "internalType": "uint32",
+          "name": "threshold",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "serviceId",
+          "type": "uint256"
+        }
+      ],
+      "name": "update",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "success",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
