@@ -133,9 +133,9 @@ describe("GnosisSafeMultisig", function () {
             expect(await multisig.getThreshold()).to.equal(threshold);
         });
 
-        it("Setting a guard contract address that guards transactions for not being able to transfer ETH funds", async function () {
+        it("Setting a safe guard (no additional payload) that guards transactions for not being able to transfer ETH funds", async function () {
             // Set up a guard contract with the last Safe owner being the guard owner
-            const GuardFactory = await ethers.getContractFactory("GuardFactory");
+            const GuardFactory = await ethers.getContractFactory("SafeGuardFactory");
             const guardFactory = await GuardFactory.deploy();
             await guardFactory.deployed();
 
@@ -145,7 +145,7 @@ describe("GnosisSafeMultisig", function () {
             const paymentReceiver = AddressZero;
             const payment = 0;
             let nonce = 0;
-            const payload = guardFactory.interface.encodeFunctionData("createGuardForSafe", [defaultOwnerAddresses[2]]);
+            const payload = guardFactory.interface.encodeFunctionData("createSafeGuard", ["0x"]);
             // Pack the data
             const data = ethers.utils.solidityPack(["address", "address", "address", "address", "uint256", "uint256", "bytes"],
                 [to, fallbackHandler, paymentToken, paymentReceiver, payment, nonce, payload]);
