@@ -36,9 +36,8 @@ error InsufficientNumberOfOwners(uint256 provided, uint256 expected);
 error IncorrectPayloadLength(uint256 expected, uint256 provided);
 
 /// @dev Payload delegatecall transaction failed.
-/// @param target Target address.
-/// @param data Execution data.
-error PayloadExecFailed(address target, bytes data);
+/// @param payload Payload data.
+error PayloadExecFailed(bytes payload);
 
 /// @dev Failed to create a Safe Guard contract for the caller.
 /// @param caller Caller address.
@@ -100,24 +99,19 @@ contract SafeGuardFactory {
         }
 
         // Execute the payload, if provided
+        // The payload must be executed before the safe guard is set, as the payload could potentially break the guard
         if (payloadLength > 0) {
-            // First 20 bytes of the payload is address
             address target;
+            bool success;
             // solhint-disable-next-line no-inline-assembly
             assembly {
+                // First 20 bytes of the payload is address
                 target := mload(add(payload, 20))
+                // Offset 52 bytes from the payload start: initial 32 bytes plus the target address 20 bytes
+                success := delegatecall(gas(), target, add(payload, 52), mload(payload), 0, 0)
             }
-            uint256 dataLength = payloadLength - 20;
-            bytes memory data = new bytes(dataLength);
-            for (uint256 i = 0; i < dataLength; ++i) {
-                data[i] = payload[i + 20];
-            }
-
-            (bool success, ) = target.delegatecall(data);
-            // TODO Try the low-level call instead
-            // success := delegatecall(gasleft(), target, add(payload, 52), mload(payload), 0, 0)
             if (!success) {
-                revert PayloadExecFailed(target, data);
+                revert PayloadExecFailed(payload);
             }
         }
 
