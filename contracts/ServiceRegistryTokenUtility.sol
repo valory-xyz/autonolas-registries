@@ -28,6 +28,31 @@ interface IToken{
     function ownerOf(uint256 tokenId) external view returns (address);
 }
 
+// Service Registry interface
+interface IServiceUtility{
+    /// @dev Gets the service instance from the map of services.
+    /// @param serviceId Service Id.
+    /// @return securityDeposit Registration activation deposit.
+    /// @return multisig Service multisig address.
+    /// @return configHash IPFS hashes pointing to the config metadata.
+    /// @return threshold Agent instance signers threshold.
+    /// @return maxNumAgentInstances Total number of agent instances.
+    /// @return numAgentInstances Actual number of agent instances.
+    /// @return state Service state.
+    function mapServices(uint256 serviceId) external returns (
+        uint96 securityDeposit,
+        address multisig,
+        bytes32 configHash,
+        uint32 threshold,
+        uint32 maxNumAgentInstances,
+        uint32 numAgentInstances,
+        uint8 state
+    );
+
+    /// @dev Gets the operator address from the map of agent instance address => operator address
+    function mapAgentInstanceOperators(address agentInstance) external returns (address operator);
+}
+
 /// @title Service Registry Token Utility - Smart contract for registering services that bond with ERC20 tokens
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author AL
@@ -36,6 +61,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     event ManagerUpdated(address indexed manager);
     event TokenDeposit(address indexed account, address indexed token, uint256 amount);
     event TokenRefund(address indexed account, address indexed token, uint256 amount);
+    event OperatorTokenSlashed(uint256 amount, address indexed operator, uint256 indexed serviceId);
 
     // Struct for a token address and a security deposit
     struct TokenSecurityDeposit {
@@ -58,6 +84,8 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     mapping(uint256 => uint256) public mapServiceAndAgentIdAgentBond;
     // Map of operator address and serviceId => agent instance bonding / escrow balance
     mapping(uint256 => uint256) public mapOperatorAndServiceIdOperatorBalances;
+    // Map of token => slashed funds
+    mapping(address => uint256) mapSlashedFunds;
 
     constructor(address _serviceRegistry) {
         serviceRegistry = _serviceRegistry;
@@ -283,9 +311,8 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             revert ManagerOnly(msg.sender, manager);
         }
 
-        // Token address and bond
-        TokenSecurityDeposit memory tokenDeposit = mapServiceIdTokenDeposit[serviceId];
-        address token = tokenDeposit.token;
+        // Token address
+        address token = mapServiceIdTokenDeposit[serviceId].token;
         if (token != address(0)) {
             // Check for the operator and unbond all its agent instances
             // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
@@ -312,8 +339,68 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             }
         }
     }
-    
-    // slash - check that the agent Id that is slashed exists?
+
+    /// @dev Slashes a specified agent instance.
+    /// @param agentInstances Agent instances to slash.
+    /// @param amounts Correspondent amounts to slash.
+    /// @param serviceId Service Id.
+    /// @return success True, if function executed successfully.
+    function slash(address[] memory agentInstances, uint96[] memory amounts, uint256 serviceId) external
+        returns (bool success)
+    {
+        // Check if the service is deployed
+        (, address multisig, , , , , uint8 state) = IServiceUtility(serviceRegistry).mapServices(serviceId);
+        // ServiceState.Deployed == 4 in the original ServiceRegistry contract
+        if (state != 4) {
+            revert WrongServiceState(uint256(state), serviceId);
+        }
+
+        // Check for the array size
+        if (agentInstances.length != amounts.length) {
+            revert WrongArrayLength(agentInstances.length, amounts.length);
+        }
+
+        // Only the multisig of a correspondent address can slash its agent instances
+        if (msg.sender != multisig) {
+            revert OnlyOwnServiceMultisig(msg.sender, multisig, serviceId);
+        }
+
+        // Token address
+        address token = mapServiceIdTokenDeposit[serviceId].token;
+        // TODO Verify if that scenario is possible at all, since if correctly updated, token must never be equal to zero, or be called from this contract
+        if (token != address(0)) {
+            revert();
+        }
+
+        // Loop over each agent instance
+        uint256 numInstancesToSlash = agentInstances.length;
+        uint256 slashedFunds;
+        for (uint256 i = 0; i < numInstancesToSlash; ++i) {
+            // Get the service Id from the agentInstance map
+            address operator = IServiceUtility(serviceRegistry).mapAgentInstanceOperators(agentInstances[i]);
+            // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
+            // operator occupies first 160 bits
+            uint256 operatorService = uint256(uint160(operator));
+            // serviceId occupies next 32 bits
+            operatorService |= serviceId << 160;
+            // Slash the balance of the operator, make sure it does not go below zero
+            uint256 balance = mapOperatorAndServiceIdOperatorBalances[operatorService];
+            if (amounts[i] >= balance) {
+                // We cannot add to the slashed amount more than the balance of the operator
+                slashedFunds += balance;
+                balance = 0;
+            } else {
+                slashedFunds += amounts[i];
+                balance -= amounts[i];
+            }
+            mapOperatorAndServiceIdOperatorBalances[operatorService] = balance;
+
+            emit OperatorTokenSlashed(amounts[i], operator, serviceId);
+        }
+        slashedFunds += mapSlashedFunds[token];
+        mapSlashedFunds[token] = slashedFunds;
+        success = true;
+    }
 
     /// @dev Gets service token secured status.
     /// @param serviceId Service Id.

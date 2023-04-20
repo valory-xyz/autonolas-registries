@@ -231,7 +231,7 @@ describe.only("ServiceManagerToken", function () {
     });
 
     context("Service manipulations via manager", async function () {
-        it("Creating a service with a custom token", async function () {
+        it.only("Creating a service with a custom token", async function () {
             const manager = signers[4];
             const owner = signers[5];
             const operator = signers[6];
