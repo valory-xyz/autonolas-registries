@@ -4,6 +4,7 @@ pragma solidity ^0.8.15;
 import "./interfaces/IErrorsRegistries.sol";
 import "./interfaces/IService.sol";
 
+// Generic token interface
 interface IToken{
     /// @dev Token allowance.
     /// @param account Account address that approves tokens.
@@ -15,6 +16,11 @@ interface IToken{
     /// @param to Address to transfer tokens to.
     /// @param amount Token amount.
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
+
+    /// @dev Token transfer.
+    /// @param to Address to transfer tokens to.
+    /// @param amount Token amount.
+    function transfer(address to, uint256 amount) external returns (bool);
 
     /// @dev Gets the owner of the token Id.
     /// @param tokenId Token Id.
@@ -28,15 +34,16 @@ interface IToken{
 contract ServiceRegistryTokenUtility is IErrorsRegistries {
     event OwnerUpdated(address indexed owner);
     event ManagerUpdated(address indexed manager);
-    event ServiceTokenDeposited(address indexed account, address indexed token, uint256 amount);
+    event TokenDeposit(address indexed account, address indexed token, uint256 amount);
+    event TokenRefund(address indexed account, address indexed token, uint256 amount);
 
-    // Struct for a token address and a deposit
-    struct TokenDeposit {
+    // Struct for a token address and a security deposit
+    struct TokenSecurityDeposit {
         // Token address
         address token;
         // Bond per agent instance, enough for 79b+ or 7e28+
-        // We assume that deposit value will be bound by that value
-        uint96 deposit;
+        // We assume that the security deposit value will be bound by that value
+        uint96 securityDeposit;
     }
 
     // Service Registry contract address
@@ -46,9 +53,11 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     // Service Manager contract address;
     address public manager;
     // Map of service Id => address of a token
-    mapping(uint256 => TokenDeposit) public mapServiceIdTokenDeposit;
+    mapping(uint256 => TokenSecurityDeposit) public mapServiceIdTokenDeposit;
     // Service Id and canonical agent Id => instance registration bond
     mapping(uint256 => uint256) public mapServiceAndAgentIdAgentBond;
+    // Map of operator address and serviceId => agent instance bonding / escrow balance
+    mapping(uint256 => uint256) public mapOperatorAndServiceIdOperatorBalances;
 
     constructor(address _serviceRegistry) {
         serviceRegistry = _serviceRegistry;
@@ -105,7 +114,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         }
         // TODO Check for the token ERC20 formality
         
-        uint256 deposit;
+        uint256 securityDeposit;
         // Service is newly created and all the array lengths are checked by the original ServiceRegistry create() function
         for (uint256 i = 0; i < agentIds.length; ++i) {
             // Check for a non-zero bond value
@@ -128,19 +137,20 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             serviceAgent |= uint256(agentIds[i]) << 32;
             mapServiceAndAgentIdAgentBond[serviceAgent] = bonds[i];
             
-            // Calculating a deposit
-            if (bonds[i] > deposit){
-                deposit = bonds[i];
+            // Calculating a security deposit
+            if (bonds[i] > securityDeposit){
+                securityDeposit = bonds[i];
             }
         }
 
         // Associate service Id with the provided token address
-        mapServiceIdTokenDeposit[serviceId] = TokenDeposit(token, uint96(deposit));
+        mapServiceIdTokenDeposit[serviceId] = TokenSecurityDeposit(token, uint96(securityDeposit));
     }
 
-    /// @dev Deposit a token bond for service registration after its activation.
-    /// @param serviceId Correspondent service Id.
-    function activationTokenDeposit(uint256 serviceId) external returns (uint256 depositValue)
+    /// @dev Deposit a token security deposit for the service registration after its activation.
+    /// @param serviceId Service Id.
+    /// @return isTokenSecured True if the service Id is token secured, false if ETH secured otherwise.
+    function activateRegistrationTokenDeposit(uint256 serviceId) external returns (bool isTokenSecured)
     {
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
@@ -148,25 +158,167 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         }
 
         // Token address and bond
-        TokenDeposit memory tokenDeposit = mapServiceIdTokenDeposit[serviceId];
+        TokenSecurityDeposit memory tokenDeposit = mapServiceIdTokenDeposit[serviceId];
         address token = tokenDeposit.token;
         if (token != address(0)) {
-            depositValue = tokenDeposit.deposit;
+            uint256 securityDeposit = tokenDeposit.securityDeposit;
             // Check for the allowance against this contract
             address serviceOwner = IToken(serviceRegistry).ownerOf(serviceId);
+
+            // Get the service owner allowance to this contract in specified tokens
             uint256 allowance = IToken(token).allowance(serviceOwner, address(this));
-            if (allowance < depositValue) {
-                revert IncorrectRegistrationDepositValue(allowance, depositValue, serviceId);
+            if (allowance < securityDeposit) {
+                revert IncorrectRegistrationDepositValue(allowance, securityDeposit, serviceId);
             }
 
-            // Transfer tokens from the msg.sender account
+            // Transfer tokens from the serviceOwner account
             // TODO Re-entrancy
             // TODO Safe transferFrom
-            bool success = IToken(token).transferFrom(serviceOwner, address(this), depositValue);
+            bool success = IToken(token).transferFrom(serviceOwner, address(this), securityDeposit);
             if (!success) {
-                revert TransferFailed(token, serviceOwner, address(this), depositValue);
+                revert TransferFailed(token, serviceOwner, address(this), securityDeposit);
             }
-            emit ServiceTokenDeposited(serviceOwner, token, depositValue);
+            isTokenSecured = true;
+            emit TokenDeposit(serviceOwner, token, securityDeposit);
         }
+    }
+
+    /// @dev Deposits bonded tokens from the operator during the agent instance registration.
+    /// @param operator Operator address.
+    /// @param serviceId Service Id.
+    /// @param agentIds Set of agent Ids for corresponding agent instances opertor is registering.
+    /// @return isTokenSecured True if the service Id is token secured, false if ETH secured otherwise.
+    function registerAgentsTokenDeposit(
+        address operator,
+        uint256 serviceId,
+        uint32[] memory agentIds
+    ) external returns (bool isTokenSecured)
+    {
+        // Check for the manager privilege for a service management
+        if (manager != msg.sender) {
+            revert ManagerOnly(msg.sender, manager);
+        }
+
+        // Token address
+        address token = mapServiceIdTokenDeposit[serviceId].token;
+        if (token != address(0)) {
+            // Check for the sufficient amount of bond fee is provided
+            uint256 numAgents = agentIds.length;
+            uint256 totalBond = 0;
+            for (uint256 i = 0; i < numAgents; ++i) {
+                // Check if canonical agent Id exists in the service
+                // Push a pair of key defining variables into one key. Service or agent Ids are not enough by themselves
+                // serviceId occupies first 32 bits, agentId gets the next 32 bits
+                uint256 serviceAgent = serviceId;
+                serviceAgent |= uint256(agentIds[i]) << 32;
+                uint256 bond = mapServiceAndAgentIdAgentBond[serviceAgent];
+                if (bond == 0) {
+                    revert ZeroValue();
+                }
+                totalBond += bond;
+            }
+
+            // Get the operator allowance to this contract in specified tokens
+            uint256 allowance = IToken(token).allowance(operator, address(this));
+            if (allowance < totalBond) {
+                revert IncorrectRegistrationDepositValue(allowance, totalBond, serviceId);
+            }
+
+            // Record the total bond of the operator
+            // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
+            // operator occupies first 160 bits
+            uint256 operatorService = uint256(uint160(operator));
+            // serviceId occupies next 32 bits
+            operatorService |= serviceId << 160;
+            totalBond += mapOperatorAndServiceIdOperatorBalances[operatorService];
+            mapOperatorAndServiceIdOperatorBalances[operatorService] = totalBond;
+
+            // Transfer tokens from the operator account
+            // TODO Re-entrancy
+            // TODO Safe transferFrom
+            bool success = IToken(token).transferFrom(operator, address(this), totalBond);
+            if (!success) {
+                revert TransferFailed(token, operator, address(this), totalBond);
+            }
+            isTokenSecured = true;
+            emit TokenDeposit(operator, token, totalBond);
+        }
+    }
+
+    /// @dev Refunds a token security deposit to the service owner after the service termination.
+    /// @param serviceId Service Id.
+    /// @return securityDeposit Returned token security deposit, or zero if the service is ETH-secured.
+    function terminationTokenWithdraw(uint256 serviceId) external returns (uint256 securityDeposit) {
+        // Check for the manager privilege for a service management
+        if (manager != msg.sender) {
+            revert ManagerOnly(msg.sender, manager);
+        }
+
+        // Token address and bond
+        TokenSecurityDeposit memory tokenDeposit = mapServiceIdTokenDeposit[serviceId];
+        address token = tokenDeposit.token;
+        if (token != address(0)) {
+            securityDeposit = tokenDeposit.securityDeposit;
+            // Check for the allowance against this contract
+            address serviceOwner = IToken(serviceRegistry).ownerOf(serviceId);
+
+            // Transfer tokens to the serviceOwner account
+            // TODO Re-entrancy
+            // TODO Safe transfer
+            bool success = IToken(token).transfer(serviceOwner, securityDeposit);
+            if (!success) {
+                revert TransferFailed(token, address(this), serviceOwner, securityDeposit);
+            }
+            emit TokenRefund(serviceOwner, token, securityDeposit);
+        }
+    }
+
+    /// @dev Refunds bonded tokens to the operator during the unbond phase.
+    /// @param operator Operator address.
+    /// @param serviceId Service Id.
+    /// @return refund Returned bonded token amount, or zero if the service is ETH-secured.
+    function unbondTokenRefund(address operator, uint256 serviceId) external returns (uint256 refund) {
+        // Check for the manager privilege for a service management
+        if (manager != msg.sender) {
+            revert ManagerOnly(msg.sender, manager);
+        }
+
+        // Token address and bond
+        TokenSecurityDeposit memory tokenDeposit = mapServiceIdTokenDeposit[serviceId];
+        address token = tokenDeposit.token;
+        if (token != address(0)) {
+            // Check for the operator and unbond all its agent instances
+            // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
+            // operator occupies first 160 bits
+            uint256 operatorService = uint256(uint160(operator));
+            // serviceId occupies next 32 bits
+            operatorService |= serviceId << 160;
+            // Get the total bond for agent Ids bonded by the operator corresponding to registered agent instances
+            refund = mapOperatorAndServiceIdOperatorBalances[operatorService];
+
+            // The zero refund scenario is possible if the operator was slashed for the agent instance misbehavior
+            if (refund > 0) {
+                // Operator's balance is essentially zero after the refund
+                mapOperatorAndServiceIdOperatorBalances[operatorService] = 0;
+                // Transfer tokens to the operator account
+                // TODO Re-entrancy
+                // TODO Safe transfer
+                // Refund the operator
+                bool success = IToken(token).transfer(operator, refund);
+                if (!success) {
+                    revert TransferFailed(token, address(this), operator, refund);
+                }
+                emit TokenRefund(operator, token, refund);
+            }
+        }
+    }
+    
+    // slash - check that the agent Id that is slashed exists?
+
+    /// @dev Gets service token secured status.
+    /// @param serviceId Service Id.
+    /// @return True if the service Id is token secured.
+    function isTokenSecuredService(uint256 serviceId) external view returns (bool) {
+        return mapServiceIdTokenDeposit[serviceId].token != address(0);
     }
 }

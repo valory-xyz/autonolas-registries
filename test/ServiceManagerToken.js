@@ -3,7 +3,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe.only("ServiceManagerWithToken", function () {
+describe.only("ServiceManagerToken", function () {
     let componentRegistry;
     let agentRegistry;
     let gnosisSafe;
@@ -13,6 +13,7 @@ describe.only("ServiceManagerWithToken", function () {
     let serviceManager;
     let gnosisSafeMultisig;
     let token;
+    let operatorWhitelist;
     let signers;
     let deployer;
     const configHash = "0x" + "5".repeat(64);
@@ -64,13 +65,17 @@ describe.only("ServiceManagerWithToken", function () {
         gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
         await gnosisSafeMultisig.deployed();
 
-        const ServiceManager = await ethers.getContractFactory("ServiceManagerWithToken");
+        const ServiceManager = await ethers.getContractFactory("ServiceManagerToken");
         serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
         await serviceManager.deployed();
 
         const Token = await ethers.getContractFactory("ERC20Token");
         token = await Token.deploy();
         await token.deployed();
+
+        const OperatorWhitelist = await ethers.getContractFactory("OperatorWhitelist");
+        operatorWhitelist = await OperatorWhitelist.deploy();
+        await operatorWhitelist.deployed();
 
         signers = await ethers.getSigners();
         deployer = signers[0];
@@ -230,7 +235,7 @@ describe.only("ServiceManagerWithToken", function () {
             const manager = signers[4];
             const owner = signers[5];
             const operator = signers[6];
-            const agentInstances = [signers[7].address, signers[8].address, signers[9].address, signers[10].address];
+            const agentInstances = [signers[7].address, signers[8].address];
             await agentRegistry.changeManager(manager.address);
 
             // Creating 3 canonical agents
@@ -240,16 +245,63 @@ describe.only("ServiceManagerWithToken", function () {
             await serviceRegistry.changeManager(serviceManager.address);
             await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
+            const newAgentParams = [[1, regBond], [1, regBond]];
+            const newMaxThreshold = newAgentParams[0][0] + newAgentParams[1][0];
+
             // Creating one service with the ERC20 token bond
-            await serviceManager.createWithToken(deployer.address, token.address, configHash, agentIds, agentParams,
-                maxThreshold);
+            await serviceManager.createWithToken(deployer.address, token.address, configHash, agentIds, newAgentParams,
+                newMaxThreshold);
             // Approve token for the serviceRegistryTokenUtility contract
             await token.connect(deployer).approve(serviceRegistryTokenUtility.address, regBond);
 
             // Activate the registration
             await serviceManager.connect(deployer).activateRegistration(serviceIds[0], {value: 1});
-            const service = await serviceRegistry.getService(serviceIds[0]);
+            let service = await serviceRegistry.getService(serviceIds[0]);
             expect(service.state).to.equal(2);
+
+            // Set the operator whitelist checker contract
+            await serviceManager.setOperatorWhitelist(operatorWhitelist.address);
+            // Whitelist a random operator address
+            await operatorWhitelist.setOperatorsStatuses([signers[15].address], [true]);
+            // Try to register agents with the non-whitelited operator address
+            await expect(
+                serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[1]],
+                    agentIds, {value: 2*regBond})
+            ).to.be.revertedWith("WrongOperator");
+
+            // Whitelist a correct operator address
+            await operatorWhitelist.setOperatorsStatuses([operator.address], [true]);
+            // Try to register agents without the approve from the operator
+            await expect(
+                serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[1]],
+                    agentIds, {value: 2*regBond})
+            ).to.be.revertedWith("IncorrectRegistrationDepositValue");
+
+            // Approve token for the serviceRegistryTokenUtility contract by the operator
+            await token.mint(operator.address, 2 * regBond);
+            await token.connect(operator).approve(serviceRegistryTokenUtility.address, 2 * regBond);
+            // Registering agents for the service Id
+            await serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[1]],
+                agentIds, {value: 2*regBond});
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(3);
+
+            // Whitelist gnosis multisig implementation
+            await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+            // Deploying the service
+            await serviceManager.connect(deployer).deploy(serviceIds[0], gnosisSafeMultisig.address, payload);
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(4);
+
+            // Terminate the service
+            await serviceManager.connect(deployer).terminate(serviceIds[0]);
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(5);
+
+            // Unbond agent instances
+            await serviceManager.connect(operator).unbond(serviceIds[0]);
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(1);
         });
 
         it("Creating services, updating one of them, activating, registering agent instances", async function () {
