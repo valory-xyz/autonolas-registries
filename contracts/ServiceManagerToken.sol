@@ -8,18 +8,10 @@ import "./interfaces/IServiceTokenUtility.sol";
 // Operator whitelist interface
 interface IOperatorWhitelist {
     /// @dev Gets operator whitelisting status.
-    /// @param serviceOwner Service owner address.
+    /// @param serviceId Service Id.
     /// @param operator Operator address.
     /// @return status Whitelisting status.
-    function isOperatorWhitelisted(address serviceOwner, address operator) external view returns (bool status);
-}
-
-// Generic token interface
-interface IToken{
-    /// @dev Gets the owner of the token Id.
-    /// @param tokenId Token Id.
-    /// @return Token Id owner address.
-    function ownerOf(uint256 tokenId) external view returns (address);
+    function isOperatorWhitelisted(uint256 serviceId, address operator) external view returns (bool status);
 }
 
 /// @title Service Manager - Periphery smart contract for managing services with custom ERC20 tokens or ETH
@@ -33,6 +25,8 @@ contract ServiceManagerToken is GenericManager {
     address public immutable serviceRegistry;
     // Service Registry Token Utility address
     address public immutable serviceRegistryTokenUtility;
+    // A well-known representation of ETH as an address
+    address public constant ETH_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     // Bond wrapping constant
     uint96 public constant BOND_WRAPPER = 1;
     // Operator whitelist address
@@ -61,34 +55,12 @@ contract ServiceManagerToken is GenericManager {
 
     /// @dev Creates a new service.
     /// @param serviceOwner Individual that creates and controls a service.
+    /// @param token ERC20 token address for the security deposit, or ETH.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids.
     /// @param agentParams Number of agent instances and required bond to register an instance in the service.
     /// @param threshold Threshold for a multisig composed by agents.
     function create(
-        address serviceOwner,
-        bytes32 configHash,
-        uint32[] memory agentIds,
-        IService.AgentParams[] memory agentParams,
-        uint32 threshold
-    ) external returns (uint256)
-    {
-        // Check if the minting is paused
-        if (paused) {
-            revert Paused();
-        }
-        return IService(serviceRegistry).create(serviceOwner, configHash, agentIds, agentParams,
-            threshold);
-    }
-
-    /// @dev Creates a new service.
-    /// @param serviceOwner Individual that creates and controls a service.
-    /// @param token ERC20 token address.
-    /// @param configHash IPFS hash pointing to the config metadata.
-    /// @param agentIds Canonical agent Ids.
-    /// @param agentParams Number of agent instances and required bond to register an instance in the service.
-    /// @param threshold Threshold for a multisig composed by agents.
-    function createWithToken(
         address serviceOwner,
         address token,
         bytes32 configHash,
@@ -102,25 +74,35 @@ contract ServiceManagerToken is GenericManager {
             revert Paused();
         }
 
-        // Wrap agent params
-        uint256 size = agentParams.length;
-        IService.AgentParams[] memory tokenAgentParams = new IService.AgentParams[](size);
-        for (uint256 i = 0; i < size; ++i) {
-            tokenAgentParams[i].slots = agentParams[i].slots;
-            tokenAgentParams[i].bond = BOND_WRAPPER;
+        // Check for the zero address
+        if (token == address(0)) {
+            revert ZeroAddress();
         }
 
-        uint256 serviceId = IService(serviceRegistry).create(serviceOwner, configHash, agentIds, tokenAgentParams,
-            threshold);
+        uint256 serviceId;
+        if (token == ETH_TOKEN_ADDRESS) {
+            serviceId = IService(serviceRegistry).create(serviceOwner, configHash, agentIds, agentParams, threshold);
+        } else {
+            // Wrap agent params
+            uint256 size = agentParams.length;
+            IService.AgentParams[] memory tokenAgentParams = new IService.AgentParams[](size);
+            for (uint256 i = 0; i < size; ++i) {
+                tokenAgentParams[i].slots = agentParams[i].slots;
+                tokenAgentParams[i].bond = BOND_WRAPPER;
+            }
 
-        // Copy actual bond values for each agent Id
-        uint256[] memory bonds = new uint256[](size);
-        for (uint256 i = 0; i < size; ++i) {
-            bonds[i] = agentParams[i].bond;
+            serviceId = IService(serviceRegistry).create(serviceOwner, configHash, agentIds, tokenAgentParams, threshold);
+
+            // Copy actual bond values for each agent Id
+            uint256[] memory bonds = new uint256[](size);
+            for (uint256 i = 0; i < size; ++i) {
+                bonds[i] = agentParams[i].bond;
+            }
+
+            // Create a token-related record for the service
+            IServiceTokenUtility(serviceRegistryTokenUtility).createWithToken(serviceId, token, agentIds, bonds);
         }
 
-        // Create a token-related record for the service
-        IServiceTokenUtility(serviceRegistryTokenUtility).createWithToken(serviceId, token, agentIds, bonds);
         return serviceId;
     }
 
@@ -171,8 +153,7 @@ contract ServiceManagerToken is GenericManager {
     ) external payable returns (bool success) {
         if (operatorWhitelist != address(0)) {
             // Check if the operator whitelisted
-            address serviceOwner = IToken(serviceRegistry).ownerOf(serviceId);
-            if (!IOperatorWhitelist(operatorWhitelist).isOperatorWhitelisted(serviceOwner, msg.sender)) {
+            if (!IOperatorWhitelist(operatorWhitelist).isOperatorWhitelisted(serviceId, msg.sender)) {
                 revert WrongOperator(serviceId);
             }
         }

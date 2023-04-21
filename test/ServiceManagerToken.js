@@ -74,7 +74,7 @@ describe.only("ServiceManagerToken", function () {
         await token.deployed();
 
         const OperatorWhitelist = await ethers.getContractFactory("OperatorWhitelist");
-        operatorWhitelist = await OperatorWhitelist.deploy();
+        operatorWhitelist = await OperatorWhitelist.deploy(serviceRegistry.address);
         await operatorWhitelist.deployed();
 
         signers = await ethers.getSigners();
@@ -231,7 +231,7 @@ describe.only("ServiceManagerToken", function () {
     });
 
     context("Service manipulations via manager", async function () {
-        it("Creating a service with a custom token", async function () {
+        it("Creating a service with a custom token, register, deploy, terminate, unbond", async function () {
             const manager = signers[4];
             const owner = signers[5];
             const operator = signers[6];
@@ -249,7 +249,7 @@ describe.only("ServiceManagerToken", function () {
             const newMaxThreshold = newAgentParams[0][0] + newAgentParams[1][0];
 
             // Creating one service with the ERC20 token bond
-            await serviceManager.createWithToken(deployer.address, token.address, configHash, agentIds, newAgentParams,
+            await serviceManager.create(deployer.address, token.address, configHash, agentIds, newAgentParams,
                 newMaxThreshold);
             // Approve token for the serviceRegistryTokenUtility contract
             await token.connect(deployer).approve(serviceRegistryTokenUtility.address, regBond);
@@ -261,20 +261,20 @@ describe.only("ServiceManagerToken", function () {
 
             // Set the operator whitelist checker contract
             await serviceManager.setOperatorWhitelist(operatorWhitelist.address);
-            // Whitelist a random operator address
-            await operatorWhitelist.setOperatorsStatuses([signers[15].address], [true]);
+            // Whitelist a random operator address for the service
+            await operatorWhitelist.setOperatorsStatuses(serviceIds[0], [signers[15].address], [true]);
             // Try to register agents with the non-whitelited operator address
             await expect(
                 serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[1]],
-                    agentIds, {value: 2*regBond})
+                    agentIds, {value: 2})
             ).to.be.revertedWith("WrongOperator");
 
             // Whitelist a correct operator address
-            await operatorWhitelist.setOperatorsStatuses([operator.address], [true]);
+            await operatorWhitelist.setOperatorsStatuses(serviceIds[0], [operator.address], [true]);
             // Try to register agents without the approve from the operator
             await expect(
                 serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[1]],
-                    agentIds, {value: 2*regBond})
+                    agentIds, {value: 2})
             ).to.be.revertedWith("IncorrectRegistrationDepositValue");
 
             // Approve token for the serviceRegistryTokenUtility contract by the operator
@@ -302,6 +302,92 @@ describe.only("ServiceManagerToken", function () {
             await serviceManager.connect(operator).unbond(serviceIds[0]);
             service = await serviceRegistry.getService(serviceIds[0]);
             expect(service.state).to.equal(1);
+        });
+
+        it("Creating a service with a custom token, register agent instances and slash", async function () {
+            const manager = signers[4];
+            const owner = signers[5];
+            const operator = signers[6];
+            const agentInstance = signers[7];
+            await agentRegistry.changeManager(manager.address);
+
+            // Creating 3 canonical agents
+            await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
+            await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
+            await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
+            await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
+
+            const newAgentIds = [1];
+            const newAgentParams = [[1, regBond]];
+
+            // Creating one service with the ERC20 token bond
+            await serviceManager.create(deployer.address, token.address, configHash, newAgentIds, newAgentParams, threshold);
+            // Approve token for the serviceRegistryTokenUtility contract
+            await token.connect(deployer).approve(serviceRegistryTokenUtility.address, regBond);
+
+            // Activate the registration
+            await serviceManager.connect(deployer).activateRegistration(serviceIds[0], {value: 1});
+            let service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(2);
+
+            // Approve token for the serviceRegistryTokenUtility contract by the operator
+            await token.mint(operator.address, regBond);
+            await token.connect(operator).approve(serviceRegistryTokenUtility.address, regBond);
+            // Registering agents for the service Id
+            await serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstance.address],
+                newAgentIds, {value: regBond});
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(3);
+
+            // Whitelist gnosis multisig implementation
+            await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+            // Deploying the service
+            const safe = await serviceManager.connect(deployer).deploy(serviceIds[0], gnosisSafeMultisig.address, payload);
+            const result = await safe.wait();
+            const proxyAddress = result.events[0].address;
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(4);
+
+            // Check initial operator's balance
+            const balanceOperator = Number(await serviceRegistryTokenUtility.getOperatorBalance(operator.address, serviceIds[0]));
+            expect(balanceOperator).to.equal(regBond);
+
+            // Get all the necessary info about multisig and slash the operator
+            const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
+            const safeContracts = require("@gnosis.pm/safe-contracts");
+            const nonce = await multisig.nonce();
+            const txHashData = await safeContracts.buildContractCall(serviceRegistryTokenUtility, "slash",
+                [[agentInstance.address], [regFine], serviceIds[0]], nonce, 0, 0);
+            const signMessageData = await safeContracts.safeSignMessage(agentInstance, multisig, txHashData, 0);
+
+            // Slash the agent instance operator with the correct multisig
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Check the new operator's balance, it must be the original balance minus the fine
+            const newBalanceOperator = Number(await serviceRegistryTokenUtility.getOperatorBalance(operator.address, serviceIds[0]));
+            expect(newBalanceOperator).to.equal(balanceOperator - regFine);
+
+            // Terminate the service
+            await serviceManager.connect(deployer).terminate(serviceIds[0]);
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(5);
+
+            // Unbond agent instances
+            await serviceManager.connect(operator).unbond(serviceIds[0]);
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(1);
+
+            // Check the balance of the operator that has to correspond the balance after slashing
+            const balance = Number(await token.balanceOf(operator.address));
+            expect(newBalanceOperator).to.equal(balance);
+
+            // Set drainer and drain funds
+            const balanceBefore = Number(await token.balanceOf(deployer.address));
+            await serviceRegistryTokenUtility.changeDrainer(deployer.address);
+            await serviceRegistryTokenUtility.connect(deployer).drain(token.address);
+            const balanceAfter = Number(await token.balanceOf(deployer.address));
+            expect(balanceAfter).to.equal(balanceBefore + regFine);
         });
 
         it("Creating services, updating one of them, activating, registering agent instances", async function () {

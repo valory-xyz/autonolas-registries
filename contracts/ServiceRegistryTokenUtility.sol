@@ -200,8 +200,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     /// @dev Deposit a token security deposit for the service registration after its activation.
     /// @param serviceId Service Id.
     /// @return isTokenSecured True if the service Id is token secured, false if ETH secured otherwise.
-    function activateRegistrationTokenDeposit(uint256 serviceId) external returns (bool isTokenSecured)
-    {
+    function activateRegistrationTokenDeposit(uint256 serviceId) external returns (bool isTokenSecured) {
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
@@ -367,7 +366,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     /// @param amounts Correspondent amounts to slash.
     /// @param serviceId Service Id.
     /// @return success True, if function executed successfully.
-    function slash(address[] memory agentInstances, uint96[] memory amounts, uint256 serviceId) external
+    function slash(address[] memory agentInstances, uint256[] memory amounts, uint256 serviceId) external
         returns (bool success)
     {
         // Check if the service is deployed
@@ -390,8 +389,9 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         // Token address
         address token = mapServiceIdTokenDeposit[serviceId].token;
         // TODO Verify if that scenario is possible at all, since if correctly updated, token must never be equal to zero, or be called from this contract
-        if (token != address(0)) {
-            revert();
+        // This is to protect this slash function to be called for ETH-secured services
+        if (token == address(0)) {
+            revert ZeroAddress();
         }
 
         // Loop over each agent instance
@@ -443,6 +443,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         amount = mapSlashedFunds[token];
         if (amount > 0) {
             mapSlashedFunds[token] = 0;
+            // TODO Safe transfer
             // Send the refund
             bool success = IToken(token).transfer(msg.sender, amount);
             if (!success) {
@@ -459,5 +460,16 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     /// @return True if the service Id is token secured.
     function isTokenSecuredService(uint256 serviceId) external view returns (bool) {
         return mapServiceIdTokenDeposit[serviceId].token != address(0);
+    }
+
+    /// @dev Gets the operator's balance in a specific service.
+    /// @param operator Operator address.
+    /// @param serviceId Service Id.
+    /// @return balance The balance of the operator.
+    function getOperatorBalance(address operator, uint256 serviceId) external view returns (uint256 balance)
+    {
+        uint256 operatorService = uint256(uint160(operator));
+        operatorService |= serviceId << 160;
+        balance = mapOperatorAndServiceIdOperatorBalances[operatorService];
     }
 }
