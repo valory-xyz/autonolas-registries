@@ -59,9 +59,11 @@ interface IServiceUtility{
 contract ServiceRegistryTokenUtility is IErrorsRegistries {
     event OwnerUpdated(address indexed owner);
     event ManagerUpdated(address indexed manager);
+    event DrainerUpdated(address indexed drainer);
     event TokenDeposit(address indexed account, address indexed token, uint256 amount);
     event TokenRefund(address indexed account, address indexed token, uint256 amount);
     event OperatorTokenSlashed(uint256 amount, address indexed operator, uint256 indexed serviceId);
+    event TokenDrain(address indexed drainer, address indexed token, uint256 amount);
 
     // Struct for a token address and a security deposit
     struct TokenSecurityDeposit {
@@ -78,6 +80,10 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     address public owner;
     // Service Manager contract address;
     address public manager;
+    // Drainer address: set by the government and is allowed to drain ETH funds accumulated in this contract
+    address public drainer;
+    // Reentrancy lock
+    uint256 internal _locked = 1;
     // Map of service Id => address of a token
     mapping(uint256 => TokenSecurityDeposit) public mapServiceIdTokenDeposit;
     // Service Id and canonical agent Id => instance registration bond
@@ -123,6 +129,22 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
 
         manager = newManager;
         emit ManagerUpdated(newManager);
+    }
+
+    /// @dev Changes the drainer.
+    /// @param newDrainer Address of a drainer.
+    function changeDrainer(address newDrainer) external {
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for the zero address
+        if (newDrainer == address(0)) {
+            revert ZeroAddress();
+        }
+
+        drainer = newDrainer;
+        emit DrainerUpdated(newDrainer);
     }
 
     /// @dev Creates a record with the token-related information for the specified service.
@@ -400,6 +422,36 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         slashedFunds += mapSlashedFunds[token];
         mapSlashedFunds[token] = slashedFunds;
         success = true;
+    }
+
+    /// @dev Drains slashed funds.
+    /// @param token Token address.
+    /// @return amount Drained amount.
+    function drain(address token) external returns (uint256 amount) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
+        // Check for the drainer address
+        if (msg.sender != drainer) {
+            revert ManagerOnly(msg.sender, drainer);
+        }
+
+        // Drain the slashed funds
+        amount = mapSlashedFunds[token];
+        if (amount > 0) {
+            mapSlashedFunds[token] = 0;
+            // Send the refund
+            bool success = IToken(token).transfer(msg.sender, amount);
+            if (!success) {
+                revert TransferFailed(token, address(this), msg.sender, amount);
+            }
+            emit TokenDrain(msg.sender, token, amount);
+        }
+
+        _locked = 1;
     }
 
     /// @dev Gets service token secured status.
