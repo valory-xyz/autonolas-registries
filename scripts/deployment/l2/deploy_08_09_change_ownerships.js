@@ -41,6 +41,10 @@ async function main() {
     const deployer = await EOA.getAddress();
     console.log("EOA is:", deployer);
 
+    // Gas pricing
+    const gasPriceInGwei = "270";
+    const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
+
     // Get all the contracts
     const serviceRegistry = await ethers.getContractAt("ServiceRegistryL2", serviceRegistryAddress);
     const serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerAddress);
@@ -48,14 +52,14 @@ async function main() {
     // Transaction signing and execution
     // 8. EOA to transfer ownership rights of ServiceRegistry to FxGovernorTunnel calling `changeOwner(FxGovernorTunnel)`;
     console.log("8. You are signing the following transaction: serviceRegistry.connect(EOA).changeOwner()");
-    let result = await serviceRegistry.connect(EOA).changeOwner(fxGovernorTunnelAddress);
+    let result = await serviceRegistry.connect(EOA).changeOwner(fxGovernorTunnelAddress, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceRegistryAddress);
     console.log("Transaction:", result.hash);
 
     // 9. EOA to transfer ownership rights of ServiceManager to FxGovernorTunnel calling `changeOwner(FxGovernorTunnel)`.
     console.log("9.You are signing the following transaction: serviceManager.connect(EOA).changeOwner()");
-    result = await serviceManager.connect(EOA).changeOwner(fxGovernorTunnelAddress);
+    result = await serviceManager.connect(EOA).changeOwner(fxGovernorTunnelAddress, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceManagerAddress);
     console.log("Transaction:", result.hash);

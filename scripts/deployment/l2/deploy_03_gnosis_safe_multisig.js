@@ -40,9 +40,11 @@ async function main() {
 
     // Transaction signing and execution
     console.log("3. EOA to deploy GnosisSafeMultisig");
+    const gasPriceInGwei = "270";
+    const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
     const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
     console.log("You are signing the following transaction: GnosisSafeMultisig.connect(EOA).deploy()");
-    const gnosisSafeMultisig = await GnosisSafeMultisig.connect(EOA).deploy(parsedData.gnosisSafeAddress, parsedData.gnosisSafeProxyFactoryAddress);
+    const gnosisSafeMultisig = await GnosisSafeMultisig.connect(EOA).deploy(parsedData.gnosisSafeAddress, parsedData.gnosisSafeProxyFactoryAddress, { gasPrice });
     const result = await gnosisSafeMultisig.deployed();
 
     // Transaction details
