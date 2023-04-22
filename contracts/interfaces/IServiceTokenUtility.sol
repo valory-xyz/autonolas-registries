@@ -15,17 +15,9 @@ interface IServiceTokenUtility {
         uint256[] memory bonds
     ) external;
 
-    /// @dev Updates a record with the token-related information for the specified service.
+    /// @dev Resets a record with token and security deposit data.
     /// @param serviceId Service Id.
-    /// @param token Token address.
-    /// @param agentIds Set of agent Ids.
-    /// @param bonds Set of correspondent bonds.
-    function updateWithToken(
-        uint256 serviceId,
-        address token,
-        uint32[] memory agentIds,
-        uint256[] memory bonds
-    ) external;
+    function resetServiceToken(uint256 serviceId) external;
 
     /// @dev Deposit a token security deposit for the service registration after its activation.
     /// @param serviceId Service Id.

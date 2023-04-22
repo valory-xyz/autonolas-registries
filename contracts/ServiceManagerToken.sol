@@ -126,17 +126,16 @@ contract ServiceManagerToken is GenericManager {
             revert ZeroAddress();
         }
 
-        uint256[] memory bonds;
         if (token == ETH_TOKEN_ADDRESS) {
             // Call the original ServiceRegistry contract function
             IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams, threshold, serviceId);
-            // Bonds are empty since they are irrelevant for the scenario of switching to ETH
+            // Reset the service token-based data
             // This function still needs to be called as the previous token could be a custom ERC20 token
-            IServiceTokenUtility(serviceRegistryTokenUtility).updateWithToken(serviceId, token, agentIds, bonds);
+            IServiceTokenUtility(serviceRegistryTokenUtility).resetServiceToken(serviceId);
         } else {
             // Wrap agent params
             uint256 numAgents = agentParams.length;
-            bonds = new uint256[](numAgents);
+            uint256[] memory bonds = new uint256[](numAgents);
             for (uint256 i = 0; i < numAgents; ++i) {
                 // Copy actual bond values for each agent Id that has at least one slot in the updated service
                 if (agentParams[i].slots > 0) {
@@ -149,7 +148,10 @@ contract ServiceManagerToken is GenericManager {
             // Call the original ServiceRegistry contract function
             IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams, threshold, serviceId);
             // Update relevant data in the ServiceRegistryTokenUtility contract
-            IServiceTokenUtility(serviceRegistryTokenUtility).updateWithToken(serviceId, token, agentIds, bonds);
+            // We follow the optimistic design where existing bonds are just overwritten without a clearing
+            // bond values of agent Ids that are not going to be used in the service. This is coming from the fact
+            // that all the checks are done on the original ServiceRegistry side
+            IServiceTokenUtility(serviceRegistryTokenUtility).createWithToken(serviceId, token, agentIds, bonds);
         }
         return true;
     }

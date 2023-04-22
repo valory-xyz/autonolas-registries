@@ -171,9 +171,9 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         uint256 securityDeposit;
         // Service is newly created and all the array lengths are checked by the original ServiceRegistry create() function
         for (uint256 i = 0; i < agentIds.length; ++i) {
-            // Check for a non-zero bond value
+            // Check for a non-zero bond value and skip those with zeros (possible when updating a service)
             if (bonds[i] == 0) {
-                revert ZeroValue();
+                continue;
             }
             // Check for a bond limit value
             if (bonds[i] > type(uint96).max) {
@@ -189,6 +189,9 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             uint256 serviceAgent = serviceId;
             // agentId takes the second 32 bits
             serviceAgent |= uint256(agentIds[i]) << 32;
+            // We follow the optimistic design where existing bonds are just overwritten without a clearing
+            // bond values of agent Ids that are not going to be used in the service. This is coming from the fact
+            // that all the checks are done on the original ServiceRegistry side
             mapServiceAndAgentIdAgentBond[serviceAgent] = bonds[i];
             
             // Calculating a security deposit
@@ -201,63 +204,16 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         mapServiceIdTokenDeposit[serviceId] = TokenSecurityDeposit(token, uint96(securityDeposit));
     }
 
-    /// @dev Updates a record with the token-related information for the specified service.
+    /// @dev Resets a record with token and security deposit data.
     /// @param serviceId Service Id.
-    /// @param token Token address.
-    /// @param agentIds Set of agent Ids.
-    /// @param bonds Set of correspondent bonds.
-    function updateWithToken(
-        uint256 serviceId,
-        address token,
-        uint32[] memory agentIds,
-        uint256[] memory bonds
-    ) external
-    {
+    function resetServiceToken(uint256 serviceId) external {
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
         }
 
-        // If the service is going to be secured with ETH, delete its token and security deposit record
-        if (token == ETH_TOKEN_ADDRESS) {
-            delete mapServiceIdTokenDeposit[serviceId];
-        } else {
-            // TODO Check for the token ERC20 formality
-            uint256 securityDeposit;
-            // Service is newly created and all the array lengths are checked by the original ServiceRegistry create() function
-            for (uint256 i = 0; i < agentIds.length; ++i) {
-                // Check for a non-zero bond value and skip those with zeros
-                if (bonds[i] == 0) {
-                    continue;
-                }
-                // Check for a bond limit value
-                if (bonds[i] > type(uint96).max) {
-                    revert Overflow(bonds[i], type(uint96).max);
-                }
-                // TODO What if some of the bond amount sum is bigger than the limit as well, but separately it's not
-                // TODO Theoretically we should not forbid that as each operator could have a bond with an allowed limit
-
-                // Push a pair of key defining variables into one key. Service or agent Ids are not enough by themselves
-                // As with other units, we assume that the system is not expected to support more than than 2^32-1 services
-                // Need to carefully check pairings, since it's hard to find if something is incorrectly misplaced bitwise
-                // serviceId occupies first 32 bits
-                uint256 serviceAgent = serviceId;
-                // agentId takes the second 32 bits
-                serviceAgent |= uint256(agentIds[i]) << 32;
-                // We follow the optimistic design where existing bonds are just overwritten without a clearing
-                // bond values of agent Ids that are not going to be used in the service. This is coming from the fact
-                // that all the checks are done on the original ServiceRegistry side
-                mapServiceAndAgentIdAgentBond[serviceAgent] = bonds[i];
-
-                // Calculating a security deposit
-                if (bonds[i] > securityDeposit){
-                    securityDeposit = bonds[i];
-                }
-            }
-
-            // Associate service Id with the provided token address
-            mapServiceIdTokenDeposit[serviceId] = TokenSecurityDeposit(token, uint96(securityDeposit));
-        }
+        // Delete token and security deposit data
+        delete mapServiceIdTokenDeposit[serviceId];
     }
 
     /// @dev Deposit a token security deposit for the service registration after its activation.
