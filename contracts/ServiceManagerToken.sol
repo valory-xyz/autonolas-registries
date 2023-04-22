@@ -60,6 +60,7 @@ contract ServiceManagerToken is GenericManager {
     /// @param agentIds Canonical agent Ids.
     /// @param agentParams Number of agent instances and required bond to register an instance in the service.
     /// @param threshold Threshold for a multisig composed by agents.
+    /// @return serviceId Created service Id.
     function create(
         address serviceOwner,
         address token,
@@ -67,7 +68,7 @@ contract ServiceManagerToken is GenericManager {
         uint32[] memory agentIds,
         IService.AgentParams[] memory agentParams,
         uint32 threshold
-    ) external returns (uint256)
+    ) external returns (uint256 serviceId)
     {
         // Check if the minting is paused
         if (paused) {
@@ -79,26 +80,23 @@ contract ServiceManagerToken is GenericManager {
             revert ZeroAddress();
         }
 
-        uint256 serviceId;
+        // Check for the custom ERC20 token or ETH based bond
         if (token == ETH_TOKEN_ADDRESS) {
+            // Call the original ServiceRegistry contract function
             serviceId = IService(serviceRegistry).create(serviceOwner, configHash, agentIds, agentParams, threshold);
         } else {
             // Wrap agent params
-            uint256 size = agentParams.length;
-            IService.AgentParams[] memory tokenAgentParams = new IService.AgentParams[](size);
-            for (uint256 i = 0; i < size; ++i) {
-                tokenAgentParams[i].slots = agentParams[i].slots;
-                tokenAgentParams[i].bond = BOND_WRAPPER;
-            }
-
-            serviceId = IService(serviceRegistry).create(serviceOwner, configHash, agentIds, tokenAgentParams, threshold);
-
-            // Copy actual bond values for each agent Id
-            uint256[] memory bonds = new uint256[](size);
-            for (uint256 i = 0; i < size; ++i) {
+            uint256 numAgents = agentParams.length;
+            uint256[] memory bonds = new uint256[](numAgents);
+            for (uint256 i = 0; i < numAgents; ++i) {
+                // Copy actual bond values for each agent Id
                 bonds[i] = agentParams[i].bond;
+                // Wrap bonds with the BOND_WRAPPER value for the original ServiceRegistry contract
+                agentParams[i].bond = BOND_WRAPPER;
             }
 
+            // Call the original ServiceRegistry contract function
+            serviceId = IService(serviceRegistry).create(serviceOwner, configHash, agentIds, agentParams, threshold);
             // Create a token-related record for the service
             IServiceTokenUtility(serviceRegistryTokenUtility).createWithToken(serviceId, token, agentIds, bonds);
         }
@@ -107,6 +105,7 @@ contract ServiceManagerToken is GenericManager {
     }
 
     /// @dev Updates a service in a CRUD way.
+    /// @param token ERC20 token address for the security deposit, or ETH.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids.
     /// @param agentParams Number of agent instances and required bond to register an instance in the service.
@@ -114,6 +113,7 @@ contract ServiceManagerToken is GenericManager {
     /// @param serviceId Service Id to be updated.
     /// @return success True, if function executed successfully.
     function update(
+        address token,
         bytes32 configHash,
         uint32[] memory agentIds,
         IService.AgentParams[] memory agentParams,
@@ -121,8 +121,37 @@ contract ServiceManagerToken is GenericManager {
         uint256 serviceId
     ) external returns (bool)
     {
-        return IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams,
-            threshold, serviceId);
+        // Check for the zero address
+        if (token == address(0)) {
+            revert ZeroAddress();
+        }
+
+        uint256[] memory bonds;
+        if (token == ETH_TOKEN_ADDRESS) {
+            // Call the original ServiceRegistry contract function
+            IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams, threshold, serviceId);
+            // Bonds are empty since they are irrelevant for the scenario of switching to ETH
+            // This function still needs to be called as the previous token could be a custom ERC20 token
+            IServiceTokenUtility(serviceRegistryTokenUtility).updateWithToken(serviceId, token, agentIds, bonds);
+        } else {
+            // Wrap agent params
+            uint256 numAgents = agentParams.length;
+            bonds = new uint256[](numAgents);
+            for (uint256 i = 0; i < numAgents; ++i) {
+                // Copy actual bond values for each agent Id that has at least one slot in the updated service
+                if (agentParams[i].slots > 0) {
+                    bonds[i] = agentParams[i].bond;
+                }
+                // Wrap bonds with the BOND_WRAPPER value for the original ServiceRegistry contract
+                agentParams[i].bond = BOND_WRAPPER;
+            }
+
+            // Call the original ServiceRegistry contract function
+            IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams, threshold, serviceId);
+            // Update relevant data in the ServiceRegistryTokenUtility contract
+            IServiceTokenUtility(serviceRegistryTokenUtility).updateWithToken(serviceId, token, agentIds, bonds);
+        }
+        return true;
     }
 
     /// @dev Activates the service and its sensitive components.
