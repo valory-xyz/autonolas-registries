@@ -172,11 +172,11 @@ describe("serviceRegistryTokenUtility", function () {
 
         it("Create a service record for a specific token and activate it", async function () {
             await serviceRegistryTokenUtility.createWithToken(serviceId, token.address, agentIds, bonds);
-            const secutiryDeposit = Math.max(...bonds);
+            const securityDeposit = Math.max(...bonds);
             // Check for the service token address
             let tokenSecurityDeposit = await serviceRegistryTokenUtility.mapServiceIdTokenDeposit(serviceId);
             expect(tokenSecurityDeposit.token).to.equal(token.address);
-            expect(tokenSecurityDeposit.securityDeposit).to.equal(secutiryDeposit);
+            expect(tokenSecurityDeposit.securityDeposit).to.equal(securityDeposit);
 
             // Try to activate a service without approving the ServiceRegistryTokenUtility contract for the security deposit amount
             await expect(
@@ -184,7 +184,7 @@ describe("serviceRegistryTokenUtility", function () {
             ).to.be.revertedWith("IncorrectRegistrationDepositValue");
 
             // Approve token for the ServiceRegistryTokenUtility contract
-            await token.connect(deployer).approve(serviceRegistryTokenUtility.address, secutiryDeposit);
+            await token.connect(deployer).approve(serviceRegistryTokenUtility.address, securityDeposit);
 
             // Check the activation status
             const isTokenSecured = await serviceRegistryTokenUtility.callStatic.activateRegistrationTokenDeposit(serviceId);
@@ -208,15 +208,15 @@ describe("serviceRegistryTokenUtility", function () {
 
         it("Create a service record for a specific token, activate it and register agent instances", async function () {
             await serviceRegistryTokenUtility.createWithToken(serviceId, token.address, agentIds, bonds);
-            const secutiryDeposit = Math.max(...bonds);
+            const securityDeposit = Math.max(...bonds);
             // Check for the service token address
             let tokenSecurityDeposit = await serviceRegistryTokenUtility.mapServiceIdTokenDeposit(serviceId);
             expect(tokenSecurityDeposit.token).to.equal(token.address);
-            expect(tokenSecurityDeposit.securityDeposit).to.equal(secutiryDeposit);
+            expect(tokenSecurityDeposit.securityDeposit).to.equal(securityDeposit);
 
 
             // Approve token for the ServiceRegistryTokenUtility contract and activate registration
-            await token.connect(deployer).approve(serviceRegistryTokenUtility.address, secutiryDeposit);
+            await token.connect(deployer).approve(serviceRegistryTokenUtility.address, securityDeposit);
             await serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId);
 
             // Try to register agent instances without approving the ServiceRegistryTokenUtility contract for the security deposit amount
@@ -257,15 +257,15 @@ describe("serviceRegistryTokenUtility", function () {
 
         it("Create, activate, register agent instances, terminate, unbond", async function () {
             await serviceRegistryTokenUtility.createWithToken(serviceId, token.address, agentIds, bonds);
-            const secutiryDeposit = Math.max(...bonds);
+            const securityDeposit = Math.max(...bonds);
             // Check for the service token address
             let tokenSecurityDeposit = await serviceRegistryTokenUtility.mapServiceIdTokenDeposit(serviceId);
             expect(tokenSecurityDeposit.token).to.equal(token.address);
-            expect(tokenSecurityDeposit.securityDeposit).to.equal(secutiryDeposit);
+            expect(tokenSecurityDeposit.securityDeposit).to.equal(securityDeposit);
 
 
             // Approve token for the ServiceRegistryTokenUtility contract and activate registration
-            await token.connect(deployer).approve(serviceRegistryTokenUtility.address, secutiryDeposit);
+            await token.connect(deployer).approve(serviceRegistryTokenUtility.address, securityDeposit);
             await serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId);
 
             // Try to register agent instances without approving the ServiceRegistryTokenUtility contract for the security deposit amount
@@ -282,13 +282,103 @@ describe("serviceRegistryTokenUtility", function () {
 
             // Check the termination refund
             let refund = await serviceRegistryTokenUtility.callStatic.terminateTokenRefund(serviceId);
-            expect(refund).to.equal(secutiryDeposit);
+            expect(refund).to.equal(securityDeposit);
             await serviceRegistryTokenUtility.terminateTokenRefund(serviceId);
 
             // Check the unbond refund
             refund = await serviceRegistryTokenUtility.callStatic.unbondTokenRefund(operator.address, serviceId);
             expect(refund).to.equal(totalBond);
             await serviceRegistryTokenUtility.unbondTokenRefund(operator.address, serviceId);
+        });
+
+        it("Should fail on slashing with wrong parameters", async function () {
+            // Try to slash when the service is not deployed
+            await expect(
+                serviceRegistryTokenUtility.slash([AddressZero], [0], 0)
+            ).to.be.revertedWith("WrongServiceState");
+
+            // Try to slash with empty arrays
+            await expect(
+                serviceRegistryTokenUtility.slash([], [], serviceId)
+            ).to.be.revertedWith("WrongArrayLength");
+
+            // Try to slash with incorrect array lengths
+            await expect(
+                serviceRegistryTokenUtility.slash([AddressZero], [], serviceId)
+            ).to.be.revertedWith("WrongArrayLength");
+
+            // Try to slash with the wrong service multisig
+            await expect(
+                serviceRegistryTokenUtility.slash([AddressZero], [0], serviceId + 1)
+            ).to.be.revertedWith("OnlyOwnServiceMultisig");
+
+            // Try to slash the service that is not token-secured
+            await expect(
+                serviceRegistryTokenUtility.slash([AddressZero], [0], serviceId)
+            ).to.be.revertedWith("ZeroAddress");
+        });
+
+        it("Create, activate, register agent instances, slash, terminate, unbond, drain", async function () {
+            await serviceRegistryTokenUtility.createWithToken(serviceId, token.address, agentIds, bonds);
+            const securityDeposit = Math.max(...bonds);
+            // Check for the service token address
+            let tokenSecurityDeposit = await serviceRegistryTokenUtility.mapServiceIdTokenDeposit(serviceId);
+            expect(tokenSecurityDeposit.token).to.equal(token.address);
+            expect(tokenSecurityDeposit.securityDeposit).to.equal(securityDeposit);
+
+
+            // Approve token for the ServiceRegistryTokenUtility contract and activate registration
+            await token.connect(deployer).approve(serviceRegistryTokenUtility.address, securityDeposit);
+            await serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId);
+
+            // Approve token for the ServiceRegistryTokenUtility contract by the operator and register agent instances
+            const totalBond = bonds.reduce((a, b) => a + b, 0);
+            await token.connect(operator).approve(serviceRegistryTokenUtility.address, totalBond);
+
+            // Register agent instances
+            await serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, serviceId, agentIds);
+
+            // Slash the operator
+            const minBond = Math.min(...bonds);
+            await serviceRegistryTokenUtility.slash([operator.address], [minBond], serviceId);
+            // Check for the contract slashed balance
+            let slashedBalance = Number(await serviceRegistryTokenUtility.mapSlashedFunds(token.address));
+            expect(slashedBalance).to.equal(minBond);
+
+            // Slash more
+            await serviceRegistryTokenUtility.slash([operator.address], [securityDeposit], serviceId);
+            // Slash even more such that there is nothing to slash
+            await serviceRegistryTokenUtility.slash([operator.address], [securityDeposit], serviceId);
+            slashedBalance = Number(await serviceRegistryTokenUtility.mapSlashedFunds(token.address));
+            expect(slashedBalance).to.equal(totalBond);
+
+            // Terminate the service
+            await serviceRegistryTokenUtility.terminateTokenRefund(serviceId);
+
+            // Check the unbond refund
+            const refund = await serviceRegistryTokenUtility.getOperatorBalance(operator.address, serviceId);
+            expect(refund).to.equal(0);
+            await serviceRegistryTokenUtility.unbondTokenRefund(operator.address, serviceId);
+
+            // Drain slashed funds
+            const account = signers[2];
+            await serviceRegistryTokenUtility.changeDrainer(account.address);
+            // Try to drain not by the owner
+            await expect(
+                serviceRegistryTokenUtility.connect(operator).drain(token.address)
+            ).to.be.revertedWith("OwnerOnly");
+            // Try to drain non existent token funds
+            await serviceRegistryTokenUtility.drain(AddressZero);
+            // Drain the token funds
+            const balanceBefore = Number(await token.balanceOf(account.address));
+            await serviceRegistryTokenUtility.drain(token.address);
+            const balanceAfter = Number(await token.balanceOf(account.address));
+            expect(balanceAfter).to.equal(balanceBefore + totalBond);
+
+            // Try to drain again when there is nothing left to drain
+            await serviceRegistryTokenUtility.drain(token.address);
+            const balanceAfterZeroDrain = Number(await token.balanceOf(account.address));
+            expect(balanceAfter).to.equal(balanceAfterZeroDrain);
         });
     });
 });
