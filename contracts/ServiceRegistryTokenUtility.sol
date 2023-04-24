@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.19;
 
 import "./interfaces/IErrorsRegistries.sol";
 import "./interfaces/IService.sol";
@@ -76,8 +76,6 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
 
     // Service Registry contract address
     address public immutable serviceRegistry;
-    // A well-known representation of ETH as an address
-    address public constant ETH_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     // Owner address
     address public owner;
     // Service Manager contract address;
@@ -157,6 +155,11 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     }
 
     /// @dev Creates a record with the token-related information for the specified service.
+    /// @notice We assume that the token is checked for being a non-zero address and a non-ETH address representation
+    ///         outside of this function. Here we optimistically check for the token to have a specific `balanceOf`
+    ///         view function. It is possible this is the attacker token that has all the required functions defined
+    ///         correctly, so there is no point in checking that formality. All the required checks will be done in-place
+    ///         where the possibility of misbehavior can be caught by return values of token function.
     /// @param serviceId Service Id.
     /// @param token Token address.
     /// @param agentIds Set of agent Ids.
@@ -259,6 +262,9 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     }
 
     /// @dev Deposits bonded tokens from the operator during the agent instance registration.
+    /// @notice This is an optimistic implementation corresponding to registering agent instances by the operator
+    ///         assuming that this function is always called in pair with the original Service Registry agent instance
+    ///         registration function, where all the necessary validity checks are provided.
     /// @param operator Operator address.
     /// @param serviceId Service Id.
     /// @param agentIds Set of agent Ids for corresponding agent instances opertor is registering.
@@ -322,8 +328,8 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
 
     /// @dev Refunds a token security deposit to the service owner after the service termination.
     /// @param serviceId Service Id.
-    /// @return securityDeposit Returned token security deposit, or zero if the service is ETH-secured.
-    function terminateTokenRefund(uint256 serviceId) external returns (uint256 securityDeposit) {
+    /// @return securityRefund Returned token security deposit, or zero if the service is ETH-secured.
+    function terminateTokenRefund(uint256 serviceId) external returns (uint256 securityRefund) {
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
@@ -333,18 +339,18 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         TokenSecurityDeposit memory tokenDeposit = mapServiceIdTokenDeposit[serviceId];
         address token = tokenDeposit.token;
         if (token != address(0)) {
-            securityDeposit = tokenDeposit.securityDeposit;
+            securityRefund = tokenDeposit.securityDeposit;
             // Check for the allowance against this contract
             address serviceOwner = IToken(serviceRegistry).ownerOf(serviceId);
 
             // Transfer tokens to the serviceOwner account
             // TODO Re-entrancy
             // TODO Safe transfer
-            bool success = IToken(token).transfer(serviceOwner, securityDeposit);
+            bool success = IToken(token).transfer(serviceOwner, securityRefund);
             if (!success) {
-                revert TransferFailed(token, address(this), serviceOwner, securityDeposit);
+                revert TransferFailed(token, address(this), serviceOwner, securityRefund);
             }
-            emit TokenRefund(serviceOwner, token, securityDeposit);
+            emit TokenRefund(serviceOwner, token, securityRefund);
         }
     }
 
@@ -415,7 +421,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         // Token address
         address token = mapServiceIdTokenDeposit[serviceId].token;
         // TODO Verify if that scenario is possible at all, since if correctly updated, token must never be equal to zero, or be called from this contract
-        // This is to protect this slash function to be called for ETH-secured services
+        // This is to protect this slash function not to be called for ETH-secured services
         if (token == address(0)) {
             revert ZeroAddress();
         }

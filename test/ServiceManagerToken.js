@@ -86,6 +86,18 @@ describe("ServiceManagerToken", function () {
     });
 
     context("Service creation via manager", async function () {
+        it("Constructor must fail with zero provided addresses", async function () {
+            const ServiceManager = await ethers.getContractFactory("ServiceManagerToken");
+
+            await expect(
+                ServiceManager.deploy(AddressZero, AddressZero)
+            ).to.be.revertedWith("ZeroAddress");
+
+            await expect(
+                ServiceManager.deploy(serviceRegistry.address, AddressZero)
+            ).to.be.revertedWith("ZeroAddress");
+        });
+
         it("Changing owner", async function () {
             const owner = signers[0];
             const account = signers[1];

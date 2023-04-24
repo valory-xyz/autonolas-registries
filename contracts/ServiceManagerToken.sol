@@ -203,7 +203,7 @@ contract ServiceManagerToken is GenericManager {
         // Record the actual ERC20 bond
         bool isTokenSecured = IServiceTokenUtility(serviceRegistryTokenUtility).registerAgentsTokenDeposit(msg.sender,
             serviceId, agentIds);
-        
+
         // Register agent instances in a main ServiceRegistry contract
         if (isTokenSecured) {
             // If the service Id is based on the ERC20 token, the provided value to the standard registration is 1

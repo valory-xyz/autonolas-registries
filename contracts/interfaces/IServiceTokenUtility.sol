@@ -37,8 +37,8 @@ interface IServiceTokenUtility {
 
     /// @dev Withdraws a token security deposit to the service owner after the service termination.
     /// @param serviceId Service Id.
-    /// @return securityDeposit Returned token security deposit, or zero if the service is ETH-secured.
-    function terminateTokenRefund(uint256 serviceId) external returns (uint256 securityDeposit);
+    /// @return securityRefund Returned token security deposit, or zero if the service is ETH-secured.
+    function terminateTokenRefund(uint256 serviceId) external returns (uint256 securityRefund);
 
     /// @dev Withdraws bonded tokens to the operator during the unbond phase.
     /// @param operator Operator address.
