@@ -220,11 +220,12 @@ describe("ServiceManagerToken", function () {
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
             await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
             await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
-            await serviceManager.connect(owner).update(configHash, [1, 2, 3],
+            await serviceManager.connect(owner).update(ETHAddress, configHash, [1, 2, 3],
                 [[3, regBond], [0, regBond], [4, regBond]], maxThreshold, serviceIds[0]);
             expect(await serviceRegistry.exists(2)).to.equal(true);
             expect(await serviceRegistry.exists(3)).to.equal(false);
@@ -415,7 +416,7 @@ describe("ServiceManagerToken", function () {
             const newAgentIds = [1, 2, 3];
             const newAgentParams = [[2, regBond], [0, regBond], [1, regBond]];
             const newMaxThreshold = newAgentParams[0][0] + newAgentParams[2][0];
-            await serviceManager.connect(owner).update(configHash, newAgentIds,
+            await serviceManager.connect(owner).update(ETHAddress, configHash, newAgentIds,
                 newAgentParams, newMaxThreshold, serviceIds[0]);
             let service = await serviceRegistry.getService(serviceIds[0]);
             expect(service.state).to.equal(1);
@@ -428,7 +429,7 @@ describe("ServiceManagerToken", function () {
 
             // Fail when trying to update the service again, even though no agent instances are registered yet
             await expect(
-                serviceManager.connect(owner).update(configHash, newAgentIds,
+                serviceManager.connect(owner).update(ETHAddress, configHash, newAgentIds,
                     newAgentParams, newMaxThreshold, serviceIds[0])
             ).to.be.revertedWith("WrongServiceState");
 
@@ -630,7 +631,7 @@ describe("ServiceManagerToken", function () {
                 maxThreshold);
             await serviceManager.connect(owner).activateRegistration(serviceIds[0], {value: regDeposit});
             await serviceManager.connect(owner).terminate(serviceIds[0]);
-            await serviceManager.connect(owner).update(configHash, [1, 2, 3],
+            await serviceManager.connect(owner).update(ETHAddress, configHash, [1, 2, 3],
                 [[3, regBond], [0, regBond], [4, regBond]], maxThreshold, serviceIds[0]);
         });
     });
