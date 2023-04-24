@@ -32,14 +32,22 @@ contract ServiceManagerToken is GenericManager {
     // Operator whitelist address
     address public operatorWhitelist;
 
+    /// @dev ServiceRegistryTokenUtility constructor.
+    /// @param _serviceRegistry Service Registry contract address.
+    /// @param _serviceRegistryTokenUtility Service Registry Token Utility contract address.
     constructor(address _serviceRegistry, address _serviceRegistryTokenUtility) {
+        // Check for the zero address
+        if (_serviceRegistry == address(0) || _serviceRegistryTokenUtility == address(0)) {
+            revert ZeroAddress();
+        }
+
         serviceRegistry = _serviceRegistry;
         serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
         owner = msg.sender;
     }
     
     function setOperatorWhitelist(address newOperatorWhitelist) external {
-        // Check for the ownership
+        // Check for the contract ownership
         if (msg.sender != owner) {
             revert OwnerOnly(msg.sender, owner);
         }
@@ -85,7 +93,8 @@ contract ServiceManagerToken is GenericManager {
             // Call the original ServiceRegistry contract function
             serviceId = IService(serviceRegistry).create(serviceOwner, configHash, agentIds, agentParams, threshold);
         } else {
-            // Wrap agent params
+            // Wrap agent params with just 1 WEI bond going to the original ServiceRegistry contract,
+            // and actual token bonds being recorded with the ServiceRegistryTokenUtility contract
             uint256 numAgents = agentParams.length;
             uint256[] memory bonds = new uint256[](numAgents);
             for (uint256 i = 0; i < numAgents; ++i) {
@@ -133,7 +142,8 @@ contract ServiceManagerToken is GenericManager {
             // This function still needs to be called as the previous token could be a custom ERC20 token
             IServiceTokenUtility(serviceRegistryTokenUtility).resetServiceToken(serviceId);
         } else {
-            // Wrap agent params
+            // Wrap agent params with just 1 WEI bond going to the original ServiceRegistry contract,
+            // and actual token bonds being recorded with the ServiceRegistryTokenUtility contract
             uint256 numAgents = agentParams.length;
             uint256[] memory bonds = new uint256[](numAgents);
             for (uint256 i = 0; i < numAgents; ++i) {
@@ -162,7 +172,8 @@ contract ServiceManagerToken is GenericManager {
     function activateRegistration(uint256 serviceId) external payable returns (bool success) {
         // Record the actual ERC20 security deposit
         bool isTokenSecured = IServiceTokenUtility(serviceRegistryTokenUtility).activateRegistrationTokenDeposit(serviceId);
-        // Activate registration in a main ServiceRegistry contract
+
+        // Activate registration in the original ServiceRegistry contract
         if (isTokenSecured) {
             // If the service Id is based on the ERC20 token, the provided value to the standard registration is 1
             success = IService(serviceRegistry).activateRegistration{value: BOND_WRAPPER}(msg.sender, serviceId);
@@ -183,14 +194,16 @@ contract ServiceManagerToken is GenericManager {
         uint32[] memory agentIds
     ) external payable returns (bool success) {
         if (operatorWhitelist != address(0)) {
-            // Check if the operator whitelisted
+            // Check if the operator is whitelisted
             if (!IOperatorWhitelist(operatorWhitelist).isOperatorWhitelisted(serviceId, msg.sender)) {
                 revert WrongOperator(serviceId);
             }
         }
+
         // Record the actual ERC20 bond
         bool isTokenSecured = IServiceTokenUtility(serviceRegistryTokenUtility).registerAgentsTokenDeposit(msg.sender,
             serviceId, agentIds);
+        
         // Register agent instances in a main ServiceRegistry contract
         if (isTokenSecured) {
             // If the service Id is based on the ERC20 token, the provided value to the standard registration is 1
@@ -223,11 +236,13 @@ contract ServiceManagerToken is GenericManager {
     /// @return success True, if function executed successfully.
     /// @return refund Refund for the service owner.
     function terminate(uint256 serviceId) external returns (bool success, uint256 refund) {
+        // Withdraw the ERC20 token if the service is token-based
+        uint256 tokenRefund = IServiceTokenUtility(serviceRegistryTokenUtility).terminateTokenRefund(serviceId);
+
         // Terminate the service with the regular service registry routine
         (success, refund) = IService(serviceRegistry).terminate(msg.sender, serviceId);
 
-        // Withdraw the ERC20 token if the service is token-based
-        uint256 tokenRefund = IServiceTokenUtility(serviceRegistryTokenUtility).terminationTokenWithdraw(serviceId);
+        // If the service is token-based, the actual refund is provided via the serviceRegistryTokenUtility contract
         if (tokenRefund > 0) {
             refund = tokenRefund;
         }
@@ -240,11 +255,13 @@ contract ServiceManagerToken is GenericManager {
     function unbond(uint256 serviceId) external returns (bool success, uint256 refund) {
         // Withdraw the ERC20 token if the service is token-based
         uint256 tokenRefund = IServiceTokenUtility(serviceRegistryTokenUtility).unbondTokenRefund(msg.sender, serviceId);
-        if (tokenRefund > 0) {
-            refund = tokenRefund;
-        }
 
         // Unbond with the regular service registry routine
         (success, refund) = IService(serviceRegistry).unbond(msg.sender, serviceId);
+
+        // If the service is token-based, the actual refund is provided via the serviceRegistryTokenUtility contract
+        if (tokenRefund > 0) {
+            refund = tokenRefund;
+        }
     }
 }

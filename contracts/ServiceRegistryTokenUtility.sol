@@ -95,7 +95,14 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     // Map of token => slashed funds
     mapping(address => uint256) mapSlashedFunds;
 
+    /// @dev ServiceRegistryTokenUtility constructor.
+    /// @param _serviceRegistry Service Registry contract address.
     constructor(address _serviceRegistry) {
+        // Check for the zero address
+        if (_serviceRegistry == address(0)) {
+            revert ZeroAddress();
+        }
+
         serviceRegistry = _serviceRegistry;
         owner = msg.sender;
     }
@@ -118,7 +125,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     }
 
     /// @dev Changes the unit manager.
-    /// @param newManager Address of a new unit manager.
+    /// @param newManager Address of a new manager.
     function changeManager(address newManager) external virtual {
         if (msg.sender != owner) {
             revert OwnerOnly(msg.sender, owner);
@@ -316,7 +323,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     /// @dev Refunds a token security deposit to the service owner after the service termination.
     /// @param serviceId Service Id.
     /// @return securityDeposit Returned token security deposit, or zero if the service is ETH-secured.
-    function terminationTokenWithdraw(uint256 serviceId) external returns (uint256 securityDeposit) {
+    function terminateTokenRefund(uint256 serviceId) external returns (uint256 securityDeposit) {
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);

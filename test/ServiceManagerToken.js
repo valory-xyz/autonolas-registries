@@ -262,6 +262,7 @@ describe("ServiceManagerToken", function () {
             expect(service.state).to.equal(2);
 
             // Set the operator whitelist checker contract
+            await operatorWhitelist.setOperatorsCheck(serviceIds[0], true);
             await serviceManager.setOperatorWhitelist(operatorWhitelist.address);
             // Whitelist a random operator address for the service
             await operatorWhitelist.setOperatorsStatuses(serviceIds[0], [signers[15].address], [true]);
