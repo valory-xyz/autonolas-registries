@@ -1,0 +1,17 @@
+INFO:Printers:Call Graph: ./OperatorWhitelist-flatten.sol.all_contracts.call-graph.dot
+Call Graph: ./OperatorWhitelist-flatten.sol.IToken.call-graph.dot
+Call Graph: ./OperatorWhitelist-flatten.sol.OperatorWhitelist.call-graph.dot
+
+INFO:Printers:Call Graph: ./ServiceManagerToken-flatten.sol.all_contracts.call-graph.dot
+Call Graph: ./ServiceManagerToken-flatten.sol.IService.call-graph.dot
+Call Graph: ./ServiceManagerToken-flatten.sol.IServiceTokenUtility.call-graph.dot
+Call Graph: ./ServiceManagerToken-flatten.sol.IOperatorWhitelist.call-graph.dot
+Call Graph: ./ServiceManagerToken-flatten.sol.ServiceManagerToken.call-graph.dot
+
+INFO:Printers:Call Graph: ./ServiceRegistryTokenUtility-flatten.sol.all_contracts.call-graph.dot
+Call Graph: ./ServiceRegistryTokenUtility-flatten.sol.IService.call-graph.dot
+Call Graph: ./ServiceRegistryTokenUtility-flatten.sol.IToken.call-graph.dot
+Call Graph: ./ServiceRegistryTokenUtility-flatten.sol.IServiceUtility.call-graph.dot
+Call Graph: ./ServiceRegistryTokenUtility-flatten.sol.ServiceRegistryTokenUtility.call-graph.dot
+
+INFO:Slither:. analyzed (13 contracts)

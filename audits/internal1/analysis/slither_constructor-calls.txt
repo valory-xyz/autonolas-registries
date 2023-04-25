@@ -1,0 +1,67 @@
+INFO:Printers:
+#################################
+####### OperatorWhitelist #######
+#################################
+
+## Constructor Call Sequence
+	- OperatorWhitelist
+
+## Constructor Definitions
+
+### OperatorWhitelist
+
+     constructor (address _serviceRegistry) {
+        // Check for the zero address
+        if (_serviceRegistry == address(0)) {
+            revert ZeroAddress();
+        }
+
+        serviceRegistry = _serviceRegistry;
+    }
+
+INFO:Printers:
+###################################
+####### ServiceManagerToken #######
+###################################
+
+## Constructor Call Sequence
+	- ServiceManagerToken
+
+## Constructor Definitions
+
+### ServiceManagerToken
+
+     constructor(address _serviceRegistry, address _serviceRegistryTokenUtility) {
+        // Check for the zero address
+        if (_serviceRegistry == address(0) || _serviceRegistryTokenUtility == address(0)) {
+            revert ZeroAddress();
+        }
+
+        serviceRegistry = _serviceRegistry;
+        serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
+        owner = msg.sender;
+    }
+
+INFO:Printers:
+###########################################
+####### ServiceRegistryTokenUtility #######
+###########################################
+
+## Constructor Call Sequence
+	- ServiceRegistryTokenUtility
+
+## Constructor Definitions
+
+### ServiceRegistryTokenUtility
+
+     constructor(address _serviceRegistry) {
+        // Check for the zero address
+        if (_serviceRegistry == address(0)) {
+            revert ZeroAddress();
+        }
+
+        serviceRegistry = _serviceRegistry;
+        owner = msg.sender;
+    }
+
+INFO:Slither:. analyzed (13 contracts)

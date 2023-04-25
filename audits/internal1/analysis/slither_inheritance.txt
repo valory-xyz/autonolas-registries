@@ -1,0 +1,79 @@
+INFO:Printers:Inheritance
+Child_Contract -> Immediate_Base_Contracts [Not_Immediate_Base_Contracts]
++ IToken
+
++ OperatorWhitelist
+
+
+Base_Contract -> Immediate_Child_Contracts
+ [Not_Immediate_Child_Contracts]
+
++ IToken
+
++ OperatorWhitelist
+
+INFO:Printers:Inheritance
+Child_Contract -> Immediate_Base_Contracts [Not_Immediate_Base_Contracts]
++ IErrorsRegistries
+
++ GenericManager
+ -> IErrorsRegistries
+
++ IService
+
++ IServiceTokenUtility
+
++ IOperatorWhitelist
+
++ ServiceManagerToken
+ -> GenericManager
+, [IErrorsRegistries]
+
+
+Base_Contract -> Immediate_Child_Contracts
+ [Not_Immediate_Child_Contracts]
+
++ IErrorsRegistries
+ -> GenericManager
+, [ServiceManagerToken]
+
++ GenericManager
+ -> ServiceManagerToken
+
++ IService
+
++ IServiceTokenUtility
+
++ IOperatorWhitelist
+
++ ServiceManagerToken
+
+INFO:Printers:Inheritance
+Child_Contract -> Immediate_Base_Contracts [Not_Immediate_Base_Contracts]
++ IErrorsRegistries
+
++ IService
+
++ IToken
+
++ IServiceUtility
+
++ ServiceRegistryTokenUtility
+ -> IErrorsRegistries
+
+
+Base_Contract -> Immediate_Child_Contracts
+ [Not_Immediate_Child_Contracts]
+
++ IErrorsRegistries
+ -> ServiceRegistryTokenUtility
+
++ IService
+
++ IToken
+
++ IServiceUtility
+
++ ServiceRegistryTokenUtility
+
+INFO:Slither:. analyzed (13 contracts)

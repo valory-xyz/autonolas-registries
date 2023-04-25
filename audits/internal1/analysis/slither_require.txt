@@ -1,0 +1,122 @@
+INFO:Printers:
+Contract IToken
++----------+-------------------+
+| Function | require or assert |
++----------+-------------------+
+| ownerOf  |                   |
++----------+-------------------+
+INFO:Printers:
+Contract OperatorWhitelist
++-----------------------+-------------------+
+|        Function       | require or assert |
++-----------------------+-------------------+
+|      constructor      |                   |
+|   setOperatorsCheck   |                   |
+|  setOperatorsStatuses |                   |
+| isOperatorWhitelisted |                   |
++-----------------------+-------------------+
+INFO:Printers:
+Contract IService
++----------------------+-------------------+
+|       Function       | require or assert |
++----------------------+-------------------+
+|        create        |                   |
+|        update        |                   |
+| activateRegistration |                   |
+|    registerAgents    |                   |
+|        deploy        |                   |
+|      terminate       |                   |
+|        unbond        |                   |
++----------------------+-------------------+
+INFO:Printers:
+Contract IServiceTokenUtility
++----------------------------------+-------------------+
+|             Function             | require or assert |
++----------------------------------+-------------------+
+|         createWithToken          |                   |
+|        resetServiceToken         |                   |
+| activateRegistrationTokenDeposit |                   |
+|    registerAgentsTokenDeposit    |                   |
+|       terminateTokenRefund       |                   |
+|        unbondTokenRefund         |                   |
+|      isTokenSecuredService       |                   |
++----------------------------------+-------------------+
+INFO:Printers:
+Contract IOperatorWhitelist
++-----------------------+-------------------+
+|        Function       | require or assert |
++-----------------------+-------------------+
+| isOperatorWhitelisted |                   |
++-----------------------+-------------------+
+INFO:Printers:
+Contract ServiceManagerToken
++-------------------------------------+-------------------+
+|               Function              | require or assert |
++-------------------------------------+-------------------+
+|             changeOwner             |                   |
+|                pause                |                   |
+|               unpause               |                   |
+|             constructor             |                   |
+|         setOperatorWhitelist        |                   |
+|                create               |                   |
+|                update               |                   |
+|         activateRegistration        |                   |
+|            registerAgents           |                   |
+|                deploy               |                   |
+|              terminate              |                   |
+|                unbond               |                   |
+| slitherConstructorConstantVariables |                   |
++-------------------------------------+-------------------+
+INFO:Printers:
+Contract IService
++----------------------+-------------------+
+|       Function       | require or assert |
++----------------------+-------------------+
+|        create        |                   |
+|        update        |                   |
+| activateRegistration |                   |
+|    registerAgents    |                   |
+|        deploy        |                   |
+|      terminate       |                   |
+|        unbond        |                   |
++----------------------+-------------------+
+INFO:Printers:
+Contract IToken
++--------------+-------------------+
+|   Function   | require or assert |
++--------------+-------------------+
+|  allowance   |                   |
+| transferFrom |                   |
+|   transfer   |                   |
+|   ownerOf    |                   |
++--------------+-------------------+
+INFO:Printers:
+Contract IServiceUtility
++---------------------------+-------------------+
+|          Function         | require or assert |
++---------------------------+-------------------+
+|        mapServices        |                   |
+| mapAgentInstanceOperators |                   |
++---------------------------+-------------------+
+INFO:Printers:
+Contract ServiceRegistryTokenUtility
++----------------------------------+-------------------+
+|             Function             | require or assert |
++----------------------------------+-------------------+
+|           constructor            |                   |
+|           changeOwner            |                   |
+|          changeManager           |                   |
+|          changeDrainer           |                   |
+|         createWithToken          |                   |
+|        resetServiceToken         |                   |
+| activateRegistrationTokenDeposit |                   |
+|    registerAgentsTokenDeposit    |                   |
+|       terminateTokenRefund       |                   |
+|        unbondTokenRefund         |                   |
+|              slash               |                   |
+|              drain               |                   |
+|      isTokenSecuredService       |                   |
+|        getOperatorBalance        |                   |
+|   slitherConstructorVariables    |                   |
++----------------------------------+-------------------+
+INFO:Slither:. analyzed (13 contracts)

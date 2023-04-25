@@ -1,0 +1,287 @@
+INFO:Printers:
+Contract IToken
+Contract vars: []
+Inheritance:: []
+ 
++------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+|     Function     | Visibility | Modifiers | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+| ownerOf(uint256) |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
++------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+| Modifiers | Visibility | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++-----------+------------+------+-------+----------------+----------------+-----------------------+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+
+INFO:Printers:
+Contract OperatorWhitelist
+Contract vars: ['serviceRegistry', 'mapServiceIdOperatorsCheck', 'mapServiceIdOperators']
+Inheritance:: []
+ 
++------------------------------------------------+------------+-----------+---------------------------------------------------------+--------------------------------+-----------------------------------------------------------------------------------+------------------------------------------------+-----------------------+
+|                    Function                    | Visibility | Modifiers |                           Read                          |             Write              |                                   Internal Calls                                  |                 External Calls                 | Cyclomatic Complexity |
++------------------------------------------------+------------+-----------+---------------------------------------------------------+--------------------------------+-----------------------------------------------------------------------------------+------------------------------------------------+-----------------------+
+|              constructor(address)              |   public   |     []    |                            []                           |      ['serviceRegistry']       |                              ['revert ZeroAddress()']                             |                       []                       |           2           |
+|        setOperatorsCheck(uint256,bool)         |  external  |     []    |            ['msg.sender', 'serviceRegistry']            | ['mapServiceIdOperatorsCheck'] |                       ['revert OwnerOnly(address,address)']                       | ['IToken(serviceRegistry).ownerOf(serviceId)'] |           2           |
+| setOperatorsStatuses(uint256,address[],bool[]) |  external  |     []    |            ['msg.sender', 'serviceRegistry']            |   ['mapServiceIdOperators']    | ['revert OwnerOnly(address,address)', 'revert WrongArrayLength(uint256,uint256)'] | ['IToken(serviceRegistry).ownerOf(serviceId)'] |           5           |
+|                                                |            |           |                                                         |                                |                              ['revert ZeroAddress()']                             |                                                |                       |
+|     isOperatorWhitelisted(uint256,address)     |  external  |     []    | ['mapServiceIdOperators', 'mapServiceIdOperatorsCheck'] |               []               |                                         []                                        | ['IToken(serviceRegistry).ownerOf(serviceId)'] |           2           |
+|                                                |            |           |                   ['serviceRegistry']                   |                                |                                                                                   |                                                |                       |
++------------------------------------------------+------------+-----------+---------------------------------------------------------+--------------------------------+-----------------------------------------------------------------------------------+------------------------------------------------+-----------------------+
+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+| Modifiers | Visibility | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++-----------+------------+------+-------+----------------+----------------+-----------------------+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+
+INFO:Printers:
+Contract IErrorsRegistries
+Contract vars: []
+Inheritance:: []
+ 
++----------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+| Function | Visibility | Modifiers | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++----------+------------+-----------+------+-------+----------------+----------------+-----------------------+
++----------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+| Modifiers | Visibility | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++-----------+------------+------+-------+----------------+----------------+-----------------------+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+
+INFO:Printers:
+Contract GenericManager
+Contract vars: ['owner', 'paused']
+Inheritance:: ['IErrorsRegistries']
+ 
++----------------------+------------+-----------+-------------------------+------------+---------------------------------------------------------------+----------------+-----------------------+
+|       Function       | Visibility | Modifiers |           Read          |   Write    |                         Internal Calls                        | External Calls | Cyclomatic Complexity |
++----------------------+------------+-----------+-------------------------+------------+---------------------------------------------------------------+----------------+-----------------------+
+| changeOwner(address) |  external  |     []    | ['msg.sender', 'owner'] | ['owner']  | ['revert OwnerOnly(address,address)', 'revert ZeroAddress()'] |       []       |           3           |
+|       pause()        |  external  |     []    | ['msg.sender', 'owner'] | ['paused'] |             ['revert OwnerOnly(address,address)']             |       []       |           2           |
+|      unpause()       |  external  |     []    | ['msg.sender', 'owner'] | ['paused'] |             ['revert OwnerOnly(address,address)']             |       []       |           2           |
++----------------------+------------+-----------+-------------------------+------------+---------------------------------------------------------------+----------------+-----------------------+
+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+| Modifiers | Visibility | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++-----------+------------+------+-------+----------------+----------------+-----------------------+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+
+INFO:Printers:
+Contract IService
+Contract vars: []
+Inheritance:: []
+ 
++------------------------------------------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+|                                Function                                | Visibility | Modifiers | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++------------------------------------------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+|     create(address,bytes32,uint32[],IService.AgentParams[],uint32)     |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+| update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256) |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|                 activateRegistration(address,uint256)                  |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|           registerAgents(address,uint256,address[],uint32[])           |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|                 deploy(address,uint256,address,bytes)                  |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|                       terminate(address,uint256)                       |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|                        unbond(address,uint256)                         |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
++------------------------------------------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+| Modifiers | Visibility | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++-----------+------------+------+-------+----------------+----------------+-----------------------+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+
+INFO:Printers:
+Contract IServiceTokenUtility
+Contract vars: []
+Inheritance:: []
+ 
++------------------------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+|                       Function                       | Visibility | Modifiers | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++------------------------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+| createWithToken(uint256,address,uint32[],uint256[])  |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|              resetServiceToken(uint256)              |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|      activateRegistrationTokenDeposit(uint256)       |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+| registerAgentsTokenDeposit(address,uint256,uint32[]) |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|            terminateTokenRefund(uint256)             |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|          unbondTokenRefund(address,uint256)          |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|            isTokenSecuredService(uint256)            |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
++------------------------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+| Modifiers | Visibility | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++-----------+------------+------+-------+----------------+----------------+-----------------------+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+
+INFO:Printers:
+Contract IOperatorWhitelist
+Contract vars: []
+Inheritance:: []
+ 
++----------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+|                Function                | Visibility | Modifiers | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++----------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+| isOperatorWhitelisted(uint256,address) |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
++----------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+| Modifiers | Visibility | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++-----------+------------+------+-------+----------------+----------------+-----------------------+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+
+INFO:Printers:
+Contract ServiceManagerToken
+Contract vars: ['owner', 'paused', 'serviceRegistry', 'serviceRegistryTokenUtility', 'ETH_TOKEN_ADDRESS', 'BOND_WRAPPER', 'operatorWhitelist']
+Inheritance:: ['GenericManager', 'IErrorsRegistries']
+ 
++------------------------------------------------------------------------+------------+-----------+----------------------------------------------------+---------------------------------------+---------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
+|                                Function                                | Visibility | Modifiers |                        Read                        |                 Write                 |                         Internal Calls                        |                                                                                                        External Calls                                                                                                        | Cyclomatic Complexity |
++------------------------------------------------------------------------+------------+-----------+----------------------------------------------------+---------------------------------------+---------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
+|                          changeOwner(address)                          |  external  |     []    |              ['msg.sender', 'owner']               |               ['owner']               | ['revert OwnerOnly(address,address)', 'revert ZeroAddress()'] |                                                                                                              []                                                                                                              |           3           |
+|                                pause()                                 |  external  |     []    |              ['msg.sender', 'owner']               |               ['paused']              |             ['revert OwnerOnly(address,address)']             |                                                                                                              []                                                                                                              |           2           |
+|                               unpause()                                |  external  |     []    |              ['msg.sender', 'owner']               |               ['paused']              |             ['revert OwnerOnly(address,address)']             |                                                                                                              []                                                                                                              |           2           |
+|                      constructor(address,address)                      |   public   |     []    |                   ['msg.sender']                   |      ['owner', 'serviceRegistry']     |                    ['revert ZeroAddress()']                   |                                                                                                              []                                                                                                              |           2           |
+|                                                                        |            |           |                                                    |    ['serviceRegistryTokenUtility']    |                                                               |                                                                                                                                                                                                                              |                       |
+|                     setOperatorWhitelist(address)                      |  external  |     []    |              ['msg.sender', 'owner']               |         ['operatorWhitelist']         | ['revert OwnerOnly(address,address)', 'revert ZeroAddress()'] |                                                                                                              []                                                                                                              |           3           |
+| create(address,address,bytes32,uint32[],IService.AgentParams[],uint32) |  external  |     []    |       ['BOND_WRAPPER', 'ETH_TOKEN_ADDRESS']        |                   []                  |          ['revert Paused()', 'revert ZeroAddress()']          |                   ['IService(serviceRegistry).create(serviceOwner,configHash,agentIds,agentParams,threshold)', 'IService(serviceRegistry).create(serviceOwner,configHash,agentIds,agentParams,threshold)']                   |           5           |
+|                                                                        |            |           |           ['paused', 'serviceRegistry']            |                                       |                                                               |                                              ['IServiceTokenUtility(serviceRegistryTokenUtility).createWithToken(serviceId,token,agentIds,bonds)', 'new uint256[](numAgents)']                                               |                       |
+|                                                                        |            |           |          ['serviceRegistryTokenUtility']           |                                       |                                                               |                                                                                                                                                                                                                              |                       |
+| update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256) |  external  |     []    |       ['BOND_WRAPPER', 'ETH_TOKEN_ADDRESS']        |                   []                  |                    ['revert ZeroAddress()']                   |           ['IService(serviceRegistry).update(msg.sender,configHash,agentIds,agentParams,threshold,serviceId)', 'IService(serviceRegistry).update(msg.sender,configHash,agentIds,agentParams,threshold,serviceId)']           |           5           |
+|                                                                        |            |           |         ['msg.sender', 'serviceRegistry']          |                                       |                                                               |                   ['IServiceTokenUtility(serviceRegistryTokenUtility).createWithToken(serviceId,token,agentIds,bonds)', 'IServiceTokenUtility(serviceRegistryTokenUtility).resetServiceToken(serviceId)']                    |                       |
+|                                                                        |            |           |          ['serviceRegistryTokenUtility']           |                                       |                                                               |                                                                                                 ['new uint256[](numAgents)']                                                                                                 |                       |
+|                     activateRegistration(uint256)                      |  external  |     []    |           ['BOND_WRAPPER', 'msg.sender']           |                   []                  |                               []                              |                   ['IService(serviceRegistry).activateRegistration{value: BOND_WRAPPER}(msg.sender,serviceId)', 'IService(serviceRegistry).activateRegistration{value: msg.value}(msg.sender,serviceId)']                    |           2           |
+|                                                                        |            |           |          ['msg.value', 'serviceRegistry']          |                                       |                                                               |                                                              ['IServiceTokenUtility(serviceRegistryTokenUtility).activateRegistrationTokenDeposit(serviceId)']                                                               |                       |
+|                                                                        |            |           |          ['serviceRegistryTokenUtility']           |                                       |                                                               |                                                                                                                                                                                                                              |                       |
+|               registerAgents(uint256,address[],uint32[])               |  external  |     []    |           ['BOND_WRAPPER', 'msg.sender']           |                   []                  |               ['revert WrongOperator(uint256)']               | ['IOperatorWhitelist(operatorWhitelist).isOperatorWhitelisted(serviceId,msg.sender)', 'IService(serviceRegistry).registerAgents{value: agentInstances.length * BOND_WRAPPER}(msg.sender,serviceId,agentInstances,agentIds)'] |           4           |
+|                                                                        |            |           |         ['msg.value', 'operatorWhitelist']         |                                       |                                                               | ['IService(serviceRegistry).registerAgents{value: msg.value}(msg.sender,serviceId,agentInstances,agentIds)', 'IServiceTokenUtility(serviceRegistryTokenUtility).registerAgentsTokenDeposit(msg.sender,serviceId,agentIds)']  |                       |
+|                                                                        |            |           | ['serviceRegistry', 'serviceRegistryTokenUtility'] |                                       |                                                               |                                                                                                                                                                                                                              |                       |
+|                     deploy(uint256,address,bytes)                      |  external  |     []    |         ['msg.sender', 'serviceRegistry']          |                   []                  |                               []                              |                                                                    ['IService(serviceRegistry).deploy(msg.sender,serviceId,multisigImplementation,data)']                                                                    |           1           |
+|                           terminate(uint256)                           |  external  |     []    |         ['msg.sender', 'serviceRegistry']          |                   []                  |                               []                              |                                      ['IService(serviceRegistry).terminate(msg.sender,serviceId)', 'IServiceTokenUtility(serviceRegistryTokenUtility).terminateTokenRefund(serviceId)']                                      |           2           |
+|                                                                        |            |           |          ['serviceRegistryTokenUtility']           |                                       |                                                               |                                                                                                                                                                                                                              |                       |
+|                            unbond(uint256)                             |  external  |     []    |         ['msg.sender', 'serviceRegistry']          |                   []                  |                               []                              |                                   ['IService(serviceRegistry).unbond(msg.sender,serviceId)', 'IServiceTokenUtility(serviceRegistryTokenUtility).unbondTokenRefund(msg.sender,serviceId)']                                    |           2           |
+|                                                                        |            |           |          ['serviceRegistryTokenUtility']           |                                       |                                                               |                                                                                                                                                                                                                              |                       |
+|                 slitherConstructorConstantVariables()                  |  internal  |     []    |                         []                         | ['BOND_WRAPPER', 'ETH_TOKEN_ADDRESS'] |                               []                              |                                                                                                              []                                                                                                              |           1           |
++------------------------------------------------------------------------+------------+-----------+----------------------------------------------------+---------------------------------------+---------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+| Modifiers | Visibility | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++-----------+------------+------+-------+----------------+----------------+-----------------------+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+
+INFO:Printers:
+Contract IErrorsRegistries
+Contract vars: []
+Inheritance:: []
+ 
++----------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+| Function | Visibility | Modifiers | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++----------+------------+-----------+------+-------+----------------+----------------+-----------------------+
++----------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+| Modifiers | Visibility | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++-----------+------------+------+-------+----------------+----------------+-----------------------+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+
+INFO:Printers:
+Contract IService
+Contract vars: []
+Inheritance:: []
+ 
++------------------------------------------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+|                                Function                                | Visibility | Modifiers | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++------------------------------------------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+|     create(address,bytes32,uint32[],IService.AgentParams[],uint32)     |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+| update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256) |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|                 activateRegistration(address,uint256)                  |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|           registerAgents(address,uint256,address[],uint32[])           |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|                 deploy(address,uint256,address,bytes)                  |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|                       terminate(address,uint256)                       |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|                        unbond(address,uint256)                         |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
++------------------------------------------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+| Modifiers | Visibility | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++-----------+------------+------+-------+----------------+----------------+-----------------------+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+
+INFO:Printers:
+Contract IToken
+Contract vars: []
+Inheritance:: []
+ 
++---------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+|                Function               | Visibility | Modifiers | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++---------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+|       allowance(address,address)      |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+| transferFrom(address,address,uint256) |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|       transfer(address,uint256)       |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+|            ownerOf(uint256)           |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
++---------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+| Modifiers | Visibility | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++-----------+------------+------+-------+----------------+----------------+-----------------------+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+
+INFO:Printers:
+Contract IServiceUtility
+Contract vars: []
+Inheritance:: []
+ 
++------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+|              Function              | Visibility | Modifiers | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+|        mapServices(uint256)        |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
+| mapAgentInstanceOperators(address) |  external  |     []    |  []  |   []  |       []       |       []       |           2           |
++------------------------------------+------------+-----------+------+-------+----------------+----------------+-----------------------+
+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+| Modifiers | Visibility | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++-----------+------------+------+-------+----------------+----------------+-----------------------+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+
+INFO:Printers:
+Contract ServiceRegistryTokenUtility
+Contract vars: ['serviceRegistry', 'owner', 'manager', 'drainer', '_locked', 'mapServiceIdTokenDeposit', 'mapServiceAndAgentIdAgentBond', 'mapOperatorAndServiceIdOperatorBalances', 'mapSlashedFunds']
+Inheritance:: ['IErrorsRegistries']
+ 
++------------------------------------------------------+------------+-----------+------------------------------------------------------------------------------+----------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
+|                       Function                       | Visibility | Modifiers |                                     Read                                     |                             Write                              |                                                Internal Calls                                                |                                                                External Calls                                                                | Cyclomatic Complexity |
++------------------------------------------------------+------------+-----------+------------------------------------------------------------------------------+----------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
+|                 constructor(address)                 |   public   |     []    |                                ['msg.sender']                                |                  ['owner', 'serviceRegistry']                  |                                           ['revert ZeroAddress()']                                           |                                                                      []                                                                      |           2           |
+|                 changeOwner(address)                 |  external  |     []    |                           ['msg.sender', 'owner']                            |                           ['owner']                            |                        ['revert OwnerOnly(address,address)', 'revert ZeroAddress()']                         |                                                                      []                                                                      |           3           |
+|                changeManager(address)                |  external  |     []    |                           ['msg.sender', 'owner']                            |                          ['manager']                           |                        ['revert OwnerOnly(address,address)', 'revert ZeroAddress()']                         |                                                                      []                                                                      |           3           |
+|                changeDrainer(address)                |  external  |     []    |                           ['msg.sender', 'owner']                            |                          ['drainer']                           |                        ['revert OwnerOnly(address,address)', 'revert ZeroAddress()']                         |                                                                      []                                                                      |           3           |
+| createWithToken(uint256,address,uint32[],uint256[])  |  external  |     []    |                          ['manager', 'msg.sender']                           | ['mapServiceAndAgentIdAgentBond', 'mapServiceIdTokenDeposit']  |                 ['revert ManagerOnly(address,address)', 'revert Overflow(uint256,uint256)']                  |                                                                      []                                                                      |           6           |
+|              resetServiceToken(uint256)              |  external  |     []    |                   ['manager', 'mapServiceIdTokenDeposit']                    |                  ['mapServiceIdTokenDeposit']                  |                                   ['revert ManagerOnly(address,address)']                                    |                                                                      []                                                                      |           2           |
+|                                                      |            |           |                                ['msg.sender']                                |                                                                |                                                                                                              |                                                                                                                                              |                       |
+|      activateRegistrationTokenDeposit(uint256)       |  external  |     []    |                            ['_locked', 'manager']                            |                          ['_locked']                           | ['revert IncorrectRegistrationDepositValue(uint256,uint256,uint256)', 'revert ManagerOnly(address,address)'] |                    ['IToken(serviceRegistry).ownerOf(serviceId)', 'IToken(token).allowance(serviceOwner,address(this))']                     |           6           |
+|                                                      |            |           |                  ['mapServiceIdTokenDeposit', 'msg.sender']                  |                                                                |            ['revert ReentrancyGuard()', 'revert TransferFailed(address,address,address,uint256)']            |                                  ['IToken(token).transferFrom(serviceOwner,address(this),securityDeposit)']                                  |                       |
+|                                                      |            |           |                         ['serviceRegistry', 'this']                          |                                                                |                                                                                                              |                                                                                                                                              |                       |
+| registerAgentsTokenDeposit(address,uint256,uint32[]) |  external  |     []    |                            ['_locked', 'manager']                            |     ['_locked', 'mapOperatorAndServiceIdOperatorBalances']     | ['revert IncorrectRegistrationDepositValue(uint256,uint256,uint256)', 'revert ManagerOnly(address,address)'] |             ['IToken(token).allowance(operator,address(this))', 'IToken(token).transferFrom(operator,address(this),totalBond)']              |           7           |
+|                                                      |            |           | ['mapOperatorAndServiceIdOperatorBalances', 'mapServiceAndAgentIdAgentBond'] |                                                                |            ['revert ReentrancyGuard()', 'revert TransferFailed(address,address,address,uint256)']            |                                                                                                                                              |                       |
+|                                                      |            |           |                  ['mapServiceIdTokenDeposit', 'msg.sender']                  |                                                                |                                                                                                              |                                                                                                                                              |                       |
+|                                                      |            |           |                                   ['this']                                   |                                                                |                                                                                                              |                                                                                                                                              |                       |
+|            terminateTokenRefund(uint256)             |  external  |     []    |                            ['_locked', 'manager']                            |                          ['_locked']                           |                     ['revert ManagerOnly(address,address)', 'revert ReentrancyGuard()']                      |                    ['IToken(serviceRegistry).ownerOf(serviceId)', 'IToken(token).transfer(serviceOwner,securityRefund)']                     |           5           |
+|                                                      |            |           |                  ['mapServiceIdTokenDeposit', 'msg.sender']                  |                                                                |                          ['revert TransferFailed(address,address,address,uint256)']                          |                                                                                                                                              |                       |
+|                                                      |            |           |                         ['serviceRegistry', 'this']                          |                                                                |                                                                                                              |                                                                                                                                              |                       |
+|          unbondTokenRefund(address,uint256)          |  external  |     []    |                            ['_locked', 'manager']                            |     ['_locked', 'mapOperatorAndServiceIdOperatorBalances']     |                     ['revert ManagerOnly(address,address)', 'revert ReentrancyGuard()']                      |                                                 ['IToken(token).transfer(operator,refund)']                                                  |           6           |
+|                                                      |            |           |   ['mapOperatorAndServiceIdOperatorBalances', 'mapServiceIdTokenDeposit']    |                                                                |                          ['revert TransferFailed(address,address,address,uint256)']                          |                                                                                                                                              |                       |
+|                                                      |            |           |                            ['msg.sender', 'this']                            |                                                                |                                                                                                              |                                                                                                                                              |                       |
+|          slash(address[],uint256[],uint256)          |  external  |     []    |   ['mapOperatorAndServiceIdOperatorBalances', 'mapServiceIdTokenDeposit']    | ['mapOperatorAndServiceIdOperatorBalances', 'mapSlashedFunds'] |    ['revert OnlyOwnServiceMultisig(address,address,uint256)', 'revert WrongArrayLength(uint256,uint256)']    | ['IServiceUtility(serviceRegistry).mapAgentInstanceOperators(agentInstances[i])', 'IServiceUtility(serviceRegistry).mapServices(serviceId)'] |           8           |
+|                                                      |            |           |                      ['mapSlashedFunds', 'msg.sender']                       |                                                                |                    ['revert WrongServiceState(uint256,uint256)', 'revert ZeroAddress()']                     |                                                                                                                                              |                       |
+|                                                      |            |           |                             ['serviceRegistry']                              |                                                                |                                                                                                              |                                                                                                                                              |                       |
+|                    drain(address)                    |  external  |     []    |                            ['_locked', 'drainer']                            |                 ['_locked', 'mapSlashedFunds']                 |                      ['revert OwnerOnly(address,address)', 'revert ReentrancyGuard()']                       |                                                  ['IToken(token).transfer(drainer,amount)']                                                  |           6           |
+|                                                      |            |           |                      ['mapSlashedFunds', 'msg.sender']                       |                                                                |              ['revert TransferFailed(address,address,address,uint256)', 'revert ZeroAddress()']              |                                                                                                                                              |                       |
+|                                                      |            |           |                              ['owner', 'this']                               |                                                                |                                                                                                              |                                                                                                                                              |                       |
+|            isTokenSecuredService(uint256)            |  external  |     []    |                         ['mapServiceIdTokenDeposit']                         |                               []                               |                                                      []                                                      |                                                                      []                                                                      |           1           |
+|         getOperatorBalance(address,uint256)          |  external  |     []    |                 ['mapOperatorAndServiceIdOperatorBalances']                  |                               []                               |                                                      []                                                      |                                                                      []                                                                      |           1           |
+|            slitherConstructorVariables()             |  internal  |     []    |                                      []                                      |                          ['_locked']                           |                                                      []                                                      |                                                                      []                                                                      |           1           |
++------------------------------------------------------+------------+-----------+------------------------------------------------------------------------------+----------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+| Modifiers | Visibility | Read | Write | Internal Calls | External Calls | Cyclomatic Complexity |
++-----------+------------+------+-------+----------------+----------------+-----------------------+
++-----------+------------+------+-------+----------------+----------------+-----------------------+
+
+INFO:Slither:. analyzed (13 contracts)

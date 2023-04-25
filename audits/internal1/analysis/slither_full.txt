@@ -1,0 +1,140 @@
+Notes: False positive
+INFO:Detectors:
+ServiceManagerToken.activateRegistration(uint256) (ServiceManagerToken-flatten.sol#494-506) sends eth to arbitrary user
+	Dangerous calls:
+	- success = IService(serviceRegistry).activateRegistration{value: BOND_WRAPPER}(msg.sender,serviceId) (ServiceManagerToken-flatten.sol#501)
+ServiceManagerToken.registerAgents(uint256,address[],uint32[]) (ServiceManagerToken-flatten.sol#513-539) sends eth to arbitrary user
+	Dangerous calls:
+	- success = IService(serviceRegistry).registerAgents{value: agentInstances.length * BOND_WRAPPER}(msg.sender,serviceId,agentInstances,agentIds) (ServiceManagerToken-flatten.sol#533-534)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#functions-that-send-ether-to-arbitrary-destinations
+
+Notes: To pay attention
+INFO:Detectors:
+ServiceManagerToken.update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256) (ServiceManagerToken-flatten.sol#446-489) ignores return value by IService(serviceRegistry).update(msg.sender,configHash,agentIds,agentParams,threshold,serviceId) (ServiceManagerToken-flatten.sol#462)
+ServiceManagerToken.update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256) (ServiceManagerToken-flatten.sol#446-489) ignores return value by IService(serviceRegistry).update(msg.sender,configHash,agentIds,agentParams,threshold,serviceId) (ServiceManagerToken-flatten.sol#481)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unused-return
+
+Notes: Can be ignored
+INFO:Detectors:
+Reentrancy in ServiceManagerToken.deploy(uint256,address,bytes) (ServiceManagerToken-flatten.sol#546-554):
+	External calls:
+	- multisig = IService(serviceRegistry).deploy(msg.sender,serviceId,multisigImplementation,data) (ServiceManagerToken-flatten.sol#552)
+	Event emitted after the call(s):
+	- CreateMultisig(multisig) (ServiceManagerToken-flatten.sol#553)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+Notes: Update to safeTransfer 
+INFO:Detectors:
+ServiceRegistryTokenUtility.activateRegistrationTokenDeposit(uint256) (ServiceRegistryTokenUtility-flatten.sol#443-481) uses arbitrary from in transferFrom: success = IToken(token).transferFrom(serviceOwner,address(this),securityDeposit) (ServiceRegistryTokenUtility-flatten.sol#472)
+ServiceRegistryTokenUtility.registerAgentsTokenDeposit(address,uint256,uint32[]) (ServiceRegistryTokenUtility-flatten.sol#491-551) uses arbitrary from in transferFrom: success = IToken(token).transferFrom(operator,address(this),totalBond) (ServiceRegistryTokenUtility-flatten.sol#542)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#arbitrary-from-in-transferfrom
+
+Notes: False, ERC20
+INFO:Detectors:
+IToken (ServiceRegistryTokenUtility-flatten.sol#219-240) has incorrect ERC721 function interface:IToken.transferFrom(address,address,uint256) (ServiceRegistryTokenUtility-flatten.sol#229)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-erc721-interface
+
+Notes: False, Reentrancy guard via _locked
+INFO:Detectors:
+Reentrancy in ServiceRegistryTokenUtility.activateRegistrationTokenDeposit(uint256) (ServiceRegistryTokenUtility-flatten.sol#443-481):
+	External calls:
+	- success = IToken(token).transferFrom(serviceOwner,address(this),securityDeposit) (ServiceRegistryTokenUtility-flatten.sol#472)
+	State variables written after the call(s):
+	- _locked = 1 (ServiceRegistryTokenUtility-flatten.sol#480)
+	ServiceRegistryTokenUtility._locked (ServiceRegistryTokenUtility-flatten.sol#297) can be used in cross function reentrancies:
+	- ServiceRegistryTokenUtility.activateRegistrationTokenDeposit(uint256) (ServiceRegistryTokenUtility-flatten.sol#443-481)
+	- ServiceRegistryTokenUtility.drain(address) (ServiceRegistryTokenUtility-flatten.sol#706-737)
+	- ServiceRegistryTokenUtility.registerAgentsTokenDeposit(address,uint256,uint32[]) (ServiceRegistryTokenUtility-flatten.sol#491-551)
+	- ServiceRegistryTokenUtility.terminateTokenRefund(uint256) (ServiceRegistryTokenUtility-flatten.sol#556-587)
+	- ServiceRegistryTokenUtility.unbondTokenRefund(address,uint256) (ServiceRegistryTokenUtility-flatten.sol#593-634)
+Reentrancy in ServiceRegistryTokenUtility.drain(address) (ServiceRegistryTokenUtility-flatten.sol#706-737):
+	External calls:
+	- success = IToken(token).transfer(drainer,amount) (ServiceRegistryTokenUtility-flatten.sol#729)
+	State variables written after the call(s):
+	- _locked = 1 (ServiceRegistryTokenUtility-flatten.sol#736)
+	ServiceRegistryTokenUtility._locked (ServiceRegistryTokenUtility-flatten.sol#297) can be used in cross function reentrancies:
+	- ServiceRegistryTokenUtility.activateRegistrationTokenDeposit(uint256) (ServiceRegistryTokenUtility-flatten.sol#443-481)
+	- ServiceRegistryTokenUtility.drain(address) (ServiceRegistryTokenUtility-flatten.sol#706-737)
+	- ServiceRegistryTokenUtility.registerAgentsTokenDeposit(address,uint256,uint32[]) (ServiceRegistryTokenUtility-flatten.sol#491-551)
+	- ServiceRegistryTokenUtility.terminateTokenRefund(uint256) (ServiceRegistryTokenUtility-flatten.sol#556-587)
+	- ServiceRegistryTokenUtility.unbondTokenRefund(address,uint256) (ServiceRegistryTokenUtility-flatten.sol#593-634)
+Reentrancy in ServiceRegistryTokenUtility.registerAgentsTokenDeposit(address,uint256,uint32[]) (ServiceRegistryTokenUtility-flatten.sol#491-551):
+	External calls:
+	- success = IToken(token).transferFrom(operator,address(this),totalBond) (ServiceRegistryTokenUtility-flatten.sol#542)
+	State variables written after the call(s):
+	- _locked = 1 (ServiceRegistryTokenUtility-flatten.sol#550)
+	ServiceRegistryTokenUtility._locked (ServiceRegistryTokenUtility-flatten.sol#297) can be used in cross function reentrancies:
+	- ServiceRegistryTokenUtility.activateRegistrationTokenDeposit(uint256) (ServiceRegistryTokenUtility-flatten.sol#443-481)
+	- ServiceRegistryTokenUtility.drain(address) (ServiceRegistryTokenUtility-flatten.sol#706-737)
+	- ServiceRegistryTokenUtility.registerAgentsTokenDeposit(address,uint256,uint32[]) (ServiceRegistryTokenUtility-flatten.sol#491-551)
+	- ServiceRegistryTokenUtility.terminateTokenRefund(uint256) (ServiceRegistryTokenUtility-flatten.sol#556-587)
+	- ServiceRegistryTokenUtility.unbondTokenRefund(address,uint256) (ServiceRegistryTokenUtility-flatten.sol#593-634)
+Reentrancy in ServiceRegistryTokenUtility.terminateTokenRefund(uint256) (ServiceRegistryTokenUtility-flatten.sol#556-587):
+	External calls:
+	- success = IToken(token).transfer(serviceOwner,securityRefund) (ServiceRegistryTokenUtility-flatten.sol#579)
+	State variables written after the call(s):
+	- _locked = 1 (ServiceRegistryTokenUtility-flatten.sol#586)
+	ServiceRegistryTokenUtility._locked (ServiceRegistryTokenUtility-flatten.sol#297) can be used in cross function reentrancies:
+	- ServiceRegistryTokenUtility.activateRegistrationTokenDeposit(uint256) (ServiceRegistryTokenUtility-flatten.sol#443-481)
+	- ServiceRegistryTokenUtility.drain(address) (ServiceRegistryTokenUtility-flatten.sol#706-737)
+	- ServiceRegistryTokenUtility.registerAgentsTokenDeposit(address,uint256,uint32[]) (ServiceRegistryTokenUtility-flatten.sol#491-551)
+	- ServiceRegistryTokenUtility.terminateTokenRefund(uint256) (ServiceRegistryTokenUtility-flatten.sol#556-587)
+	- ServiceRegistryTokenUtility.unbondTokenRefund(address,uint256) (ServiceRegistryTokenUtility-flatten.sol#593-634)
+Reentrancy in ServiceRegistryTokenUtility.unbondTokenRefund(address,uint256) (ServiceRegistryTokenUtility-flatten.sol#593-634):
+	External calls:
+	- success = IToken(token).transfer(operator,refund) (ServiceRegistryTokenUtility-flatten.sol#625)
+	State variables written after the call(s):
+	- _locked = 1 (ServiceRegistryTokenUtility-flatten.sol#633)
+	ServiceRegistryTokenUtility._locked (ServiceRegistryTokenUtility-flatten.sol#297) can be used in cross function reentrancies:
+	- ServiceRegistryTokenUtility.activateRegistrationTokenDeposit(uint256) (ServiceRegistryTokenUtility-flatten.sol#443-481)
+	- ServiceRegistryTokenUtility.drain(address) (ServiceRegistryTokenUtility-flatten.sol#706-737)
+	- ServiceRegistryTokenUtility.registerAgentsTokenDeposit(address,uint256,uint32[]) (ServiceRegistryTokenUtility-flatten.sol#491-551)
+	- ServiceRegistryTokenUtility.terminateTokenRefund(uint256) (ServiceRegistryTokenUtility-flatten.sol#556-587)
+	- ServiceRegistryTokenUtility.unbondTokenRefund(address,uint256) (ServiceRegistryTokenUtility-flatten.sol#593-634)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
+
+Notes: False, zero by default
+INFO:Detectors:
+ServiceRegistryTokenUtility.createWithToken(uint256,address,uint32[],uint256[]).securityDeposit (ServiceRegistryTokenUtility-flatten.sol#392) is a local variable never initialized
+ServiceRegistryTokenUtility.slash(address[],uint256[],uint256).slashedFunds (ServiceRegistryTokenUtility-flatten.sol#671) is a local variable never initialized
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#uninitialized-local-variables
+
+Notes: False, by design
+INFO:Detectors:
+ServiceRegistryTokenUtility.slash(address[],uint256[],uint256) (ServiceRegistryTokenUtility-flatten.sol#641-701) has external calls inside a loop: operator = IServiceUtility(serviceRegistry).mapAgentInstanceOperators(agentInstances[i]) (ServiceRegistryTokenUtility-flatten.sol#674)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation/#calls-inside-a-loop
+
+Notes: False, see above
+INFO:Detectors:
+Reentrancy in ServiceRegistryTokenUtility.activateRegistrationTokenDeposit(uint256) (ServiceRegistryTokenUtility-flatten.sol#443-481):
+	External calls:
+	- success = IToken(token).transferFrom(serviceOwner,address(this),securityDeposit) (ServiceRegistryTokenUtility-flatten.sol#472)
+	Event emitted after the call(s):
+	- TokenDeposit(serviceOwner,token,securityDeposit) (ServiceRegistryTokenUtility-flatten.sol#477)
+Reentrancy in ServiceRegistryTokenUtility.drain(address) (ServiceRegistryTokenUtility-flatten.sol#706-737):
+	External calls:
+	- success = IToken(token).transfer(drainer,amount) (ServiceRegistryTokenUtility-flatten.sol#729)
+	Event emitted after the call(s):
+	- TokenDrain(msg.sender,token,amount) (ServiceRegistryTokenUtility-flatten.sol#733)
+Reentrancy in ServiceRegistryTokenUtility.registerAgentsTokenDeposit(address,uint256,uint32[]) (ServiceRegistryTokenUtility-flatten.sol#491-551):
+	External calls:
+	- success = IToken(token).transferFrom(operator,address(this),totalBond) (ServiceRegistryTokenUtility-flatten.sol#542)
+	Event emitted after the call(s):
+	- TokenDeposit(operator,token,totalBond) (ServiceRegistryTokenUtility-flatten.sol#547)
+Reentrancy in ServiceRegistryTokenUtility.terminateTokenRefund(uint256) (ServiceRegistryTokenUtility-flatten.sol#556-587):
+	External calls:
+	- success = IToken(token).transfer(serviceOwner,securityRefund) (ServiceRegistryTokenUtility-flatten.sol#579)
+	Event emitted after the call(s):
+	- TokenRefund(serviceOwner,token,securityRefund) (ServiceRegistryTokenUtility-flatten.sol#583)
+Reentrancy in ServiceRegistryTokenUtility.unbondTokenRefund(address,uint256) (ServiceRegistryTokenUtility-flatten.sol#593-634):
+	External calls:
+	- success = IToken(token).transfer(operator,refund) (ServiceRegistryTokenUtility-flatten.sol#625)
+	Event emitted after the call(s):
+	- TokenRefund(operator,token,refund) (ServiceRegistryTokenUtility-flatten.sol#629)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+Notes: Can be ignored
+INFO:Detectors:
+Variable ServiceRegistryTokenUtility._locked (ServiceRegistryTokenUtility-flatten.sol#297) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+INFO:Slither:. analyzed (13 contracts with 85 detectors), 28 result(s) found

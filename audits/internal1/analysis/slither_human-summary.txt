@@ -1,0 +1,61 @@
+INFO:Printers:
+Compiled with solc
+Number of lines: 109 (+ 0 in dependencies, + 0 in tests)
+Number of assembly lines: 0
+Number of contracts: 2 (+ 0 in dependencies, + 0 tests) 
+
+Number of optimization issues: 0
+Number of informational issues: 2
+Number of low issues: 0
+Number of medium issues: 0
+Number of high issues: 0
+
+
++-------------------+-------------+------+------------+--------------+--------------------+
+|        Name       | # functions | ERCS | ERC20 info | Complex code |      Features      |
++-------------------+-------------+------+------------+--------------+--------------------+
+|       IToken      |      1      |      |            |      No      |                    |
+| OperatorWhitelist |      4      |      |            |      No      | Tokens interaction |
++-------------------+-------------+------+------------+--------------+--------------------+
+INFO:Printers:
+Compiled with solc
+Number of lines: 592 (+ 0 in dependencies, + 0 in tests)
+Number of assembly lines: 0
+Number of contracts: 6 (+ 0 in dependencies, + 0 tests) 
+
+Number of optimization issues: 0
+Number of informational issues: 2
+Number of low issues: 1
+Number of medium issues: 2
+Number of high issues: 2
+
++----------------------+-------------+------+------------+--------------+-------------+
+|         Name         | # functions | ERCS | ERC20 info | Complex code |   Features  |
++----------------------+-------------+------+------------+--------------+-------------+
+|       IService       |      7      |      |            |      No      | Receive ETH |
+| IServiceTokenUtility |      7      |      |            |      No      |             |
+|  IOperatorWhitelist  |      1      |      |            |      No      |             |
+| ServiceManagerToken  |      13     |      |            |      No      | Receive ETH |
+|                      |             |      |            |              |   Send ETH  |
++----------------------+-------------+------+------------+--------------+-------------+
+INFO:Printers:
+Compiled with solc
+Number of lines: 758 (+ 0 in dependencies, + 0 in tests)
+Number of assembly lines: 0
+Number of contracts: 5 (+ 0 in dependencies, + 0 tests) 
+
+Number of optimization issues: 0
+Number of informational issues: 3
+Number of low issues: 6
+Number of medium issues: 8
+Number of high issues: 2
+
++-----------------------------+-------------+------+------------+--------------+--------------------+
+|             Name            | # functions | ERCS | ERC20 info | Complex code |      Features      |
++-----------------------------+-------------+------+------------+--------------+--------------------+
+|           IService          |      7      |      |            |      No      |    Receive ETH     |
+|            IToken           |      4      |      |            |      No      |                    |
+|       IServiceUtility       |      2      |      |            |      No      |                    |
+| ServiceRegistryTokenUtility |      15     |      |            |     Yes      | Tokens interaction |
++-----------------------------+-------------+------+------------+--------------+--------------------+
+INFO:Slither:. analyzed (13 contracts)
