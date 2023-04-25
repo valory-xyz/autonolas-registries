@@ -71,6 +71,8 @@ mapOperatorAndServiceIdOperatorBalances[operatorService] = totalBond;
 #### ServiceManagerToken
 ```
 version number
+
+constructor(address _serviceRegistry, address _serviceRegistryTokenUtility) + operatorWhitelist in constructor
 ``` 
 #### OperatorWhitelist
 ```
