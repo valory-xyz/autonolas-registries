@@ -77,8 +77,19 @@ setCheck = true equal setOperatorsCheck(true)
 setCheck = false equal setOperatorsCheck(false)
 function setOperatorsStatuses(uint256 serviceId, address[] memory operators, bool[] memory statuses, bool setCheck) external
 ```
+#### ServiceRegistryTokenUtility
+```
+            bool success = IToken(token).transfer(drainer, amount);
+            if (!success) {
+                revert TransferFailed(token, address(this), msg.sender, amount);
+            }
+simple cure for https://github.com/Defi-Cartel/salmonella
+check balances[recipient] before/after transfer
+low priority
+```
 
 ### TODO helpers
+Below are tips on how to solve `TODO` 
 ```
 TODO Check for the token ERC20 formality
 function isERC20(address token) public view returns (bool) {
