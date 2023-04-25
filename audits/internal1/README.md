@@ -67,7 +67,11 @@ totalBond += mapOperatorAndServiceIdOperatorBalances[operatorService];
 mapOperatorAndServiceIdOperatorBalances[operatorService] = totalBond;
 ```
 
-### Needed improvements 
+### Needed improvements
+#### ServiceManagerToken
+```
+version number
+``` 
 #### OperatorWhitelist
 ```
 It would be nice to add an additional user-assignable setting. Through the UI, you can select the most typical combination. 
