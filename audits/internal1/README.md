@@ -97,12 +97,17 @@ function isERC20(address token) public view returns (bool) {
                 0                 // output length
             )
         }
-    }
+        // or Solidity without assembly
+        // (bool success, bytes memory data) = token.staticcall(abi.encodeWithSignature("balanceOf(address)", address(0)));
+        // Details: https://medium.com/coinmonks/call-staticcall-and-delegatecall-1f0e1853340
+    }    
     return success;
 }
 
+```
 ```	
 TODO Safe transferFrom
+https://github.com/transmissions11/solmate/blob/8f9b23f8838670afda0fd8983f2c41e8037ae6bc/src/utils/SafeTransferLib.sol
 https://github.com/transmissions11/solmate/blob/8f9b23f8838670afda0fd8983f2c41e8037ae6bc/src/tokens/WETH.sol
 https://github.com/transmissions11/solmate/blob/8f9b23f8838670afda0fd8983f2c41e8037ae6bc/src/test/SafeTransferLib.t.sol
 ```
