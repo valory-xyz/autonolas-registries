@@ -307,9 +307,6 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
                 uint256 serviceAgent = serviceId;
                 serviceAgent |= uint256(agentIds[i]) << 32;
                 uint256 bond = mapServiceAndAgentIdAgentBond[serviceAgent];
-                if (bond == 0) {
-                    revert ZeroValue();
-                }
                 totalBond += bond;
             }
 

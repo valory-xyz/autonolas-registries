@@ -85,7 +85,7 @@ describe("ServiceManagerToken", function () {
         await componentRegistry.create(signers[0].address, unitHash3, []);
     });
 
-    context("Service creation via manager", async function () {
+    context("Initialization", async function () {
         it("Constructor must fail with zero provided addresses", async function () {
             const ServiceManager = await ethers.getContractFactory("ServiceManagerToken");
 
@@ -221,6 +221,28 @@ describe("ServiceManagerToken", function () {
             // Create a service
             await serviceManager.create(owner.address, ETHAddress, configHash, [1], [[1, regBond]], 1);
         });
+
+        it("Should fail when setting the operator whitelist incorrectly", async function () {
+            // Try to set the address not by the owner
+            await expect(
+                serviceManager.connect(signers[1]).setOperatorWhitelist(deployer.address)
+            ).to.be.revertedWith("OwnerOnly");
+            // Try to set the zero contract address
+            await expect(
+                serviceManager.connect(deployer).setOperatorWhitelist(AddressZero)
+            ).to.be.revertedWith("ZeroAddress");
+        });
+
+        it("Should fail when calling functions with a zero token", async function () {
+            // Create a service
+            await expect(
+                serviceManager.create(deployer.address, AddressZero, configHash, agentIds, agentParams, threshold)
+            ).to.be.revertedWith("ZeroAddress");
+            // Update a service
+            await expect(
+                serviceManager.update(AddressZero, configHash, agentIds, agentParams, threshold, serviceIds[0])
+            ).to.be.revertedWith("ZeroAddress");
+        });
     });
     
     context("Service creation and update via manager", async function () {
@@ -245,7 +267,7 @@ describe("ServiceManagerToken", function () {
     });
 
     context("Service manipulations via manager", async function () {
-        it("Creating a service with a custom token, register, deploy, terminate, unbond", async function () {
+        it("Creating a service with a custom token, update, register, deploy, terminate, unbond", async function () {
             const manager = signers[4];
             const owner = signers[5];
             const operator = signers[6];
@@ -259,12 +281,16 @@ describe("ServiceManagerToken", function () {
             await serviceRegistry.changeManager(serviceManager.address);
             await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
-            const newAgentParams = [[1, regBond], [1, regBond]];
+            // Create one service with the ERC20 token bond
+            const initAgentIds = [1, 3];
+            await serviceManager.create(deployer.address, token.address, configHash, initAgentIds, agentParams, maxThreshold);
+
+            const newAgentIds = [1, 2, 3];
+            const newAgentParams = [[1, regBond], [1, regBond],  [0, 0]];
             const newMaxThreshold = newAgentParams[0][0] + newAgentParams[1][0];
 
-            // Creating one service with the ERC20 token bond
-            await serviceManager.create(deployer.address, token.address, configHash, agentIds, newAgentParams,
-                newMaxThreshold);
+            // Update a service with the ERC20 token bond
+            await serviceManager.update(token.address, configHash, newAgentIds, newAgentParams, newMaxThreshold, serviceIds[0]);
             // Approve token for the serviceRegistryTokenUtility contract
             await token.connect(deployer).approve(serviceRegistryTokenUtility.address, regBond);
 

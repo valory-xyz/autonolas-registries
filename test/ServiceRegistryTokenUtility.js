@@ -349,6 +349,7 @@ describe("serviceRegistryTokenUtility", function () {
             await serviceRegistryTokenUtility.slash([operator.address], [securityDeposit], serviceId);
             // Slash even more such that there is nothing to slash
             await serviceRegistryTokenUtility.slash([operator.address], [securityDeposit], serviceId);
+            await serviceRegistryTokenUtility.slash([operator.address], [securityDeposit], serviceId);
             slashedBalance = Number(await serviceRegistryTokenUtility.mapSlashedFunds(token.address));
             expect(slashedBalance).to.equal(totalBond);
 
@@ -362,6 +363,10 @@ describe("serviceRegistryTokenUtility", function () {
 
             // Drain slashed funds
             const account = signers[2];
+            // Try to drain with a zero drainer address
+            await expect(
+                serviceRegistryTokenUtility.connect(deployer).drain(token.address)
+            ).to.be.revertedWith("ZeroAddress");
             await serviceRegistryTokenUtility.changeDrainer(account.address);
             // Try to drain not by the owner
             await expect(
