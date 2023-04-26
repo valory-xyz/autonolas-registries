@@ -97,10 +97,6 @@ describe("ServiceManagerToken", function () {
             await expect(
                 ServiceManager.deploy(serviceRegistry.address, AddressZero, AddressZero)
             ).to.be.revertedWith("ZeroAddress");
-
-            await expect(
-                ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address, AddressZero)
-            ).to.be.revertedWith("ZeroAddress");
         });
 
         it("Changing owner", async function () {
@@ -275,7 +271,7 @@ describe("ServiceManagerToken", function () {
             const agentInstances = [signers[7].address, signers[8].address];
             await agentRegistry.changeManager(manager.address);
 
-            // Creating 3 canonical agents
+            // Creating 4 canonical agents
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
@@ -283,8 +279,8 @@ describe("ServiceManagerToken", function () {
             await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
             // Try to create a service with a token having specified at least one zero bond
-            const errAgentIds = [1, 4];
-            const errAgentParams = [[1, 0], [1, regBond]];
+            let errAgentIds = [1, 4];
+            let errAgentParams = [[1, 0], [1, regBond]];
             await expect(
                 serviceManager.create(deployer.address, token.address, configHash, errAgentIds, errAgentParams, maxThreshold)
             ).to.be.revertedWith("ZeroValue");
@@ -293,6 +289,15 @@ describe("ServiceManagerToken", function () {
             const initAgentIds = [1, 3];
             await serviceManager.create(deployer.address, token.address, configHash, initAgentIds, agentParams, maxThreshold);
 
+            // Try to update a service with at least one slot being non zero and its corresponding bond being a zero
+            errAgentIds = [1, 2, 3];
+            errAgentParams = [[1, regBond], [1, 0], [1, regBond]];
+            const errThreshold = errAgentParams[0][0] + errAgentParams[1][0] + errAgentParams[2][0];
+            await expect(
+                serviceManager.update(token.address, configHash, errAgentIds, errAgentParams, errThreshold, serviceIds[0])
+            ).to.be.revertedWith("ZeroValue");
+
+            // Construct correct values for the service update
             const newAgentIds = [1, 2, 3];
             const newAgentParams = [[1, regBond], [1, regBond],  [0, 0]];
             const newMaxThreshold = newAgentParams[0][0] + newAgentParams[1][0];

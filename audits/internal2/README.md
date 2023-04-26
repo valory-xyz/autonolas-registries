@@ -18,7 +18,7 @@ Several checks are obtained automatically. They are commented. Some issues found
 All automatic warnings are listed in the following file, concerns of which we address in more detail below: <br>
 [slither-full](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal1/analysis/slither_full.txt)
 
-- ignores return value by IService(serviceRegistry).update: [];
+- ignores return value by `IService(serviceRegistry).update()`: [x] fixed.
 
 #### ServiceManagerToken needs attention
 ```

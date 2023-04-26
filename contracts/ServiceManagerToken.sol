@@ -38,9 +38,8 @@ contract ServiceManagerToken is GenericManager {
     /// @param _serviceRegistry Service Registry contract address.
     /// @param _serviceRegistryTokenUtility Service Registry Token Utility contract address.
     constructor(address _serviceRegistry, address _serviceRegistryTokenUtility, address _operatorWhitelist) {
-        // Check for the zero address
-        if (_serviceRegistry == address(0) || _serviceRegistryTokenUtility == address(0) ||
-            _operatorWhitelist == address(0)) {
+        // Check for the Service Registry related contract zero addresses
+        if (_serviceRegistry == address(0) || _serviceRegistryTokenUtility == address(0)) {
             revert ZeroAddress();
         }
 
@@ -134,7 +133,7 @@ contract ServiceManagerToken is GenericManager {
         IService.AgentParams[] memory agentParams,
         uint32 threshold,
         uint256 serviceId
-    ) external returns (bool)
+    ) external returns (bool success)
     {
         // Check for the zero address
         if (token == address(0)) {
@@ -143,7 +142,7 @@ contract ServiceManagerToken is GenericManager {
 
         if (token == ETH_TOKEN_ADDRESS) {
             // Call the original ServiceRegistry contract function
-            IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams, threshold, serviceId);
+            success = IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams, threshold, serviceId);
             // Reset the service token-based data
             // This function still needs to be called as the previous token could be a custom ERC20 token
             IServiceTokenUtility(serviceRegistryTokenUtility).resetServiceToken(serviceId);
@@ -155,6 +154,10 @@ contract ServiceManagerToken is GenericManager {
             for (uint256 i = 0; i < numAgents; ++i) {
                 // Copy actual bond values for each agent Id that has at least one slot in the updated service
                 if (agentParams[i].slots > 0) {
+                    // Check for the zero bond value
+                    if (agentParams[i].bond == 0) {
+                        revert ZeroValue();
+                    }
                     bonds[i] = agentParams[i].bond;
                     // Wrap bonds with the BOND_WRAPPER value for the original ServiceRegistry contract
                     agentParams[i].bond = BOND_WRAPPER;
@@ -162,14 +165,13 @@ contract ServiceManagerToken is GenericManager {
             }
 
             // Call the original ServiceRegistry contract function
-            IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams, threshold, serviceId);
+            success = IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams, threshold, serviceId);
             // Update relevant data in the ServiceRegistryTokenUtility contract
             // We follow the optimistic design where existing bonds are just overwritten without a clearing
             // bond values of agent Ids that are not going to be used in the service. This is coming from the fact
             // that all the checks are done on the original ServiceRegistry side
             IServiceTokenUtility(serviceRegistryTokenUtility).createWithToken(serviceId, token, agentIds, bonds);
         }
-        return true;
     }
 
     /// @dev Activates the service and its sensitive components.

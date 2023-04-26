@@ -446,8 +446,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             // serviceId occupies next 32 bits
             operatorService |= serviceId << 160;
             // Update operator's bonding balance
-            uint256 operatorBalance = totalBond + mapOperatorAndServiceIdOperatorBalances[operatorService];
-            mapOperatorAndServiceIdOperatorBalances[operatorService] = operatorBalance;
+            mapOperatorAndServiceIdOperatorBalances[operatorService] += totalBond;
             // Set the token-secured flag for the service
             isTokenSecured = true;
 
