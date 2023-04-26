@@ -66,17 +66,18 @@ describe("ServiceManagerToken", function () {
         gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
         await gnosisSafeMultisig.deployed();
 
+        const OperatorWhitelist = await ethers.getContractFactory("OperatorWhitelist");
+        operatorWhitelist = await OperatorWhitelist.deploy(serviceRegistry.address);
+        await operatorWhitelist.deployed();
+
         const ServiceManager = await ethers.getContractFactory("ServiceManagerToken");
-        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
+        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address,
+            operatorWhitelist.address);
         await serviceManager.deployed();
 
         const Token = await ethers.getContractFactory("ERC20Token");
         token = await Token.deploy();
         await token.deployed();
-
-        const OperatorWhitelist = await ethers.getContractFactory("OperatorWhitelist");
-        operatorWhitelist = await OperatorWhitelist.deploy(serviceRegistry.address);
-        await operatorWhitelist.deployed();
 
         signers = await ethers.getSigners();
         deployer = signers[0];
@@ -90,11 +91,15 @@ describe("ServiceManagerToken", function () {
             const ServiceManager = await ethers.getContractFactory("ServiceManagerToken");
 
             await expect(
-                ServiceManager.deploy(AddressZero, AddressZero)
+                ServiceManager.deploy(AddressZero, AddressZero, AddressZero)
             ).to.be.revertedWith("ZeroAddress");
 
             await expect(
-                ServiceManager.deploy(serviceRegistry.address, AddressZero)
+                ServiceManager.deploy(serviceRegistry.address, AddressZero, AddressZero)
+            ).to.be.revertedWith("ZeroAddress");
+
+            await expect(
+                ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address, AddressZero)
             ).to.be.revertedWith("ZeroAddress");
         });
 
@@ -300,10 +305,8 @@ describe("ServiceManagerToken", function () {
             expect(service.state).to.equal(2);
 
             // Set the operator whitelist checker contract
-            await operatorWhitelist.setOperatorsCheck(serviceIds[0], true);
-            await serviceManager.setOperatorWhitelist(operatorWhitelist.address);
             // Whitelist a random operator address for the service
-            await operatorWhitelist.setOperatorsStatuses(serviceIds[0], [signers[15].address], [true]);
+            await operatorWhitelist.setOperatorsStatuses(serviceIds[0], [signers[15].address], [true], true);
             // Try to register agents with the non-whitelited operator address
             await expect(
                 serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[1]],
@@ -311,12 +314,12 @@ describe("ServiceManagerToken", function () {
             ).to.be.revertedWith("WrongOperator");
 
             // Whitelist a correct operator address
-            await operatorWhitelist.setOperatorsStatuses(serviceIds[0], [operator.address], [true]);
+            await operatorWhitelist.setOperatorsStatuses(serviceIds[0], [operator.address], [true], true);
             // Try to register agents without the approve from the operator
             await expect(
                 serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[1]],
                     agentIds, {value: 2})
-            ).to.be.revertedWith("IncorrectRegistrationDepositValue");
+            ).to.be.revertedWith("IncorrectAgentBondingValue");
 
             // Approve token for the serviceRegistryTokenUtility contract by the operator
             await token.mint(operator.address, 2 * regBond);

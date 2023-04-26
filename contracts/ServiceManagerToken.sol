@@ -31,18 +31,22 @@ contract ServiceManagerToken is GenericManager {
     uint96 public constant BOND_WRAPPER = 1;
     // Operator whitelist address
     address public operatorWhitelist;
+    // Service manager version number
+    string public constant VERSION = "1.1.0";
 
     /// @dev ServiceRegistryTokenUtility constructor.
     /// @param _serviceRegistry Service Registry contract address.
     /// @param _serviceRegistryTokenUtility Service Registry Token Utility contract address.
-    constructor(address _serviceRegistry, address _serviceRegistryTokenUtility) {
+    constructor(address _serviceRegistry, address _serviceRegistryTokenUtility, address _operatorWhitelist) {
         // Check for the zero address
-        if (_serviceRegistry == address(0) || _serviceRegistryTokenUtility == address(0)) {
+        if (_serviceRegistry == address(0) || _serviceRegistryTokenUtility == address(0) ||
+            _operatorWhitelist == address(0)) {
             revert ZeroAddress();
         }
 
         serviceRegistry = _serviceRegistry;
         serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
+        operatorWhitelist = _operatorWhitelist;
         owner = msg.sender;
     }
     
@@ -98,6 +102,11 @@ contract ServiceManagerToken is GenericManager {
             uint256 numAgents = agentParams.length;
             uint256[] memory bonds = new uint256[](numAgents);
             for (uint256 i = 0; i < numAgents; ++i) {
+                // Check for the zero bond value
+                if (agentParams[i].bond == 0) {
+                    revert ZeroValue();
+                }
+
                 // Copy actual bond values for each agent Id
                 bonds[i] = agentParams[i].bond;
                 // Wrap bonds with the BOND_WRAPPER value for the original ServiceRegistry contract
@@ -150,9 +159,9 @@ contract ServiceManagerToken is GenericManager {
                 // Copy actual bond values for each agent Id that has at least one slot in the updated service
                 if (agentParams[i].slots > 0) {
                     bonds[i] = agentParams[i].bond;
+                    // Wrap bonds with the BOND_WRAPPER value for the original ServiceRegistry contract
+                    agentParams[i].bond = BOND_WRAPPER;
                 }
-                // Wrap bonds with the BOND_WRAPPER value for the original ServiceRegistry contract
-                agentParams[i].bond = BOND_WRAPPER;
             }
 
             // Call the original ServiceRegistry contract function

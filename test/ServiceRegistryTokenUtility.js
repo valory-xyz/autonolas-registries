@@ -222,7 +222,7 @@ describe("serviceRegistryTokenUtility", function () {
             // Try to register agent instances without approving the ServiceRegistryTokenUtility contract for the security deposit amount
             await expect(
                 serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, serviceId, agentIds)
-            ).to.be.revertedWith("IncorrectRegistrationDepositValue");
+            ).to.be.revertedWith("IncorrectAgentBondingValue");
 
             // Approve token for the ServiceRegistryTokenUtility contract by the operator and register agent instances
             const totalBond = bonds.reduce((a, b) => a + b, 0);
@@ -271,7 +271,7 @@ describe("serviceRegistryTokenUtility", function () {
             // Try to register agent instances without approving the ServiceRegistryTokenUtility contract for the security deposit amount
             await expect(
                 serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, serviceId, agentIds)
-            ).to.be.revertedWith("IncorrectRegistrationDepositValue");
+            ).to.be.revertedWith("IncorrectAgentBondingValue");
 
             // Approve token for the ServiceRegistryTokenUtility contract by the operator and register agent instances
             const totalBond = bonds.reduce((a, b) => a + b, 0);

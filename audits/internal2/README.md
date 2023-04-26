@@ -1,7 +1,7 @@
 # Internal audit of autonolas-registries
 The review has been performed based on the contract code in the following repository:<br>
 `https://github.com/valory-xyz/autonolas-registries` <br>
-commit: `v1.1.4.pre-internal-audi` <br> 
+commit: `v1.1.4.pre-internal-audit` <br> 
 
 ## Objectives
 The audit focused on `managing services with custom ERC20 tokens` contracts in this repo.
@@ -30,8 +30,9 @@ for (uint256 i = 0; i < numAgents; ++i) {
     // Wrap bonds with the BOND_WRAPPER value for the original ServiceRegistry contract
     agentParams[i].bond = BOND_WRAPPER;
 }
-no zeros are allowed
+no zeros are allowed as we might incorrectly wrap zero bonds
 ```
+[x] fixed
 
 ```
 function update()
@@ -44,8 +45,9 @@ for (uint256 i = 0; i < numAgents; ++i) {
     // Wrap bonds with the BOND_WRAPPER value for the original ServiceRegistry contract
     agentParams[i].bond = BOND_WRAPPER;
 }
-no all zeros bonds are allowed, see above
+not all zero bonds are allowed, as we don't want to wrap zero bonds, see above
 ```
+[x] fixed
 
 #### ServiceRegistryTokenUtility needs attention
 ```
@@ -66,6 +68,7 @@ lines 325-326
 totalBond += mapOperatorAndServiceIdOperatorBalances[operatorService];
 mapOperatorAndServiceIdOperatorBalances[operatorService] = totalBond;
 ```
+[x] fixed
 
 ### Needed improvements
 #### ServiceManagerToken
@@ -74,6 +77,8 @@ version number
 
 constructor(address _serviceRegistry, address _serviceRegistryTokenUtility) + operatorWhitelist in constructor
 ``` 
+[x] fixed
+
 #### OperatorWhitelist
 ```
 It would be nice to add an additional user-assignable setting. Through the UI, you can select the most typical combination. 
@@ -83,6 +88,8 @@ setCheck = true equal setOperatorsCheck(true)
 setCheck = false equal setOperatorsCheck(false)
 function setOperatorsStatuses(uint256 serviceId, address[] memory operators, bool[] memory statuses, bool setCheck) external
 ```
+[x] fixed
+
 #### ServiceRegistryTokenUtility
 ```
             bool success = IToken(token).transfer(drainer, amount);
@@ -93,6 +100,7 @@ simple cure for https://github.com/Defi-Cartel/salmonella
 check balances[recipient] before/after transfer
 low priority
 ```
+[x] fixed
 
 ### TODO helpers
 Below are tips on how to solve `TODO` 
@@ -122,9 +130,12 @@ function isERC20(address token) public view returns (bool) {
 }
 
 ```
+[x] fixed
+
 ```	
 TODO Safe transferFrom
 https://github.com/transmissions11/solmate/blob/8f9b23f8838670afda0fd8983f2c41e8037ae6bc/src/utils/SafeTransferLib.sol
 https://github.com/transmissions11/solmate/blob/8f9b23f8838670afda0fd8983f2c41e8037ae6bc/src/tokens/WETH.sol
 https://github.com/transmissions11/solmate/blob/8f9b23f8838670afda0fd8983f2c41e8037ae6bc/src/test/SafeTransferLib.t.sol
 ```
+[x] fixed
