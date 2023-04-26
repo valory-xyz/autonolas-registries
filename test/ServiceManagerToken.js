@@ -232,10 +232,6 @@ describe("ServiceManagerToken", function () {
             await expect(
                 serviceManager.connect(signers[1]).setOperatorWhitelist(deployer.address)
             ).to.be.revertedWith("OwnerOnly");
-            // Try to set the zero contract address
-            await expect(
-                serviceManager.connect(deployer).setOperatorWhitelist(AddressZero)
-            ).to.be.revertedWith("ZeroAddress");
         });
 
         it("Should fail when calling functions with a zero token", async function () {
@@ -285,6 +281,13 @@ describe("ServiceManagerToken", function () {
             await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
             await serviceRegistryTokenUtility.changeManager(serviceManager.address);
+
+            // Try to create a service with a token having specified at least one zero bond
+            const errAgentIds = [1, 4];
+            const errAgentParams = [[1, 0], [1, regBond]];
+            await expect(
+                serviceManager.create(deployer.address, token.address, configHash, errAgentIds, errAgentParams, maxThreshold)
+            ).to.be.revertedWith("ZeroValue");
 
             // Create one service with the ERC20 token bond
             const initAgentIds = [1, 3];
@@ -364,6 +367,9 @@ describe("ServiceManagerToken", function () {
 
             const newAgentIds = [1];
             const newAgentParams = [[1, regBond]];
+
+            // Remove the operator whitelist check completely
+            serviceManager.connect(deployer).setOperatorWhitelist(AddressZero);
 
             // Creating one service with the ERC20 token bond
             await serviceManager.create(deployer.address, token.address, configHash, newAgentIds, newAgentParams, threshold);

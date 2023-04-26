@@ -49,16 +49,13 @@ contract ServiceManagerToken is GenericManager {
         operatorWhitelist = _operatorWhitelist;
         owner = msg.sender;
     }
-    
+
+    /// @dev Sets the operator whitelist contract address.
+    /// @param newOperatorWhitelist New operator whitelist contract address.
     function setOperatorWhitelist(address newOperatorWhitelist) external {
         // Check for the contract ownership
         if (msg.sender != owner) {
             revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero address
-        if (newOperatorWhitelist == address(0)) {
-            revert ZeroAddress();
         }
 
         operatorWhitelist = newOperatorWhitelist;

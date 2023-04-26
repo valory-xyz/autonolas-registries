@@ -124,6 +124,17 @@ describe("serviceRegistryTokenUtility", function () {
             ).to.be.revertedWith("Overflow");
         });
 
+        it("Should fail if the token does not pass the verification", async function () {
+            // Try to use a non-contract address
+            await expect(
+                serviceRegistryTokenUtility.createWithToken(serviceId, deployer.address, agentIds, bonds)
+            ).to.be.revertedWith("TokenRejected");
+            // Try to use a non ERC20 token
+            await expect(
+                serviceRegistryTokenUtility.createWithToken(serviceId, serviceRegistry.address, agentIds, bonds)
+            ).to.be.revertedWith("TokenRejected");
+        });
+
         it("Create a service record for a specific token", async function () {
             await serviceRegistryTokenUtility.createWithToken(serviceId, token.address, agentIds, bonds);
             // Check for the service token address
