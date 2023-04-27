@@ -39,6 +39,7 @@ A more detailed set of registries definitions are provided [here](https://github
     [L2](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistry2.sol)
   - [ServiceRegistryTokenUtility](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistryTokenUtility.sol)
 - Periphery contracts:
+  - [OperatorWhitelist](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/OperatorWhitelist.sol)
   - [RegistriesManager](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/RegistriesManager.sol)
   - [ServiceManager](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceManager.sol)
   - [ServiceManagerToken](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceManagerToken.sol)
