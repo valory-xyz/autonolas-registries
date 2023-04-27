@@ -71,9 +71,9 @@ contract ReentrancyTokenAttacker {
         return type(uint256).max;
     }
 
-    function transferFrom(address, address, uint256 amount) external returns (bool) {
+    function transferFrom(address, address, uint256 amount) external {
         if (state == AttackState.FAILED_TRANSFER_FROM) {
-            return false;
+            revert();
         } else if (state == AttackState.BALANCE_ZERO) {
             balance = 0;
         } else if (state == AttackState.BALANCE_REDUCED) {
@@ -85,12 +85,11 @@ contract ReentrancyTokenAttacker {
         } else {
             balance += amount;
         }
-        return true;
     }
 
-    function transfer(address, uint256 amount) external returns (bool) {
+    function transfer(address, uint256 amount) external {
         if (state == AttackState.FAILED_TRANSFER) {
-            return false;
+            revert();
         } else if (state == AttackState.TERMINATE) {
             IServiceRegistryTokenUtility(serviceRegistryTokenUtility).terminateTokenRefund(0);
         } else if (state == AttackState.UNBOND) {
@@ -100,6 +99,5 @@ contract ReentrancyTokenAttacker {
         } else {
             balance += amount;
         }
-        return true;
     }
 }
