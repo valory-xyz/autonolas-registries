@@ -103,9 +103,9 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     address public drainer;
     // Reentrancy lock
     uint256 internal _locked = 1;
-    // Map of service Id => address of a token
+    // Map of service Id => address of a token and a security deposit
     mapping(uint256 => TokenSecurityDeposit) public mapServiceIdTokenDeposit;
-    // Service Id and canonical agent Id => instance registration bond
+    // Service Id and canonical agent Id => agent instance registration bond
     mapping(uint256 => uint256) public mapServiceAndAgentIdAgentBond;
     // Map of operator address and serviceId => agent instance bonding / escrow balance
     mapping(uint256 => uint256) public mapOperatorAndServiceIdOperatorBalances;
