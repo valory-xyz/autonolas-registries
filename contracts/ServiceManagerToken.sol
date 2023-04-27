@@ -140,7 +140,15 @@ contract ServiceManagerToken is GenericManager {
             revert ZeroAddress();
         }
 
+        uint256 numAgents = agentParams.length;
         if (token == ETH_TOKEN_ADDRESS) {
+            // If any of the slots is a non-zero, the correspondent bond cannot be zero
+            for (uint256 i = 0; i < numAgents; ++i) {
+                // Check for the zero bond value
+                if (agentParams[i].slots > 0 && agentParams[i].bond == 0) {
+                        revert ZeroValue();
+                }
+            }
             // Call the original ServiceRegistry contract function
             success = IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams, threshold, serviceId);
             // Reset the service token-based data
@@ -149,7 +157,6 @@ contract ServiceManagerToken is GenericManager {
         } else {
             // Wrap agent params with just 1 WEI bond going to the original ServiceRegistry contract,
             // and actual token bonds being recorded with the ServiceRegistryTokenUtility contract
-            uint256 numAgents = agentParams.length;
             uint256[] memory bonds = new uint256[](numAgents);
             for (uint256 i = 0; i < numAgents; ++i) {
                 // Copy actual bond values for each agent Id that has at least one slot in the updated service

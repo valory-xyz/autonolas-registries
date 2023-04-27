@@ -517,6 +517,32 @@ describe("ServiceManagerToken", function () {
             expect(await serviceRegistry.exists(3)).to.equal(false);
         });
 
+        it("Should fail when updating a service with zero bonds and non-zero slots", async function () {
+            const manager = signers[4];
+            const owner = signers[5];
+            await agentRegistry.changeManager(manager.address);
+
+            // Creating 3 canonical agents
+            await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
+            await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
+            await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
+            await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
+
+            // Creating a service
+            await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams, maxThreshold);
+
+            // Updating service Id == 1
+            const newAgentIds = [1, 2, 3];
+            const newAgentParams = [[2, regBond], [0, regBond], [1, 0]];
+            const newMaxThreshold = newAgentParams[0][0] + newAgentParams[2][0];
+            // Try to update a service with the non-zero slot and a zero bond
+            await expect(
+                serviceManager.connect(owner).update(ETHAddress, configHash, newAgentIds, newAgentParams,
+                    newMaxThreshold, serviceIds[0])
+            ).to.be.revertedWith("ZeroValue");
+        });
+
         it("Creating a service, registering agent instances from different operators, calling Safe", async function () {
             const manager = signers[4];
             const owner = signers[5];
