@@ -645,7 +645,17 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         return mapServiceIdTokenDeposit[serviceId].token != address(0);
     }
 
-    /// @dev Gets the operator's balance in a specific service.
+    /// @dev Gets the agent Id bond in a specified service.
+    /// @param serviceId Service Id.
+    /// @param serviceId Agent Id.
+    /// @return bond Agent Id bond in a specified service Id.
+    function getAgentBond(uint256 serviceId, uint256 agentId) external view returns (uint256 bond) {
+        uint256 serviceAgent = serviceId;
+        serviceAgent |= agentId << 32;
+        bond = mapServiceAndAgentIdAgentBond[serviceAgent];
+    }
+
+    /// @dev Gets the operator's balance in a specified service.
     /// @param operator Operator address.
     /// @param serviceId Service Id.
     /// @return balance The balance of the operator.

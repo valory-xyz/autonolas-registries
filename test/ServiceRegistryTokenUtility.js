@@ -155,6 +155,13 @@ describe("serviceRegistryTokenUtility", function () {
             tokenSecurityDeposit = await serviceRegistryTokenUtility.mapServiceIdTokenDeposit(serviceId);
             expect(tokenSecurityDeposit.token).to.equal(token.address);
             expect(tokenSecurityDeposit.securityDeposit).to.equal(Math.max(...bonds));
+            // Check the agent Id bonds
+            for (let i = 0; i < newAgentIds.length; i++) {
+                const agentBond = Number(await serviceRegistryTokenUtility.getAgentBond(serviceId, newAgentIds[i]));
+                if (newBonds[i] > 0) {
+                    expect(agentBond).to.equal(newBonds[i]);
+                }
+            }
 
             // Check if the service is token secured
             expect(await serviceRegistryTokenUtility.isTokenSecuredService(serviceId)).to.be.true;
