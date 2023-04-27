@@ -490,6 +490,8 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             address serviceOwner = IToken(serviceRegistry).ownerOf(serviceId);
 
             // Transfer tokens to the serviceOwner account
+            // The transfer is not checked for correctness since it relies fully on the token implementation
+            // The protocol is concerned about getting a correct amount and calling the transfer function to send it back
             safeTransfer(token, serviceOwner, securityRefund);
             emit TokenRefund(serviceOwner, token, securityRefund);
         }
@@ -531,6 +533,8 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
                 mapOperatorAndServiceIdOperatorBalances[operatorService] = 0;
 
                 // Transfer tokens to the operator account
+                // The transfer is not checked for correctness since it relies fully on the token implementation
+                // The protocol is concerned about getting a correct amount and calling the transfer function to send it back
                 safeTransfer(token, operator, refund);
                 emit TokenRefund(operator, token, refund);
             }
@@ -566,7 +570,6 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
 
         // Token address
         address token = mapServiceIdTokenDeposit[serviceId].token;
-        // TODO Verify if that scenario is possible at all, since if correctly updated, token must never be equal to zero, or be called from this contract
         // This is to protect this slash function not to be called for ETH-secured services
         if (token == address(0)) {
             revert ZeroAddress();
