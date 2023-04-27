@@ -14,6 +14,7 @@ describe("ServiceManagerToken", function () {
     let gnosisSafeMultisig;
     let token;
     let operatorWhitelist;
+    let reentrancyAttacker;
     let signers;
     let deployer;
     const configHash = "0x" + "5".repeat(64);
@@ -78,6 +79,10 @@ describe("ServiceManagerToken", function () {
         const Token = await ethers.getContractFactory("ERC20Token");
         token = await Token.deploy();
         await token.deployed();
+
+        const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyTokenAttacker");
+        reentrancyAttacker = await ReentrancyAttacker.deploy(serviceRegistryTokenUtility.address);
+        await reentrancyAttacker.deployed();
 
         signers = await ethers.getSigners();
         deployer = signers[0];
@@ -763,6 +768,89 @@ describe("ServiceManagerToken", function () {
         it("Should fail when sending funds directly to the contract", async function () {
             await expect(
                 signers[0].sendTransaction({to: serviceManager.address, value: ethers.utils.parseEther("1000"), data: "0x12"})
+            ).to.be.reverted;
+        });
+    });
+
+    context("Attacks", async function () {
+        it("Reentrancy during a drain function", async function () {
+            const manager = signers[4];
+            const owner = signers[5];
+            const operator = signers[6];
+            const agentInstance = signers[7];
+            await agentRegistry.changeManager(manager.address);
+
+            // Creating 3 canonical agents
+            await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
+            await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
+            await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
+            await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
+
+            const newAgentIds = [1];
+            const newAgentParams = [[1, regBond]];
+
+            // Remove the operator whitelist check completely
+            serviceManager.connect(deployer).setOperatorWhitelist(AddressZero);
+
+            // Creating one service with the ERC20 token bond
+            await serviceManager.create(deployer.address, reentrancyAttacker.address, configHash, newAgentIds, newAgentParams, threshold);
+
+            // Activate the registration
+            await serviceManager.connect(deployer).activateRegistration(serviceIds[0], {value: 1});
+            let service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(2);
+
+            // Registering agents for the service Id
+            await serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstance.address],
+                newAgentIds, {value: regBond});
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(3);
+
+            // Whitelist gnosis multisig implementation
+            await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+            // Deploying the service
+            const safe = await serviceManager.connect(deployer).deploy(serviceIds[0], gnosisSafeMultisig.address, payload);
+            const result = await safe.wait();
+            const proxyAddress = result.events[0].address;
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(4);
+
+            // Check initial operator's balance
+            const balanceOperator = Number(await serviceRegistryTokenUtility.getOperatorBalance(operator.address, serviceIds[0]));
+            expect(balanceOperator).to.equal(regBond);
+
+            // Get all the necessary info about multisig and slash the operator
+            const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
+            const safeContracts = require("@gnosis.pm/safe-contracts");
+            const nonce = await multisig.nonce();
+            const txHashData = await safeContracts.buildContractCall(serviceRegistryTokenUtility, "slash",
+                [[agentInstance.address], [regFine], serviceIds[0]], nonce, 0, 0);
+            const signMessageData = await safeContracts.safeSignMessage(agentInstance, multisig, txHashData, 0);
+
+            // Slash the agent instance operator with the correct multisig
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Check the new operator's balance, it must be the original balance minus the fine
+            const newBalanceOperator = Number(await serviceRegistryTokenUtility.getOperatorBalance(operator.address, serviceIds[0]));
+            expect(newBalanceOperator).to.equal(balanceOperator - regFine);
+
+            // Terminate the service
+            await serviceManager.connect(deployer).terminate(serviceIds[0]);
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(5);
+
+            // Unbond agent instances
+            await serviceManager.connect(operator).unbond(serviceIds[0]);
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(1);
+
+            // Set the reentrancy attack on agent instances unbond
+            await reentrancyAttacker.setAttackState(9);
+            await serviceRegistryTokenUtility.changeDrainer(deployer.address);
+            // Try to terminate the service
+            await expect(
+                serviceRegistryTokenUtility.drain(reentrancyAttacker.address)
             ).to.be.reverted;
         });
     });
