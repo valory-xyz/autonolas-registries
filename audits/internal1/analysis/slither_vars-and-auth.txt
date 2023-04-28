@@ -1,0 +1,146 @@
+INFO:Printers:
+Contract IToken
++----------+-------------------------+--------------------------+
+| Function | State variables written | Conditions on msg.sender |
++----------+-------------------------+--------------------------+
+| ownerOf  |            []           |            []            |
++----------+-------------------------+--------------------------+
+
+Contract OperatorWhitelist
++-----------------------+--------------------------------+--------------------------------+
+|        Function       |    State variables written     |    Conditions on msg.sender    |
++-----------------------+--------------------------------+--------------------------------+
+|      constructor      |      ['serviceRegistry']       |               []               |
+|   setOperatorsCheck   | ['mapServiceIdOperatorsCheck'] | ['serviceOwner != msg.sender'] |
+|  setOperatorsStatuses |   ['mapServiceIdOperators']    | ['serviceOwner != msg.sender'] |
+| isOperatorWhitelisted |               []               |               []               |
++-----------------------+--------------------------------+--------------------------------+
+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+-------------------------+--------------------------+
+| Function | State variables written | Conditions on msg.sender |
++----------+-------------------------+--------------------------+
++----------+-------------------------+--------------------------+
+
+Contract GenericManager
++-------------+-------------------------+--------------------------+
+|   Function  | State variables written | Conditions on msg.sender |
++-------------+-------------------------+--------------------------+
+| changeOwner |        ['owner']        | ['msg.sender != owner']  |
+|    pause    |        ['paused']       | ['msg.sender != owner']  |
+|   unpause   |        ['paused']       | ['msg.sender != owner']  |
++-------------+-------------------------+--------------------------+
+
+Contract IService
++----------------------+-------------------------+--------------------------+
+|       Function       | State variables written | Conditions on msg.sender |
++----------------------+-------------------------+--------------------------+
+|        create        |            []           |            []            |
+|        update        |            []           |            []            |
+| activateRegistration |            []           |            []            |
+|    registerAgents    |            []           |            []            |
+|        deploy        |            []           |            []            |
+|      terminate       |            []           |            []            |
+|        unbond        |            []           |            []            |
++----------------------+-------------------------+--------------------------+
+
+Contract IServiceTokenUtility
++----------------------------------+-------------------------+--------------------------+
+|             Function             | State variables written | Conditions on msg.sender |
++----------------------------------+-------------------------+--------------------------+
+|         createWithToken          |            []           |            []            |
+|        resetServiceToken         |            []           |            []            |
+| activateRegistrationTokenDeposit |            []           |            []            |
+|    registerAgentsTokenDeposit    |            []           |            []            |
+|       terminateTokenRefund       |            []           |            []            |
+|        unbondTokenRefund         |            []           |            []            |
+|      isTokenSecuredService       |            []           |            []            |
++----------------------------------+-------------------------+--------------------------+
+
+Contract IOperatorWhitelist
++-----------------------+-------------------------+--------------------------+
+|        Function       | State variables written | Conditions on msg.sender |
++-----------------------+-------------------------+--------------------------+
+| isOperatorWhitelisted |            []           |            []            |
++-----------------------+-------------------------+--------------------------+
+
+Contract ServiceManagerToken
++-------------------------------------+-------------------------------------------------------------+-----------------------------------------------------------------------------------------+
+|               Function              |                   State variables written                   |                                 Conditions on msg.sender                                |
++-------------------------------------+-------------------------------------------------------------+-----------------------------------------------------------------------------------------+
+|             changeOwner             |                          ['owner']                          |                                 ['msg.sender != owner']                                 |
+|                pause                |                          ['paused']                         |                                 ['msg.sender != owner']                                 |
+|               unpause               |                          ['paused']                         |                                 ['msg.sender != owner']                                 |
+|             constructor             | ['owner', 'serviceRegistry', 'serviceRegistryTokenUtility'] |                                            []                                           |
+|         setOperatorWhitelist        |                    ['operatorWhitelist']                    |                                 ['msg.sender != owner']                                 |
+|                create               |                              []                             |                                            []                                           |
+|                update               |                              []                             |                                            []                                           |
+|         activateRegistration        |                              []                             |                                            []                                           |
+|            registerAgents           |                              []                             | ['! IOperatorWhitelist(operatorWhitelist).isOperatorWhitelisted(serviceId,msg.sender)'] |
+|                deploy               |                              []                             |                                            []                                           |
+|              terminate              |                              []                             |                                            []                                           |
+|                unbond               |                              []                             |                                            []                                           |
+| slitherConstructorConstantVariables |            ['BOND_WRAPPER', 'ETH_TOKEN_ADDRESS']            |                                            []                                           |
++-------------------------------------+-------------------------------------------------------------+-----------------------------------------------------------------------------------------+
+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+-------------------------+--------------------------+
+| Function | State variables written | Conditions on msg.sender |
++----------+-------------------------+--------------------------+
++----------+-------------------------+--------------------------+
+
+Contract IService
++----------------------+-------------------------+--------------------------+
+|       Function       | State variables written | Conditions on msg.sender |
++----------------------+-------------------------+--------------------------+
+|        create        |            []           |            []            |
+|        update        |            []           |            []            |
+| activateRegistration |            []           |            []            |
+|    registerAgents    |            []           |            []            |
+|        deploy        |            []           |            []            |
+|      terminate       |            []           |            []            |
+|        unbond        |            []           |            []            |
++----------------------+-------------------------+--------------------------+
+
+Contract IToken
++--------------+-------------------------+--------------------------+
+|   Function   | State variables written | Conditions on msg.sender |
++--------------+-------------------------+--------------------------+
+|  allowance   |            []           |            []            |
+| transferFrom |            []           |            []            |
+|   transfer   |            []           |            []            |
+|   ownerOf    |            []           |            []            |
++--------------+-------------------------+--------------------------+
+
+Contract IServiceUtility
++---------------------------+-------------------------+--------------------------+
+|          Function         | State variables written | Conditions on msg.sender |
++---------------------------+-------------------------+--------------------------+
+|        mapServices        |            []           |            []            |
+| mapAgentInstanceOperators |            []           |            []            |
++---------------------------+-------------------------+--------------------------+
+
+Contract ServiceRegistryTokenUtility
++----------------------------------+----------------------------------------------------------------+----------------------------+
+|             Function             |                    State variables written                     |  Conditions on msg.sender  |
++----------------------------------+----------------------------------------------------------------+----------------------------+
+|           constructor            |                  ['owner', 'serviceRegistry']                  |             []             |
+|           changeOwner            |                           ['owner']                            |  ['msg.sender != owner']   |
+|          changeManager           |                          ['manager']                           |  ['msg.sender != owner']   |
+|          changeDrainer           |                          ['drainer']                           |  ['msg.sender != owner']   |
+|         createWithToken          | ['mapServiceAndAgentIdAgentBond', 'mapServiceIdTokenDeposit']  | ['manager != msg.sender']  |
+|        resetServiceToken         |                  ['mapServiceIdTokenDeposit']                  | ['manager != msg.sender']  |
+| activateRegistrationTokenDeposit |                          ['_locked']                           | ['manager != msg.sender']  |
+|    registerAgentsTokenDeposit    |     ['_locked', 'mapOperatorAndServiceIdOperatorBalances']     | ['manager != msg.sender']  |
+|       terminateTokenRefund       |                          ['_locked']                           | ['manager != msg.sender']  |
+|        unbondTokenRefund         |     ['_locked', 'mapOperatorAndServiceIdOperatorBalances']     | ['manager != msg.sender']  |
+|              slash               | ['mapOperatorAndServiceIdOperatorBalances', 'mapSlashedFunds'] | ['msg.sender != multisig'] |
+|              drain               |                 ['_locked', 'mapSlashedFunds']                 |  ['msg.sender != owner']   |
+|      isTokenSecuredService       |                               []                               |             []             |
+|        getOperatorBalance        |                               []                               |             []             |
+|   slitherConstructorVariables    |                          ['_locked']                           |             []             |
++----------------------------------+----------------------------------------------------------------+----------------------------+
+
+INFO:Slither:. analyzed (13 contracts)

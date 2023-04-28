@@ -1,0 +1,122 @@
+INFO:Printers:
+Contract IToken
++----------+-----------+
+| Function | Modifiers |
++----------+-----------+
+| ownerOf  |     []    |
++----------+-----------+
+INFO:Printers:
+Contract OperatorWhitelist
++-----------------------+-----------+
+|        Function       | Modifiers |
++-----------------------+-----------+
+|      constructor      |     []    |
+|   setOperatorsCheck   |     []    |
+|  setOperatorsStatuses |     []    |
+| isOperatorWhitelisted |     []    |
++-----------------------+-----------+
+INFO:Printers:
+Contract IService
++----------------------+-----------+
+|       Function       | Modifiers |
++----------------------+-----------+
+|        create        |     []    |
+|        update        |     []    |
+| activateRegistration |     []    |
+|    registerAgents    |     []    |
+|        deploy        |     []    |
+|      terminate       |     []    |
+|        unbond        |     []    |
++----------------------+-----------+
+INFO:Printers:
+Contract IServiceTokenUtility
++----------------------------------+-----------+
+|             Function             | Modifiers |
++----------------------------------+-----------+
+|         createWithToken          |     []    |
+|        resetServiceToken         |     []    |
+| activateRegistrationTokenDeposit |     []    |
+|    registerAgentsTokenDeposit    |     []    |
+|       terminateTokenRefund       |     []    |
+|        unbondTokenRefund         |     []    |
+|      isTokenSecuredService       |     []    |
++----------------------------------+-----------+
+INFO:Printers:
+Contract IOperatorWhitelist
++-----------------------+-----------+
+|        Function       | Modifiers |
++-----------------------+-----------+
+| isOperatorWhitelisted |     []    |
++-----------------------+-----------+
+INFO:Printers:
+Contract ServiceManagerToken
++-------------------------------------+-----------+
+|               Function              | Modifiers |
++-------------------------------------+-----------+
+|             changeOwner             |     []    |
+|                pause                |     []    |
+|               unpause               |     []    |
+|             constructor             |     []    |
+|         setOperatorWhitelist        |     []    |
+|                create               |     []    |
+|                update               |     []    |
+|         activateRegistration        |     []    |
+|            registerAgents           |     []    |
+|                deploy               |     []    |
+|              terminate              |     []    |
+|                unbond               |     []    |
+| slitherConstructorConstantVariables |     []    |
++-------------------------------------+-----------+
+INFO:Printers:
+Contract IService
++----------------------+-----------+
+|       Function       | Modifiers |
++----------------------+-----------+
+|        create        |     []    |
+|        update        |     []    |
+| activateRegistration |     []    |
+|    registerAgents    |     []    |
+|        deploy        |     []    |
+|      terminate       |     []    |
+|        unbond        |     []    |
++----------------------+-----------+
+INFO:Printers:
+Contract IToken
++--------------+-----------+
+|   Function   | Modifiers |
++--------------+-----------+
+|  allowance   |     []    |
+| transferFrom |     []    |
+|   transfer   |     []    |
+|   ownerOf    |     []    |
++--------------+-----------+
+INFO:Printers:
+Contract IServiceUtility
++---------------------------+-----------+
+|          Function         | Modifiers |
++---------------------------+-----------+
+|        mapServices        |     []    |
+| mapAgentInstanceOperators |     []    |
++---------------------------+-----------+
+INFO:Printers:
+Contract ServiceRegistryTokenUtility
++----------------------------------+-----------+
+|             Function             | Modifiers |
++----------------------------------+-----------+
+|           constructor            |     []    |
+|           changeOwner            |     []    |
+|          changeManager           |     []    |
+|          changeDrainer           |     []    |
+|         createWithToken          |     []    |
+|        resetServiceToken         |     []    |
+| activateRegistrationTokenDeposit |     []    |
+|    registerAgentsTokenDeposit    |     []    |
+|       terminateTokenRefund       |     []    |
+|        unbondTokenRefund         |     []    |
+|              slash               |     []    |
+|              drain               |     []    |
+|      isTokenSecuredService       |     []    |
+|        getOperatorBalance        |     []    |
+|   slitherConstructorVariables    |     []    |
++----------------------------------+-----------+
+INFO:Slither:. analyzed (13 contracts)

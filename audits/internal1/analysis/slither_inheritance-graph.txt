@@ -1,0 +1,7 @@
+INFO:Printers:Inheritance Graph: ./OperatorWhitelist-flatten.sol.inheritance-graph.dot
+
+INFO:Printers:Inheritance Graph: ./ServiceManagerToken-flatten.sol.inheritance-graph.dot
+
+INFO:Printers:Inheritance Graph: ./ServiceRegistryTokenUtility-flatten.sol.inheritance-graph.dot
+
+INFO:Slither:. analyzed (13 contracts)

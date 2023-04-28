@@ -1,0 +1,1749 @@
+INFO:Printers:
+Contract IToken
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function ownerOf(uint256)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+| tokenId  |      []      |
+|          |      []      |
++----------+--------------+
+INFO:Printers:
+Contract IToken
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function ownerOf(uint256)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+| tokenId  |      []      |
+|          |      []      |
++----------+--------------+
+Contract OperatorWhitelist
++----------------------------+------------------------------------------+
+|          Variable          |               Dependencies               |
++----------------------------+------------------------------------------+
+|      serviceRegistry       | ['_serviceRegistry', 'serviceRegistry']  |
+| mapServiceIdOperatorsCheck | ['mapServiceIdOperatorsCheck', 'status'] |
+|   mapServiceIdOperators    |        ['mapServiceIdOperators']         |
++----------------------------+------------------------------------------+
+
+Function constructor(address)
++----------------------------------------------+----------------------+
+|                   Variable                   |     Dependencies     |
++----------------------------------------------+----------------------+
+|               _serviceRegistry               |          []          |
+|      OperatorWhitelist.serviceRegistry       | ['_serviceRegistry'] |
+| OperatorWhitelist.mapServiceIdOperatorsCheck |          []          |
+|   OperatorWhitelist.mapServiceIdOperators    |          []          |
++----------------------------------------------+----------------------+
+Function setOperatorsCheck(uint256,bool)
++----------------------------------------------+------------------------------------------+
+|                   Variable                   |               Dependencies               |
++----------------------------------------------+------------------------------------------+
+|                  serviceId                   |                    []                    |
+|                    status                    |                    []                    |
+|                 serviceOwner                 |     ['serviceId', 'serviceRegistry']     |
+|      OperatorWhitelist.serviceRegistry       |           ['serviceRegistry']            |
+| OperatorWhitelist.mapServiceIdOperatorsCheck | ['mapServiceIdOperatorsCheck', 'status'] |
+|   OperatorWhitelist.mapServiceIdOperators    |                    []                    |
++----------------------------------------------+------------------------------------------+
+Function setOperatorsStatuses(uint256,address[],bool[])
++----------------------------------------------+----------------------------------+
+|                   Variable                   |           Dependencies           |
++----------------------------------------------+----------------------------------+
+|                  serviceId                   |                []                |
+|                  operators                   |          ['operators']           |
+|                   statuses                   |           ['statuses']           |
+|                 serviceOwner                 | ['serviceId', 'serviceRegistry'] |
+|                      i                       |              ['i']               |
+|      OperatorWhitelist.serviceRegistry       |       ['serviceRegistry']        |
+| OperatorWhitelist.mapServiceIdOperatorsCheck |                []                |
+|   OperatorWhitelist.mapServiceIdOperators    |    ['mapServiceIdOperators']     |
++----------------------------------------------+----------------------------------+
+Function isOperatorWhitelisted(uint256,address)
++----------------------------------------------+----------------------------------+
+|                   Variable                   |           Dependencies           |
++----------------------------------------------+----------------------------------+
+|                  serviceId                   |                []                |
+|                   operator                   |                []                |
+|                    status                    |    ['mapServiceIdOperators']     |
+|                 serviceOwner                 | ['serviceId', 'serviceRegistry'] |
+|      OperatorWhitelist.serviceRegistry       |       ['serviceRegistry']        |
+| OperatorWhitelist.mapServiceIdOperatorsCheck |  ['mapServiceIdOperatorsCheck']  |
+|   OperatorWhitelist.mapServiceIdOperators    |    ['mapServiceIdOperators']     |
++----------------------------------------------+----------------------------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract GenericManager
++----------+-----------------------+
+| Variable |      Dependencies     |
++----------+-----------------------+
+|  owner   | ['newOwner', 'owner'] |
+|  paused  |           []          |
++----------+-----------------------+
+
+Function changeOwner(address)
++-----------------------+-----------------------+
+|        Variable       |      Dependencies     |
++-----------------------+-----------------------+
+|        newOwner       |           []          |
+|  GenericManager.owner | ['newOwner', 'owner'] |
+| GenericManager.paused |           []          |
++-----------------------+-----------------------+
+Function pause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Function unpause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract GenericManager
++----------+-----------------------+
+| Variable |      Dependencies     |
++----------+-----------------------+
+|  owner   | ['newOwner', 'owner'] |
+|  paused  |           []          |
++----------+-----------------------+
+
+Function changeOwner(address)
++-----------------------+-----------------------+
+|        Variable       |      Dependencies     |
++-----------------------+-----------------------+
+|        newOwner       |           []          |
+|  GenericManager.owner | ['newOwner', 'owner'] |
+| GenericManager.paused |           []          |
++-----------------------+-----------------------+
+Function pause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Function unpause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Contract IService
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function create(address,bytes32,uint32[],IService.AgentParams[],uint32)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
++--------------+--------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function activateRegistration(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function registerAgents(address,uint256,address[],uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+| agentInstances |      []      |
+|    agentIds    |      []      |
+|    success     |      []      |
++----------------+--------------+
+Function deploy(address,uint256,address,bytes)
++------------------------+--------------+
+|        Variable        | Dependencies |
++------------------------+--------------+
+|      serviceOwner      |      []      |
+|       serviceId        |      []      |
+| multisigImplementation |      []      |
+|          data          |      []      |
+|        multisig        |      []      |
++------------------------+--------------+
+Function terminate(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
+|    refund    |      []      |
++--------------+--------------+
+Function unbond(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|  success  |      []      |
+|   refund  |      []      |
++-----------+--------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract GenericManager
++----------+-----------------------+
+| Variable |      Dependencies     |
++----------+-----------------------+
+|  owner   | ['newOwner', 'owner'] |
+|  paused  |           []          |
++----------+-----------------------+
+
+Function changeOwner(address)
++-----------------------+-----------------------+
+|        Variable       |      Dependencies     |
++-----------------------+-----------------------+
+|        newOwner       |           []          |
+|  GenericManager.owner | ['newOwner', 'owner'] |
+| GenericManager.paused |           []          |
++-----------------------+-----------------------+
+Function pause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Function unpause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Contract IService
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function create(address,bytes32,uint32[],IService.AgentParams[],uint32)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
++--------------+--------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function activateRegistration(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function registerAgents(address,uint256,address[],uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+| agentInstances |      []      |
+|    agentIds    |      []      |
+|    success     |      []      |
++----------------+--------------+
+Function deploy(address,uint256,address,bytes)
++------------------------+--------------+
+|        Variable        | Dependencies |
++------------------------+--------------+
+|      serviceOwner      |      []      |
+|       serviceId        |      []      |
+| multisigImplementation |      []      |
+|          data          |      []      |
+|        multisig        |      []      |
++------------------------+--------------+
+Function terminate(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
+|    refund    |      []      |
++--------------+--------------+
+Function unbond(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|  success  |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Contract IServiceTokenUtility
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function createWithToken(uint256,address,uint32[],uint256[])
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|   token   |      []      |
+|  agentIds |      []      |
+|   bonds   |      []      |
++-----------+--------------+
+Function resetServiceToken(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
++-----------+--------------+
+Function activateRegistrationTokenDeposit(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function registerAgentsTokenDeposit(address,uint256,uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+|    agentIds    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function terminateTokenRefund(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| securityRefund |      []      |
++----------------+--------------+
+Function unbondTokenRefund(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Function isTokenSecuredService(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|           |      []      |
++-----------+--------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract GenericManager
++----------+-----------------------+
+| Variable |      Dependencies     |
++----------+-----------------------+
+|  owner   | ['newOwner', 'owner'] |
+|  paused  |           []          |
++----------+-----------------------+
+
+Function changeOwner(address)
++-----------------------+-----------------------+
+|        Variable       |      Dependencies     |
++-----------------------+-----------------------+
+|        newOwner       |           []          |
+|  GenericManager.owner | ['newOwner', 'owner'] |
+| GenericManager.paused |           []          |
++-----------------------+-----------------------+
+Function pause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Function unpause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Contract IService
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function create(address,bytes32,uint32[],IService.AgentParams[],uint32)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
++--------------+--------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function activateRegistration(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function registerAgents(address,uint256,address[],uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+| agentInstances |      []      |
+|    agentIds    |      []      |
+|    success     |      []      |
++----------------+--------------+
+Function deploy(address,uint256,address,bytes)
++------------------------+--------------+
+|        Variable        | Dependencies |
++------------------------+--------------+
+|      serviceOwner      |      []      |
+|       serviceId        |      []      |
+| multisigImplementation |      []      |
+|          data          |      []      |
+|        multisig        |      []      |
++------------------------+--------------+
+Function terminate(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
+|    refund    |      []      |
++--------------+--------------+
+Function unbond(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|  success  |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Contract IServiceTokenUtility
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function createWithToken(uint256,address,uint32[],uint256[])
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|   token   |      []      |
+|  agentIds |      []      |
+|   bonds   |      []      |
++-----------+--------------+
+Function resetServiceToken(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
++-----------+--------------+
+Function activateRegistrationTokenDeposit(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function registerAgentsTokenDeposit(address,uint256,uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+|    agentIds    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function terminateTokenRefund(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| securityRefund |      []      |
++----------------+--------------+
+Function unbondTokenRefund(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Function isTokenSecuredService(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|           |      []      |
++-----------+--------------+
+Contract IOperatorWhitelist
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function isOperatorWhitelisted(uint256,address)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|  operator |      []      |
+|   status  |      []      |
++-----------+--------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract GenericManager
++----------+-----------------------+
+| Variable |      Dependencies     |
++----------+-----------------------+
+|  owner   | ['newOwner', 'owner'] |
+|  paused  |           []          |
++----------+-----------------------+
+
+Function changeOwner(address)
++-----------------------+-----------------------+
+|        Variable       |      Dependencies     |
++-----------------------+-----------------------+
+|        newOwner       |           []          |
+|  GenericManager.owner | ['newOwner', 'owner'] |
+| GenericManager.paused |           []          |
++-----------------------+-----------------------+
+Function pause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Function unpause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Contract IService
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function create(address,bytes32,uint32[],IService.AgentParams[],uint32)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
++--------------+--------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function activateRegistration(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function registerAgents(address,uint256,address[],uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+| agentInstances |      []      |
+|    agentIds    |      []      |
+|    success     |      []      |
++----------------+--------------+
+Function deploy(address,uint256,address,bytes)
++------------------------+--------------+
+|        Variable        | Dependencies |
++------------------------+--------------+
+|      serviceOwner      |      []      |
+|       serviceId        |      []      |
+| multisigImplementation |      []      |
+|          data          |      []      |
+|        multisig        |      []      |
++------------------------+--------------+
+Function terminate(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
+|    refund    |      []      |
++--------------+--------------+
+Function unbond(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|  success  |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Contract IServiceTokenUtility
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function createWithToken(uint256,address,uint32[],uint256[])
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|   token   |      []      |
+|  agentIds |      []      |
+|   bonds   |      []      |
++-----------+--------------+
+Function resetServiceToken(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
++-----------+--------------+
+Function activateRegistrationTokenDeposit(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function registerAgentsTokenDeposit(address,uint256,uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+|    agentIds    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function terminateTokenRefund(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| securityRefund |      []      |
++----------------+--------------+
+Function unbondTokenRefund(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Function isTokenSecuredService(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|           |      []      |
++-----------+--------------+
+Contract IOperatorWhitelist
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function isOperatorWhitelisted(uint256,address)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|  operator |      []      |
+|   status  |      []      |
++-----------+--------------+
+Contract ServiceManagerToken
++-----------------------------+-----------------------------------------------------------------+
+|           Variable          |                           Dependencies                          |
++-----------------------------+-----------------------------------------------------------------+
+|            owner            |               ['msg.sender', 'newOwner', 'owner']               |
+|            paused           |                            ['paused']                           |
+|       serviceRegistry       |             ['_serviceRegistry', 'serviceRegistry']             |
+| serviceRegistryTokenUtility | ['_serviceRegistryTokenUtility', 'serviceRegistryTokenUtility'] |
+|      ETH_TOKEN_ADDRESS      |                      ['ETH_TOKEN_ADDRESS']                      |
+|         BOND_WRAPPER        |                         ['BOND_WRAPPER']                        |
+|      operatorWhitelist      |          ['newOperatorWhitelist', 'operatorWhitelist']          |
++-----------------------------+-----------------------------------------------------------------+
+
+Function constructor(address,address)
++-------------------------------------------------+----------------------------------+
+|                     Variable                    |           Dependencies           |
++-------------------------------------------------+----------------------------------+
+|                 _serviceRegistry                |                []                |
+|           _serviceRegistryTokenUtility          |                []                |
+|               GenericManager.owner              |          ['msg.sender']          |
+|              GenericManager.paused              |                []                |
+|       ServiceManagerToken.serviceRegistry       |       ['_serviceRegistry']       |
+| ServiceManagerToken.serviceRegistryTokenUtility | ['_serviceRegistryTokenUtility'] |
+|      ServiceManagerToken.ETH_TOKEN_ADDRESS      |                []                |
+|         ServiceManagerToken.BOND_WRAPPER        |                []                |
+|      ServiceManagerToken.operatorWhitelist      |                []                |
++-------------------------------------------------+----------------------------------+
+Function setOperatorWhitelist(address)
++-------------------------------------------------+--------------------------+
+|                     Variable                    |       Dependencies       |
++-------------------------------------------------+--------------------------+
+|               newOperatorWhitelist              |            []            |
+|               GenericManager.owner              |        ['owner']         |
+|              GenericManager.paused              |            []            |
+|       ServiceManagerToken.serviceRegistry       |            []            |
+| ServiceManagerToken.serviceRegistryTokenUtility |            []            |
+|      ServiceManagerToken.ETH_TOKEN_ADDRESS      |            []            |
+|         ServiceManagerToken.BOND_WRAPPER        |            []            |
+|      ServiceManagerToken.operatorWhitelist      | ['newOperatorWhitelist'] |
++-------------------------------------------------+--------------------------+
+Function create(address,address,bytes32,uint32[],IService.AgentParams[],uint32)
++-------------------------------------------------+--------------------------------------------------------------------------------------------------------+
+|                     Variable                    |                                              Dependencies                                              |
++-------------------------------------------------+--------------------------------------------------------------------------------------------------------+
+|                   serviceOwner                  |                                                   []                                                   |
+|                      token                      |                                                   []                                                   |
+|                    configHash                   |                                                   []                                                   |
+|                     agentIds                    |                                                   []                                                   |
+|                   agentParams                   |                                            ['agentParams']                                             |
+|                    threshold                    |                                                   []                                                   |
+|                    serviceId                    | ['agentIds', 'agentParams', 'configHash', 'serviceId', 'serviceOwner', 'serviceRegistry', 'threshold'] |
+|                    numAgents                    |                                            ['agentParams']                                             |
+|                      bonds                      |                                 ['agentParams', 'bonds', 'numAgents']                                  |
+|                        i                        |                                                 ['i']                                                  |
+|               GenericManager.owner              |                                                   []                                                   |
+|              GenericManager.paused              |                                               ['paused']                                               |
+|       ServiceManagerToken.serviceRegistry       |                                          ['serviceRegistry']                                           |
+| ServiceManagerToken.serviceRegistryTokenUtility |                                    ['serviceRegistryTokenUtility']                                     |
+|      ServiceManagerToken.ETH_TOKEN_ADDRESS      |                                         ['ETH_TOKEN_ADDRESS']                                          |
+|         ServiceManagerToken.BOND_WRAPPER        |                                            ['BOND_WRAPPER']                                            |
+|      ServiceManagerToken.operatorWhitelist      |                                                   []                                                   |
++-------------------------------------------------+--------------------------------------------------------------------------------------------------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++-------------------------------------------------+---------------------------------------+
+|                     Variable                    |              Dependencies             |
++-------------------------------------------------+---------------------------------------+
+|                      token                      |                   []                  |
+|                    configHash                   |                   []                  |
+|                     agentIds                    |                   []                  |
+|                   agentParams                   |            ['agentParams']            |
+|                    threshold                    |                   []                  |
+|                    serviceId                    |                   []                  |
+|                                                 |                   []                  |
+|                    numAgents                    |            ['agentParams']            |
+|                      bonds                      | ['agentParams', 'bonds', 'numAgents'] |
+|                        i                        |                 ['i']                 |
+|               GenericManager.owner              |                   []                  |
+|              GenericManager.paused              |                   []                  |
+|       ServiceManagerToken.serviceRegistry       |          ['serviceRegistry']          |
+| ServiceManagerToken.serviceRegistryTokenUtility |    ['serviceRegistryTokenUtility']    |
+|      ServiceManagerToken.ETH_TOKEN_ADDRESS      |         ['ETH_TOKEN_ADDRESS']         |
+|         ServiceManagerToken.BOND_WRAPPER        |            ['BOND_WRAPPER']           |
+|      ServiceManagerToken.operatorWhitelist      |                   []                  |
++-------------------------------------------------+---------------------------------------+
+Function activateRegistration(uint256)
++-------------------------------------------------+-----------------------------------------------------------------------------+
+|                     Variable                    |                                 Dependencies                                |
++-------------------------------------------------+-----------------------------------------------------------------------------+
+|                    serviceId                    |                                      []                                     |
+|                     success                     | ['BOND_WRAPPER', 'msg.sender', 'msg.value', 'serviceId', 'serviceRegistry'] |
+|                  isTokenSecured                 |                 ['serviceId', 'serviceRegistryTokenUtility']                |
+|               GenericManager.owner              |                                      []                                     |
+|              GenericManager.paused              |                                      []                                     |
+|       ServiceManagerToken.serviceRegistry       |                             ['serviceRegistry']                             |
+| ServiceManagerToken.serviceRegistryTokenUtility |                       ['serviceRegistryTokenUtility']                       |
+|      ServiceManagerToken.ETH_TOKEN_ADDRESS      |                                      []                                     |
+|         ServiceManagerToken.BOND_WRAPPER        |                               ['BOND_WRAPPER']                              |
+|      ServiceManagerToken.operatorWhitelist      |                                      []                                     |
++-------------------------------------------------+-----------------------------------------------------------------------------+
+Function registerAgents(uint256,address[],uint32[])
++-------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+|                     Variable                    |                                                Dependencies                                               |
++-------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+|                    serviceId                    |                                                     []                                                    |
+|                  agentInstances                 |                                             ['agentInstances']                                            |
+|                     agentIds                    |                                                     []                                                    |
+|                     success                     | ['BOND_WRAPPER', 'agentIds', 'agentInstances', 'msg.sender', 'msg.value', 'serviceId', 'serviceRegistry'] |
+|                  isTokenSecured                 |                   ['agentIds', 'msg.sender', 'serviceId', 'serviceRegistryTokenUtility']                  |
+|               GenericManager.owner              |                                                     []                                                    |
+|              GenericManager.paused              |                                                     []                                                    |
+|       ServiceManagerToken.serviceRegistry       |                                            ['serviceRegistry']                                            |
+| ServiceManagerToken.serviceRegistryTokenUtility |                                      ['serviceRegistryTokenUtility']                                      |
+|      ServiceManagerToken.ETH_TOKEN_ADDRESS      |                                                     []                                                    |
+|         ServiceManagerToken.BOND_WRAPPER        |                                              ['BOND_WRAPPER']                                             |
+|      ServiceManagerToken.operatorWhitelist      |                                           ['operatorWhitelist']                                           |
++-------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+Function deploy(uint256,address,bytes)
++-------------------------------------------------+----------------------------------------------------------------------------------+
+|                     Variable                    |                                   Dependencies                                   |
++-------------------------------------------------+----------------------------------------------------------------------------------+
+|                    serviceId                    |                                        []                                        |
+|              multisigImplementation             |                                        []                                        |
+|                       data                      |                                        []                                        |
+|                     multisig                    | ['data', 'msg.sender', 'multisigImplementation', 'serviceId', 'serviceRegistry'] |
+|               GenericManager.owner              |                                        []                                        |
+|              GenericManager.paused              |                                        []                                        |
+|       ServiceManagerToken.serviceRegistry       |                               ['serviceRegistry']                                |
+| ServiceManagerToken.serviceRegistryTokenUtility |                                        []                                        |
+|      ServiceManagerToken.ETH_TOKEN_ADDRESS      |                                        []                                        |
+|         ServiceManagerToken.BOND_WRAPPER        |                                        []                                        |
+|      ServiceManagerToken.operatorWhitelist      |                                        []                                        |
++-------------------------------------------------+----------------------------------------------------------------------------------+
+Function terminate(uint256)
++-------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+|                     Variable                    |                                               Dependencies                                              |
++-------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+|                    serviceId                    |                                                    []                                                   |
+|                     success                     |                        ['TUPLE_0', 'msg.sender', 'serviceId', 'serviceRegistry']                        |
+|                      refund                     | ['TUPLE_0', 'msg.sender', 'serviceId', 'serviceRegistry', 'serviceRegistryTokenUtility', 'tokenRefund'] |
+|                   tokenRefund                   |                               ['serviceId', 'serviceRegistryTokenUtility']                              |
+|               GenericManager.owner              |                                                    []                                                   |
+|              GenericManager.paused              |                                                    []                                                   |
+|       ServiceManagerToken.serviceRegistry       |                                           ['serviceRegistry']                                           |
+| ServiceManagerToken.serviceRegistryTokenUtility |                                     ['serviceRegistryTokenUtility']                                     |
+|      ServiceManagerToken.ETH_TOKEN_ADDRESS      |                                                    []                                                   |
+|         ServiceManagerToken.BOND_WRAPPER        |                                                    []                                                   |
+|      ServiceManagerToken.operatorWhitelist      |                                                    []                                                   |
++-------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+Function unbond(uint256)
++-------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+|                     Variable                    |                                               Dependencies                                              |
++-------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+|                    serviceId                    |                                                    []                                                   |
+|                     success                     |                        ['TUPLE_1', 'msg.sender', 'serviceId', 'serviceRegistry']                        |
+|                      refund                     | ['TUPLE_1', 'msg.sender', 'serviceId', 'serviceRegistry', 'serviceRegistryTokenUtility', 'tokenRefund'] |
+|                   tokenRefund                   |                        ['msg.sender', 'serviceId', 'serviceRegistryTokenUtility']                       |
+|               GenericManager.owner              |                                                    []                                                   |
+|              GenericManager.paused              |                                                    []                                                   |
+|       ServiceManagerToken.serviceRegistry       |                                           ['serviceRegistry']                                           |
+| ServiceManagerToken.serviceRegistryTokenUtility |                                     ['serviceRegistryTokenUtility']                                     |
+|      ServiceManagerToken.ETH_TOKEN_ADDRESS      |                                                    []                                                   |
+|         ServiceManagerToken.BOND_WRAPPER        |                                                    []                                                   |
+|      ServiceManagerToken.operatorWhitelist      |                                                    []                                                   |
++-------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+Function slitherConstructorConstantVariables()
++-------------------------------------------------+--------------+
+|                     Variable                    | Dependencies |
++-------------------------------------------------+--------------+
+|               GenericManager.owner              |      []      |
+|              GenericManager.paused              |      []      |
+|       ServiceManagerToken.serviceRegistry       |      []      |
+| ServiceManagerToken.serviceRegistryTokenUtility |      []      |
+|      ServiceManagerToken.ETH_TOKEN_ADDRESS      |      []      |
+|         ServiceManagerToken.BOND_WRAPPER        |      []      |
+|      ServiceManagerToken.operatorWhitelist      |      []      |
++-------------------------------------------------+--------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract IService
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function create(address,bytes32,uint32[],IService.AgentParams[],uint32)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
++--------------+--------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function activateRegistration(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function registerAgents(address,uint256,address[],uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+| agentInstances |      []      |
+|    agentIds    |      []      |
+|    success     |      []      |
++----------------+--------------+
+Function deploy(address,uint256,address,bytes)
++------------------------+--------------+
+|        Variable        | Dependencies |
++------------------------+--------------+
+|      serviceOwner      |      []      |
+|       serviceId        |      []      |
+| multisigImplementation |      []      |
+|          data          |      []      |
+|        multisig        |      []      |
++------------------------+--------------+
+Function terminate(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
+|    refund    |      []      |
++--------------+--------------+
+Function unbond(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|  success  |      []      |
+|   refund  |      []      |
++-----------+--------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract IService
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function create(address,bytes32,uint32[],IService.AgentParams[],uint32)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
++--------------+--------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function activateRegistration(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function registerAgents(address,uint256,address[],uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+| agentInstances |      []      |
+|    agentIds    |      []      |
+|    success     |      []      |
++----------------+--------------+
+Function deploy(address,uint256,address,bytes)
++------------------------+--------------+
+|        Variable        | Dependencies |
++------------------------+--------------+
+|      serviceOwner      |      []      |
+|       serviceId        |      []      |
+| multisigImplementation |      []      |
+|          data          |      []      |
+|        multisig        |      []      |
++------------------------+--------------+
+Function terminate(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
+|    refund    |      []      |
++--------------+--------------+
+Function unbond(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|  success  |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Contract IToken
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function allowance(address,address)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+| account  |      []      |
+| spender  |      []      |
+|          |      []      |
++----------+--------------+
+Function transferFrom(address,address,uint256)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+|   from   |      []      |
+|    to    |      []      |
+|  amount  |      []      |
+|          |      []      |
++----------+--------------+
+Function transfer(address,uint256)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+|    to    |      []      |
+|  amount  |      []      |
+|          |      []      |
++----------+--------------+
+Function ownerOf(uint256)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+| tokenId  |      []      |
+|          |      []      |
++----------+--------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract IService
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function create(address,bytes32,uint32[],IService.AgentParams[],uint32)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
++--------------+--------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function activateRegistration(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function registerAgents(address,uint256,address[],uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+| agentInstances |      []      |
+|    agentIds    |      []      |
+|    success     |      []      |
++----------------+--------------+
+Function deploy(address,uint256,address,bytes)
++------------------------+--------------+
+|        Variable        | Dependencies |
++------------------------+--------------+
+|      serviceOwner      |      []      |
+|       serviceId        |      []      |
+| multisigImplementation |      []      |
+|          data          |      []      |
+|        multisig        |      []      |
++------------------------+--------------+
+Function terminate(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
+|    refund    |      []      |
++--------------+--------------+
+Function unbond(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|  success  |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Contract IToken
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function allowance(address,address)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+| account  |      []      |
+| spender  |      []      |
+|          |      []      |
++----------+--------------+
+Function transferFrom(address,address,uint256)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+|   from   |      []      |
+|    to    |      []      |
+|  amount  |      []      |
+|          |      []      |
++----------+--------------+
+Function transfer(address,uint256)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+|    to    |      []      |
+|  amount  |      []      |
+|          |      []      |
++----------+--------------+
+Function ownerOf(uint256)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+| tokenId  |      []      |
+|          |      []      |
++----------+--------------+
+Contract IServiceUtility
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function mapServices(uint256)
++----------------------+--------------+
+|       Variable       | Dependencies |
++----------------------+--------------+
+|      serviceId       |      []      |
+|   securityDeposit    |      []      |
+|       multisig       |      []      |
+|      configHash      |      []      |
+|      threshold       |      []      |
+| maxNumAgentInstances |      []      |
+|  numAgentInstances   |      []      |
+|        state         |      []      |
++----------------------+--------------+
+Function mapAgentInstanceOperators(address)
++---------------+--------------+
+|    Variable   | Dependencies |
++---------------+--------------+
+| agentInstance |      []      |
+|    operator   |      []      |
++---------------+--------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract IService
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function create(address,bytes32,uint32[],IService.AgentParams[],uint32)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
++--------------+--------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function activateRegistration(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function registerAgents(address,uint256,address[],uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+| agentInstances |      []      |
+|    agentIds    |      []      |
+|    success     |      []      |
++----------------+--------------+
+Function deploy(address,uint256,address,bytes)
++------------------------+--------------+
+|        Variable        | Dependencies |
++------------------------+--------------+
+|      serviceOwner      |      []      |
+|       serviceId        |      []      |
+| multisigImplementation |      []      |
+|          data          |      []      |
+|        multisig        |      []      |
++------------------------+--------------+
+Function terminate(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
+|    refund    |      []      |
++--------------+--------------+
+Function unbond(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|  success  |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Contract IToken
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function allowance(address,address)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+| account  |      []      |
+| spender  |      []      |
+|          |      []      |
++----------+--------------+
+Function transferFrom(address,address,uint256)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+|   from   |      []      |
+|    to    |      []      |
+|  amount  |      []      |
+|          |      []      |
++----------+--------------+
+Function transfer(address,uint256)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+|    to    |      []      |
+|  amount  |      []      |
+|          |      []      |
++----------+--------------+
+Function ownerOf(uint256)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+| tokenId  |      []      |
+|          |      []      |
++----------+--------------+
+Contract IServiceUtility
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function mapServices(uint256)
++----------------------+--------------+
+|       Variable       | Dependencies |
++----------------------+--------------+
+|      serviceId       |      []      |
+|   securityDeposit    |      []      |
+|       multisig       |      []      |
+|      configHash      |      []      |
+|      threshold       |      []      |
+| maxNumAgentInstances |      []      |
+|  numAgentInstances   |      []      |
+|        state         |      []      |
++----------------------+--------------+
+Function mapAgentInstanceOperators(address)
++---------------+--------------+
+|    Variable   | Dependencies |
++---------------+--------------+
+| agentInstance |      []      |
+|    operator   |      []      |
++---------------+--------------+
+Contract ServiceRegistryTokenUtility
++-----------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
+|                 Variable                |                                                           Dependencies                                                           |
++-----------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
+|             serviceRegistry             |                                             ['_serviceRegistry', 'serviceRegistry']                                              |
+|                  owner                  |                                               ['msg.sender', 'newOwner', 'owner']                                                |
+|                 manager                 |                                                    ['manager', 'newManager']                                                     |
+|                 drainer                 |                                                    ['drainer', 'newDrainer']                                                     |
+|                 _locked                 |                                                           ['_locked']                                                            |
+|         mapServiceIdTokenDeposit        |                                     ['mapServiceIdTokenDeposit', 'securityDeposit', 'token']                                     |
+|      mapServiceAndAgentIdAgentBond      |                                            ['bonds', 'mapServiceAndAgentIdAgentBond']                                            |
+| mapOperatorAndServiceIdOperatorBalances | ['amounts', 'balance', 'bond', 'bonds', 'mapOperatorAndServiceIdOperatorBalances', 'mapServiceAndAgentIdAgentBond', 'totalBond'] |
+|             mapSlashedFunds             |                                               ['mapSlashedFunds', 'slashedFunds']                                                |
++-----------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
+
+Function constructor(address)
++---------------------------------------------------------------------+----------------------+
+|                               Variable                              |     Dependencies     |
++---------------------------------------------------------------------+----------------------+
+|                           _serviceRegistry                          |          []          |
+|             ServiceRegistryTokenUtility.serviceRegistry             | ['_serviceRegistry'] |
+|                  ServiceRegistryTokenUtility.owner                  |    ['msg.sender']    |
+|                 ServiceRegistryTokenUtility.manager                 |          []          |
+|                 ServiceRegistryTokenUtility.drainer                 |          []          |
+|                 ServiceRegistryTokenUtility._locked                 |          []          |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        |          []          |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |          []          |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances |          []          |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |          []          |
++---------------------------------------------------------------------+----------------------+
+Function changeOwner(address)
++---------------------------------------------------------------------+-----------------------+
+|                               Variable                              |      Dependencies     |
++---------------------------------------------------------------------+-----------------------+
+|                               newOwner                              |           []          |
+|             ServiceRegistryTokenUtility.serviceRegistry             |           []          |
+|                  ServiceRegistryTokenUtility.owner                  | ['newOwner', 'owner'] |
+|                 ServiceRegistryTokenUtility.manager                 |           []          |
+|                 ServiceRegistryTokenUtility.drainer                 |           []          |
+|                 ServiceRegistryTokenUtility._locked                 |           []          |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        |           []          |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |           []          |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances |           []          |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |           []          |
++---------------------------------------------------------------------+-----------------------+
+Function changeManager(address)
++---------------------------------------------------------------------+----------------+
+|                               Variable                              |  Dependencies  |
++---------------------------------------------------------------------+----------------+
+|                              newManager                             |       []       |
+|             ServiceRegistryTokenUtility.serviceRegistry             |       []       |
+|                  ServiceRegistryTokenUtility.owner                  |   ['owner']    |
+|                 ServiceRegistryTokenUtility.manager                 | ['newManager'] |
+|                 ServiceRegistryTokenUtility.drainer                 |       []       |
+|                 ServiceRegistryTokenUtility._locked                 |       []       |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        |       []       |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |       []       |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances |       []       |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |       []       |
++---------------------------------------------------------------------+----------------+
+Function changeDrainer(address)
++---------------------------------------------------------------------+----------------+
+|                               Variable                              |  Dependencies  |
++---------------------------------------------------------------------+----------------+
+|                              newDrainer                             |       []       |
+|             ServiceRegistryTokenUtility.serviceRegistry             |       []       |
+|                  ServiceRegistryTokenUtility.owner                  |   ['owner']    |
+|                 ServiceRegistryTokenUtility.manager                 |       []       |
+|                 ServiceRegistryTokenUtility.drainer                 | ['newDrainer'] |
+|                 ServiceRegistryTokenUtility._locked                 |       []       |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        |       []       |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |       []       |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances |       []       |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |       []       |
++---------------------------------------------------------------------+----------------+
+Function createWithToken(uint256,address,uint32[],uint256[])
++---------------------------------------------------------------------+----------------------------------------------------------+
+|                               Variable                              |                       Dependencies                       |
++---------------------------------------------------------------------+----------------------------------------------------------+
+|                              serviceId                              |                            []                            |
+|                                token                                |                            []                            |
+|                               agentIds                              |                       ['agentIds']                       |
+|                                bonds                                |                        ['bonds']                         |
+|                           securityDeposit                           |               ['bonds', 'securityDeposit']               |
+|                                  i                                  |                          ['i']                           |
+|                             serviceAgent                            |        ['agentIds', 'serviceAgent', 'serviceId']         |
+|             ServiceRegistryTokenUtility.serviceRegistry             |                            []                            |
+|                  ServiceRegistryTokenUtility.owner                  |                            []                            |
+|                 ServiceRegistryTokenUtility.manager                 |                       ['manager']                        |
+|                 ServiceRegistryTokenUtility.drainer                 |                            []                            |
+|                 ServiceRegistryTokenUtility._locked                 |                            []                            |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        | ['mapServiceIdTokenDeposit', 'securityDeposit', 'token'] |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |        ['bonds', 'mapServiceAndAgentIdAgentBond']        |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances |                            []                            |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |                            []                            |
++---------------------------------------------------------------------+----------------------------------------------------------+
+Function resetServiceToken(uint256)
++---------------------------------------------------------------------+------------------------------+
+|                               Variable                              |         Dependencies         |
++---------------------------------------------------------------------+------------------------------+
+|                              serviceId                              |              []              |
+|             ServiceRegistryTokenUtility.serviceRegistry             |              []              |
+|                  ServiceRegistryTokenUtility.owner                  |              []              |
+|                 ServiceRegistryTokenUtility.manager                 |         ['manager']          |
+|                 ServiceRegistryTokenUtility.drainer                 |              []              |
+|                 ServiceRegistryTokenUtility._locked                 |              []              |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        | ['mapServiceIdTokenDeposit'] |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |              []              |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances |              []              |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |              []              |
++---------------------------------------------------------------------+------------------------------+
+Function activateRegistrationTokenDeposit(uint256)
++---------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
+|                               Variable                              |                                                           Dependencies                                                           |
++---------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
+|                              serviceId                              |                                                                []                                                                |
+|                            isTokenSecured                           |                                                                []                                                                |
+|                             tokenDeposit                            |                                           ['mapServiceIdTokenDeposit', 'tokenDeposit']                                           |
+|                                token                                |                                           ['mapServiceIdTokenDeposit', 'tokenDeposit']                                           |
+|                           securityDeposit                           |                                           ['mapServiceIdTokenDeposit', 'tokenDeposit']                                           |
+|                             serviceOwner                            |                                                 ['serviceId', 'serviceRegistry']                                                 |
+|                              allowance                              |          ['mapServiceIdTokenDeposit', 'serviceId', 'serviceOwner', 'serviceRegistry', 'this', 'token', 'tokenDeposit']           |
+|                               success                               | ['mapServiceIdTokenDeposit', 'securityDeposit', 'serviceId', 'serviceOwner', 'serviceRegistry', 'this', 'token', 'tokenDeposit'] |
+|             ServiceRegistryTokenUtility.serviceRegistry             |                                                       ['serviceRegistry']                                                        |
+|                  ServiceRegistryTokenUtility.owner                  |                                                                []                                                                |
+|                 ServiceRegistryTokenUtility.manager                 |                                                           ['manager']                                                            |
+|                 ServiceRegistryTokenUtility.drainer                 |                                                                []                                                                |
+|                 ServiceRegistryTokenUtility._locked                 |                                                           ['_locked']                                                            |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        |                                                   ['mapServiceIdTokenDeposit']                                                   |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |                                                                []                                                                |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances |                                                                []                                                                |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |                                                                []                                                                |
++---------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
+Function registerAgentsTokenDeposit(address,uint256,uint32[])
++---------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                               Variable                              |                                                                        Dependencies                                                                        |
++---------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                               operator                              |                                                                             []                                                                             |
+|                              serviceId                              |                                                                             []                                                                             |
+|                               agentIds                              |                                                                        ['agentIds']                                                                        |
+|                            isTokenSecured                           |                                                                             []                                                                             |
+|                                token                                |                                                                ['mapServiceIdTokenDeposit']                                                                |
+|                              numAgents                              |                                                                        ['agentIds']                                                                        |
+|                              totalBond                              |                             ['bond', 'mapOperatorAndServiceIdOperatorBalances', 'mapServiceAndAgentIdAgentBond', 'totalBond']                              |
+|                                  i                                  |                                                                           ['i']                                                                            |
+|                             serviceAgent                            |                                                         ['agentIds', 'serviceAgent', 'serviceId']                                                          |
+|                                 bond                                |                                                             ['mapServiceAndAgentIdAgentBond']                                                              |
+|                              allowance                              |                                                 ['mapServiceIdTokenDeposit', 'operator', 'this', 'token']                                                  |
+|                           operatorService                           |                                                        ['operator', 'operatorService', 'serviceId']                                                        |
+|                               success                               | ['bond', 'mapOperatorAndServiceIdOperatorBalances', 'mapServiceAndAgentIdAgentBond', 'mapServiceIdTokenDeposit', 'operator', 'this', 'token', 'totalBond'] |
+|             ServiceRegistryTokenUtility.serviceRegistry             |                                                                             []                                                                             |
+|                  ServiceRegistryTokenUtility.owner                  |                                                                             []                                                                             |
+|                 ServiceRegistryTokenUtility.manager                 |                                                                        ['manager']                                                                         |
+|                 ServiceRegistryTokenUtility.drainer                 |                                                                             []                                                                             |
+|                 ServiceRegistryTokenUtility._locked                 |                                                                        ['_locked']                                                                         |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        |                                                                ['mapServiceIdTokenDeposit']                                                                |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |                                                             ['mapServiceAndAgentIdAgentBond']                                                              |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances |                             ['bond', 'mapOperatorAndServiceIdOperatorBalances', 'mapServiceAndAgentIdAgentBond', 'totalBond']                              |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |                                                                             []                                                                             |
++---------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
+Function terminateTokenRefund(uint256)
++---------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+|                               Variable                              |                                                       Dependencies                                                      |
++---------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+|                              serviceId                              |                                                            []                                                           |
+|                            securityRefund                           |                                       ['mapServiceIdTokenDeposit', 'tokenDeposit']                                      |
+|                             tokenDeposit                            |                                       ['mapServiceIdTokenDeposit', 'tokenDeposit']                                      |
+|                                token                                |                                       ['mapServiceIdTokenDeposit', 'tokenDeposit']                                      |
+|                             serviceOwner                            |                                             ['serviceId', 'serviceRegistry']                                            |
+|                               success                               | ['mapServiceIdTokenDeposit', 'securityRefund', 'serviceId', 'serviceOwner', 'serviceRegistry', 'token', 'tokenDeposit'] |
+|             ServiceRegistryTokenUtility.serviceRegistry             |                                                   ['serviceRegistry']                                                   |
+|                  ServiceRegistryTokenUtility.owner                  |                                                            []                                                           |
+|                 ServiceRegistryTokenUtility.manager                 |                                                       ['manager']                                                       |
+|                 ServiceRegistryTokenUtility.drainer                 |                                                            []                                                           |
+|                 ServiceRegistryTokenUtility._locked                 |                                                       ['_locked']                                                       |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        |                                               ['mapServiceIdTokenDeposit']                                              |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |                                                            []                                                           |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances |                                                            []                                                           |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |                                                            []                                                           |
++---------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+Function unbondTokenRefund(address,uint256)
++---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------+
+|                               Variable                              |                                              Dependencies                                              |
++---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------+
+|                               operator                              |                                                   []                                                   |
+|                              serviceId                              |                                                   []                                                   |
+|                                refund                               |                              ['mapOperatorAndServiceIdOperatorBalances']                               |
+|                                token                                |                                      ['mapServiceIdTokenDeposit']                                      |
+|                           operatorService                           |                              ['operator', 'operatorService', 'serviceId']                              |
+|                               success                               | ['mapOperatorAndServiceIdOperatorBalances', 'mapServiceIdTokenDeposit', 'operator', 'refund', 'token'] |
+|             ServiceRegistryTokenUtility.serviceRegistry             |                                                   []                                                   |
+|                  ServiceRegistryTokenUtility.owner                  |                                                   []                                                   |
+|                 ServiceRegistryTokenUtility.manager                 |                                              ['manager']                                               |
+|                 ServiceRegistryTokenUtility.drainer                 |                                                   []                                                   |
+|                 ServiceRegistryTokenUtility._locked                 |                                              ['_locked']                                               |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        |                                      ['mapServiceIdTokenDeposit']                                      |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |                                                   []                                                   |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances |                              ['mapOperatorAndServiceIdOperatorBalances']                               |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |                                                   []                                                   |
++---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------+
+Function slash(address[],uint256[],uint256)
++---------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+
+|                               Variable                              |                                             Dependencies                                             |
++---------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+
+|                            agentInstances                           |                                          ['agentInstances']                                          |
+|                               amounts                               |                                             ['amounts']                                              |
+|                              serviceId                              |                                                  []                                                  |
+|                               success                               |                                                  []                                                  |
+|                               multisig                              |                             ['TUPLE_0', 'serviceId', 'serviceRegistry']                              |
+|                                state                                |                             ['TUPLE_0', 'serviceId', 'serviceRegistry']                              |
+|                                token                                |                                     ['mapServiceIdTokenDeposit']                                     |
+|                         numInstancesToSlash                         |                                          ['agentInstances']                                          |
+|                             slashedFunds                            | ['amounts', 'balance', 'mapOperatorAndServiceIdOperatorBalances', 'mapSlashedFunds', 'slashedFunds'] |
+|                                  i                                  |                                                ['i']                                                 |
+|                               operator                              |                                ['agentInstances', 'serviceRegistry']                                 |
+|                           operatorService                           |          ['agentInstances', 'operator', 'operatorService', 'serviceId', 'serviceRegistry']           |
+|                               balance                               |                  ['amounts', 'balance', 'mapOperatorAndServiceIdOperatorBalances']                   |
+|             ServiceRegistryTokenUtility.serviceRegistry             |                                         ['serviceRegistry']                                          |
+|                  ServiceRegistryTokenUtility.owner                  |                                                  []                                                  |
+|                 ServiceRegistryTokenUtility.manager                 |                                                  []                                                  |
+|                 ServiceRegistryTokenUtility.drainer                 |                                                  []                                                  |
+|                 ServiceRegistryTokenUtility._locked                 |                                                  []                                                  |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        |                                     ['mapServiceIdTokenDeposit']                                     |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |                                                  []                                                  |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances |                  ['amounts', 'balance', 'mapOperatorAndServiceIdOperatorBalances']                   |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |                                 ['mapSlashedFunds', 'slashedFunds']                                  |
++---------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+
+Function drain(address)
++---------------------------------------------------------------------+---------------------------------------------------+
+|                               Variable                              |                    Dependencies                   |
++---------------------------------------------------------------------+---------------------------------------------------+
+|                                token                                |                         []                        |
+|                                amount                               |                ['mapSlashedFunds']                |
+|                               success                               | ['amount', 'drainer', 'mapSlashedFunds', 'token'] |
+|             ServiceRegistryTokenUtility.serviceRegistry             |                         []                        |
+|                  ServiceRegistryTokenUtility.owner                  |                     ['owner']                     |
+|                 ServiceRegistryTokenUtility.manager                 |                         []                        |
+|                 ServiceRegistryTokenUtility.drainer                 |                    ['drainer']                    |
+|                 ServiceRegistryTokenUtility._locked                 |                    ['_locked']                    |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        |                         []                        |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |                         []                        |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances |                         []                        |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |                ['mapSlashedFunds']                |
++---------------------------------------------------------------------+---------------------------------------------------+
+Function isTokenSecuredService(uint256)
++---------------------------------------------------------------------+------------------------------+
+|                               Variable                              |         Dependencies         |
++---------------------------------------------------------------------+------------------------------+
+|                              serviceId                              |              []              |
+|                                                                     |              []              |
+|             ServiceRegistryTokenUtility.serviceRegistry             |              []              |
+|                  ServiceRegistryTokenUtility.owner                  |              []              |
+|                 ServiceRegistryTokenUtility.manager                 |              []              |
+|                 ServiceRegistryTokenUtility.drainer                 |              []              |
+|                 ServiceRegistryTokenUtility._locked                 |              []              |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        | ['mapServiceIdTokenDeposit'] |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |              []              |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances |              []              |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |              []              |
++---------------------------------------------------------------------+------------------------------+
+Function getOperatorBalance(address,uint256)
++---------------------------------------------------------------------+----------------------------------------------+
+|                               Variable                              |                 Dependencies                 |
++---------------------------------------------------------------------+----------------------------------------------+
+|                               operator                              |                      []                      |
+|                              serviceId                              |                      []                      |
+|                               balance                               | ['mapOperatorAndServiceIdOperatorBalances']  |
+|                           operatorService                           | ['operator', 'operatorService', 'serviceId'] |
+|             ServiceRegistryTokenUtility.serviceRegistry             |                      []                      |
+|                  ServiceRegistryTokenUtility.owner                  |                      []                      |
+|                 ServiceRegistryTokenUtility.manager                 |                      []                      |
+|                 ServiceRegistryTokenUtility.drainer                 |                      []                      |
+|                 ServiceRegistryTokenUtility._locked                 |                      []                      |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        |                      []                      |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |                      []                      |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances | ['mapOperatorAndServiceIdOperatorBalances']  |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |                      []                      |
++---------------------------------------------------------------------+----------------------------------------------+
+Function slitherConstructorVariables()
++---------------------------------------------------------------------+--------------+
+|                               Variable                              | Dependencies |
++---------------------------------------------------------------------+--------------+
+|             ServiceRegistryTokenUtility.serviceRegistry             |      []      |
+|                  ServiceRegistryTokenUtility.owner                  |      []      |
+|                 ServiceRegistryTokenUtility.manager                 |      []      |
+|                 ServiceRegistryTokenUtility.drainer                 |      []      |
+|                 ServiceRegistryTokenUtility._locked                 |      []      |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        |      []      |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |      []      |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances |      []      |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |      []      |
++---------------------------------------------------------------------+--------------+
+INFO:Slither:. analyzed (13 contracts)

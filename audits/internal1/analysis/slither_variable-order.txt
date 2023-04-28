@@ -1,0 +1,77 @@
+INFO:Printers:
+IToken:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+OperatorWhitelist:
++----------------------------------------------+----------------------------------------------+------+--------+
+|                     Name                     |                     Type                     | Slot | Offset |
++----------------------------------------------+----------------------------------------------+------+--------+
+| OperatorWhitelist.mapServiceIdOperatorsCheck |           mapping(uint256 => bool)           |  0   |   0    |
+|   OperatorWhitelist.mapServiceIdOperators    | mapping(uint256 => mapping(address => bool)) |  1   |   0    |
++----------------------------------------------+----------------------------------------------+------+--------+
+
+INFO:Printers:
+IService:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+IServiceTokenUtility:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+IOperatorWhitelist:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+ServiceManagerToken:
++---------------------------------------+---------+------+--------+
+|                  Name                 |   Type  | Slot | Offset |
++---------------------------------------+---------+------+--------+
+|          GenericManager.owner         | address |  0   |   0    |
+|         GenericManager.paused         |   bool  |  0   |   20   |
+| ServiceManagerToken.operatorWhitelist | address |  1   |   0    |
++---------------------------------------+---------+------+--------+
+
+INFO:Printers:
+IService:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+IToken:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+IServiceUtility:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+ServiceRegistryTokenUtility:
++---------------------------------------------------------------------+----------------------------------------------------------------------+------+--------+
+|                                 Name                                |                                 Type                                 | Slot | Offset |
++---------------------------------------------------------------------+----------------------------------------------------------------------+------+--------+
+|                  ServiceRegistryTokenUtility.owner                  |                               address                                |  0   |   0    |
+|                 ServiceRegistryTokenUtility.manager                 |                               address                                |  1   |   0    |
+|                 ServiceRegistryTokenUtility.drainer                 |                               address                                |  2   |   0    |
+|                 ServiceRegistryTokenUtility._locked                 |                               uint256                                |  3   |   0    |
+|         ServiceRegistryTokenUtility.mapServiceIdTokenDeposit        | mapping(uint256 => ServiceRegistryTokenUtility.TokenSecurityDeposit) |  4   |   0    |
+|      ServiceRegistryTokenUtility.mapServiceAndAgentIdAgentBond      |                     mapping(uint256 => uint256)                      |  5   |   0    |
+| ServiceRegistryTokenUtility.mapOperatorAndServiceIdOperatorBalances |                     mapping(uint256 => uint256)                      |  6   |   0    |
+|             ServiceRegistryTokenUtility.mapSlashedFunds             |                     mapping(address => uint256)                      |  7   |   0    |
++---------------------------------------------------------------------+----------------------------------------------------------------------+------+--------+
+
+INFO:Slither:. analyzed (13 contracts)

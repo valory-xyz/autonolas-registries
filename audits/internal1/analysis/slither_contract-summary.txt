@@ -1,0 +1,104 @@
+INFO:Printers:
++ Contract IToken (Most derived contract)
+  - From IToken
+    - ownerOf(uint256) (external)
+
++ Contract OperatorWhitelist (Most derived contract)
+  - From OperatorWhitelist
+    - constructor(address) (public)
+    - isOperatorWhitelisted(uint256,address) (external)
+    - setOperatorsCheck(uint256,bool) (external)
+    - setOperatorsStatuses(uint256,address[],bool[]) (external)
+
+INFO:Printers:
++ Contract IErrorsRegistries
+
++ Contract GenericManager
+  - From GenericManager
+    - changeOwner(address) (external)
+    - pause() (external)
+    - unpause() (external)
+
++ Contract IService (Most derived contract)
+  - From IService
+    - activateRegistration(address,uint256) (external)
+    - create(address,bytes32,uint32[],IService.AgentParams[],uint32) (external)
+    - deploy(address,uint256,address,bytes) (external)
+    - registerAgents(address,uint256,address[],uint32[]) (external)
+    - terminate(address,uint256) (external)
+    - unbond(address,uint256) (external)
+    - update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256) (external)
+
++ Contract IServiceTokenUtility (Most derived contract)
+  - From IServiceTokenUtility
+    - activateRegistrationTokenDeposit(uint256) (external)
+    - createWithToken(uint256,address,uint32[],uint256[]) (external)
+    - isTokenSecuredService(uint256) (external)
+    - registerAgentsTokenDeposit(address,uint256,uint32[]) (external)
+    - resetServiceToken(uint256) (external)
+    - terminateTokenRefund(uint256) (external)
+    - unbondTokenRefund(address,uint256) (external)
+
++ Contract IOperatorWhitelist (Most derived contract)
+  - From IOperatorWhitelist
+    - isOperatorWhitelisted(uint256,address) (external)
+
++ Contract ServiceManagerToken (Most derived contract)
+  - From GenericManager
+    - changeOwner(address) (external)
+    - pause() (external)
+    - unpause() (external)
+  - From ServiceManagerToken
+    - activateRegistration(uint256) (external)
+    - constructor(address,address) (public)
+    - create(address,address,bytes32,uint32[],IService.AgentParams[],uint32) (external)
+    - deploy(uint256,address,bytes) (external)
+    - registerAgents(uint256,address[],uint32[]) (external)
+    - setOperatorWhitelist(address) (external)
+    - terminate(uint256) (external)
+    - unbond(uint256) (external)
+    - update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256) (external)
+
+INFO:Printers:
++ Contract IErrorsRegistries
+
++ Contract IService (Most derived contract)
+  - From IService
+    - activateRegistration(address,uint256) (external)
+    - create(address,bytes32,uint32[],IService.AgentParams[],uint32) (external)
+    - deploy(address,uint256,address,bytes) (external)
+    - registerAgents(address,uint256,address[],uint32[]) (external)
+    - terminate(address,uint256) (external)
+    - unbond(address,uint256) (external)
+    - update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256) (external)
+
++ Contract IToken (Most derived contract)
+  - From IToken
+    - allowance(address,address) (external)
+    - ownerOf(uint256) (external)
+    - transfer(address,uint256) (external)
+    - transferFrom(address,address,uint256) (external)
+
++ Contract IServiceUtility (Most derived contract)
+  - From IServiceUtility
+    - mapAgentInstanceOperators(address) (external)
+    - mapServices(uint256) (external)
+
++ Contract ServiceRegistryTokenUtility (Most derived contract)
+  - From ServiceRegistryTokenUtility
+    - activateRegistrationTokenDeposit(uint256) (external)
+    - changeDrainer(address) (external)
+    - changeManager(address) (external)
+    - changeOwner(address) (external)
+    - constructor(address) (public)
+    - createWithToken(uint256,address,uint32[],uint256[]) (external)
+    - drain(address) (external)
+    - getOperatorBalance(address,uint256) (external)
+    - isTokenSecuredService(uint256) (external)
+    - registerAgentsTokenDeposit(address,uint256,uint32[]) (external)
+    - resetServiceToken(uint256) (external)
+    - slash(address[],uint256[],uint256) (external)
+    - terminateTokenRefund(uint256) (external)
+    - unbondTokenRefund(address,uint256) (external)
+
+INFO:Slither:. analyzed (13 contracts)
