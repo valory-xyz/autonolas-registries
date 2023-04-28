@@ -72,12 +72,12 @@ describe("ServiceManager", function () {
             // Trying to change owner from a non-owner account address
             await expect(
                 serviceManager.connect(account).changeOwner(account.address)
-            ).to.be.revertedWith("OwnerOnly");
+            ).to.be.revertedWithCustomError(serviceManager, "OwnerOnly");
 
             // Trying to change owner for the zero address
             await expect(
                 serviceManager.connect(owner).changeOwner(AddressZero)
-            ).to.be.revertedWith("ZeroAddress");
+            ).to.be.revertedWithCustomError(serviceManager, "ZeroAddress");
 
             // Changing the owner
             await serviceManager.connect(owner).changeOwner(account.address);
@@ -85,7 +85,7 @@ describe("ServiceManager", function () {
             // Trying to change owner from the previous owner address
             await expect(
                 serviceManager.connect(owner).changeOwner(owner.address)
-            ).to.be.revertedWith("OwnerOnly");
+            ).to.be.revertedWithCustomError(serviceManager, "OwnerOnly");
         });
 
         it("Pausing and unpausing", async function () {
@@ -100,7 +100,7 @@ describe("ServiceManager", function () {
             // Try to pause not from the owner of the service manager
             await expect(
                 serviceManager.connect(manager).pause()
-            ).to.be.revertedWith("OwnerOnly");
+            ).to.be.revertedWithCustomError(serviceManager, "OwnerOnly");
 
             // Pause the contract
             await serviceManager.pause();
@@ -109,12 +109,12 @@ describe("ServiceManager", function () {
             // 0 is component, 1 is agent
             await expect(
                 serviceManager.create(owner, configHash, agentIds, agentParams, maxThreshold)
-            ).to.be.revertedWith("Paused");
+            ).to.be.revertedWithCustomError(serviceManager, "Paused");
 
             // Try to unpause not from the owner of the service manager
             await expect(
                 serviceManager.connect(manager).unpause()
-            ).to.be.revertedWith("OwnerOnly");
+            ).to.be.revertedWithCustomError(serviceManager, "OwnerOnly");
 
             // Unpause the contract
             await serviceManager.unpause();
@@ -127,7 +127,7 @@ describe("ServiceManager", function () {
             const owner = signers[4].address;
             await expect(
                 serviceManager.create(owner, configHash, agentIds, agentParams, threshold)
-            ).to.be.revertedWith("ManagerOnly");
+            ).to.be.revertedWithCustomError(serviceManager, "ManagerOnly");
         });
 
         it("Service Id=1 after first successful service creation must exist", async function () {
@@ -179,7 +179,7 @@ describe("ServiceManager", function () {
             // Try creating a contract when paused
             await expect(
                 serviceManager.create(owner.address, configHash, [1], [[1, regBond]], 1)
-            ).to.be.revertedWith("Paused");
+            ).to.be.revertedWithCustomError(serviceManager, "Paused");
 
             // Unpause the contract
             await serviceManager.unpause();
@@ -248,7 +248,7 @@ describe("ServiceManager", function () {
             await expect(
                 serviceManager.connect(owner).update(configHash, newAgentIds,
                     newAgentParams, newMaxThreshold, serviceIds[0])
-            ).to.be.revertedWith("WrongServiceState");
+            ).to.be.revertedWithCustomError(serviceManager, "WrongServiceState");
 
             // Registering agents for service Id == 1
             await serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[2]],
@@ -256,21 +256,21 @@ describe("ServiceManager", function () {
             // After the update, service has only 2 slots for canonical agent 1 and 1 slot for canonical agent 3
             await expect(
                 serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[3]], [newAgentIds[0]], {value: regBond})
-            ).to.be.revertedWith("AgentInstancesSlotsFilled");
+            ).to.be.revertedWithCustomError(serviceManager, "AgentInstancesSlotsFilled");
             // Registering agent instance for the last possible slot
             await serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[1]],
                 [newAgentIds[2]], {value: regBond});
             // Now all slots are filled and the service cannot register more agent instances
             await expect(
                 serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[3]], [newAgentIds[2]], {value: regBond})
-            ).to.be.revertedWith("WrongServiceState");
+            ).to.be.revertedWithCustomError(serviceManager, "WrongServiceState");
 
             // When terminated, no agent instance registration is possible
             await serviceManager.connect(owner).terminate(serviceIds[1]);
             const newAgentInstance = signers[11].address;
             await expect(
                 serviceManager.connect(operator).registerAgents(serviceIds[1], [newAgentInstance], [agentIds[0]], {value: regBond})
-            ).to.be.revertedWith("WrongServiceState");
+            ).to.be.revertedWithCustomError(serviceManager, "WrongServiceState");
 
             expect(await serviceRegistry.exists(2)).to.equal(true);
             expect(await serviceRegistry.exists(3)).to.equal(false);
@@ -306,7 +306,7 @@ describe("ServiceManager", function () {
             // Safe is not possible without all the registered agent instances
             await expect(
                 serviceManager.connect(owner).deploy(serviceIds[0], gnosisSafeMultisig.address, payload)
-            ).to.be.revertedWith("WrongServiceState");
+            ).to.be.revertedWithCustomError(serviceManager, "WrongServiceState");
             // Registering the final agent instance
             await serviceManager.connect(operators[0]).registerAgents(serviceIds[0], [agentInstances[2]],
                 [newAgentIds[0]], {value: regBond});
@@ -315,11 +315,11 @@ describe("ServiceManager", function () {
             await expect(
                 serviceManager.connect(operators[0]).registerAgents(serviceIds[0], [agentInstances[3]],
                     [newAgentIds[0]], {value: regBond})
-            ).to.be.revertedWith("WrongServiceState");
+            ).to.be.revertedWithCustomError(serviceManager, "WrongServiceState");
             await expect(
                 serviceManager.connect(operators[1]).registerAgents(serviceIds[0], [agentInstances[3]],
                     [newAgentIds[1]], {value: regBond})
-            ).to.be.revertedWith("WrongServiceState");
+            ).to.be.revertedWithCustomError(serviceManager, "WrongServiceState");
 
             // Creating Safe with blanc safe parameters for the test
             const safe = await serviceManager.connect(owner).deploy(serviceIds[0], gnosisSafeMultisig.address, payload);
@@ -413,7 +413,7 @@ describe("ServiceManager", function () {
             // Try to unbond when service is still in active registration
             await expect(
                 serviceManager.connect(operator).unbond(serviceIds[0])
-            ).to.be.revertedWith("WrongServiceState");
+            ).to.be.revertedWithCustomError(serviceManager, "WrongServiceState");
 
             // Registering the remaining agent instance
             await serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[1]],

@@ -42,7 +42,7 @@ describe("GnosisSafeSameAddressMultisig", function () {
         it("Should fail when passing the non-zero multisig data with the incorrect number of bytes", async function () {
             await expect(
                 gnosisSafeSameAddressMultisig.create(newOwnerAddresses, initialThreshold, "0x55")
-            ).to.be.revertedWith("IncorrectDataLength");
+            ).to.be.revertedWithCustomError(gnosisSafeSameAddressMultisig, "IncorrectDataLength");
 
             const data = AddressZero + "55";
             await expect(
@@ -78,17 +78,17 @@ describe("GnosisSafeSameAddressMultisig", function () {
             // Threshold is incorrect
             await expect(
                 gnosisSafeSameAddressMultisig.create([initialOwner.address], newThreshold, data)
-            ).to.be.revertedWith("WrongThreshold");
+            ).to.be.revertedWithCustomError(gnosisSafeSameAddressMultisig, "WrongThreshold");
 
             // Number of owners does not match
             await expect(
                 gnosisSafeSameAddressMultisig.create(newOwnerAddresses, initialThreshold, data)
-            ).to.be.revertedWith("WrongNumOwners");
+            ).to.be.revertedWithCustomError(gnosisSafeSameAddressMultisig, "WrongNumOwners");
 
             // Number of owners is the same, but the addresses are different
             await expect(
                 gnosisSafeSameAddressMultisig.create([signers[2].address], initialThreshold, data)
-            ).to.be.revertedWith("WrongOwner");
+            ).to.be.revertedWithCustomError(gnosisSafeSameAddressMultisig, "WrongOwner");
 
             // Change the multisig owners and threshold (skipping the first one)
             // Add owners

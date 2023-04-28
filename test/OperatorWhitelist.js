@@ -33,7 +33,7 @@ describe("OperatorWhitelist", function () {
     
         it("Should not allow the zero address as serviceRegistry address", async function () {
             const OperatorWhitelist = await ethers.getContractFactory("OperatorWhitelist");
-            await expect(OperatorWhitelist.deploy(AddressZero)).to.be.revertedWith("ZeroAddress");
+            await expect(OperatorWhitelist.deploy(AddressZero)).to.be.revertedWithCustomError(operatorWhitelist, "ZeroAddress");
         });
     });
 
@@ -48,7 +48,7 @@ describe("OperatorWhitelist", function () {
         it("Should revert if the service owner is not the message sender", async function () {
             await expect(
                 operatorWhitelist.connect(signers[1]).setOperatorsCheck(serviceId, true)
-            ).to.be.revertedWith("OwnerOnly");
+            ).to.be.revertedWithCustomError(operatorWhitelist, "OwnerOnly");
         });
     });
 
@@ -74,25 +74,25 @@ describe("OperatorWhitelist", function () {
         it("Should revert if the arrays have different lengths", async function () {
             await expect(
                 operatorWhitelist.setOperatorsStatuses(serviceId, [signers[1].address, signers[2].address], [true], true)
-            ).to.be.revertedWith("WrongArrayLength");
+            ).to.be.revertedWithCustomError(operatorWhitelist, "WrongArrayLength");
         });
         
         it("Should revert if the arrays are empty", async function () {
             await expect(
                 operatorWhitelist.setOperatorsStatuses(serviceId, [], [], false)
-            ).to.be.revertedWith("WrongArrayLength");
+            ).to.be.revertedWithCustomError(operatorWhitelist, "WrongArrayLength");
         });
         
         it("Should revert if the service owner is not the message sender", async function () {
             await expect(
                 operatorWhitelist.connect(signers[1]).setOperatorsStatuses(serviceId, [signers[2].address], [true], false)
-            ).to.be.revertedWith("OwnerOnly");
+            ).to.be.revertedWithCustomError(operatorWhitelist, "OwnerOnly");
         });
         
         it("Should revert if an operator address is the zero address", async function () {
             await expect(
                 operatorWhitelist.setOperatorsStatuses(serviceId, [AddressZero], [true], false)
-            ).to.be.revertedWith("ZeroAddress");
+            ).to.be.revertedWithCustomError(operatorWhitelist, "ZeroAddress");
         });
     });
 });

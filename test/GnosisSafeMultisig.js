@@ -43,7 +43,7 @@ describe("GnosisSafeMultisig", function () {
         it("Should fail when passing the non-zero multisig data with the incorrect number of bytes", async function () {
             await expect(
                 gnosisSafeMultisig.create(defaultOwnerAddresses, threshold, "0x55")
-            ).to.be.revertedWith("IncorrectDataLength");
+            ).to.be.revertedWithCustomError(gnosisSafeMultisig, "IncorrectDataLength");
         });
 
         it("Passing static fields to meet the minimum bytes length requirement with a zero payload", async function () {
