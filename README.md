@@ -28,6 +28,9 @@ An overview of the state machine governing service management and usage is provi
 
 A more detailed set of registries definitions are provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/definitions.md).
 
+Details on how services can eventually be protected with a custom ERC20 token and how service owners can opt for a set of authorized operators are provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/Secure_Autonomous_service_with_Token.pdf?raw=true).
+
+
 - Abstract contracts:
   - [GenericRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/GenericRegistry.sol)
   - [UnitRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/UnitRegistry.sol)
@@ -144,7 +147,7 @@ If you want to use custom contracts in the registry image, read [here](https://g
 
 ### Audits
 The audit is provided as development matures. The latest audit report can be found here: [audits](https://github.com/valory-xyz/autonolas-registries/blob/main/audits).
-A list of known vulnerabilities can be found here: [Vulnerabilities list #1](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/Vulnerabilities_list%231.pdf)
+A list of known vulnerabilities can be found here: [Vulnerabilities list](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/Vulnerabilities_list_registries.pdf?raw=true)
 
 ## Deployed Protocol
 The list of addresses can be found [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/mainnet_addresses).
