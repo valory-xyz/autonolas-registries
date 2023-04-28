@@ -14,6 +14,7 @@ describe("ServiceManagerToken", function () {
     let gnosisSafeMultisig;
     let token;
     let operatorWhitelist;
+    let reentrancyAttacker;
     let signers;
     let deployer;
     const configHash = "0x" + "5".repeat(64);
@@ -66,17 +67,22 @@ describe("ServiceManagerToken", function () {
         gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
         await gnosisSafeMultisig.deployed();
 
+        const OperatorWhitelist = await ethers.getContractFactory("OperatorWhitelist");
+        operatorWhitelist = await OperatorWhitelist.deploy(serviceRegistry.address);
+        await operatorWhitelist.deployed();
+
         const ServiceManager = await ethers.getContractFactory("ServiceManagerToken");
-        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
+        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address,
+            operatorWhitelist.address);
         await serviceManager.deployed();
 
         const Token = await ethers.getContractFactory("ERC20Token");
         token = await Token.deploy();
         await token.deployed();
 
-        const OperatorWhitelist = await ethers.getContractFactory("OperatorWhitelist");
-        operatorWhitelist = await OperatorWhitelist.deploy(serviceRegistry.address);
-        await operatorWhitelist.deployed();
+        const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyTokenAttacker");
+        reentrancyAttacker = await ReentrancyAttacker.deploy(serviceRegistryTokenUtility.address);
+        await reentrancyAttacker.deployed();
 
         signers = await ethers.getSigners();
         deployer = signers[0];
@@ -90,11 +96,11 @@ describe("ServiceManagerToken", function () {
             const ServiceManager = await ethers.getContractFactory("ServiceManagerToken");
 
             await expect(
-                ServiceManager.deploy(AddressZero, AddressZero)
+                ServiceManager.deploy(AddressZero, AddressZero, AddressZero)
             ).to.be.revertedWith("ZeroAddress");
 
             await expect(
-                ServiceManager.deploy(serviceRegistry.address, AddressZero)
+                ServiceManager.deploy(serviceRegistry.address, AddressZero, AddressZero)
             ).to.be.revertedWith("ZeroAddress");
         });
 
@@ -227,10 +233,6 @@ describe("ServiceManagerToken", function () {
             await expect(
                 serviceManager.connect(signers[1]).setOperatorWhitelist(deployer.address)
             ).to.be.revertedWith("OwnerOnly");
-            // Try to set the zero contract address
-            await expect(
-                serviceManager.connect(deployer).setOperatorWhitelist(AddressZero)
-            ).to.be.revertedWith("ZeroAddress");
         });
 
         it("Should fail when calling functions with a zero token", async function () {
@@ -274,17 +276,33 @@ describe("ServiceManagerToken", function () {
             const agentInstances = [signers[7].address, signers[8].address];
             await agentRegistry.changeManager(manager.address);
 
-            // Creating 3 canonical agents
+            // Creating 4 canonical agents
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
             await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
+            // Try to create a service with a token having specified at least one zero bond
+            let errAgentIds = [1, 4];
+            let errAgentParams = [[1, 0], [1, regBond]];
+            await expect(
+                serviceManager.create(deployer.address, token.address, configHash, errAgentIds, errAgentParams, maxThreshold)
+            ).to.be.revertedWith("ZeroValue");
+
             // Create one service with the ERC20 token bond
             const initAgentIds = [1, 3];
             await serviceManager.create(deployer.address, token.address, configHash, initAgentIds, agentParams, maxThreshold);
 
+            // Try to update a service with at least one slot being non zero and its corresponding bond being a zero
+            errAgentIds = [1, 2, 3];
+            errAgentParams = [[1, regBond], [1, 0], [1, regBond]];
+            const errThreshold = errAgentParams[0][0] + errAgentParams[1][0] + errAgentParams[2][0];
+            await expect(
+                serviceManager.update(token.address, configHash, errAgentIds, errAgentParams, errThreshold, serviceIds[0])
+            ).to.be.revertedWith("ZeroValue");
+
+            // Construct correct values for the service update
             const newAgentIds = [1, 2, 3];
             const newAgentParams = [[1, regBond], [1, regBond],  [0, 0]];
             const newMaxThreshold = newAgentParams[0][0] + newAgentParams[1][0];
@@ -300,10 +318,8 @@ describe("ServiceManagerToken", function () {
             expect(service.state).to.equal(2);
 
             // Set the operator whitelist checker contract
-            await operatorWhitelist.setOperatorsCheck(serviceIds[0], true);
-            await serviceManager.setOperatorWhitelist(operatorWhitelist.address);
             // Whitelist a random operator address for the service
-            await operatorWhitelist.setOperatorsStatuses(serviceIds[0], [signers[15].address], [true]);
+            await operatorWhitelist.setOperatorsStatuses(serviceIds[0], [signers[15].address], [true], true);
             // Try to register agents with the non-whitelited operator address
             await expect(
                 serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[1]],
@@ -311,12 +327,12 @@ describe("ServiceManagerToken", function () {
             ).to.be.revertedWith("WrongOperator");
 
             // Whitelist a correct operator address
-            await operatorWhitelist.setOperatorsStatuses(serviceIds[0], [operator.address], [true]);
+            await operatorWhitelist.setOperatorsStatuses(serviceIds[0], [operator.address], [true], true);
             // Try to register agents without the approve from the operator
             await expect(
                 serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[1]],
                     agentIds, {value: 2})
-            ).to.be.revertedWith("IncorrectRegistrationDepositValue");
+            ).to.be.revertedWith("IncorrectAgentBondingValue");
 
             // Approve token for the serviceRegistryTokenUtility contract by the operator
             await token.mint(operator.address, 2 * regBond);
@@ -361,6 +377,9 @@ describe("ServiceManagerToken", function () {
 
             const newAgentIds = [1];
             const newAgentParams = [[1, regBond]];
+
+            // Remove the operator whitelist check completely
+            serviceManager.connect(deployer).setOperatorWhitelist(AddressZero);
 
             // Creating one service with the ERC20 token bond
             await serviceManager.create(deployer.address, token.address, configHash, newAgentIds, newAgentParams, threshold);
@@ -749,6 +768,89 @@ describe("ServiceManagerToken", function () {
         it("Should fail when sending funds directly to the contract", async function () {
             await expect(
                 signers[0].sendTransaction({to: serviceManager.address, value: ethers.utils.parseEther("1000"), data: "0x12"})
+            ).to.be.reverted;
+        });
+    });
+
+    context("Attacks", async function () {
+        it("Reentrancy during a drain function", async function () {
+            const manager = signers[4];
+            const owner = signers[5];
+            const operator = signers[6];
+            const agentInstance = signers[7];
+            await agentRegistry.changeManager(manager.address);
+
+            // Creating 3 canonical agents
+            await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
+            await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
+            await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
+            await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
+
+            const newAgentIds = [1];
+            const newAgentParams = [[1, regBond]];
+
+            // Remove the operator whitelist check completely
+            serviceManager.connect(deployer).setOperatorWhitelist(AddressZero);
+
+            // Creating one service with the ERC20 token bond
+            await serviceManager.create(deployer.address, reentrancyAttacker.address, configHash, newAgentIds, newAgentParams, threshold);
+
+            // Activate the registration
+            await serviceManager.connect(deployer).activateRegistration(serviceIds[0], {value: 1});
+            let service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(2);
+
+            // Registering agents for the service Id
+            await serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstance.address],
+                newAgentIds, {value: regBond});
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(3);
+
+            // Whitelist gnosis multisig implementation
+            await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+            // Deploying the service
+            const safe = await serviceManager.connect(deployer).deploy(serviceIds[0], gnosisSafeMultisig.address, payload);
+            const result = await safe.wait();
+            const proxyAddress = result.events[0].address;
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(4);
+
+            // Check initial operator's balance
+            const balanceOperator = Number(await serviceRegistryTokenUtility.getOperatorBalance(operator.address, serviceIds[0]));
+            expect(balanceOperator).to.equal(regBond);
+
+            // Get all the necessary info about multisig and slash the operator
+            const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
+            const safeContracts = require("@gnosis.pm/safe-contracts");
+            const nonce = await multisig.nonce();
+            const txHashData = await safeContracts.buildContractCall(serviceRegistryTokenUtility, "slash",
+                [[agentInstance.address], [regFine], serviceIds[0]], nonce, 0, 0);
+            const signMessageData = await safeContracts.safeSignMessage(agentInstance, multisig, txHashData, 0);
+
+            // Slash the agent instance operator with the correct multisig
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Check the new operator's balance, it must be the original balance minus the fine
+            const newBalanceOperator = Number(await serviceRegistryTokenUtility.getOperatorBalance(operator.address, serviceIds[0]));
+            expect(newBalanceOperator).to.equal(balanceOperator - regFine);
+
+            // Terminate the service
+            await serviceManager.connect(deployer).terminate(serviceIds[0]);
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(5);
+
+            // Unbond agent instances
+            await serviceManager.connect(operator).unbond(serviceIds[0]);
+            service = await serviceRegistry.getService(serviceIds[0]);
+            expect(service.state).to.equal(1);
+
+            // Set the reentrancy attack on agent instances unbond
+            await reentrancyAttacker.setAttackState(9);
+            await serviceRegistryTokenUtility.changeDrainer(deployer.address);
+            // Try to terminate the service
+            await expect(
+                serviceRegistryTokenUtility.drain(reentrancyAttacker.address)
             ).to.be.reverted;
         });
     });
