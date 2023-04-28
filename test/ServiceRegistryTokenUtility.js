@@ -6,7 +6,6 @@ describe("serviceRegistryTokenUtility", function () {
     let serviceRegistry;
     let serviceRegistryTokenUtility;
     let token;
-    let reentrancyAttacker;
     let signers;
     let deployer;
     let operator;
@@ -33,10 +32,6 @@ describe("serviceRegistryTokenUtility", function () {
         const Token = await ethers.getContractFactory("ERC20Token");
         token = await Token.deploy();
         await token.deployed();
-
-        const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyTokenAttacker");
-        reentrancyAttacker = await ReentrancyAttacker.deploy(serviceRegistryTokenUtility.address);
-        await reentrancyAttacker.deployed();
 
         // Set the deployer to the service owner by default
         await serviceRegistry.setServiceOwner(serviceId, deployer.address);
@@ -129,17 +124,6 @@ describe("serviceRegistryTokenUtility", function () {
             ).to.be.revertedWith("Overflow");
         });
 
-        it("Should fail if the token does not pass the verification", async function () {
-            // Try to use a non-contract address
-            await expect(
-                serviceRegistryTokenUtility.createWithToken(serviceId, deployer.address, agentIds, bonds)
-            ).to.be.revertedWith("TokenRejected");
-            // Try to use a non ERC20 token
-            await expect(
-                serviceRegistryTokenUtility.createWithToken(serviceId, serviceRegistry.address, agentIds, bonds)
-            ).to.be.revertedWith("TokenRejected");
-        });
-
         it("Create a service record for a specific token", async function () {
             await serviceRegistryTokenUtility.createWithToken(serviceId, token.address, agentIds, bonds);
             // Check for the service token address
@@ -155,13 +139,6 @@ describe("serviceRegistryTokenUtility", function () {
             tokenSecurityDeposit = await serviceRegistryTokenUtility.mapServiceIdTokenDeposit(serviceId);
             expect(tokenSecurityDeposit.token).to.equal(token.address);
             expect(tokenSecurityDeposit.securityDeposit).to.equal(Math.max(...bonds));
-            // Check the agent Id bonds
-            for (let i = 0; i < newAgentIds.length; i++) {
-                const agentBond = Number(await serviceRegistryTokenUtility.getAgentBond(serviceId, newAgentIds[i]));
-                if (newBonds[i] > 0) {
-                    expect(agentBond).to.equal(newBonds[i]);
-                }
-            }
 
             // Check if the service is token secured
             expect(await serviceRegistryTokenUtility.isTokenSecuredService(serviceId)).to.be.true;
@@ -245,7 +222,7 @@ describe("serviceRegistryTokenUtility", function () {
             // Try to register agent instances without approving the ServiceRegistryTokenUtility contract for the security deposit amount
             await expect(
                 serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, serviceId, agentIds)
-            ).to.be.revertedWith("IncorrectAgentBondingValue");
+            ).to.be.revertedWith("IncorrectRegistrationDepositValue");
 
             // Approve token for the ServiceRegistryTokenUtility contract by the operator and register agent instances
             const totalBond = bonds.reduce((a, b) => a + b, 0);
@@ -294,7 +271,7 @@ describe("serviceRegistryTokenUtility", function () {
             // Try to register agent instances without approving the ServiceRegistryTokenUtility contract for the security deposit amount
             await expect(
                 serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, serviceId, agentIds)
-            ).to.be.revertedWith("IncorrectAgentBondingValue");
+            ).to.be.revertedWith("IncorrectRegistrationDepositValue");
 
             // Approve token for the ServiceRegistryTokenUtility contract by the operator and register agent instances
             const totalBond = bonds.reduce((a, b) => a + b, 0);
@@ -407,141 +384,6 @@ describe("serviceRegistryTokenUtility", function () {
             await serviceRegistryTokenUtility.drain(token.address);
             const balanceAfterZeroDrain = Number(await token.balanceOf(account.address));
             expect(balanceAfter).to.equal(balanceAfterZeroDrain);
-        });
-    });
-
-    context("Attacks", async function () {
-        it("Failed transferFrom during the service activation", async function () {
-            // Record token data when creating a service
-            await serviceRegistryTokenUtility.createWithToken(serviceId, reentrancyAttacker.address, agentIds, bonds);
-
-            // Set the transferFrom failure
-            await reentrancyAttacker.setAttackState(4);
-
-            // Try to activate registration with the failed transferFrom
-            await expect(
-                serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId)
-            ).to.be.revertedWith("TransferFailed");
-        });
-
-        it("Failed transfer during the termination", async function () {
-            // Record token data when creating a service
-            await serviceRegistryTokenUtility.createWithToken(serviceId, reentrancyAttacker.address, agentIds, bonds);
-
-            // Set the transfer failure
-            await reentrancyAttacker.setAttackState(3);
-
-            // Activate registration
-            await serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId);
-
-            // Try to terminate a service with the failed transfer function
-            await expect(
-                serviceRegistryTokenUtility.terminateTokenRefund(serviceId)
-            ).to.be.revertedWith("TransferFailed");
-        });
-
-        it("Incorrectly received funds during the transferFrom function call in registration activation", async function () {
-            // Record token data when creating a service
-            await serviceRegistryTokenUtility.createWithToken(serviceId, reentrancyAttacker.address, agentIds, bonds);
-
-            // Set the balance failure where the second balanceOf is lower than the first one
-            await reentrancyAttacker.setAttackState(1);
-
-            // Try to activate registration with the incorrect transferFrom function
-            await expect(
-                serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId)
-            ).to.be.revertedWith("IncorrectRegistrationDepositValue");
-
-            // Set the balance failure such that the diff of balanceOf before and after the transferFrom is invalid
-            await reentrancyAttacker.setAttackState(2);
-
-            // Try to activate registration with the incorrect transferFrom function
-            await expect(
-                serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId)
-            ).to.be.revertedWith("IncorrectRegistrationDepositValue");
-        });
-
-        it("Incorrectly received funds during the transferFrom function call in agent registration", async function () {
-            // Record token data when creating a service
-            await serviceRegistryTokenUtility.createWithToken(serviceId, reentrancyAttacker.address, agentIds, bonds);
-            // Activate service registration
-            await serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId);
-
-            // Set the balance failure where the second balanceOf is lower than the first one
-            await reentrancyAttacker.setAttackState(1);
-            // Try to register agent instances with the incorrect transferFrom function
-            await expect(
-                serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, serviceId, agentIds)
-            ).to.be.revertedWith("IncorrectAgentBondingValue");
-
-            // Set the balance failure such that the diff of balanceOf before and after the transferFrom is invalid
-            await reentrancyAttacker.setAttackState(2);
-            // Try to register agent instances with the incorrect transferFrom function
-            await expect(
-                serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, serviceId, agentIds)
-            ).to.be.revertedWith("IncorrectAgentBondingValue");
-        });
-
-        it("Reentrancy attack during the service activation", async function () {
-            // Record token data when creating a service
-            await serviceRegistryTokenUtility.createWithToken(serviceId, reentrancyAttacker.address, agentIds, bonds);
-
-            // Set the reentrancy attack on registration activation
-            await reentrancyAttacker.setAttackState(5);
-
-            // Try to activate registration
-            await expect(
-                serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId)
-            ).to.be.reverted;
-        });
-
-        it("Reentrancy attack during the agent registration", async function () {
-            // Record token data when creating a service
-            await serviceRegistryTokenUtility.createWithToken(serviceId, reentrancyAttacker.address, agentIds, bonds);
-
-            // Set the reentrancy attack on agent instance registration
-            await reentrancyAttacker.setAttackState(6);
-
-            // Activate service registration
-            serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId);
-            // Try to register agent instances
-            await expect(
-                serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, serviceId, agentIds)
-            ).to.be.reverted;
-        });
-
-        it("Reentrancy attack during the termination", async function () {
-            // Record token data when creating a service
-            await serviceRegistryTokenUtility.createWithToken(serviceId, reentrancyAttacker.address, agentIds, bonds);
-            // Activate service registration
-            serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId);
-            // Register agent instances
-            await serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, serviceId, agentIds);
-
-            // Set the reentrancy attack on service termination
-            await reentrancyAttacker.setAttackState(7);
-            // Try to terminate the service
-            await expect(
-                serviceRegistryTokenUtility.terminateTokenRefund(serviceId)
-            ).to.be.reverted;
-        });
-
-        it("Reentrancy attack during the unbond", async function () {
-            // Record token data when creating a service
-            await serviceRegistryTokenUtility.createWithToken(serviceId, reentrancyAttacker.address, agentIds, bonds);
-            // Activate service registration
-            serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId);
-            // Register agent instances
-            await serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, serviceId, agentIds);
-            // Terminate the service
-            await serviceRegistryTokenUtility.terminateTokenRefund(serviceId);
-
-            // Set the reentrancy attack on agent instances unbond
-            await reentrancyAttacker.setAttackState(8);
-            // Try to terminate the service
-            await expect(
-                serviceRegistryTokenUtility.unbondTokenRefund(operator.address, serviceId)
-            ).to.be.reverted;
         });
     });
 });

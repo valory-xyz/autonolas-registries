@@ -5,16 +5,22 @@ import "./interfaces/IErrorsRegistries.sol";
 import "./interfaces/IService.sol";
 
 // Generic token interface
-interface IToken {
-    /// @dev Gets the amount of tokens owned by a specified account.
-    /// @param account Account address.
-    /// @return Amount of tokens owned.
-    function balanceOf(address account) external view returns (uint256);
-
+interface IToken{
     /// @dev Token allowance.
     /// @param account Account address that approves tokens.
     /// @param spender The target token spender address.
     function allowance(address account, address spender) external view returns (uint256);
+
+    /// @dev Token transferFrom.
+    /// @param from Address to transfer tokens from.
+    /// @param to Address to transfer tokens to.
+    /// @param amount Token amount.
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+
+    /// @dev Token transfer.
+    /// @param to Address to transfer tokens to.
+    /// @param amount Token amount.
+    function transfer(address to, uint256 amount) external returns (bool);
 
     /// @dev Gets the owner of the token Id.
     /// @param tokenId Token Id.
@@ -23,7 +29,7 @@ interface IToken {
 }
 
 // Service Registry interface
-interface IServiceUtility {
+interface IServiceUtility{
     /// @dev Gets the service instance from the map of services.
     /// @param serviceId Service Id.
     /// @return securityDeposit Registration activation deposit.
@@ -46,31 +52,6 @@ interface IServiceUtility {
     /// @dev Gets the operator address from the map of agent instance address => operator address
     function mapAgentInstanceOperators(address agentInstance) external view returns (address operator);
 }
-
-/// @dev The provided token is rejected.
-/// @param token Token address.
-error TokenRejected(address token);
-
-/* This ServiceRegistryTokenUtility represents an optimistic ERC20-based version of the ServiceRegistry contract.
-*  The contract serves as a means of the utility for the ServiceRegistry contract by storing ERC20-related data.
-*  Considering that the service manipulation logic stays untouched as compared to the original ServiceRegistry contract,
-*  and considering that each ServiceRegistryTokenUtility contract function is called in pair with the corresponding
-*  ServiceRegistry contract one, the majority of the ServiceRegistry checks are not repeated in this contract.
-*  For example, this contract does not track the correctness of agent Ids (since it is performed on the ServiceRegistry side),
-*  or agent instance addresses (as they are recorded in the ServiceRegistry contract), and only writes ERC20 token provided
-*  bonds that correspond to each agent Id.
-*
-*  Note that only formal verifications for the validity of provided ERC20 tokens are performed that insure the protocol
-*  safety and stability. However, full checks for a specific token misbehavior are not performed. The service owner
-*  bears their full responsibility to provide the correct ERC20 token that does not harm the protocol, engaged parties
-*  and the DAO in general.
-*
-*  The following ERC20 token checks are performed:
-*  - Existence of a `balanceOf()` view function;
-*  - `transferFrom()` and `transfer()` functions return the expected output;
-*  - The difference of `balanceOf()` before and after the transfer for the current contract instance (address(this))
-*    matches the value of token amount declared in the transfer.
-*/
 
 /// @title Service Registry Token Utility - Smart contract for registering services that bond with ERC20 tokens
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -103,9 +84,9 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     address public drainer;
     // Reentrancy lock
     uint256 internal _locked = 1;
-    // Map of service Id => address of a token and a security deposit
+    // Map of service Id => address of a token
     mapping(uint256 => TokenSecurityDeposit) public mapServiceIdTokenDeposit;
-    // Service Id and canonical agent Id => agent instance registration bond
+    // Service Id and canonical agent Id => instance registration bond
     mapping(uint256 => uint256) public mapServiceAndAgentIdAgentBond;
     // Map of operator address and serviceId => agent instance bonding / escrow balance
     mapping(uint256 => uint256) public mapOperatorAndServiceIdOperatorBalances;
@@ -122,88 +103,6 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
 
         serviceRegistry = _serviceRegistry;
         owner = msg.sender;
-    }
-
-    /// @dev Safe token transferFrom implementation.
-    /// @notice The implementation is fully copied from the audited MIT-licensed solmate code repository:
-    ///         https://github.com/transmissions11/solmate/blob/v7/src/utils/SafeTransferLib.sol
-    ///         The original library imports the `ERC20` abstract token contract, and thus embeds all that contract
-    ///         related code that is not needed. In this version, `ERC20` is swapped with the `address` representation.
-    ///         Also, the final `require` statement is modified with this contract own `revert` statement.
-    /// @param token Token address.
-    /// @param from Address to transfer tokens from.
-    /// @param to Address to transfer tokens to.
-    /// @param amount Token amount.
-    function safeTransferFrom(address token, address from, address to, uint256 amount) internal {
-        bool success;
-
-        assembly {
-            // We'll write our calldata to this slot below, but restore it later.
-            let memPointer := mload(0x40)
-
-            // Write the abi-encoded calldata into memory, beginning with the function selector.
-            mstore(0, 0x23b872dd00000000000000000000000000000000000000000000000000000000)
-            mstore(4, from) // Append the "from" argument.
-            mstore(36, to) // Append the "to" argument.
-            mstore(68, amount) // Append the "amount" argument.
-
-            success := and(
-                // Set success to whether the call reverted, if not we check it either
-                // returned exactly 1 (can't just be non-zero data), or had no return data.
-                or(and(eq(mload(0), 1), gt(returndatasize(), 31)), iszero(returndatasize())),
-                // We use 100 because that's the total length of our calldata (4 + 32 * 3)
-                // Counterintuitively, this call() must be positioned after the or() in the
-                // surrounding and() because and() evaluates its arguments from right to left.
-                call(gas(), token, 0, 0, 100, 0, 32)
-            )
-
-            mstore(0x60, 0) // Restore the zero slot to zero.
-            mstore(0x40, memPointer) // Restore the memPointer.
-        }
-
-        if (!success) {
-            revert TransferFailed(token, from, to, amount);
-        }
-    }
-
-    /// @dev Safe token transfer implementation.
-    /// @notice The implementation is fully copied from the audited MIT-licensed solmate code repository:
-    ///         https://github.com/transmissions11/solmate/blob/v7/src/utils/SafeTransferLib.sol
-    ///         The original library imports the `ERC20` abstract token contract, and thus embeds all that contract
-    ///         related code that is not needed. In this version, `ERC20` is swapped with the `address` representation.
-    ///         Also, the final `require` statement is modified with this contract own `revert` statement.
-    /// @param token Token address.
-    /// @param to Address to transfer tokens to.
-    /// @param amount Token amount.
-    function safeTransfer(address token, address to, uint256 amount) internal {
-        bool success;
-
-        assembly {
-            // We'll write our calldata to this slot below, but restore it later.
-            let memPointer := mload(0x40)
-
-            // Write the abi-encoded calldata into memory, beginning with the function selector.
-            mstore(0, 0xa9059cbb00000000000000000000000000000000000000000000000000000000)
-            mstore(4, to) // Append the "to" argument.
-            mstore(36, amount) // Append the "amount" argument.
-
-            success := and(
-                // Set success to whether the call reverted, if not we check it either
-                // returned exactly 1 (can't just be non-zero data), or had no return data.
-                or(and(eq(mload(0), 1), gt(returndatasize(), 31)), iszero(returndatasize())),
-                // We use 68 because that's the total length of our calldata (4 + 32 * 2)
-                // Counterintuitively, this call() must be positioned after the or() in the
-                // surrounding and() because and() evaluates its arguments from right to left.
-                call(gas(), token, 0, 0, 68, 0, 32)
-            )
-
-            mstore(0x60, 0) // Restore the zero slot to zero.
-            mstore(0x40, memPointer) // Restore the memPointer.
-        }
-
-        if (!success) {
-            revert TransferFailed(token, address(this), to, amount);
-        }
     }
 
     /// @dev Changes the owner address.
@@ -257,7 +156,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
 
     /// @dev Creates a record with the token-related information for the specified service.
     /// @notice We assume that the token is checked for being a non-zero address and a non-ETH address representation
-    ///         outside of this function. Here we optimistically check for the token to have a specific `balanceOf()`
+    ///         outside of this function. Here we optimistically check for the token to have a specific `balanceOf`
     ///         view function. It is possible this is the attacker token that has all the required functions defined
     ///         correctly, so there is no point in checking that formality. All the required checks will be done in-place
     ///         where the possibility of misbehavior can be caught by return values of token function.
@@ -277,28 +176,8 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             revert ManagerOnly(msg.sender, manager);
         }
 
-        // Check the provided token for the `balanceOf()` function
-        bytes4 selector = bytes4(keccak256("balanceOf(address)"));
-        bool success;
-        bytes memory data = abi.encodeWithSelector(selector, address(0));
-
-        if (token.code.length > 0) {
-            assembly {
-                success := staticcall(
-                    gas(),            // gas remaining
-                    token,            // destination address
-                    add(data, 32),    // input buffer (starts after the first 32 bytes in the `data` array)
-                    mload(data),      // input length (loaded from the first 32 bytes in the `data` array)
-                    0,                // output buffer
-                    0                 // output length
-                )
-            }
-        }
-        // Check if the token check has passed
-        if (!success) {
-            revert TokenRejected(token);
-        }
-
+        // TODO Check for the token ERC20 formality
+        
         uint256 securityDeposit;
         // Service is newly created and all the array lengths are checked by the original ServiceRegistry create() function
         for (uint256 i = 0; i < agentIds.length; ++i) {
@@ -310,6 +189,8 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             if (bonds[i] > type(uint96).max) {
                 revert Overflow(bonds[i], type(uint96).max);
             }
+            // TODO What if some of the bond amount sum is bigger than the limit as well, but separately it's not
+            // TODO Theoretically we should not forbid that as each operator could have a bond with an allowed limit
             
             // Push a pair of key defining variables into one key. Service or agent Ids are not enough by themselves
             // As with other units, we assume that the system is not expected to support more than than 2^32-1 services
@@ -373,19 +254,15 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             if (allowance < securityDeposit) {
                 revert IncorrectRegistrationDepositValue(allowance, securityDeposit, serviceId);
             }
-            // Set the token-secured flag for the service
-            isTokenSecured = true;
 
             // Transfer tokens from the serviceOwner account
-            uint256 balanceBefore = IToken(token).balanceOf(address(this));
-            safeTransferFrom(token, serviceOwner, address(this), securityDeposit);
-            uint256 balanceAfter = IToken(token).balanceOf(address(this));
-            // Check the correctness of received funds
-            if (balanceBefore > balanceAfter || (balanceAfter - balanceBefore) != securityDeposit) {
-                // The first argument is set to zero because (balanceAfter - balanceBefore) can be negative
-                // In that case there is some token manipulation happening, and the transfer is considered to be zero
-                revert IncorrectRegistrationDepositValue(0, securityDeposit, serviceId);
+            // TODO Re-entrancy
+            // TODO Safe transferFrom
+            bool success = IToken(token).transferFrom(serviceOwner, address(this), securityDeposit);
+            if (!success) {
+                revert TransferFailed(token, serviceOwner, address(this), securityDeposit);
             }
+            isTokenSecured = true;
             emit TokenDeposit(serviceOwner, token, securityDeposit);
         }
 
@@ -436,7 +313,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             // Get the operator allowance to this contract in specified tokens
             uint256 allowance = IToken(token).allowance(operator, address(this));
             if (allowance < totalBond) {
-                revert IncorrectAgentBondingValue(allowance, totalBond, serviceId);
+                revert IncorrectRegistrationDepositValue(allowance, totalBond, serviceId);
             }
 
             // Record the total bond of the operator
@@ -445,21 +322,17 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             uint256 operatorService = uint256(uint160(operator));
             // serviceId occupies next 32 bits
             operatorService |= serviceId << 160;
-            // Update operator's bonding balance
-            mapOperatorAndServiceIdOperatorBalances[operatorService] += totalBond;
-            // Set the token-secured flag for the service
-            isTokenSecured = true;
+            totalBond += mapOperatorAndServiceIdOperatorBalances[operatorService];
+            mapOperatorAndServiceIdOperatorBalances[operatorService] = totalBond;
 
-            // Transfer totalBond amount of tokens from the operator account
-            uint256 balanceBefore = IToken(token).balanceOf(address(this));
-            safeTransferFrom(token, operator, address(this), totalBond);
-            uint256 balanceAfter = IToken(token).balanceOf(address(this));
-            // Check the correctness of received funds
-            if (balanceBefore > balanceAfter || (balanceAfter - balanceBefore) != totalBond) {
-                // The first argument is set to zero because (balanceAfter - balanceBefore) can be negative
-                // In that case there is some token manipulation happening, and the transfer is considered to be zero
-                revert IncorrectAgentBondingValue(0, totalBond, serviceId);
+            // Transfer tokens from the operator account
+            // TODO Re-entrancy
+            // TODO Safe transferFrom
+            bool success = IToken(token).transferFrom(operator, address(this), totalBond);
+            if (!success) {
+                revert TransferFailed(token, operator, address(this), totalBond);
             }
+            isTokenSecured = true;
             emit TokenDeposit(operator, token, totalBond);
         }
 
@@ -490,9 +363,12 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             address serviceOwner = IToken(serviceRegistry).ownerOf(serviceId);
 
             // Transfer tokens to the serviceOwner account
-            // The transfer is not checked for correctness since it relies fully on the token implementation
-            // The protocol is concerned about getting a correct amount and calling the transfer function to send it back
-            safeTransfer(token, serviceOwner, securityRefund);
+            // TODO Re-entrancy
+            // TODO Safe transfer
+            bool success = IToken(token).transfer(serviceOwner, securityRefund);
+            if (!success) {
+                revert TransferFailed(token, address(this), serviceOwner, securityRefund);
+            }
             emit TokenRefund(serviceOwner, token, securityRefund);
         }
 
@@ -531,11 +407,14 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             if (refund > 0) {
                 // Operator's balance is essentially zero after the refund
                 mapOperatorAndServiceIdOperatorBalances[operatorService] = 0;
-
                 // Transfer tokens to the operator account
-                // The transfer is not checked for correctness since it relies fully on the token implementation
-                // The protocol is concerned about getting a correct amount and calling the transfer function to send it back
-                safeTransfer(token, operator, refund);
+                // TODO Re-entrancy
+                // TODO Safe transfer
+                // Refund the operator
+                bool success = IToken(token).transfer(operator, refund);
+                if (!success) {
+                    revert TransferFailed(token, address(this), operator, refund);
+                }
                 emit TokenRefund(operator, token, refund);
             }
         }
@@ -570,6 +449,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
 
         // Token address
         address token = mapServiceIdTokenDeposit[serviceId].token;
+        // TODO Verify if that scenario is possible at all, since if correctly updated, token must never be equal to zero, or be called from this contract
         // This is to protect this slash function not to be called for ETH-secured services
         if (token == address(0)) {
             revert ZeroAddress();
@@ -633,8 +513,12 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         amount = mapSlashedFunds[token];
         if (amount > 0) {
             mapSlashedFunds[token] = 0;
-            // Send slashed funds to the drainer address
-            safeTransfer(token, drainer, amount);
+            // TODO Safe transfer
+            // Send the refund
+            bool success = IToken(token).transfer(drainer, amount);
+            if (!success) {
+                revert TransferFailed(token, address(this), msg.sender, amount);
+            }
             emit TokenDrain(msg.sender, token, amount);
         }
 
@@ -648,17 +532,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         return mapServiceIdTokenDeposit[serviceId].token != address(0);
     }
 
-    /// @dev Gets the agent Id bond in a specified service.
-    /// @param serviceId Service Id.
-    /// @param serviceId Agent Id.
-    /// @return bond Agent Id bond in a specified service Id.
-    function getAgentBond(uint256 serviceId, uint256 agentId) external view returns (uint256 bond) {
-        uint256 serviceAgent = serviceId;
-        serviceAgent |= agentId << 32;
-        bond = mapServiceAndAgentIdAgentBond[serviceAgent];
-    }
-
-    /// @dev Gets the operator's balance in a specified service.
+    /// @dev Gets the operator's balance in a specific service.
     /// @param operator Operator address.
     /// @param serviceId Service Id.
     /// @return balance The balance of the operator.
