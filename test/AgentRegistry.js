@@ -44,7 +44,7 @@ describe("AgentRegistry", function () {
         it("Should fail when trying to change the mechManager from a different address", async function () {
             await expect(
                 agentRegistry.connect(signers[1]).changeManager(signers[1].address)
-            ).to.be.revertedWith("OwnerOnly");
+            ).to.be.revertedWithCustomError(agentRegistry, "OwnerOnly");
         });
 
         it("Setting the base URI", async function () {
@@ -58,7 +58,7 @@ describe("AgentRegistry", function () {
             const user = signers[2];
             await expect(
                 agentRegistry.create(user.address, agentHash, dependencies)
-            ).to.be.revertedWith("ManagerOnly");
+            ).to.be.revertedWithCustomError(agentRegistry, "ManagerOnly");
         });
 
         it("Should fail when creating an agent with a zero owner address", async function () {
@@ -66,7 +66,7 @@ describe("AgentRegistry", function () {
             await agentRegistry.changeManager(mechManager.address);
             await expect(
                 agentRegistry.connect(mechManager).create(AddressZero, agentHash, dependencies)
-            ).to.be.revertedWith("ZeroAddress");
+            ).to.be.revertedWithCustomError(agentRegistry, "ZeroAddress");
         });
 
         it("Should fail when component number is less or equal to zero", async function () {
@@ -75,7 +75,7 @@ describe("AgentRegistry", function () {
             await agentRegistry.changeManager(mechManager.address);
             await expect(
                 agentRegistry.connect(mechManager).create(user.address, agentHash, [0])
-            ).to.be.revertedWith("ComponentNotFound");
+            ).to.be.revertedWithCustomError(agentRegistry, "ComponentNotFound");
         });
 
         it("Should fail when creating a non-existent component dependency", async function () {
@@ -84,7 +84,7 @@ describe("AgentRegistry", function () {
             await agentRegistry.changeManager(mechManager.address);
             await expect(
                 agentRegistry.connect(mechManager).create(user.address, agentHash, [2])
-            ).to.be.revertedWith("ComponentNotFound");
+            ).to.be.revertedWithCustomError(agentRegistry, "ComponentNotFound");
         });
 
         it("Token Id=1 after first successful agent creation must exist ", async function () {
@@ -147,7 +147,7 @@ describe("AgentRegistry", function () {
             await agentRegistry.changeManager(mechManager.address);
             await expect(
                 agentRegistry.connect(mechManager).create(user.address, agentHash, [])
-            ).to.be.revertedWith("ZeroValue");
+            ).to.be.revertedWithCustomError(agentRegistry, "ZeroValue");
         });
     });
 
@@ -163,10 +163,10 @@ describe("AgentRegistry", function () {
                 agentHash1, dependencies);
             await expect(
                 agentRegistry.connect(mechManager).updateHash(user2.address, 1, agentHash2)
-            ).to.be.revertedWith("AgentNotFound");
+            ).to.be.revertedWithCustomError(agentRegistry, "AgentNotFound");
             await expect(
                 agentRegistry.connect(mechManager).updateHash(user.address, 2, agentHash2)
-            ).to.be.revertedWith("AgentNotFound");
+            ).to.be.revertedWithCustomError(agentRegistry, "AgentNotFound");
             await agentRegistry.connect(mechManager).updateHash(user.address, 1, agentHash2);
         });
 

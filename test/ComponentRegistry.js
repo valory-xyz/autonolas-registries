@@ -41,7 +41,7 @@ describe("ComponentRegistry", function () {
         it("Should fail when trying to change the mechManager from a different address", async function () {
             await expect(
                 componentRegistry.connect(signers[1]).changeManager(signers[1].address)
-            ).to.be.revertedWith("OwnerOnly");
+            ).to.be.revertedWithCustomError(componentRegistry, "OwnerOnly");
         });
 
         it("Setting the base URI", async function () {
@@ -55,7 +55,7 @@ describe("ComponentRegistry", function () {
             const user = signers[2];
             await expect(
                 componentRegistry.create(user.address, componentHash, dependencies)
-            ).to.be.revertedWith("ManagerOnly");
+            ).to.be.revertedWithCustomError(componentRegistry, "ManagerOnly");
         });
 
         it("Should fail when creating a component with a zero owner address", async function () {
@@ -63,7 +63,7 @@ describe("ComponentRegistry", function () {
             await componentRegistry.changeManager(mechManager.address);
             await expect(
                 componentRegistry.connect(mechManager).create(AddressZero, componentHash, dependencies)
-            ).to.be.revertedWith("ZeroAddress");
+            ).to.be.revertedWithCustomError(componentRegistry, "ZeroAddress");
         });
 
         it("Should fail when creating a component with an empty hash", async function () {
@@ -73,7 +73,7 @@ describe("ComponentRegistry", function () {
             await expect(
                 componentRegistry.connect(mechManager).create(user.address, "0x" + "0".repeat(64),
                     dependencies)
-            ).to.be.revertedWith("ZeroValue");
+            ).to.be.revertedWithCustomError(componentRegistry, "ZeroValue");
         });
 
         it("Should fail when creating a non-existent component dependency", async function () {
@@ -82,10 +82,10 @@ describe("ComponentRegistry", function () {
             await componentRegistry.changeManager(mechManager.address);
             await expect(
                 componentRegistry.connect(mechManager).create(user.address, componentHash, [0])
-            ).to.be.revertedWith("ComponentNotFound");
+            ).to.be.revertedWithCustomError(componentRegistry, "ComponentNotFound");
             await expect(
                 componentRegistry.connect(mechManager).create(user.address, componentHash, [1])
-            ).to.be.revertedWith("ComponentNotFound");
+            ).to.be.revertedWithCustomError(componentRegistry, "ComponentNotFound");
         });
 
         it("Create a components with duplicate dependencies in the list of dependencies", async function () {
@@ -96,10 +96,10 @@ describe("ComponentRegistry", function () {
             await componentRegistry.connect(mechManager).create(user.address, componentHash1, [1]);
             await expect(
                 componentRegistry.connect(mechManager).create(user.address, componentHash2, [1, 1, 1])
-            ).to.be.revertedWith("ComponentNotFound");
+            ).to.be.revertedWithCustomError(componentRegistry, "ComponentNotFound");
             await expect(
                 componentRegistry.connect(mechManager).create(user.address, componentHash2, [2, 1, 2, 1, 1, 1, 2])
-            ).to.be.revertedWith("ComponentNotFound");
+            ).to.be.revertedWithCustomError(componentRegistry, "ComponentNotFound");
         });
 
         it("Token Id=1 after first successful component creation must exist", async function () {
@@ -209,10 +209,10 @@ describe("ComponentRegistry", function () {
             await componentRegistry.connect(mechManager).create(user2.address, componentHash1, dependencies);
             await expect(
                 componentRegistry.connect(mechManager).updateHash(user2.address, 1, componentHash2)
-            ).to.be.revertedWith("ComponentNotFound");
+            ).to.be.revertedWithCustomError(componentRegistry, "ComponentNotFound");
             await expect(
                 componentRegistry.connect(mechManager).updateHash(user.address, 2, componentHash2)
-            ).to.be.revertedWith("ComponentNotFound");
+            ).to.be.revertedWithCustomError(componentRegistry, "ComponentNotFound");
             await componentRegistry.connect(mechManager).updateHash(user.address, 1, componentHash2);
         });
 
@@ -235,12 +235,12 @@ describe("ComponentRegistry", function () {
             // Try to update hash not via a manager
             await expect(
                 componentRegistry.connect(user).updateHash(user.address, 1, componentHash1)
-            ).to.be.revertedWith("ManagerOnly");
+            ).to.be.revertedWithCustomError(componentRegistry, "ManagerOnly");
 
             // Try to update to a zero value hash
             await expect(
                 componentRegistry.connect(mechManager).updateHash(user.address, 1, "0x" + "0".repeat(64))
-            ).to.be.revertedWith("ZeroValue");
+            ).to.be.revertedWithCustomError(componentRegistry, "ZeroValue");
 
             // Proceed with hash updates
             await componentRegistry.connect(mechManager).updateHash(user.address, 1, componentHash1);
@@ -375,7 +375,7 @@ describe("ComponentRegistry", function () {
             await reentrancyAttacker.setAttackOnCreate(true);
             await expect(
                 reentrancyAttacker.createBadComponent(reentrancyAttacker.address, componentHash, [])
-            ).to.be.revertedWith("ReentrancyGuard");
+            ).to.be.revertedWithCustomError(componentRegistry, "ReentrancyGuard");
         });
     });
 

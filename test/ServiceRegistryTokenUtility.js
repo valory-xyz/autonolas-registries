@@ -50,7 +50,7 @@ describe("serviceRegistryTokenUtility", function () {
     context("Initialization", function () {
         it("Should not allow the zero address as serviceRegistry address", async function () {
             const ServiceRegistryTokenUtility = await ethers.getContractFactory("ServiceRegistryTokenUtility");
-            await expect(ServiceRegistryTokenUtility.deploy(AddressZero)).to.be.revertedWith("ZeroAddress");
+            await expect(ServiceRegistryTokenUtility.deploy(AddressZero)).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "ZeroAddress");
         });
 
         it("Changing owner", async function () {
@@ -60,12 +60,12 @@ describe("serviceRegistryTokenUtility", function () {
             // Trying to change owner from a non-owner account address
             await expect(
                 serviceRegistryTokenUtility.connect(account).changeOwner(account.address)
-            ).to.be.revertedWith("OwnerOnly");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "OwnerOnly");
 
             // Trying to change owner for the zero address
             await expect(
                 serviceRegistryTokenUtility.connect(owner).changeOwner(AddressZero)
-            ).to.be.revertedWith("ZeroAddress");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "ZeroAddress");
 
             // Changing the owner
             await serviceRegistryTokenUtility.connect(owner).changeOwner(account.address);
@@ -73,7 +73,7 @@ describe("serviceRegistryTokenUtility", function () {
             // Trying to change owner from the previous owner address
             await expect(
                 serviceRegistryTokenUtility.connect(owner).changeOwner(owner.address)
-            ).to.be.revertedWith("OwnerOnly");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "OwnerOnly");
         });
 
         it("Changing manager", async function () {
@@ -83,12 +83,12 @@ describe("serviceRegistryTokenUtility", function () {
             // Trying to change manager from a non-owner account address
             await expect(
                 serviceRegistryTokenUtility.connect(account).changeManager(account.address)
-            ).to.be.revertedWith("OwnerOnly");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "OwnerOnly");
 
             // Trying to change manager for the zero address
             await expect(
                 serviceRegistryTokenUtility.connect(owner).changeManager(AddressZero)
-            ).to.be.revertedWith("ZeroAddress");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "ZeroAddress");
 
             // Changing the manager
             await serviceRegistryTokenUtility.connect(owner).changeManager(account.address);
@@ -101,12 +101,12 @@ describe("serviceRegistryTokenUtility", function () {
             // Trying to change owner from a non-owner account address
             await expect(
                 serviceRegistryTokenUtility.connect(account).changeDrainer(account.address)
-            ).to.be.revertedWith("OwnerOnly");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "OwnerOnly");
 
             // Trying to change owner for the zero address
             await expect(
                 serviceRegistryTokenUtility.connect(owner).changeDrainer(AddressZero)
-            ).to.be.revertedWith("ZeroAddress");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "ZeroAddress");
 
             // Changing the owner
             await serviceRegistryTokenUtility.connect(owner).changeDrainer(account.address);
@@ -120,24 +120,24 @@ describe("serviceRegistryTokenUtility", function () {
         it("Should fail if not called by the manager", async function () {
             await expect(
                 serviceRegistryTokenUtility.connect(operator).createWithToken(serviceId, token.address, agentIds, bonds)
-            ).to.be.revertedWith("ManagerOnly");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "ManagerOnly");
         });
 
         it("Should fail if one of the bonds has an overflow value", async function () {
             await expect(
                 serviceRegistryTokenUtility.createWithToken(serviceId, token.address, agentIds, [0, uint256MaxValue])
-            ).to.be.revertedWith("Overflow");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "Overflow");
         });
 
         it("Should fail if the token does not pass the verification", async function () {
             // Try to use a non-contract address
             await expect(
                 serviceRegistryTokenUtility.createWithToken(serviceId, deployer.address, agentIds, bonds)
-            ).to.be.revertedWith("TokenRejected");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "TokenRejected");
             // Try to use a non ERC20 token
             await expect(
                 serviceRegistryTokenUtility.createWithToken(serviceId, serviceRegistry.address, agentIds, bonds)
-            ).to.be.revertedWith("TokenRejected");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "TokenRejected");
         });
 
         it("Create a service record for a specific token", async function () {
@@ -169,7 +169,7 @@ describe("serviceRegistryTokenUtility", function () {
             // Try to reset the token not by the manager
             await expect(
                 serviceRegistryTokenUtility.connect(operator).resetServiceToken(serviceId)
-            ).to.be.revertedWith("ManagerOnly");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "ManagerOnly");
             // Reset the token and check its record
             await serviceRegistryTokenUtility.connect(deployer).resetServiceToken(serviceId);
             tokenSecurityDeposit = await serviceRegistryTokenUtility.mapServiceIdTokenDeposit(serviceId);
@@ -185,7 +185,7 @@ describe("serviceRegistryTokenUtility", function () {
         it("Should fail if not called by the manager", async function () {
             await expect(
                 serviceRegistryTokenUtility.connect(operator).activateRegistrationTokenDeposit(serviceId)
-            ).to.be.revertedWith("ManagerOnly");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "ManagerOnly");
         });
 
         it("Try to activate a service with a zero-address token", async function () {
@@ -204,7 +204,7 @@ describe("serviceRegistryTokenUtility", function () {
             // Try to activate a service without approving the ServiceRegistryTokenUtility contract for the security deposit amount
             await expect(
                 serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId)
-            ).to.be.revertedWith("IncorrectRegistrationDepositValue");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "IncorrectRegistrationDepositValue");
 
             // Approve token for the ServiceRegistryTokenUtility contract
             await token.connect(deployer).approve(serviceRegistryTokenUtility.address, securityDeposit);
@@ -220,7 +220,7 @@ describe("serviceRegistryTokenUtility", function () {
         it("Should fail if not called by the manager", async function () {
             await expect(
                 serviceRegistryTokenUtility.connect(operator).registerAgentsTokenDeposit(operator.address, serviceId, agentIds)
-            ).to.be.revertedWith("ManagerOnly");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "ManagerOnly");
         });
 
         it("Try to register agent instances with a zero-address token", async function () {
@@ -245,7 +245,7 @@ describe("serviceRegistryTokenUtility", function () {
             // Try to register agent instances without approving the ServiceRegistryTokenUtility contract for the security deposit amount
             await expect(
                 serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, serviceId, agentIds)
-            ).to.be.revertedWith("IncorrectAgentBondingValue");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "IncorrectAgentBondingValue");
 
             // Approve token for the ServiceRegistryTokenUtility contract by the operator and register agent instances
             const totalBond = bonds.reduce((a, b) => a + b, 0);
@@ -263,11 +263,11 @@ describe("serviceRegistryTokenUtility", function () {
         it("Should fail if not called by the manager", async function () {
             await expect(
                 serviceRegistryTokenUtility.connect(operator).terminateTokenRefund(serviceId)
-            ).to.be.revertedWith("ManagerOnly");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "ManagerOnly");
 
             await expect(
                 serviceRegistryTokenUtility.connect(operator).unbondTokenRefund(operator.address, serviceId)
-            ).to.be.revertedWith("ManagerOnly");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "ManagerOnly");
         });
 
         it("Try to register agent instances with a zero-address token", async function () {
@@ -294,7 +294,7 @@ describe("serviceRegistryTokenUtility", function () {
             // Try to register agent instances without approving the ServiceRegistryTokenUtility contract for the security deposit amount
             await expect(
                 serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, serviceId, agentIds)
-            ).to.be.revertedWith("IncorrectAgentBondingValue");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "IncorrectAgentBondingValue");
 
             // Approve token for the ServiceRegistryTokenUtility contract by the operator and register agent instances
             const totalBond = bonds.reduce((a, b) => a + b, 0);
@@ -318,27 +318,27 @@ describe("serviceRegistryTokenUtility", function () {
             // Try to slash when the service is not deployed
             await expect(
                 serviceRegistryTokenUtility.slash([AddressZero], [0], 0)
-            ).to.be.revertedWith("WrongServiceState");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "WrongServiceState");
 
             // Try to slash with empty arrays
             await expect(
                 serviceRegistryTokenUtility.slash([], [], serviceId)
-            ).to.be.revertedWith("WrongArrayLength");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "WrongArrayLength");
 
             // Try to slash with incorrect array lengths
             await expect(
                 serviceRegistryTokenUtility.slash([AddressZero], [], serviceId)
-            ).to.be.revertedWith("WrongArrayLength");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "WrongArrayLength");
 
             // Try to slash with the wrong service multisig
             await expect(
                 serviceRegistryTokenUtility.slash([AddressZero], [0], serviceId + 1)
-            ).to.be.revertedWith("OnlyOwnServiceMultisig");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "OnlyOwnServiceMultisig");
 
             // Try to slash the service that is not token-secured
             await expect(
                 serviceRegistryTokenUtility.slash([AddressZero], [0], serviceId)
-            ).to.be.revertedWith("ZeroAddress");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "ZeroAddress");
         });
 
         it("Create, activate, register agent instances, slash, terminate, unbond, drain", async function () {
@@ -389,12 +389,12 @@ describe("serviceRegistryTokenUtility", function () {
             // Try to drain with a zero drainer address
             await expect(
                 serviceRegistryTokenUtility.connect(deployer).drain(token.address)
-            ).to.be.revertedWith("ZeroAddress");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "ZeroAddress");
             await serviceRegistryTokenUtility.changeDrainer(account.address);
             // Try to drain not by the owner
             await expect(
                 serviceRegistryTokenUtility.connect(operator).drain(token.address)
-            ).to.be.revertedWith("OwnerOnly");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "OwnerOnly");
             // Try to drain non existent token funds
             await serviceRegistryTokenUtility.drain(AddressZero);
             // Drain the token funds
@@ -421,7 +421,7 @@ describe("serviceRegistryTokenUtility", function () {
             // Try to activate registration with the failed transferFrom
             await expect(
                 serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId)
-            ).to.be.revertedWith("TransferFailed");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "TransferFailed");
         });
 
         it("Failed transfer during the termination", async function () {
@@ -437,7 +437,7 @@ describe("serviceRegistryTokenUtility", function () {
             // Try to terminate a service with the failed transfer function
             await expect(
                 serviceRegistryTokenUtility.terminateTokenRefund(serviceId)
-            ).to.be.revertedWith("TransferFailed");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "TransferFailed");
         });
 
         it("Incorrectly received funds during the transferFrom function call in registration activation", async function () {
@@ -450,7 +450,7 @@ describe("serviceRegistryTokenUtility", function () {
             // Try to activate registration with the incorrect transferFrom function
             await expect(
                 serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId)
-            ).to.be.revertedWith("IncorrectRegistrationDepositValue");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "IncorrectRegistrationDepositValue");
 
             // Set the balance failure such that the diff of balanceOf before and after the transferFrom is invalid
             await reentrancyAttacker.setAttackState(2);
@@ -458,7 +458,7 @@ describe("serviceRegistryTokenUtility", function () {
             // Try to activate registration with the incorrect transferFrom function
             await expect(
                 serviceRegistryTokenUtility.activateRegistrationTokenDeposit(serviceId)
-            ).to.be.revertedWith("IncorrectRegistrationDepositValue");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "IncorrectRegistrationDepositValue");
         });
 
         it("Incorrectly received funds during the transferFrom function call in agent registration", async function () {
@@ -472,14 +472,14 @@ describe("serviceRegistryTokenUtility", function () {
             // Try to register agent instances with the incorrect transferFrom function
             await expect(
                 serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, serviceId, agentIds)
-            ).to.be.revertedWith("IncorrectAgentBondingValue");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "IncorrectAgentBondingValue");
 
             // Set the balance failure such that the diff of balanceOf before and after the transferFrom is invalid
             await reentrancyAttacker.setAttackState(2);
             // Try to register agent instances with the incorrect transferFrom function
             await expect(
                 serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, serviceId, agentIds)
-            ).to.be.revertedWith("IncorrectAgentBondingValue");
+            ).to.be.revertedWithCustomError(serviceRegistryTokenUtility, "IncorrectAgentBondingValue");
         });
 
         it("Reentrancy attack during the service activation", async function () {

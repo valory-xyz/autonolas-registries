@@ -121,12 +121,12 @@ describe("ServiceRegistry", function () {
                 // Trying to change owner from a non-owner account address
                 await expect(
                     serviceRegistry.connect(account).changeOwner(account.address)
-                ).to.be.revertedWith("OwnerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "OwnerOnly");
 
                 // Trying to change owner for the zero address
                 await expect(
                     serviceRegistry.connect(owner).changeOwner(AddressZero)
-                ).to.be.revertedWith("ZeroAddress");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ZeroAddress");
 
                 // Changing the owner
                 await serviceRegistry.connect(owner).changeOwner(account.address);
@@ -134,7 +134,7 @@ describe("ServiceRegistry", function () {
                 // Trying to change owner from the previous owner address
                 await expect(
                     serviceRegistry.connect(owner).changeOwner(owner.address)
-                ).to.be.revertedWith("OwnerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "OwnerOnly");
             });
 
             it("Changing drainer", async function () {
@@ -151,12 +151,12 @@ describe("ServiceRegistry", function () {
                 // Trying to change owner from a non-owner account address
                 await expect(
                     serviceRegistry.connect(account).changeDrainer(account.address)
-                ).to.be.revertedWith("OwnerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "OwnerOnly");
 
                 // Trying to change owner for the zero address
                 await expect(
                     serviceRegistry.connect(owner).changeDrainer(AddressZero)
-                ).to.be.revertedWith("ZeroAddress");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ZeroAddress");
 
                 // Changing the owner
                 await serviceRegistry.connect(owner).changeDrainer(account.address);
@@ -187,7 +187,7 @@ describe("ServiceRegistry", function () {
 
                 await expect(
                     serviceRegistry.connect(signers[3]).changeManager(signers[3].address)
-                ).to.be.revertedWith("OwnerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "OwnerOnly");
             });
 
             it("Setting the base URI", async function () {
@@ -200,11 +200,11 @@ describe("ServiceRegistry", function () {
 
                 await expect(
                     serviceRegistry.connect(signers[1]).setBaseURI("https://localhost2/service/")
-                ).to.be.revertedWith("OwnerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "OwnerOnly");
 
                 await expect(
                     serviceRegistry.setBaseURI("")
-                ).to.be.revertedWith("ZeroValue");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ZeroValue");
 
                 await serviceRegistry.setBaseURI("https://localhost2/service/");
                 expect(await serviceRegistry.baseURI()).to.equal("https://localhost2/service/");
@@ -225,7 +225,7 @@ describe("ServiceRegistry", function () {
                 const owner = signers[3].address;
                 await expect(
                     serviceRegistry.create(owner, configHash, agentIds, agentParams, threshold)
-                ).to.be.revertedWith("ManagerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ManagerOnly");
             });
 
             it("Should fail when changing the owner and the manager to a zero address", async function () {
@@ -239,12 +239,12 @@ describe("ServiceRegistry", function () {
                 // Try to change the owner to the zero address
                 await expect(
                     serviceRegistry.changeOwner(AddressZero)
-                ).to.be.revertedWith("ZeroAddress");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ZeroAddress");
 
                 // Try to change the manager to the zero address
                 await expect(
                     serviceRegistry.changeManager(AddressZero)
-                ).to.be.revertedWith("ZeroAddress");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ZeroAddress");
             });
 
             it("Should fail when the owner of a service has a zero address", async function () {
@@ -260,7 +260,7 @@ describe("ServiceRegistry", function () {
                 await expect(
                     serviceRegistry.connect(serviceManager).create(AddressZero, configHash, agentIds,
                         agentParams, threshold)
-                ).to.be.revertedWith("ZeroAddress");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ZeroAddress");
             });
 
             it("Should fail when creating a service with a zero value config hash", async function () {
@@ -277,7 +277,7 @@ describe("ServiceRegistry", function () {
                 await expect(
                     serviceRegistry.connect(serviceManager).create(owner, ZeroBytes32, agentIds, agentParams,
                         threshold)
-                ).to.be.revertedWith("ZeroValue");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ZeroValue");
             });
 
             it("Should fail when creating a service with incorrect agent slots values", async function () {
@@ -293,14 +293,14 @@ describe("ServiceRegistry", function () {
                 await serviceRegistry.changeManager(serviceManager.address);
                 await expect(
                     serviceRegistry.connect(serviceManager).create(owner, configHash, [], [], threshold)
-                ).to.be.revertedWith("WrongArrayLength");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongArrayLength");
                 await expect(
                     serviceRegistry.connect(serviceManager).create(owner, configHash, [1], [], threshold)
-                ).to.be.revertedWith("WrongArrayLength");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongArrayLength");
                 await expect(
                     serviceRegistry.connect(serviceManager).create(owner, configHash, [1, 3], [[2, regBond]],
                         threshold)
-                ).to.be.revertedWith("WrongArrayLength");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongArrayLength");
             });
 
             it("Should fail when creating a service with non existent canonical agent", async function () {
@@ -318,7 +318,7 @@ describe("ServiceRegistry", function () {
                     await expect(
                         serviceRegistry.connect(serviceManager).create(owner, configHash, agentIds,
                             agentParams, threshold)
-                    ).to.be.revertedWith("WrongAgentId");
+                    ).to.be.revertedWithCustomError(serviceRegistry, "WrongAgentId");
                 }
             });
 
@@ -342,7 +342,7 @@ describe("ServiceRegistry", function () {
                 await expect(
                     serviceRegistry.connect(serviceManager).create(owner, configHash, [1, 1],
                         [[2, regBond], [2, regBond]], threshold)
-                ).to.be.revertedWith("WrongAgentId");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongAgentId");
             });
 
             it("Should fail when creating a service with incorrect input parameter", async function () {
@@ -365,7 +365,7 @@ describe("ServiceRegistry", function () {
                 await expect(
                     serviceRegistry.connect(serviceManager).create(owner, configHash, [1, 0],
                         [[2, regBond], [2, regBond]], threshold)
-                ).to.be.revertedWith("WrongAgentId");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongAgentId");
             });
 
             it("Should fail when trying to set empty agent slots", async function () {
@@ -388,7 +388,7 @@ describe("ServiceRegistry", function () {
                 await expect(
                     serviceRegistry.connect(serviceManager).create(owner, configHash, agentIds,
                         [[3, regBond], [0, regBond]], threshold)
-                ).to.be.revertedWith("ZeroValue");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ZeroValue");
             });
 
             it("Checking for different signers threshold combinations", async function () {
@@ -412,11 +412,11 @@ describe("ServiceRegistry", function () {
                 await expect(
                     serviceRegistry.connect(serviceManager).create(owner, configHash, agentIds,
                         agentParams, minThreshold - 1)
-                ).to.be.revertedWith("WrongThreshold");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongThreshold");
                 await expect(
                     serviceRegistry.connect(serviceManager).create(owner, configHash, agentIds,
                         agentParams, maxThreshold + 1)
-                ).to.be.revertedWith("WrongThreshold");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongThreshold");
                 await serviceRegistry.connect(serviceManager).create(owner, configHash, agentIds,
                     agentParams, minThreshold);
                 await serviceRegistry.connect(serviceManager).create(owner, configHash, agentIds,
@@ -515,7 +515,7 @@ describe("ServiceRegistry", function () {
                     agentIds, agentParams, maxThreshold);
                 await expect(
                     serviceRegistry.tokenByIndex(1)
-                ).to.be.revertedWith("Overflow");
+                ).to.be.revertedWithCustomError(serviceRegistry, "Overflow");
                 expect(await serviceRegistry.tokenByIndex(0)).to.equal(serviceId);
             });
         });
@@ -534,7 +534,7 @@ describe("ServiceRegistry", function () {
                 const owner = signers[3].address;
                 await expect(
                     serviceRegistry.create(owner, configHash, agentIds, agentParams, threshold)
-                ).to.be.revertedWith("ManagerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ManagerOnly");
             });
 
             it("Should fail when the owner of a service has a zero address during the update", async function () {
@@ -623,13 +623,13 @@ describe("ServiceRegistry", function () {
                 // Try to register agents with a conflicting agent information
                 await expect(
                     serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstance], [], {value: regBond})
-                ).to.be.revertedWith("WrongArrayLength");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongArrayLength");
 
                 await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstance], [agentId], {value: regBond});
                 await expect(
                     serviceRegistry.connect(serviceManager).update(owner, configHash, agentIds,
                         agentParams, maxThreshold, 1)
-                ).to.be.revertedWith("WrongServiceState");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongServiceState");
             });
 
             it("Update specifically for hashes, then get service hashes", async function () {
@@ -682,7 +682,7 @@ describe("ServiceRegistry", function () {
                 const agentInstance = signers[7].address;
                 await expect(
                     serviceRegistry.registerAgents(operator, serviceId, [agentInstance], [agentId], {value: regBond})
-                ).to.be.revertedWith("ManagerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ManagerOnly");
             });
 
             it("Should fail when registering an agent instance with a non-existent service", async function () {
@@ -699,7 +699,7 @@ describe("ServiceRegistry", function () {
                 await serviceRegistry.changeManager(serviceManager.address);
                 await expect(
                     serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstance], [agentId], {value: regBond})
-                ).to.be.revertedWith("WrongServiceState");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongServiceState");
             });
 
             it("Should fail when registering an agent instance for the inactive service", async function () {
@@ -726,7 +726,7 @@ describe("ServiceRegistry", function () {
                     agentParams, maxThreshold);
                 await expect(
                     serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstance], [agentId], {value: regBond})
-                ).to.be.revertedWith("WrongServiceState");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongServiceState");
             });
 
             it("Should fail when registering an agent instance that is already registered", async function () {
@@ -754,7 +754,7 @@ describe("ServiceRegistry", function () {
                 await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstance], [agentId], {value: regBond});
                 await expect(
                     serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstance], [agentId], {value: regBond})
-                ).to.be.revertedWith("AgentInstanceRegistered");
+                ).to.be.revertedWithCustomError(serviceRegistry, "AgentInstanceRegistered");
             });
 
             it("Should fail when registering an agent instance for non existent canonical agent Id", async function () {
@@ -781,7 +781,7 @@ describe("ServiceRegistry", function () {
                 await serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit});
                 await expect(
                     serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstance], [0])
-                ).to.be.revertedWith("AgentNotInService");
+                ).to.be.revertedWithCustomError(serviceRegistry, "AgentNotInService");
             });
 
             it("Should fail when registering an agent instance for the service with no available slots", async function () {
@@ -809,7 +809,7 @@ describe("ServiceRegistry", function () {
                 await serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit});
                 await expect(
                     serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, agentInstances, regAgentIds, {value: 4*regBond})
-                ).to.be.revertedWith("AgentInstancesSlotsFilled");
+                ).to.be.revertedWithCustomError(serviceRegistry, "AgentInstancesSlotsFilled");
             });
 
             it("Catching \"RegisterInstance\" event log after agent instance registration", async function () {
@@ -898,13 +898,13 @@ describe("ServiceRegistry", function () {
                 await expect(
                     serviceRegistry.connect(serviceManager).registerAgents(agentInstances[0], serviceId, [agentInstances[0]],
                         [agentId], {value: regBond})
-                ).to.be.revertedWith("WrongOperator");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongOperator");
                 await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstances[0]],
                     [agentId], {value: regBond});
                 await expect(
                     serviceRegistry.connect(serviceManager).registerAgents(agentInstances[0], serviceId, [agentInstances[1]],
                         [agentId], {value: regBond})
-                ).to.be.revertedWith("WrongOperator");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongOperator");
             });
         });
     });
@@ -949,7 +949,7 @@ describe("ServiceRegistry", function () {
                 await serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit});
                 await expect(
                     serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit})
-                ).to.be.revertedWith("ServiceMustBeInactive");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ServiceMustBeInactive");
             });
 
             it("Catching \"ActivateRegistration\" event log after service activation", async function () {
@@ -1041,7 +1041,7 @@ describe("ServiceRegistry", function () {
                 // Try to unbond to a zero address
                 await expect(
                     serviceRegistry.connect(serviceManager).unbond(AddressZero, serviceId)
-                ).to.be.revertedWith("ZeroAddress");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ZeroAddress");
 
                 await serviceRegistry.connect(serviceManager).unbond(operator, serviceId);
 
@@ -1080,7 +1080,7 @@ describe("ServiceRegistry", function () {
                 await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstance], [agentId], {value: regBond});
                 await expect(
                     serviceRegistry.connect(serviceManager).deploy(owner, serviceId, gnosisSafeMultisig.address, payload)
-                ).to.be.revertedWith("WrongServiceState");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongServiceState");
             });
 
             it("Catching \"CreateMultisigWithAgents\" event log when calling the Safe contract creation", async function () {
@@ -1547,7 +1547,7 @@ describe("ServiceRegistry", function () {
                 await expect(
                     serviceRegistry.connect(serviceManager).deploy(serviceOwnerAddress, serviceId,
                         gnosisSafeSameAddressMultisig.address, packedErrData)
-                ).to.be.revertedWith("MultisigExecFailed");
+                ).to.be.revertedWithCustomError(gnosisSafeSameAddressMultisig, "MultisigExecFailed");
 
                 // Try to deploy when passing the incorrect tx signature
                 safeExecErrData = gnosisSafe.interface.encodeFunctionData("execTransaction", [safeTx.to, safeTx.value,
@@ -1557,7 +1557,7 @@ describe("ServiceRegistry", function () {
                 await expect(
                     serviceRegistry.connect(serviceManager).deploy(serviceOwnerAddress, serviceId,
                         gnosisSafeSameAddressMultisig.address, packedErrData)
-                ).to.be.revertedWith("MultisigExecFailed");
+                ).to.be.revertedWithCustomError(gnosisSafeSameAddressMultisig, "MultisigExecFailed");
 
 
                 // Redeploy the service updating the multisig with new owners and threshold
@@ -1926,7 +1926,7 @@ describe("ServiceRegistry", function () {
                 // Terminating service without registered agent instances will give it a terminated-unbonded state
                 await expect(
                     serviceRegistry.connect(serviceManager).terminate(owner, serviceId)
-                ).to.be.revertedWith("WrongServiceState");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongServiceState");
             });
 
             it("Terminate service right after creation and registering a single agent instance", async function () {
@@ -1967,7 +1967,7 @@ describe("ServiceRegistry", function () {
                 // Trying to terminate it again will revert
                 await expect(
                     serviceRegistry.connect(serviceManager).terminate(owner, serviceId)
-                ).to.be.revertedWith("WrongServiceState");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongServiceState");
             });
 
             it("Calling terminate from active-registration state", async function () {
@@ -2029,7 +2029,7 @@ describe("ServiceRegistry", function () {
                 // Revert when insufficient amount is passed
                 await expect(
                     serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: 0})
-                ).to.be.revertedWith("IncorrectRegistrationDepositValue");
+                ).to.be.revertedWithCustomError(serviceRegistry, "IncorrectRegistrationDepositValue");
 
                 // Activate registration and register one agent instance
                 await serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit});
@@ -2044,7 +2044,7 @@ describe("ServiceRegistry", function () {
                 // Trying to unbond before the service is terminated
                 await expect(
                     serviceRegistry.connect(serviceManager).unbond(operator, serviceId)
-                ).to.be.revertedWith("WrongServiceState");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongServiceState");
 
                 // Terminate the service
                 await serviceRegistry.connect(serviceManager).terminate(owner, serviceId);
@@ -2052,7 +2052,7 @@ describe("ServiceRegistry", function () {
                 // Try to unbond by an operator that has not registered a single agent instance
                 await expect(
                     serviceRegistry.connect(serviceManager).unbond(owner, serviceId)
-                ).to.be.revertedWith("OperatorHasNoInstances");
+                ).to.be.revertedWithCustomError(serviceRegistry, "OperatorHasNoInstances");
 
                 // Unbonding
                 const unbondTx = await serviceRegistry.connect(serviceManager).unbond(operator, serviceId);
@@ -2096,7 +2096,7 @@ describe("ServiceRegistry", function () {
                 await serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit});
                 await expect(
                     serviceRegistry.connect(serviceManager).unbond(operator, serviceId)
-                ).to.be.revertedWith("WrongServiceState");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongServiceState");
             });
         });
     });
@@ -2134,7 +2134,7 @@ describe("ServiceRegistry", function () {
                 await expect(
                     serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstance],
                         [agentId], {value: 0})
-                ).to.be.revertedWith("IncorrectAgentBondingValue");
+                ).to.be.revertedWithCustomError(serviceRegistry, "IncorrectAgentBondingValue");
             });
 
             it("Should fail when trying to activate registration with a smaller amount", async function () {
@@ -2164,7 +2164,7 @@ describe("ServiceRegistry", function () {
                 // Activate registration and register one agent instance
                 await expect(
                     serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit - 1})
-                ).to.be.revertedWith("IncorrectRegistrationDepositValue");
+                ).to.be.revertedWithCustomError(serviceRegistry, "IncorrectRegistrationDepositValue");
             });
 
             it("Should fail when slashing the agent not in a service", async function () {
@@ -2200,7 +2200,7 @@ describe("ServiceRegistry", function () {
                 // Try to slash in a non deployed service state
                 await expect(
                     serviceRegistry.slash([wrongAgentInstance], [regFine], serviceId)
-                ).to.be.revertedWith("WrongServiceState");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongServiceState");
 
                 // Whitelist gnosis multisig implementation
                 await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
@@ -2211,12 +2211,12 @@ describe("ServiceRegistry", function () {
                 // Should fail when dimentions of arrays don't match
                 await expect(
                     serviceRegistry.slash([wrongAgentInstance, AddressZero], [regFine], serviceId)
-                ).to.be.revertedWith("WrongArrayLength");
+                ).to.be.revertedWithCustomError(serviceRegistry, "WrongArrayLength");
 
                 // Simulate slashing with the agent instance that is not in the service
                 await expect(
                     serviceRegistry.slash([wrongAgentInstance], [regFine], serviceId)
-                ).to.be.revertedWith("OnlyOwnServiceMultisig");
+                ).to.be.revertedWithCustomError(serviceRegistry, "OnlyOwnServiceMultisig");
             });
 
             it("Slashing the operator of agent instance", async function () {
@@ -2265,7 +2265,7 @@ describe("ServiceRegistry", function () {
                 // Try slashing from a different simulated multisig address
                 await expect(
                     serviceRegistry.connect(wrongMultisig).slash([agentInstance.address], [regFine], serviceId)
-                ).to.be.revertedWith("OnlyOwnServiceMultisig");
+                ).to.be.revertedWithCustomError(serviceRegistry, "OnlyOwnServiceMultisig");
 
                 // Getting a real multisig address and calling slashing method with it
                 const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
@@ -2354,7 +2354,7 @@ describe("ServiceRegistry", function () {
                 // Trying to drain by the operator
                 await expect(
                     serviceRegistry.connect(signers[6]).drain()
-                ).to.be.revertedWith("ManagerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ManagerOnly");
 
                 // Get the slashed funds transferred to the drainer address
                 const amount = await serviceRegistry.connect(drainer).callStatic.drain();
@@ -2409,7 +2409,7 @@ describe("ServiceRegistry", function () {
                 // Should fail without whitelisted multisig implementation
                 await expect(
                     serviceRegistry.connect(serviceManager).deploy(owner, serviceId, gnosisSafeMultisig.address, payload)
-                ).to.be.revertedWith("UnauthorizedMultisig");
+                ).to.be.revertedWithCustomError(serviceRegistry, "UnauthorizedMultisig");
 
                 // Whitelist gnosis multisig implementation
                 await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
@@ -2488,32 +2488,32 @@ describe("ServiceRegistry", function () {
                 // Trying to update with a wrong manager
                 await expect(
                     serviceRegistry.update(owner, configHash, agentIds, agentParams, threshold, serviceId)
-                ).to.be.revertedWith("ManagerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ManagerOnly");
 
                 // Trying to activate the service with a wrong manager
                 await expect(
                     serviceRegistry.activateRegistration(owner, serviceId)
-                ).to.be.revertedWith("ManagerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ManagerOnly");
 
                 // Trying to register an agent instance with a wrong manager
                 await expect(
                     serviceRegistry.registerAgents(operator, serviceId, [AddressZero], [agentId])
-                ).to.be.revertedWith("ManagerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ManagerOnly");
 
                 // Trying to deploy the service with a wrong manager
                 await expect(
                     serviceRegistry.deploy(owner, serviceId, AddressZero, "0x")
-                ).to.be.revertedWith("ManagerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ManagerOnly");
 
                 // Trying to terminate the service with a wrong manager
                 await expect(
                     serviceRegistry.terminate(owner, serviceId)
-                ).to.be.revertedWith("ManagerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ManagerOnly");
 
                 // Trying to unbond from the service with a wrong manager
                 await expect(
                     serviceRegistry.unbond(operator, serviceId)
-                ).to.be.revertedWith("ManagerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ManagerOnly");
             });
 
             it("Should fail when trying to act on a service being not its owner", async function () {
@@ -2543,27 +2543,27 @@ describe("ServiceRegistry", function () {
                 await expect(
                     serviceRegistry.connect(serviceManager).update(nonOwner, configHash, agentIds, agentParams,
                         threshold, serviceId)
-                ).to.be.revertedWith("OwnerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "OwnerOnly");
 
                 // Trying to activate the service with a wrong manager
                 await expect(
                     serviceRegistry.connect(serviceManager).activateRegistration(nonOwner, serviceId)
-                ).to.be.revertedWith("OwnerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "OwnerOnly");
 
                 // Trying to deploy the service with a wrong manager
                 await expect(
                     serviceRegistry.connect(serviceManager).deploy(nonOwner, serviceId, AddressZero, "0x")
-                ).to.be.revertedWith("OwnerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "OwnerOnly");
 
                 // Trying to terminate the service with a wrong manager
                 await expect(
                     serviceRegistry.connect(serviceManager).terminate(nonOwner, serviceId)
-                ).to.be.revertedWith("OwnerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "OwnerOnly");
 
                 // Trying to unbond from the service with a wrong manager
                 await expect(
                     serviceRegistry.unbond(operator, serviceId)
-                ).to.be.revertedWith("ManagerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ManagerOnly");
             });
         });
     });
@@ -2580,15 +2580,15 @@ describe("ServiceRegistry", function () {
 
                 await expect(
                     serviceRegistry.connect(signers[1]).changeMultisigPermission(AddressZero, true)
-                ).to.be.revertedWith("OwnerOnly");
+                ).to.be.revertedWithCustomError(serviceRegistry, "OwnerOnly");
 
                 await expect(
                     serviceRegistry.changeMultisigPermission(AddressZero, true)
-                ).to.be.revertedWith("ZeroAddress");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ZeroAddress");
 
                 await expect(
                     serviceRegistry.changeMultisigPermission(AddressZero, false)
-                ).to.be.revertedWith("ZeroAddress");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ZeroAddress");
             });
 
             it("Adding and removing multisig implementation addresses", async function () {
@@ -2930,7 +2930,7 @@ describe("ServiceRegistry", function () {
                 await expect(
                     reentrancyAttacker.createBadService(reentrancyAttacker.address, configHash, agentIds,
                         agentParams, maxThreshold)
-                ).to.be.revertedWith("ReentrancyGuard");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ReentrancyGuard");
             });
 
             it("Reentrancy attack by the manager during the service deployment", async function () {
@@ -2973,7 +2973,7 @@ describe("ServiceRegistry", function () {
                 // Calling deployment by the attacker
                 await expect(
                     reentrancyAttacker.deployBadMultisig(reentrancyAttacker.address, serviceId, reentrancyAttacker.address, payload)
-                ).to.be.revertedWith("ReentrancyGuard");
+                ).to.be.revertedWithCustomError(serviceRegistry, "ReentrancyGuard");
             });
 
             it("Reentrancy attack by the manager during the service termination", async function () {
@@ -3016,7 +3016,7 @@ describe("ServiceRegistry", function () {
                 // Reentrancy guard revert failed the attacker receive() function that returned as "TransferFailed"
                 await expect(
                     reentrancyAttacker.terminateBadRefund(reentrancyAttacker.address, serviceId)
-                ).to.be.revertedWith("TransferFailed");
+                ).to.be.revertedWithCustomError(serviceRegistry, "TransferFailed");
             });
 
             it("Reentrancy attack by the manager during the service unbond", async function () {
@@ -3062,7 +3062,7 @@ describe("ServiceRegistry", function () {
                 // Reentrancy guard revert failed the attacker receive() function that returned as "TransferFailed"
                 await expect(
                     reentrancyAttacker.unbondBadOperator(reentrancyAttacker.address, serviceId)
-                ).to.be.revertedWith("TransferFailed");
+                ).to.be.revertedWithCustomError(serviceRegistry, "TransferFailed");
             });
 
             it("Reentrancy attack by the bad drainer", async function () {
@@ -3129,7 +3129,7 @@ describe("ServiceRegistry", function () {
                 // Trying to drain by the attacker who got the drain access
                 await expect(
                     reentrancyAttacker.drainFromBadAddress()
-                ).to.be.revertedWith("TransferFailed");
+                ).to.be.revertedWithCustomError(serviceRegistry, "TransferFailed");
             });
         });
     });

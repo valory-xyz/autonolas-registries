@@ -1,12 +1,14 @@
 /*global process*/
 
+require("hardhat-contract-sizer");
 require("hardhat-deploy");
 require("hardhat-deploy-ethers");
-require("@nomiclabs/hardhat-waffle");
-require("solidity-coverage");
 require("hardhat-gas-reporter");
-require("hardhat-contract-sizer");
+require("hardhat-tracer");
+require("@nomicfoundation/hardhat-chai-matchers");
+require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-etherscan");
+require("@nomicfoundation/hardhat-toolbox");
 
 const accounts = {
     // Generated with bip39
@@ -84,5 +86,8 @@ module.exports = {
                 },
             }
         ]
+    },
+    gasReporter: {
+        enabled: true
     }
 };

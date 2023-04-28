@@ -41,7 +41,7 @@ describe("RegistriesManager", function () {
             // Try to pause not from the owner of the service manager
             await expect(
                 registriesManager.connect(user).pause()
-            ).to.be.revertedWith("OwnerOnly");
+            ).to.be.revertedWithCustomError(registriesManager, "OwnerOnly");
 
             // Pause the contract
             await registriesManager.pause();
@@ -50,16 +50,16 @@ describe("RegistriesManager", function () {
             // 0 is component, 1 is agent
             await expect(
                 registriesManager.create(0, user.address, componentHashes[0], dependencies)
-            ).to.be.revertedWith("Paused");
+            ).to.be.revertedWithCustomError(registriesManager, "Paused");
 
             await expect(
                 registriesManager.create(1, user.address, componentHashes[0], dependencies)
-            ).to.be.revertedWith("Paused");
+            ).to.be.revertedWithCustomError(registriesManager, "Paused");
 
             // Try to unpause not from the owner of the service manager
             await expect(
                 registriesManager.connect(user).unpause()
-            ).to.be.revertedWith("OwnerOnly");
+            ).to.be.revertedWithCustomError(registriesManager, "OwnerOnly");
 
             // Unpause the contract
             await registriesManager.unpause();
