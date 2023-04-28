@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.19;
 
 import "./interfaces/IErrorsRegistries.sol";
 import "./interfaces/IService.sol";
@@ -39,7 +39,7 @@ interface IServiceUtility{
     /// @return maxNumAgentInstances Total number of agent instances.
     /// @return numAgentInstances Actual number of agent instances.
     /// @return state Service state.
-    function mapServices(uint256 serviceId) external returns (
+    function mapServices(uint256 serviceId) external view returns (
         uint96 securityDeposit,
         address multisig,
         bytes32 configHash,
@@ -50,7 +50,7 @@ interface IServiceUtility{
     );
 
     /// @dev Gets the operator address from the map of agent instance address => operator address
-    function mapAgentInstanceOperators(address agentInstance) external returns (address operator);
+    function mapAgentInstanceOperators(address agentInstance) external view returns (address operator);
 }
 
 /// @title Service Registry Token Utility - Smart contract for registering services that bond with ERC20 tokens
@@ -91,9 +91,16 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     // Map of operator address and serviceId => agent instance bonding / escrow balance
     mapping(uint256 => uint256) public mapOperatorAndServiceIdOperatorBalances;
     // Map of token => slashed funds
-    mapping(address => uint256) mapSlashedFunds;
+    mapping(address => uint256) public mapSlashedFunds;
 
+    /// @dev ServiceRegistryTokenUtility constructor.
+    /// @param _serviceRegistry Service Registry contract address.
     constructor(address _serviceRegistry) {
+        // Check for the zero address
+        if (_serviceRegistry == address(0)) {
+            revert ZeroAddress();
+        }
+
         serviceRegistry = _serviceRegistry;
         owner = msg.sender;
     }
@@ -116,7 +123,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     }
 
     /// @dev Changes the unit manager.
-    /// @param newManager Address of a new unit manager.
+    /// @param newManager Address of a new manager.
     function changeManager(address newManager) external virtual {
         if (msg.sender != owner) {
             revert OwnerOnly(msg.sender, owner);
@@ -148,28 +155,35 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     }
 
     /// @dev Creates a record with the token-related information for the specified service.
+    /// @notice We assume that the token is checked for being a non-zero address and a non-ETH address representation
+    ///         outside of this function. Here we optimistically check for the token to have a specific `balanceOf`
+    ///         view function. It is possible this is the attacker token that has all the required functions defined
+    ///         correctly, so there is no point in checking that formality. All the required checks will be done in-place
+    ///         where the possibility of misbehavior can be caught by return values of token function.
     /// @param serviceId Service Id.
     /// @param token Token address.
     /// @param agentIds Set of agent Ids.
     /// @param bonds Set of correspondent bonds.
-    function createWithToken(uint256 serviceId, address token, uint32[] memory agentIds, uint256[] memory bonds) external {
+    function createWithToken(
+        uint256 serviceId,
+        address token,
+        uint32[] memory agentIds,
+        uint256[] memory bonds
+    ) external
+    {
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
         }
 
-        // Check for the zero token address
-        if (token == address(0)) {
-            revert ZeroAddress();
-        }
         // TODO Check for the token ERC20 formality
         
         uint256 securityDeposit;
         // Service is newly created and all the array lengths are checked by the original ServiceRegistry create() function
         for (uint256 i = 0; i < agentIds.length; ++i) {
-            // Check for a non-zero bond value
+            // Check for a non-zero bond value and skip those with zeros (possible when updating a service)
             if (bonds[i] == 0) {
-                revert ZeroValue();
+                continue;
             }
             // Check for a bond limit value
             if (bonds[i] > type(uint96).max) {
@@ -185,6 +199,9 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             uint256 serviceAgent = serviceId;
             // agentId takes the second 32 bits
             serviceAgent |= uint256(agentIds[i]) << 32;
+            // We follow the optimistic design where existing bonds are just overwritten without a clearing
+            // bond values of agent Ids that are not going to be used in the service. This is coming from the fact
+            // that all the checks are done on the original ServiceRegistry side
             mapServiceAndAgentIdAgentBond[serviceAgent] = bonds[i];
             
             // Calculating a security deposit
@@ -197,10 +214,28 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         mapServiceIdTokenDeposit[serviceId] = TokenSecurityDeposit(token, uint96(securityDeposit));
     }
 
+    /// @dev Resets a record with token and security deposit data.
+    /// @param serviceId Service Id.
+    function resetServiceToken(uint256 serviceId) external {
+        // Check for the manager privilege for a service management
+        if (manager != msg.sender) {
+            revert ManagerOnly(msg.sender, manager);
+        }
+
+        // Delete token and security deposit data
+        delete mapServiceIdTokenDeposit[serviceId];
+    }
+
     /// @dev Deposit a token security deposit for the service registration after its activation.
     /// @param serviceId Service Id.
     /// @return isTokenSecured True if the service Id is token secured, false if ETH secured otherwise.
     function activateRegistrationTokenDeposit(uint256 serviceId) external returns (bool isTokenSecured) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
@@ -230,9 +265,14 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             isTokenSecured = true;
             emit TokenDeposit(serviceOwner, token, securityDeposit);
         }
+
+        _locked = 1;
     }
 
     /// @dev Deposits bonded tokens from the operator during the agent instance registration.
+    /// @notice This is an optimistic implementation corresponding to registering agent instances by the operator
+    ///         assuming that this function is always called in pair with the original Service Registry agent instance
+    ///         registration function, where all the necessary validity checks are provided.
     /// @param operator Operator address.
     /// @param serviceId Service Id.
     /// @param agentIds Set of agent Ids for corresponding agent instances opertor is registering.
@@ -243,6 +283,12 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         uint32[] memory agentIds
     ) external returns (bool isTokenSecured)
     {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
@@ -261,9 +307,6 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
                 uint256 serviceAgent = serviceId;
                 serviceAgent |= uint256(agentIds[i]) << 32;
                 uint256 bond = mapServiceAndAgentIdAgentBond[serviceAgent];
-                if (bond == 0) {
-                    revert ZeroValue();
-                }
                 totalBond += bond;
             }
 
@@ -292,12 +335,20 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             isTokenSecured = true;
             emit TokenDeposit(operator, token, totalBond);
         }
+
+        _locked = 1;
     }
 
     /// @dev Refunds a token security deposit to the service owner after the service termination.
     /// @param serviceId Service Id.
-    /// @return securityDeposit Returned token security deposit, or zero if the service is ETH-secured.
-    function terminationTokenWithdraw(uint256 serviceId) external returns (uint256 securityDeposit) {
+    /// @return securityRefund Returned token security deposit, or zero if the service is ETH-secured.
+    function terminateTokenRefund(uint256 serviceId) external returns (uint256 securityRefund) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
@@ -307,19 +358,21 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         TokenSecurityDeposit memory tokenDeposit = mapServiceIdTokenDeposit[serviceId];
         address token = tokenDeposit.token;
         if (token != address(0)) {
-            securityDeposit = tokenDeposit.securityDeposit;
+            securityRefund = tokenDeposit.securityDeposit;
             // Check for the allowance against this contract
             address serviceOwner = IToken(serviceRegistry).ownerOf(serviceId);
 
             // Transfer tokens to the serviceOwner account
             // TODO Re-entrancy
             // TODO Safe transfer
-            bool success = IToken(token).transfer(serviceOwner, securityDeposit);
+            bool success = IToken(token).transfer(serviceOwner, securityRefund);
             if (!success) {
-                revert TransferFailed(token, address(this), serviceOwner, securityDeposit);
+                revert TransferFailed(token, address(this), serviceOwner, securityRefund);
             }
-            emit TokenRefund(serviceOwner, token, securityDeposit);
+            emit TokenRefund(serviceOwner, token, securityRefund);
         }
+
+        _locked = 1;
     }
 
     /// @dev Refunds bonded tokens to the operator during the unbond phase.
@@ -327,6 +380,12 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     /// @param serviceId Service Id.
     /// @return refund Returned bonded token amount, or zero if the service is ETH-secured.
     function unbondTokenRefund(address operator, uint256 serviceId) external returns (uint256 refund) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Check for the manager privilege for a service management
         if (manager != msg.sender) {
             revert ManagerOnly(msg.sender, manager);
@@ -359,6 +418,8 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
                 emit TokenRefund(operator, token, refund);
             }
         }
+
+        _locked = 1;
     }
 
     /// @dev Slashes a specified agent instance.
@@ -377,7 +438,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         }
 
         // Check for the array size
-        if (agentInstances.length != amounts.length) {
+        if (agentInstances.length == 0 || agentInstances.length != amounts.length) {
             revert WrongArrayLength(agentInstances.length, amounts.length);
         }
 
@@ -389,7 +450,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         // Token address
         address token = mapServiceIdTokenDeposit[serviceId].token;
         // TODO Verify if that scenario is possible at all, since if correctly updated, token must never be equal to zero, or be called from this contract
-        // This is to protect this slash function to be called for ETH-secured services
+        // This is to protect this slash function not to be called for ETH-secured services
         if (token == address(0)) {
             revert ZeroAddress();
         }
@@ -407,11 +468,15 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             operatorService |= serviceId << 160;
             // Slash the balance of the operator, make sure it does not go below zero
             uint256 balance = mapOperatorAndServiceIdOperatorBalances[operatorService];
-            if (amounts[i] >= balance) {
+            // Skip the zero balance
+            if (balance == 0) {
+                continue;
+            } else if (amounts[i] >= balance) {
                 // We cannot add to the slashed amount more than the balance of the operator
                 slashedFunds += balance;
                 balance = 0;
             } else {
+                // Slash the specified amount
                 slashedFunds += amounts[i];
                 balance -= amounts[i];
             }
@@ -424,7 +489,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         success = true;
     }
 
-    /// @dev Drains slashed funds.
+    /// @dev Drains slashed funds to the drainer address.
     /// @param token Token address.
     /// @return amount Drained amount.
     function drain(address token) external returns (uint256 amount) {
@@ -435,8 +500,13 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         _locked = 2;
 
         // Check for the drainer address
-        if (msg.sender != drainer) {
-            revert ManagerOnly(msg.sender, drainer);
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for the zero address
+        if (drainer == address(0)) {
+            revert ZeroAddress();
         }
 
         // Drain the slashed funds
@@ -445,7 +515,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
             mapSlashedFunds[token] = 0;
             // TODO Safe transfer
             // Send the refund
-            bool success = IToken(token).transfer(msg.sender, amount);
+            bool success = IToken(token).transfer(drainer, amount);
             if (!success) {
                 revert TransferFailed(token, address(this), msg.sender, amount);
             }
@@ -466,8 +536,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     /// @param operator Operator address.
     /// @param serviceId Service Id.
     /// @return balance The balance of the operator.
-    function getOperatorBalance(address operator, uint256 serviceId) external view returns (uint256 balance)
-    {
+    function getOperatorBalance(address operator, uint256 serviceId) external view returns (uint256 balance) {
         uint256 operatorService = uint256(uint160(operator));
         operatorService |= serviceId << 160;
         balance = mapOperatorAndServiceIdOperatorBalances[operatorService];

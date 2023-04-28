@@ -8,24 +8,16 @@ interface IServiceTokenUtility {
     /// @param token Token address.
     /// @param agentIds Set of agent Ids.
     /// @param bonds Set of correspondent bonds.
-    function createWithToken(uint256 serviceId, address token, uint32[] memory agentIds, uint256[] memory bonds) external;
-
-    /// @dev Updates a service in a CRUD way.
-    /// @param serviceOwner Individual that creates and controls a service.
-    /// @param configHash IPFS hash pointing to the config metadata.
-    /// @param agentIds Canonical agent Ids in a sorted ascending order.
-    /// @param bonds Set of required bonds to register an instance in the service corresponding to agent Ids.
-    /// @param threshold Signers threshold for a multisig composed by agent instances.
-    /// @param serviceId Service Id to be updated.
-    /// @return success True, if function executed successfully.
-    function update(
-        address serviceOwner,
-        bytes32 configHash,
+    function createWithToken(
+        uint256 serviceId,
+        address token,
         uint32[] memory agentIds,
-        uint256[] memory bonds,
-        uint32 threshold,
-        uint256 serviceId
-    ) external returns (bool success);
+        uint256[] memory bonds
+    ) external;
+
+    /// @dev Resets a record with token and security deposit data.
+    /// @param serviceId Service Id.
+    function resetServiceToken(uint256 serviceId) external;
 
     /// @dev Deposit a token security deposit for the service registration after its activation.
     /// @param serviceId Service Id.
@@ -45,8 +37,8 @@ interface IServiceTokenUtility {
 
     /// @dev Withdraws a token security deposit to the service owner after the service termination.
     /// @param serviceId Service Id.
-    /// @return securityDeposit Returned token security deposit, or zero if the service is ETH-secured.
-    function terminationTokenWithdraw(uint256 serviceId) external returns (uint256 securityDeposit);
+    /// @return securityRefund Returned token security deposit, or zero if the service is ETH-secured.
+    function terminateTokenRefund(uint256 serviceId) external returns (uint256 securityRefund);
 
     /// @dev Withdraws bonded tokens to the operator during the unbond phase.
     /// @param operator Operator address.

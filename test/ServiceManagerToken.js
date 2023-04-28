@@ -85,7 +85,19 @@ describe("ServiceManagerToken", function () {
         await componentRegistry.create(signers[0].address, unitHash3, []);
     });
 
-    context("Service creation via manager", async function () {
+    context("Initialization", async function () {
+        it("Constructor must fail with zero provided addresses", async function () {
+            const ServiceManager = await ethers.getContractFactory("ServiceManagerToken");
+
+            await expect(
+                ServiceManager.deploy(AddressZero, AddressZero)
+            ).to.be.revertedWith("ZeroAddress");
+
+            await expect(
+                ServiceManager.deploy(serviceRegistry.address, AddressZero)
+            ).to.be.revertedWith("ZeroAddress");
+        });
+
         it("Changing owner", async function () {
             const owner = signers[0];
             const account = signers[1];
@@ -209,6 +221,28 @@ describe("ServiceManagerToken", function () {
             // Create a service
             await serviceManager.create(owner.address, ETHAddress, configHash, [1], [[1, regBond]], 1);
         });
+
+        it("Should fail when setting the operator whitelist incorrectly", async function () {
+            // Try to set the address not by the owner
+            await expect(
+                serviceManager.connect(signers[1]).setOperatorWhitelist(deployer.address)
+            ).to.be.revertedWith("OwnerOnly");
+            // Try to set the zero contract address
+            await expect(
+                serviceManager.connect(deployer).setOperatorWhitelist(AddressZero)
+            ).to.be.revertedWith("ZeroAddress");
+        });
+
+        it("Should fail when calling functions with a zero token", async function () {
+            // Create a service
+            await expect(
+                serviceManager.create(deployer.address, AddressZero, configHash, agentIds, agentParams, threshold)
+            ).to.be.revertedWith("ZeroAddress");
+            // Update a service
+            await expect(
+                serviceManager.update(AddressZero, configHash, agentIds, agentParams, threshold, serviceIds[0])
+            ).to.be.revertedWith("ZeroAddress");
+        });
     });
     
     context("Service creation and update via manager", async function () {
@@ -220,11 +254,12 @@ describe("ServiceManagerToken", function () {
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
             await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
             await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
-            await serviceManager.connect(owner).update(configHash, [1, 2, 3],
+            await serviceManager.connect(owner).update(ETHAddress, configHash, [1, 2, 3],
                 [[3, regBond], [0, regBond], [4, regBond]], maxThreshold, serviceIds[0]);
             expect(await serviceRegistry.exists(2)).to.equal(true);
             expect(await serviceRegistry.exists(3)).to.equal(false);
@@ -232,7 +267,7 @@ describe("ServiceManagerToken", function () {
     });
 
     context("Service manipulations via manager", async function () {
-        it("Creating a service with a custom token, register, deploy, terminate, unbond", async function () {
+        it("Creating a service with a custom token, update, register, deploy, terminate, unbond", async function () {
             const manager = signers[4];
             const owner = signers[5];
             const operator = signers[6];
@@ -246,12 +281,16 @@ describe("ServiceManagerToken", function () {
             await serviceRegistry.changeManager(serviceManager.address);
             await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
-            const newAgentParams = [[1, regBond], [1, regBond]];
+            // Create one service with the ERC20 token bond
+            const initAgentIds = [1, 3];
+            await serviceManager.create(deployer.address, token.address, configHash, initAgentIds, agentParams, maxThreshold);
+
+            const newAgentIds = [1, 2, 3];
+            const newAgentParams = [[1, regBond], [1, regBond],  [0, 0]];
             const newMaxThreshold = newAgentParams[0][0] + newAgentParams[1][0];
 
-            // Creating one service with the ERC20 token bond
-            await serviceManager.create(deployer.address, token.address, configHash, agentIds, newAgentParams,
-                newMaxThreshold);
+            // Update a service with the ERC20 token bond
+            await serviceManager.update(token.address, configHash, newAgentIds, newAgentParams, newMaxThreshold, serviceIds[0]);
             // Approve token for the serviceRegistryTokenUtility contract
             await token.connect(deployer).approve(serviceRegistryTokenUtility.address, regBond);
 
@@ -261,6 +300,7 @@ describe("ServiceManagerToken", function () {
             expect(service.state).to.equal(2);
 
             // Set the operator whitelist checker contract
+            await operatorWhitelist.setOperatorsCheck(serviceIds[0], true);
             await serviceManager.setOperatorWhitelist(operatorWhitelist.address);
             // Whitelist a random operator address for the service
             await operatorWhitelist.setOperatorsStatuses(serviceIds[0], [signers[15].address], [true]);
@@ -415,7 +455,7 @@ describe("ServiceManagerToken", function () {
             const newAgentIds = [1, 2, 3];
             const newAgentParams = [[2, regBond], [0, regBond], [1, regBond]];
             const newMaxThreshold = newAgentParams[0][0] + newAgentParams[2][0];
-            await serviceManager.connect(owner).update(configHash, newAgentIds,
+            await serviceManager.connect(owner).update(ETHAddress, configHash, newAgentIds,
                 newAgentParams, newMaxThreshold, serviceIds[0]);
             let service = await serviceRegistry.getService(serviceIds[0]);
             expect(service.state).to.equal(1);
@@ -428,7 +468,7 @@ describe("ServiceManagerToken", function () {
 
             // Fail when trying to update the service again, even though no agent instances are registered yet
             await expect(
-                serviceManager.connect(owner).update(configHash, newAgentIds,
+                serviceManager.connect(owner).update(ETHAddress, configHash, newAgentIds,
                     newAgentParams, newMaxThreshold, serviceIds[0])
             ).to.be.revertedWith("WrongServiceState");
 
@@ -630,7 +670,7 @@ describe("ServiceManagerToken", function () {
                 maxThreshold);
             await serviceManager.connect(owner).activateRegistration(serviceIds[0], {value: regDeposit});
             await serviceManager.connect(owner).terminate(serviceIds[0]);
-            await serviceManager.connect(owner).update(configHash, [1, 2, 3],
+            await serviceManager.connect(owner).update(ETHAddress, configHash, [1, 2, 3],
                 [[3, regBond], [0, regBond], [4, regBond]], maxThreshold, serviceIds[0]);
         });
     });

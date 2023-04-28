@@ -66,14 +66,9 @@ contract OperatorWhitelist {
     /// @param operators Set of operator addresses.
     /// @param statuses Set of whitelisting statuses.
     function setOperatorsStatuses(uint256 serviceId, address[] memory operators, bool[] memory statuses) external {
-        // Check for the array length
-        if (operators.length != statuses.length) {
+        // Check for the array length and that they are not empty
+        if (operators.length == 0 || operators.length != statuses.length) {
             revert WrongArrayLength(operators.length, statuses.length);
-        }
-
-        // Check that the arrays are not empty
-        if (operators.length == 0) {
-            revert WrongArrayLength(0, 1);
         }
 
         // Check that the service owner is the msg.sender
@@ -82,7 +77,6 @@ contract OperatorWhitelist {
             revert OwnerOnly(serviceOwner, msg.sender);
         }
 
-        bool atLeastOneOperatorWhitelisted;
         // Set operators whitelisting status
         for (uint256 i = 0; i < operators.length; ++i) {
             // Check for the zero address
@@ -91,19 +85,8 @@ contract OperatorWhitelist {
             }
             // Set the operator whitelisting status
             mapServiceIdOperators[serviceId][operators[i]] = statuses[i];
-
-            // Check if at least one operator is whitelisted
-            if (statuses[i]) {
-                atLeastOneOperatorWhitelisted = true;
-            }
         }
         emit OperatorsWhitelistUpdated(msg.sender, serviceId, operators, statuses);
-
-        // Set the operator whitelisting check, if at least one of the operators are whitelisted
-        if (atLeastOneOperatorWhitelisted) {
-            mapServiceIdOperatorsCheck[serviceId] = true;
-            emit OperatorsWhitelistCheckSet(msg.sender, serviceId);
-        }
     }
 
     /// @dev Gets operator whitelisting status.
