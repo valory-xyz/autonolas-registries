@@ -1,0 +1,13 @@
+{
+  "agentInstances": [
+    "0x31D3202d8744B16A120117A053459DDFAE93c855",
+    "0x62815Bcc2941394801B2DA338568afdf93959E7c"
+  ],
+  "serviceMultisigAddress": "0x2A1Ec17463Fc12a1068DDE7B789B922276A26D27",
+  "serviceOwnerAddress": "0x52370eE170c0E2767B32687166791973a0dE7966",
+  "multisendAddress": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+  "threshold": "2",
+  "nonce": "4",
+  "chainId": "5",
+  "approvedHash": false
+}

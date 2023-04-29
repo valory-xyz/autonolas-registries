@@ -59,13 +59,15 @@ Once all agent instances are registered, the service owner re-deploys the servic
 The implementation of such multisig is provided here:
 - [GnosisSafeSameAddressMultisig](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/multisigs/GnosisSafeSameAddressMultisig.sol)
 
+To verify the multisig data, use the hardhat script along with the helper JSON file located [here](https://github.com/valory-xyz/autonolas-registries/blob/main/scripts/multisig/)
+
 As more multisigs come into play, their underlying implementation of the generic multisig will be added.
 
 ## Development
 
 ### Prerequisites
 - This repository follows the standard [`Hardhat`](https://hardhat.org/tutorial/) development process.
-- The code is written on Solidity `0.8.15`.
+- The code is written on Solidity `0.8.15` and `0.8.19`.
 - The standard versions of Node.js along with Yarn are required to proceed further (confirmed to work with Yarn `1.22.10` and npx/npm `6.14.11` and node `v12.22.0`).
 
 ### Install the dependencies
