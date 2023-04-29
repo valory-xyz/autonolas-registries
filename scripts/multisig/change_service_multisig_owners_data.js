@@ -91,10 +91,10 @@ async function main() {
             { type: "address", name: "refundReceiver" },
             { type: "uint256", name: "nonce" },
         ]
-    }
+    };
     // Hash the Safe transaction
     const hash = ethers.utils._TypedDataEncoder.hash({ verifyingContract: serviceMultisigAddress, chainId }, EIP712_SAFE_TX_TYPE, safeTx);
-    console.log("\nFull unsigned safeTx:")
+    console.log("\nFull unsigned safeTx:");
     console.log(safeTx);
     console.log("\nsafeTx hash to sign by the service owner:");
     console.log(hash);
@@ -106,7 +106,7 @@ async function main() {
         // Since the hash is approved, it's enough to base one on the service owner address
         signatureBytes = "0x000000000000000000000000" + serviceOwnerAddress.slice(2) +
             "0000000000000000000000000000000000000000000000000000000000000000" + "01";
-        console.log("\nApproved hash signatureBytes value (without initial \"0x\")")
+        console.log("\nApproved hash signatureBytes value (without initial \"0x\")");
     } else {
         console.log("\nsafeTx hash needs to be signed, and the resulting signature has to be assigned to the signatureBytes variable.");
         console.log("The mock signatureBytes is set to 65 bytes of repeating \"bb\". Substitute it with the real signature string in the final safeTx bytecode.");
