@@ -33,6 +33,10 @@ contract OperatorSignedHashes {
     bytes32 public immutable domainSeparator;
     // Original chain Id
     uint256 public immutable chainId;
+    // Name hash
+    bytes32 public immutable nameHash;
+    // Version hash
+    bytes32 public immutable versionHash;
 
     // Name of a signing domain
     string public name;
@@ -43,19 +47,31 @@ contract OperatorSignedHashes {
     mapping(address => uint256) public mapOperatorUnbondNonces;
     // Mapping operator address => register agents nonce
     mapping(address => uint256) public mapOperatorRegisterAgentsNonces;
-    // Mapping operator => approved hashes status
+    // Mapping operator address => approved hashes status
     mapping(address => mapping(bytes32 => bool)) public mapOperatorApprovedHashes;
 
     constructor(string memory _name, string memory _version) {
         name = _name;
         version = _version;
+        nameHash = keccak256(bytes(_name));
+        versionHash = keccak256(bytes(_version));
         chainId = block.chainid;
         domainSeparator = _computeDomainSeparator();
     }
 
-    function _verifySignature(bytes32 txHash, bytes memory signature) internal view returns (address recOperator) {
+    function _verifySignedHash(
+        address operator,
+        bytes32 txHash,
+        bytes memory signature
+    ) internal view returns (bool)
+    {
         // Decode the signature
         uint8 v = uint8(signature[64]);
+        // Check if v is zero because it was signed by the ledger
+        if (v == 0 && operator.code.length == 0) {
+            // In case of a non-contract, adjust v to follow the standard ecrecover case
+            v = 27;
+        }
         bytes32 r;
         bytes32 s;
         // solhint-disable-next-line no-inline-assembly
@@ -64,24 +80,33 @@ contract OperatorSignedHashes {
             s := mload(add(signature, 64))
         }
 
+        address recOperator;
+        // Go through signature cases based on the value of v
         if (v == 0) {
             // Contract signature case, where the address of the contract is encoded into r
             recOperator = address(uint160(uint256(r)));
 
+            // Check for the signature validity in the contract
             if (ISignatureValidator(recOperator).isValidSignature(txHash, signature) != MAGIC_VALUE) {
-                recOperator = address(0);
+                return false;
             }
         } else if (v == 1) {
             // Case of an approved hash, where the address of the operator is encoded into r
             recOperator = address(uint160(uint256(r)));
             // Hashes have been pre-approved by the operator via a separate transaction, see operatorApproveHash() function
             if (!mapOperatorApprovedHashes[recOperator][txHash]) {
-                recOperator = address(0);
+                return false;
             }
         } else {
             // Case of ecrecover with the transaction hash for EOA signatures
             recOperator = ecrecover(txHash, v, r, s);
         }
+
+        // Final check is fo the operator address itself
+        if (recOperator != operator || recOperator == address(0)) {
+            return false;
+        }
+        return true;
     }
 
     function operatorApproveHash(bytes32 hash) external {
@@ -93,8 +118,8 @@ contract OperatorSignedHashes {
         return keccak256(
             abi.encode(
                 DOMAIN_SEPARATOR_TYPE_HASH,
-                keccak256(bytes(name)),
-                keccak256(bytes(version)),
+                nameHash,
+                versionHash,
                 block.chainid,
                 address(this)
             )

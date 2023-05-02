@@ -154,18 +154,22 @@ describe("ServiceRedeployment", function () {
             await safeContracts.executeTx(serviceOwnerMultisig, txHashData, signMessageData, 0);
 
             // Get the unbond function related data for the operator signed transaction
-            const unbondTx = { operator: operator.address, serviceId: serviceId };
+            const unbondNonce = await serviceManager.mapOperatorUnbondNonces(operator.address);
+            const unbondTx = { operator: operator.address, serviceOwner: serviceOwnerAddress, serviceId: serviceId, nonce: unbondNonce };
             const chainId = (await ethers.provider.getNetwork()).chainId;
             const EIP712_UNBOND_TX_TYPE = {
-                // "Unbond(address operator,uint256 serviceId)"
+                // "Unbond(address operator,address serviceOwner,uint256 serviceId,uint256 nonce)"
                 Unbond: [
                     { type: "address", name: "operator" },
+                    { type: "address", name: "serviceOwner" },
                     { type: "uint256", name: "serviceId" },
+                    { type: "uint256", name: "nonce" },
                 ]
             };
 
-            const managerVersion = await serviceManager.VERSION();
-            const EIP712_DOMAIN = {version: managerVersion, chainId: chainId, verifyingContract: serviceManager.address};
+            const managerName = await serviceManager.name();
+            const managerVersion = await serviceManager.version();
+            const EIP712_DOMAIN = { name: managerName, version: managerVersion, chainId: chainId, verifyingContract: serviceManager.address };
             // Get the signature of an unbond transaction
             let signatureBytes = await operator._signTypedData(EIP712_DOMAIN, EIP712_UNBOND_TX_TYPE, unbondTx);
             // Unbond the agent instance in order to update the service using a pre-signed operator message
@@ -175,7 +179,6 @@ describe("ServiceRedeployment", function () {
             signMessageData = [await safeContracts.safeSignMessage(serviceOwnerOwners[0], serviceOwnerMultisig, txHashData, 0),
                 await safeContracts.safeSignMessage(serviceOwnerOwners[1], serviceOwnerMultisig, txHashData, 0)];
             await safeContracts.executeTx(serviceOwnerMultisig, txHashData, signMessageData, 0);
-            //await serviceManager.connect().unbondWithSignature(operator.address, serviceId, signatureBytes);
 
             // At this point of time the agent instance gives the ownership rights to the service owner
             // In other words, swap the owner of the multisig to the service owner (agent instance to give up rights for the service owner)
@@ -205,17 +208,20 @@ describe("ServiceRedeployment", function () {
             await safeContracts.executeTx(serviceOwnerMultisig, txHashData, signMessageData, 0);
 
             // Get the register agents function related data for the operator signed transaction
+            const registerAgentsNonce = await serviceManager.mapOperatorRegisterAgentsNonces(operator.address);
             const agentIds = new Array(4).fill(agentId);
             // Get the solidity counterpart of keccak256(abi.encode(agentInstances, agentIds))
             const agentsData = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(["address[]", "uint32[]"],
                 [agentInstancesAddresses, agentIds]));
-            const registerAgentsTx = { operator: operator.address, serviceId: serviceId, agentsData: agentsData };
+            const registerAgentsTx = { operator: operator.address, serviceOwner: serviceOwnerAddress, serviceId: serviceId, agentsData: agentsData, nonce: registerAgentsNonce };
             const EIP712_REGISTER_AGENTS_TX_TYPE = {
-                // "RegisterAgents(address operator,uint256 serviceId,bytes32 agentsData)"
+                // "RegisterAgents(address operator,address serviceOwner,uint256 serviceId,bytes32 agentsData,uint256 nonce)"
                 RegisterAgents: [
                     { type: "address", name: "operator" },
+                    { type: "address", name: "serviceOwner" },
                     { type: "uint256", name: "serviceId" },
                     { type: "bytes32", name: "agentsData" },
+                    { type: "uint256", name: "nonce" },
                 ]
             };
 

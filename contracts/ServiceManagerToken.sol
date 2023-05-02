@@ -45,7 +45,7 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
     /// @param _serviceRegistry Service Registry contract address.
     /// @param _serviceRegistryTokenUtility Service Registry Token Utility contract address.
     constructor(address _serviceRegistry, address _serviceRegistryTokenUtility, address _operatorWhitelist)
-        OperatorSignedHashes("Service Manager", "1.1.0")
+        OperatorSignedHashes("Service Manager Token", "1.1.1")
     {
         // Check for the Service Registry related contract zero addresses
         if (_serviceRegistry == address(0) || _serviceRegistryTokenUtility == address(0)) {
@@ -308,19 +308,16 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
     {
         // Check the service owner
         address serviceOwner = IToken(serviceRegistry).ownerOf(serviceId);
-        if (msg.sender != serviceOwner) {
-            revert OwnerOnly(msg.sender, serviceOwner);
-        }
+//        if (msg.sender != serviceOwner) {
+//            revert OwnerOnly(msg.sender, serviceOwner);
+//        }
 
         // Get the unbond transaction hash
         uint256 nonce = mapOperatorUnbondNonces[operator];
         bytes32 txHash = getUnbondHash(operator, serviceOwner, serviceId, nonce);
 
-        // Get the recovered operator address
-        address recOperator = _verifySignature(txHash, signature);
-
-        // Compare the obtained operator address with the tx originating one
-        if (recOperator != operator || recOperator == address(0)) {
+        // Verify the signed hash against the operator address
+        if (!_verifySignedHash(operator, txHash, signature)) {
             revert WrongOperator(serviceId);
         }
 
@@ -364,11 +361,8 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
         uint256 nonce = mapOperatorRegisterAgentsNonces[operator];
         bytes32 txHash = getRegisterAgentsHash(operator, serviceOwner, serviceId, agentInstances, agentIds, nonce);
 
-        // Get the recovered operator address
-        address recOperator = _verifySignature(txHash, signature);
-
-        // Compare the obtained operator address with the tx originating one
-        if (recOperator != operator || recOperator == address(0)) {
+        // Verify the signed hash against the operator address
+        if (!_verifySignedHash(operator, txHash, signature)) {
             revert WrongOperator(serviceId);
         }
 
