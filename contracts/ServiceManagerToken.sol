@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import "./GenericManager.sol";
 import "./interfaces/IService.sol";
 import "./interfaces/IServiceTokenUtility.sol";
+import "./utils/OperatorSignedHashes.sol";
 
 // Operator whitelist interface
 interface IOperatorWhitelist {
@@ -25,7 +26,7 @@ interface IToken {
 /// @title Service Manager - Periphery smart contract for managing services with custom ERC20 tokens or ETH
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author AL
-contract ServiceManagerToken is GenericManager {
+contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
     event OperatorWhitelistUpdated(address indexed operatorWhitelist);
     event CreateMultisig(address indexed multisig);
 
@@ -39,13 +40,13 @@ contract ServiceManagerToken is GenericManager {
     uint96 public constant BOND_WRAPPER = 1;
     // Operator whitelist address
     address public operatorWhitelist;
-    // Service manager version number
-    string public constant VERSION = "1.1.0";
 
     /// @dev ServiceRegistryTokenUtility constructor.
     /// @param _serviceRegistry Service Registry contract address.
     /// @param _serviceRegistryTokenUtility Service Registry Token Utility contract address.
-    constructor(address _serviceRegistry, address _serviceRegistryTokenUtility, address _operatorWhitelist) {
+    constructor(address _serviceRegistry, address _serviceRegistryTokenUtility, address _operatorWhitelist)
+        OperatorSignedHashes("Service Manager", "1.1.0")
+    {
         // Check for the Service Registry related contract zero addresses
         if (_serviceRegistry == address(0) || _serviceRegistryTokenUtility == address(0)) {
             revert ZeroAddress();
@@ -312,43 +313,20 @@ contract ServiceManagerToken is GenericManager {
         }
 
         // Get the unbond transaction hash
-        bytes32 txHash = getUnbondHash(operator, serviceId);
-        // Decode the signature
-        uint8 v = uint8(signature[64]);
-        bytes32 r;
-        bytes32 s;
-
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            r := mload(add(signature, 32))
-            s := mload(add(signature, 64))
-        }
+        uint256 nonce = mapOperatorUnbondNonces[operator];
+        bytes32 txHash = getUnbondHash(operator, serviceOwner, serviceId, nonce);
 
         // Get the recovered operator address
-        address recOperator;
-
-        if (v == 0) {
-            // If v is 0 then it is a contract signature
-            // When handling contract signatures the address of the contract is encoded into r
-            recOperator = address(uint160(uint256(r)));
-
-            //require(ISignatureValidator(currentOwner).isValidSignature(data, signature) == EIP1271_MAGIC_VALUE, "GS024");
-        } else if (v == 1) {
-            // If v is 1 then it is an approved hash
-            // When handling approved hashes the address of the approver is encoded into r
-            recOperator = address(uint160(uint256(r)));
-            // Hashes are automatically approved by the sender of the message or when they have been pre-approved via a separate transaction
-            //require(msg.sender == currentOwner || approvedHashes[currentOwner][dataHash] != 0, "GS025");
-        } else {
-            // Default is the ecrecover flow with the provided data hash
-            // Use ecrecover with the messageHash for EOA signatures
-            recOperator = ecrecover(txHash, v, r, s);
-        }
+        address recOperator = _verifySignature(txHash, signature);
 
         // Compare the obtained operator address with the tx originating one
-        if (recOperator != operator || recOperator == address (0)) {
+        if (recOperator != operator || recOperator == address(0)) {
             revert WrongOperator(serviceId);
         }
+
+        // Update corresponding nonce value
+        nonce++;
+        mapOperatorUnbondNonces[operator] = nonce;
 
         // Withdraw the ERC20 token if the service is token-based
         uint256 tokenRefund = IServiceTokenUtility(serviceRegistryTokenUtility).unbondTokenRefund(operator, serviceId);
@@ -368,7 +346,7 @@ contract ServiceManagerToken is GenericManager {
     /// @param agentInstances Agent instance addresses.
     /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
     /// @param signature Signature byte array associated with operator transaction hash signature.
-    /// @return success True, if function executed successfully.
+    /// @return success True, if the function executed successfully.
     function registerAgentsWithSignature(
         address operator,
         uint256 serviceId,
@@ -377,117 +355,40 @@ contract ServiceManagerToken is GenericManager {
         bytes memory signature
     ) external payable returns (bool success) {
         // Check the service owner
-//        address serviceOwner = IToken(serviceRegistry).ownerOf(serviceId);
-//        if (msg.sender != serviceOwner) {
-//            revert OwnerOnly(msg.sender, serviceOwner);
-//        }
+        address serviceOwner = IToken(serviceRegistry).ownerOf(serviceId);
+        if (msg.sender != serviceOwner) {
+            revert OwnerOnly(msg.sender, serviceOwner);
+        }
 
         // Get register agents transaction hash
-        bytes32 txHash = getRegisterAgentsHash(operator, serviceId, agentInstances, agentIds);
-        // Decode the signature
-        uint8 v = uint8(signature[64]);
-        bytes32 r;
-        bytes32 s;
-
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            r := mload(add(signature, 32))
-            s := mload(add(signature, 64))
-        }
+        uint256 nonce = mapOperatorRegisterAgentsNonces[operator];
+        bytes32 txHash = getRegisterAgentsHash(operator, serviceOwner, serviceId, agentInstances, agentIds, nonce);
 
         // Get the recovered operator address
-        address recOperator;
-
-        if (v == 0) {
-            // If v is 0 then it is a contract signature
-            // When handling contract signatures the address of the contract is encoded into r
-            recOperator = address(uint160(uint256(r)));
-
-            //require(ISignatureValidator(currentOwner).isValidSignature(data, signature) == EIP1271_MAGIC_VALUE, "GS024");
-        } else if (v == 1) {
-            // If v is 1 then it is an approved hash
-            // When handling approved hashes the address of the approver is encoded into r
-            recOperator = address(uint160(uint256(r)));
-            // Hashes are automatically approved by the sender of the message or when they have been pre-approved via a separate transaction
-            //require(msg.sender == currentOwner || approvedHashes[currentOwner][dataHash] != 0, "GS025");
-        } else {
-            // Default is the ecrecover flow with the provided data hash
-            // Use ecrecover with the messageHash for EOA signatures
-            recOperator = ecrecover(txHash, v, r, s);
-        }
+        address recOperator = _verifySignature(txHash, signature);
 
         // Compare the obtained operator address with the tx originating one
-        if (recOperator != operator || recOperator == address (0)) {
+        if (recOperator != operator || recOperator == address(0)) {
             revert WrongOperator(serviceId);
         }
 
+        // Update corresponding nonce value
+        nonce++;
+        mapOperatorRegisterAgentsNonces[operator] = nonce;
+
         // Record the actual ERC20 bond
-        bool isTokenSecured = IServiceTokenUtility(serviceRegistryTokenUtility).registerAgentsTokenDeposit(msg.sender,
+        bool isTokenSecured = IServiceTokenUtility(serviceRegistryTokenUtility).registerAgentsTokenDeposit(operator,
             serviceId, agentIds);
 
         // Register agent instances in a main ServiceRegistry contract
         if (isTokenSecured) {
             // If the service Id is based on the ERC20 token, the provided value to the standard registration is 1
             // multiplied by the number of agent instances
-            success = IService(serviceRegistry).registerAgents{value: agentInstances.length * BOND_WRAPPER}(msg.sender,
+            success = IService(serviceRegistry).registerAgents{value: agentInstances.length * BOND_WRAPPER}(operator,
                 serviceId, agentInstances, agentIds);
         } else {
             // Otherwise follow the standard msg.value path
-            success = IService(serviceRegistry).registerAgents{value: msg.value}(msg.sender, serviceId, agentInstances, agentIds);
+            success = IService(serviceRegistry).registerAgents{value: msg.value}(operator, serviceId, agentInstances, agentIds);
         }
-    }
-
-    function computeDomainSeparator() internal view returns (bytes32) {
-        return keccak256(
-            abi.encode(
-                keccak256("EIP712Domain(string version,uint256 chainId,address verifyingContract)"),
-                keccak256(bytes(VERSION)),
-                block.chainid,
-                address(this)
-            )
-        );
-    }
-
-    function DOMAIN_SEPARATOR() public view returns (bytes32) {
-        //return block.chainid == INITIAL_CHAIN_ID ? INITIAL_DOMAIN_SEPARATOR : computeDomainSeparator();
-        return computeDomainSeparator();
-    }
-
-    function getUnbondHash(address operator, uint256 serviceId) public view returns (bytes32) {
-        return keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                DOMAIN_SEPARATOR(),
-                keccak256(
-                    abi.encode(
-                        keccak256("Unbond(address operator,uint256 serviceId)"),
-                        operator,
-                        serviceId
-                    )
-                )
-            )
-        );
-    }
-
-    function getRegisterAgentsHash(
-        address operator,
-        uint256 serviceId,
-        address[] memory agentInstances,
-        uint32[] memory agentIds
-    ) public view returns (bytes32) {
-        return keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                DOMAIN_SEPARATOR(),
-                keccak256(
-                    abi.encode(
-                        keccak256("RegisterAgents(address operator,uint256 serviceId,bytes32 agentsData)"),
-                        operator,
-                        serviceId,
-                        keccak256(abi.encode(agentInstances, agentIds))
-                    )
-                )
-            )
-        );
     }
 }
