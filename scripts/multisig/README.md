@@ -40,11 +40,12 @@ Note that, on the local environment, it is not necessary to add `--network netwo
 
 ### Script 1: change_service_multsig_owners_data.js
 
-The script `change_service_multsig_owners_data.js` has the following provides: 
-- the `safeTx` that allows the current owner to give up ownership of the multisig, add the new owners, and update the multisig threshold;  
-- the `hash` of the safeTx  that has to be approved by the current service multisig owner; 
-- the `signatureByte` that mock the signature string;
-- the `Data` the multisend data  with the signature bytes that has to be executed by the multisig proxy
+The script `change_service_multsig_owners_data.js` has the following outputs: 
+- `safeTx` that allows the current owner to give up ownership of the multisig, add the new owners, and update the multisig threshold;  
+- `hash` of the `safeTx` that has to be approved by the current service multisig owner; 
+- `signatureByte` that mocks the signature string or provides the required one for the approved hash transaction;
+- `safeExecData` the multisend data  with the signature bytes that has to be executed by the multisig proxy;
+- `packedData` the ServiceRegistry contract `deploy()` function bytes data.
 
 
 
