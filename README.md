@@ -59,7 +59,6 @@ Once all agent instances are registered, the service owner re-deploys the servic
 The implementation of such multisig is provided here:
 - [GnosisSafeSameAddressMultisig](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/multisigs/GnosisSafeSameAddressMultisig.sol)
 
-To verify the multisig data, use the hardhat script along with the helper JSON file located [here](https://github.com/valory-xyz/autonolas-registries/blob/main/scripts/multisig/)
 
 As more multisigs come into play, their underlying implementation of the generic multisig will be added.
 
