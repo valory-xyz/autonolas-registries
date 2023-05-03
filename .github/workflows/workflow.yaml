@@ -11,9 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository and submodules
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
+
+      - name: Get a specific Node.js version such that hardhat does not periodically hang
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.15.0"
 
       # Install modules
       - name: Install modules
