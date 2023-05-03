@@ -61,7 +61,6 @@ async function main() {
         // Note that the prevOwner is the very first added address as it corresponds to the reverse order of added addresses
         // The order in the gnosis safe multisig is as follows: sentinelOwners => agentInstances[last].address => ... =>
         // => newOwnerAddresses[1].address => serviceOwnerAddress
-        // If changing just one owner to another, then instead of newOwnerAddresses[1].address we need sentinelOwners address
         callData.push(gnosisSafe.interface.encodeFunctionData("swapOwner", [agentInstances[1], serviceOwnerAddress, agentInstances[0]]));
         txs.push(safeContracts.buildSafeTransaction({to: serviceMultisigAddress, data: callData[callData.length - 1], nonce: 0}));
     } else {
