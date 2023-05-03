@@ -154,7 +154,7 @@ describe("ServiceRedeployment", function () {
             await safeContracts.executeTx(serviceOwnerMultisig, txHashData, signMessageData, 0);
 
             // Get the unbond function related data for the operator signed transaction
-            const unbondNonce = await serviceManager.mapOperatorUnbondNonces(operator.address);
+            const unbondNonce = await serviceManager.getOperatorUnbondNonce(operator.address, serviceId);
             const unbondTx = { operator: operator.address, serviceOwner: serviceOwnerAddress, serviceId: serviceId, nonce: unbondNonce };
             const chainId = (await ethers.provider.getNetwork()).chainId;
             const EIP712_UNBOND_TX_TYPE = {
@@ -179,6 +179,8 @@ describe("ServiceRedeployment", function () {
             signMessageData = [await safeContracts.safeSignMessage(serviceOwnerOwners[0], serviceOwnerMultisig, txHashData, 0),
                 await safeContracts.safeSignMessage(serviceOwnerOwners[1], serviceOwnerMultisig, txHashData, 0)];
             await safeContracts.executeTx(serviceOwnerMultisig, txHashData, signMessageData, 0);
+            // Check that the unbond nonce has changed
+            expect(await serviceManager.getOperatorUnbondNonce(operator.address, serviceId)).to.equal(unbondNonce + 1);
 
             // At this point of time the agent instance gives the ownership rights to the service owner
             // In other words, swap the owner of the multisig to the service owner (agent instance to give up rights for the service owner)
@@ -208,7 +210,7 @@ describe("ServiceRedeployment", function () {
             await safeContracts.executeTx(serviceOwnerMultisig, txHashData, signMessageData, 0);
 
             // Get the register agents function related data for the operator signed transaction
-            const registerAgentsNonce = await serviceManager.mapOperatorRegisterAgentsNonces(operator.address);
+            const registerAgentsNonce = await serviceManager.getOperatorRegisterAgentsNonce(operator.address, serviceId);
             const agentIds = new Array(4).fill(agentId);
             // Get the solidity counterpart of keccak256(abi.encode(agentInstances, agentIds))
             const agentsData = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(["address[]", "uint32[]"],
@@ -236,6 +238,8 @@ describe("ServiceRedeployment", function () {
             signMessageData = [await safeContracts.safeSignMessage(serviceOwnerOwners[0], serviceOwnerMultisig, txHashData, 0),
                 await safeContracts.safeSignMessage(serviceOwnerOwners[1], serviceOwnerMultisig, txHashData, 0)];
             await safeContracts.executeTx(serviceOwnerMultisig, txHashData, signMessageData, 0);
+            // Check that the register agents nonce has changed
+            expect(await serviceManager.getOperatorRegisterAgentsNonce(operator.address, serviceId)).to.equal(registerAgentsNonce + 1);
 
             /// Register agent instances with signature
             //await serviceManager.connect(operator).registerAgents(serviceId, agentInstancesAddresses, agentIds, {value: 4 * regBond});

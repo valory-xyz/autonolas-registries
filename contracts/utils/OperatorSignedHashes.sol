@@ -43,13 +43,16 @@ contract OperatorSignedHashes {
     // Version of a signing domain
     string public version;
 
-    // Mapping operator address => unbond nonce
-    mapping(address => uint256) public mapOperatorUnbondNonces;
-    // Mapping operator address => register agents nonce
-    mapping(address => uint256) public mapOperatorRegisterAgentsNonces;
+    // Map of operator address and serviceId => unbond nonce
+    mapping(uint256 => uint256) public mapOperatorUnbondNonces;
+    // Map of operator address and serviceId => register agents nonce
+    mapping(uint256 => uint256) public mapOperatorRegisterAgentsNonces;
     // Mapping operator address => approved hashes status
     mapping(address => mapping(bytes32 => bool)) public mapOperatorApprovedHashes;
 
+    /// @dev Contract constructor.
+    /// @param _name Name of a signing domain.
+    /// @param _version Version of a signing domain.
     constructor(string memory _name, string memory _version) {
         name = _name;
         version = _version;
@@ -59,12 +62,22 @@ contract OperatorSignedHashes {
         domainSeparator = _computeDomainSeparator();
     }
 
+    /// @dev Verifies provided message hash against its signature.
+    /// @param operator Operator address.
+    /// @param msgHash Message hash.
+    /// @param signature Signature bytes associated with the signed message hash.
+    /// @return True, if the signature verification is successful.
     function _verifySignedHash(
         address operator,
-        bytes32 txHash,
+        bytes32 msgHash,
         bytes memory signature
     ) internal view returns (bool)
     {
+        // Check for the operator zero address
+        if (operator == address(0)) {
+            return false;
+        }
+
         // Decode the signature
         uint8 v = uint8(signature[64]);
         // Check if v is zero because it was signed by the ledger
@@ -87,33 +100,35 @@ contract OperatorSignedHashes {
             recOperator = address(uint160(uint256(r)));
 
             // Check for the signature validity in the contract
-            if (ISignatureValidator(recOperator).isValidSignature(txHash, signature) != MAGIC_VALUE) {
+            if (ISignatureValidator(recOperator).isValidSignature(msgHash, signature) != MAGIC_VALUE) {
                 return false;
             }
         } else if (v == 1) {
             // Case of an approved hash, where the address of the operator is encoded into r
             recOperator = address(uint160(uint256(r)));
-            // Hashes have been pre-approved by the operator via a separate transaction, see operatorApproveHash() function
-            if (!mapOperatorApprovedHashes[recOperator][txHash]) {
+
+            // Hashes have been pre-approved by the operator via a separate message, see operatorApproveHash() function
+            if (!mapOperatorApprovedHashes[recOperator][msgHash]) {
                 return false;
             }
         } else {
-            // Case of ecrecover with the transaction hash for EOA signatures
-            recOperator = ecrecover(txHash, v, r, s);
+            // Case of ecrecover with the message hash for EOA signatures
+            recOperator = ecrecover(msgHash, v, r, s);
         }
 
         // Final check is fo the operator address itself
-        if (recOperator != operator || recOperator == address(0)) {
-            return false;
-        }
-        return true;
+        return recOperator == operator;
     }
 
+    /// @dev Approves message hash for the operator address.
+    /// @param hash Provided message hash to approve.
     function operatorApproveHash(bytes32 hash) external {
         mapOperatorApprovedHashes[msg.sender][hash] = true;
         emit OperatorHashApproved(msg.sender, hash);
     }
 
+    /// @dev Computes domain separator hash.
+    /// @return Hash of the domain separator based on its name, version, chain Id and contract address.
     function _computeDomainSeparator() internal view returns (bytes32) {
         return keccak256(
             abi.encode(
@@ -126,10 +141,18 @@ contract OperatorSignedHashes {
         );
     }
 
+    /// @dev Gets the already computed domain separator of recomputes one if the chain Id is different.
+    /// @return Original or recomputed domain separator.
     function DOMAIN_SEPARATOR() public view returns (bytes32) {
         return block.chainid == chainId ? domainSeparator : _computeDomainSeparator();
     }
 
+    /// @dev Gets the unbond message hash for the operator.
+    /// @param operator Operator address.
+    /// @param serviceOwner Service owner address.
+    /// @param serviceId Service Id.
+    /// @param nonce Nonce for the unbond message from the pair of (operator | service Id).
+    /// @return Computed message hash.
     function getUnbondHash(
         address operator,
         address serviceOwner,
@@ -154,6 +177,14 @@ contract OperatorSignedHashes {
         );
     }
 
+    /// @dev Gets the register agents message hash for the operator.
+    /// @param operator Operator address.
+    /// @param serviceOwner Service owner address.
+    /// @param serviceId Service Id.
+    /// @param agentInstances Agent instance addresses operator is going to register.
+    /// @param agentIds Agent Ids corresponding to each agent instance address.
+    /// @param nonce Nonce for the register agents message from the pair of (operator | service Id).
+    /// @return Computed message hash.
     function getRegisterAgentsHash(
         address operator,
         address serviceOwner,
@@ -181,7 +212,35 @@ contract OperatorSignedHashes {
         );
     }
 
+    /// @dev Checks if the hash provided by the operator is approved.
+    /// @param operator Operator address.
+    /// @param hash Message hash.
+    /// @return True, if the hash provided by the operator is approved.
     function isOperatorHashApproved(address operator, bytes32 hash) external view returns (bool) {
         return mapOperatorApprovedHashes[operator][hash];
+    }
+
+    /// @dev Gets the (operator | service Id) nonce for the unbond message data.
+    /// @param operator Operator address.
+    /// @param serviceId Service Id.
+    /// @return nonce Obtained nonce.
+    function getOperatorUnbondNonce(address operator, uint256 serviceId) external view returns (uint256 nonce) {
+        // operator occupies first 160 bits
+        uint256 operatorService = uint256(uint160(operator));
+        // serviceId occupies next 32 bits as serviceId is limited by the 2^32 - 1 value
+        operatorService |= serviceId << 160;
+        nonce = mapOperatorUnbondNonces[operatorService];
+    }
+
+    /// @dev Gets the (operator | service Id) nonce for the register agents message data.
+    /// @param operator Operator address.
+    /// @param serviceId Service Id.
+    /// @return nonce Obtained nonce.
+    function getOperatorRegisterAgentsNonce(address operator, uint256 serviceId) external view returns (uint256 nonce) {
+        // operator occupies first 160 bits
+        uint256 operatorService = uint256(uint160(operator));
+        // serviceId occupies next 32 bits as serviceId is limited by the 2^32 - 1 value
+        operatorService |= serviceId << 160;
+        nonce = mapOperatorRegisterAgentsNonces[operatorService];
     }
 }

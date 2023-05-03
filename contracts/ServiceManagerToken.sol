@@ -287,18 +287,17 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
         }
     }
 
-    /// @dev Unbonds agent instances of the operator from the service via the operator's pre-signed tx hash.
-    /// @notice Note that this function accounts for the operator being the EOA or the contract that has an
-    ///         isValidSignature() function that would confirm the tx being signed by the operator contract.
-    ///         Otherwise, if the transaction hash has been pre-defined, a third-party contract has to be called
-    ///         to verify the signed hash, similar to the Safe contract implementation v1.3.0:
+    /// @dev Unbonds agent instances of the operator by the service owner via the operator's pre-signed message hash.
+    /// @notice Note that this function accounts for the operator being the EOA, or the contract that has an
+    ///         isValidSignature() function that would confirm the message hash was signed by the operator contract.
+    ///         Otherwise, if the message hash has been pre-approved, the corresponding map of hashes is going to
+    ///         to verify the signed hash, similar to the Safe contract implementation in v1.3.0:
     ///         https://github.com/safe-global/safe-contracts/blob/186a21a74b327f17fc41217a927dea7064f74604/contracts/GnosisSafe.sol#L240-L304
     ///         Also note that only the service owner is able to call this function on behalf of the operator.
-    ///         In order for the operator to disable its signature, the third-party contract is utilized.
-    /// @param operator Operator address that signed the unbond transaction hash.
+    /// @param operator Operator address that signed the unbond message hash.
     /// @param serviceId Service Id.
-    /// @param signature Signature byte array associated with operator transaction hash signature.
-    /// @return success True, if function executed successfully.
+    /// @param signature Signature byte array associated with operator message hash signature.
+    /// @return success True, if the function executed successfully.
     /// @return refund The amount of refund returned to the operator.
     function unbondWithSignature(
         address operator,
@@ -308,22 +307,29 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
     {
         // Check the service owner
         address serviceOwner = IToken(serviceRegistry).ownerOf(serviceId);
-//        if (msg.sender != serviceOwner) {
-//            revert OwnerOnly(msg.sender, serviceOwner);
-//        }
+        if (msg.sender != serviceOwner) {
+            revert OwnerOnly(msg.sender, serviceOwner);
+        }
 
-        // Get the unbond transaction hash
-        uint256 nonce = mapOperatorUnbondNonces[operator];
-        bytes32 txHash = getUnbondHash(operator, serviceOwner, serviceId, nonce);
+        // Get the (operator | serviceId) nonce for the unbond message
+        // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
+        // as another service might use the operator address at the same time frame
+        // operator occupies first 160 bits
+        uint256 operatorService = uint256(uint160(operator));
+        // serviceId occupies next 32 bits
+        operatorService |= serviceId << 160;
+        uint256 nonce = mapOperatorUnbondNonces[operatorService];
+        // Get the unbond message hash
+        bytes32 msgHash = getUnbondHash(operator, serviceOwner, serviceId, nonce);
 
         // Verify the signed hash against the operator address
-        if (!_verifySignedHash(operator, txHash, signature)) {
+        if (!_verifySignedHash(operator, msgHash, signature)) {
             revert WrongOperator(serviceId);
         }
 
         // Update corresponding nonce value
         nonce++;
-        mapOperatorUnbondNonces[operator] = nonce;
+        mapOperatorUnbondNonces[operatorService] = nonce;
 
         // Withdraw the ERC20 token if the service is token-based
         uint256 tokenRefund = IServiceTokenUtility(serviceRegistryTokenUtility).unbondTokenRefund(operator, serviceId);
@@ -337,13 +343,19 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
         }
     }
 
-    /// @dev Registers agent instances.
-    /// @param operator Operator address.
-    /// @param serviceId Service Id to be updated.
+    /// @dev Registers agent instances of the operator by the service owner via the operator's pre-signed message hash.
+    /// @notice Note that this function accounts for the operator being the EOA, or the contract that has an
+    ///         isValidSignature() function that would confirm the message hash was signed by the operator contract.
+    ///         Otherwise, if the message hash has been pre-approved, the corresponding map of hashes is going to
+    ///         to verify the signed hash, similar to the Safe contract implementation in v1.3.0:
+    ///         https://github.com/safe-global/safe-contracts/blob/186a21a74b327f17fc41217a927dea7064f74604/contracts/GnosisSafe.sol#L240-L304
+    ///         Also note that only the service owner is able to call this function on behalf of the operator.
+    /// @param operator Operator address that signed the register agents message hash.
+    /// @param serviceId Service Id.
     /// @param agentInstances Agent instance addresses.
     /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
-    /// @param signature Signature byte array associated with operator transaction hash signature.
-    /// @return success True, if the function executed successfully.
+    /// @param signature Signature byte array associated with operator message hash signature.
+    /// @return success True, if the the function executed successfully.
     function registerAgentsWithSignature(
         address operator,
         uint256 serviceId,
@@ -357,18 +369,25 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
             revert OwnerOnly(msg.sender, serviceOwner);
         }
 
-        // Get register agents transaction hash
-        uint256 nonce = mapOperatorRegisterAgentsNonces[operator];
-        bytes32 txHash = getRegisterAgentsHash(operator, serviceOwner, serviceId, agentInstances, agentIds, nonce);
+        // Get the (operator | serviceId) nonce for the registerAgents message
+        // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
+        // as another service might use the operator address at the same time frame
+        // operator occupies first 160 bits
+        uint256 operatorService = uint256(uint160(operator));
+        // serviceId occupies next 32 bits as serviceId is limited by the 2^32 - 1 value
+        operatorService |= serviceId << 160;
+        uint256 nonce = mapOperatorRegisterAgentsNonces[operatorService];
+        // Get register agents message hash
+        bytes32 msgHash = getRegisterAgentsHash(operator, serviceOwner, serviceId, agentInstances, agentIds, nonce);
 
         // Verify the signed hash against the operator address
-        if (!_verifySignedHash(operator, txHash, signature)) {
+        if (!_verifySignedHash(operator, msgHash, signature)) {
             revert WrongOperator(serviceId);
         }
 
         // Update corresponding nonce value
         nonce++;
-        mapOperatorRegisterAgentsNonces[operator] = nonce;
+        mapOperatorRegisterAgentsNonces[operatorService] = nonce;
 
         // Record the actual ERC20 bond
         bool isTokenSecured = IServiceTokenUtility(serviceRegistryTokenUtility).registerAgentsTokenDeposit(operator,
