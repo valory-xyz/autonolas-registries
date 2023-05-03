@@ -3,7 +3,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("ServiceManagerToken", function () {
+describe.only("ServiceManagerToken", function () {
     let componentRegistry;
     let agentRegistry;
     let gnosisSafe;

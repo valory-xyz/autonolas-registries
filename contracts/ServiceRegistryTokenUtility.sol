@@ -653,7 +653,9 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     /// @param serviceId Agent Id.
     /// @return bond Agent Id bond in a specified service Id.
     function getAgentBond(uint256 serviceId, uint256 agentId) external view returns (uint256 bond) {
+        // serviceId occupies first 32 bits as serviceId is limited by the 2^32 - 1 value
         uint256 serviceAgent = serviceId;
+        // agentId occupies next 32 bits as agentId is limited by the 2^32 - 1 value
         serviceAgent |= agentId << 32;
         bond = mapServiceAndAgentIdAgentBond[serviceAgent];
     }
@@ -663,7 +665,9 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     /// @param serviceId Service Id.
     /// @return balance The balance of the operator.
     function getOperatorBalance(address operator, uint256 serviceId) external view returns (uint256 balance) {
+        // operator occupies first 160 bits
         uint256 operatorService = uint256(uint160(operator));
+        // serviceId occupies next 32 bits as serviceId is limited by the 2^32 - 1 value
         operatorService |= serviceId << 160;
         balance = mapOperatorAndServiceIdOperatorBalances[operatorService];
     }

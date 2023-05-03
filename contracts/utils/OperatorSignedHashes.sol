@@ -73,8 +73,8 @@ contract OperatorSignedHashes {
         bytes memory signature
     ) internal view returns (bool)
     {
-        // Check for the operator zero address
-        if (operator == address(0)) {
+        // Check for the operator zero address and for the signature length
+        if (operator == address(0) || signature.length < 65) {
             return false;
         }
 
