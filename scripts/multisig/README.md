@@ -38,7 +38,7 @@ Note that, on the local environment, it is not necessary to add `--network netwo
 
 ## Current scripts
 
-### Scipt 1: change_service_multsig_owners_data.js
+### Script 1: change_service_multsig_owners_data.js
 
 The script `change_service_multsig_owners_data.js` has the following provides: 
 - the `safeTx` that allows the current owner to give up ownership of the multisig, add the new owners, and update the multisig threshold;  
