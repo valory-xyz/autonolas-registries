@@ -137,6 +137,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     function safeTransferFrom(address token, address from, address to, uint256 amount) internal {
         bool success;
 
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             // We'll write our calldata to this slot below, but restore it later.
             let memPointer := mload(0x40)
@@ -178,6 +179,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     function safeTransfer(address token, address to, uint256 amount) internal {
         bool success;
 
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             // We'll write our calldata to this slot below, but restore it later.
             let memPointer := mload(0x40)
@@ -283,6 +285,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         bytes memory data = abi.encodeWithSelector(selector, address(0));
 
         if (token.code.length > 0) {
+            // solhint-disable-next-line no-inline-assembly
             assembly {
                 success := staticcall(
                     gas(),            // gas remaining
@@ -653,7 +656,9 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     /// @param serviceId Agent Id.
     /// @return bond Agent Id bond in a specified service Id.
     function getAgentBond(uint256 serviceId, uint256 agentId) external view returns (uint256 bond) {
+        // serviceId occupies first 32 bits as serviceId is limited by the 2^32 - 1 value
         uint256 serviceAgent = serviceId;
+        // agentId occupies next 32 bits as agentId is limited by the 2^32 - 1 value
         serviceAgent |= agentId << 32;
         bond = mapServiceAndAgentIdAgentBond[serviceAgent];
     }
@@ -663,7 +668,9 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     /// @param serviceId Service Id.
     /// @return balance The balance of the operator.
     function getOperatorBalance(address operator, uint256 serviceId) external view returns (uint256 balance) {
+        // operator occupies first 160 bits
         uint256 operatorService = uint256(uint160(operator));
+        // serviceId occupies next 32 bits as serviceId is limited by the 2^32 - 1 value
         operatorService |= serviceId << 160;
         balance = mapOperatorAndServiceIdOperatorBalances[operatorService];
     }

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+error FailedTransferFrom();
+error FailedTransfer();
+
 // ServiceRegistryTokenUtility interface
 interface IServiceRegistryTokenUtility {
     /// @dev Deposit a token security deposit for the service registration after its activation.
@@ -73,7 +76,7 @@ contract ReentrancyTokenAttacker {
 
     function transferFrom(address, address, uint256 amount) external {
         if (state == AttackState.FAILED_TRANSFER_FROM) {
-            revert();
+            revert FailedTransferFrom();
         } else if (state == AttackState.BALANCE_ZERO) {
             balance = 0;
         } else if (state == AttackState.BALANCE_REDUCED) {
@@ -89,7 +92,7 @@ contract ReentrancyTokenAttacker {
 
     function transfer(address, uint256 amount) external {
         if (state == AttackState.FAILED_TRANSFER) {
-            revert();
+            revert FailedTransfer();
         } else if (state == AttackState.TERMINATE) {
             IServiceRegistryTokenUtility(serviceRegistryTokenUtility).terminateTokenRefund(0);
         } else if (state == AttackState.UNBOND) {

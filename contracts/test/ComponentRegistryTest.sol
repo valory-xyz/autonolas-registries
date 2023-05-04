@@ -3,6 +3,8 @@ pragma solidity ^0.8.15;
 
 import "../ComponentRegistry.sol";
 
+error DifferentTokenURIs();
+
 /// @title Unit Registry - Smart contract for registering generalized units / units
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 contract ComponentRegistryTest is ComponentRegistry {
@@ -32,6 +34,8 @@ contract ComponentRegistryTest is ComponentRegistry {
         string memory str2 = string(abi.encodePacked(baseURI, CID_PREFIX, buffer));
 
         // Compare two obtained tokenURI-s
-        require(keccak256(abi.encodePacked((str1))) == keccak256(abi.encodePacked((str2))));
+        if (keccak256(abi.encodePacked((str1))) != keccak256(abi.encodePacked((str2)))) {
+            revert DifferentTokenURIs();
+        }
     }
 }

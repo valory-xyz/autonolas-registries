@@ -2,10 +2,14 @@
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const helpers = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("Deployment", function () {
     context("Deployment", async function () {
         it("Deployment steps", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
             const signers = await ethers.getSigners();
             // EOA
             const EOA = signers[0];
@@ -80,6 +84,9 @@ describe("Deployment", function () {
             expect(await serviceRegistry.owner()).to.equal(timelock.address);
             expect(await registriesManager.owner()).to.equal(timelock.address);
             expect(await serviceManager.owner()).to.equal(timelock.address);
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
         });
     });
 });

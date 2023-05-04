@@ -42,10 +42,12 @@ Details on how services can eventually be protected with a custom ERC20 token an
     [L2](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistryL2.sol)
   - [ServiceRegistryTokenUtility](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistryTokenUtility.sol)
 - Periphery contracts:
-  - [OperatorWhitelist](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/OperatorWhitelist.sol)
   - [RegistriesManager](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/RegistriesManager.sol)
   - [ServiceManager](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceManager.sol)
   - [ServiceManagerToken](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceManagerToken.sol)
+- Utility contracts:
+  - [OperatorSignedHashes](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/utils/OperatorSignedHashes.sol)
+  - [OperatorWhitelist](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/utils/OperatorWhitelist.sol)
 
 In order to deploy a service, its registered agent instances form a consensus mechanism via the means of multisigs using the generic multisig interface.
 One of the most well-known multisigs is Gnosis Safe. The Gnosis interface implementation of a generic multisig interface is provided here:
@@ -59,7 +61,8 @@ Once all agent instances are registered, the service owner re-deploys the servic
 The implementation of such multisig is provided here:
 - [GnosisSafeSameAddressMultisig](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/multisigs/GnosisSafeSameAddressMultisig.sol)
 
-To verify the multisig data when redeploying the service using the GnosisSafeSameAddressMultisig contract while changing service multisig owners (with updated agent instance addresses), see the guidelines and corresponding scripts [here](https://github.com/valory-xyz/autonolas-registries/blob/main/scripts/multisig/)
+To verify the multisig data when redeploying the service using the GnosisSafeSameAddressMultisig contract while changing service multisig owners (with updated agent instance addresses),
+see the guidelines and corresponding scripts [here](https://github.com/valory-xyz/autonolas-registries/blob/main/scripts/multisig/)
 
 As more multisigs come into play, their underlying implementation of the generic multisig will be added.
 

@@ -11,9 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository and submodules
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
+
+      - name: Get a specific Node.js version such that hardhat does not hang periodically
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.15.0"
 
       # Install modules
       - name: Install modules
@@ -23,7 +28,8 @@ jobs:
       - name: Run ESLint
         run: ./node_modules/.bin/eslint . --ext .js,.jsx,.ts,.tsx
       - name: Run solhint
-        run: ./node_modules/.bin/solhint contracts/interfaces/*.sol contracts/*.sol contracts/test/*.sol contracts/multisigs/*.sol
+        run: ./node_modules/.bin/solhint contracts/interfaces/*.sol contracts/*.sol contracts/test/*.sol \
+          contracts/multisigs/*.sol contracts/utils/*.sol
 
       # Compile the code and run tests and deploy script(s)
       - name: Compile the code
