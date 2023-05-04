@@ -404,16 +404,11 @@ describe("ServiceManagementWithOperatorSignatures", function () {
             let signatureBytes = await operator._signTypedData(EIP712_DOMAIN, EIP712_UNBOND_TX_TYPE, unbondTx);
 
             // Unbond the agent instance in order to update the service using a pre-signed operator message
-            // Case 1. Simulate the unbond when the message was signed by the ledger (change v value to zero)
+            // Case 1. Simulate the unbond when the message was signed by the ledger (change v value to 0-3 in theory)
             // Take last byte of the v value and subtract 27
             const lastByte = signatureBytes.slice(-2);
             const lastByteValue = parseInt(lastByte, 16) - 27;
-            let ledgerSignatureBytes;
-            if (lastByteValue == 0) {
-                ledgerSignatureBytes = signatureBytes.substring(0, signatureBytes.length - 2) + "00";
-            } else {
-                ledgerSignatureBytes = signatureBytes.substring(0, signatureBytes.length - 2) + "01";
-            }
+            const ledgerSignatureBytes = signatureBytes.substring(0, signatureBytes.length - 2) + "0" + lastByteValue.toString(16);
 
             result = await serviceManager.connect(serviceOwner).callStatic.unbondWithSignature(operator.address, serviceId, ledgerSignatureBytes);
             expect(result.success).to.be.true;
@@ -421,7 +416,7 @@ describe("ServiceManagementWithOperatorSignatures", function () {
             // Case 2. Approve the hash and provide the signature to follow the approved hash path
             // Build the signature to follow the approved hash path
             const approveSignatureBytes = "0x000000000000000000000000" + operator.address.slice(2) +
-                "0000000000000000000000000000000000000000000000000000000000000000" + "03";
+                "0000000000000000000000000000000000000000000000000000000000000000" + "05";
 
             // Try to unbond agent instances on behalf of the operator without the hash being pre-approved
             await expect(
@@ -441,7 +436,7 @@ describe("ServiceManagementWithOperatorSignatures", function () {
             // Case 3. Provide the signature to follow the isValidSignature() path when the operator is the contract
             // Build the signature to follow the contract hash verification path
             const verifySignatureBytes = "0x000000000000000000000000" + operatorContract.address.slice(2) +
-                "0000000000000000000000000000000000000000000000000000000000000000" + "02";
+                "0000000000000000000000000000000000000000000000000000000000000000" + "04";
 
             // Try to unbond agent instances on behalf of the operator without the hash being validated
             await expect(

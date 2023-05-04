@@ -57,6 +57,7 @@ reserved v = 0..3 for ECDSA
 v = 4 for EIP-1271 (isValidSignature)
 v = 5 for pre-approved hash
 ```
+[x] fixed
 
 Small fixing:
 ```
@@ -70,10 +71,11 @@ Small fixing:
             revert IncorrectSignatureLength(signature, signature.length, 65);
         }
 ```
+[x] fixed
 
 #### Design question
 ```
-Let's doing:
+Assume the following setup:
 const addressA = '0x067024faa81ACBF984EEA0E4E75Fcc3F44558AfD';
 const addressAPrvtKey = 'xxx';
 
@@ -114,3 +116,5 @@ function registerAgentsWithSignature(
         bytes memory signature
     ) external payable returns (bool success) {}
 ```
+[x] fixed by design: the ServiceRegistry contract has a check for the unbonded number of agent instances of the operator in the service:
+https://github.com/valory-xyz/autonolas-registries/blob/784d312b0eb34ff7dcb4a7d4639d51a7eb76d77e/contracts/ServiceRegistry.sol#L687-L697
