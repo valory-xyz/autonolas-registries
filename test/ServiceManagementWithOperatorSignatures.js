@@ -3,7 +3,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe.only("ServiceManagementWithOperatorSignatures", function () {
+describe("ServiceManagementWithOperatorSignatures", function () {
     let componentRegistry;
     let agentRegistry;
     let serviceRegistry;
