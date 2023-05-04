@@ -1,0 +1,112 @@
+INFO:Printers:
+Contract IErrorsRegistries
++----------+-------------------------+--------------------------+
+| Function | State variables written | Conditions on msg.sender |
++----------+-------------------------+--------------------------+
++----------+-------------------------+--------------------------+
+
+Contract GenericManager
++-------------+-------------------------+--------------------------+
+|   Function  | State variables written | Conditions on msg.sender |
++-------------+-------------------------+--------------------------+
+| changeOwner |        ['owner']        | ['msg.sender != owner']  |
+|    pause    |        ['paused']       | ['msg.sender != owner']  |
+|   unpause   |        ['paused']       | ['msg.sender != owner']  |
++-------------+-------------------------+--------------------------+
+
+Contract IService
++----------------------+-------------------------+--------------------------+
+|       Function       | State variables written | Conditions on msg.sender |
++----------------------+-------------------------+--------------------------+
+|        create        |            []           |            []            |
+|        update        |            []           |            []            |
+| activateRegistration |            []           |            []            |
+|    registerAgents    |            []           |            []            |
+|        deploy        |            []           |            []            |
+|      terminate       |            []           |            []            |
+|        unbond        |            []           |            []            |
++----------------------+-------------------------+--------------------------+
+
+Contract IServiceTokenUtility
++----------------------------------+-------------------------+--------------------------+
+|             Function             | State variables written | Conditions on msg.sender |
++----------------------------------+-------------------------+--------------------------+
+|         createWithToken          |            []           |            []            |
+|        resetServiceToken         |            []           |            []            |
+| activateRegistrationTokenDeposit |            []           |            []            |
+|    registerAgentsTokenDeposit    |            []           |            []            |
+|       terminateTokenRefund       |            []           |            []            |
+|        unbondTokenRefund         |            []           |            []            |
+|      isTokenSecuredService       |            []           |            []            |
++----------------------------------+-------------------------+--------------------------+
+
+Contract ISignatureValidator
++------------------+-------------------------+--------------------------+
+|     Function     | State variables written | Conditions on msg.sender |
++------------------+-------------------------+--------------------------+
+| isValidSignature |            []           |            []            |
++------------------+-------------------------+--------------------------+
+
+Contract OperatorSignedHashes
++-------------------------------------+------------------------------------------------------------------------------------------------+--------------------------+
+|               Function              |                                    State variables written                                     | Conditions on msg.sender |
++-------------------------------------+------------------------------------------------------------------------------------------------+--------------------------+
+|             constructor             |          ['chainId', 'domainSeparator', 'name', 'nameHash', 'version', 'versionHash']          |            []            |
+|          _verifySignedHash          |                                               []                                               |            []            |
+|         operatorApproveHash         |                                 ['mapOperatorApprovedHashes']                                  |            []            |
+|       _computeDomainSeparator       |                                               []                                               |            []            |
+|          getDomainSeparator         |                                               []                                               |            []            |
+|            getUnbondHash            |                                               []                                               |            []            |
+|        getRegisterAgentsHash        |                                               []                                               |            []            |
+|        isOperatorHashApproved       |                                               []                                               |            []            |
+|        getOperatorUnbondNonce       |                                               []                                               |            []            |
+|    getOperatorRegisterAgentsNonce   |                                               []                                               |            []            |
+| slitherConstructorConstantVariables | ['DOMAIN_SEPARATOR_TYPE_HASH', 'MAGIC_VALUE', 'REGISTER_AGENTS_TYPE_HASH', 'UNBOND_TYPE_HASH'] |            []            |
++-------------------------------------+------------------------------------------------------------------------------------------------+--------------------------+
+
+Contract IOperatorWhitelist
++-----------------------+-------------------------+--------------------------+
+|        Function       | State variables written | Conditions on msg.sender |
++-----------------------+-------------------------+--------------------------+
+| isOperatorWhitelisted |            []           |            []            |
++-----------------------+-------------------------+--------------------------+
+
+Contract IToken
++----------+-------------------------+--------------------------+
+| Function | State variables written | Conditions on msg.sender |
++----------+-------------------------+--------------------------+
+| ownerOf  |            []           |            []            |
++----------+-------------------------+--------------------------+
+
+Contract ServiceManagerToken
++-------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------+
+|               Function              |                                                                   State variables written                                                                    |                                 Conditions on msg.sender                                |
++-------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------+
+|             constructor             |                                         ['chainId', 'domainSeparator', 'name', 'nameHash', 'version', 'versionHash']                                         |                                            []                                           |
+|          _verifySignedHash          |                                                                              []                                                                              |                                            []                                           |
+|         operatorApproveHash         |                                                                ['mapOperatorApprovedHashes']                                                                 |                                            []                                           |
+|       _computeDomainSeparator       |                                                                              []                                                                              |                                            []                                           |
+|          getDomainSeparator         |                                                                              []                                                                              |                                            []                                           |
+|            getUnbondHash            |                                                                              []                                                                              |                                            []                                           |
+|        getRegisterAgentsHash        |                                                                              []                                                                              |                                            []                                           |
+|        isOperatorHashApproved       |                                                                              []                                                                              |                                            []                                           |
+|        getOperatorUnbondNonce       |                                                                              []                                                                              |                                            []                                           |
+|    getOperatorRegisterAgentsNonce   |                                                                              []                                                                              |                                            []                                           |
+|             changeOwner             |                                                                          ['owner']                                                                           |                                 ['msg.sender != owner']                                 |
+|                pause                |                                                                          ['paused']                                                                          |                                 ['msg.sender != owner']                                 |
+|               unpause               |                                                                          ['paused']                                                                          |                                 ['msg.sender != owner']                                 |
+|             constructor             | ['chainId', 'domainSeparator', 'name', 'nameHash', 'operatorWhitelist', 'owner', 'serviceRegistry', 'serviceRegistryTokenUtility', 'version', 'versionHash'] |                                            []                                           |
+|         setOperatorWhitelist        |                                                                    ['operatorWhitelist']                                                                     |                                 ['msg.sender != owner']                                 |
+|                create               |                                                                              []                                                                              |                                            []                                           |
+|                update               |                                                                              []                                                                              |                                            []                                           |
+|         activateRegistration        |                                                                              []                                                                              |                                            []                                           |
+|            registerAgents           |                                                                              []                                                                              | ['! IOperatorWhitelist(operatorWhitelist).isOperatorWhitelisted(serviceId,msg.sender)'] |
+|                deploy               |                                                                              []                                                                              |                                            []                                           |
+|              terminate              |                                                                              []                                                                              |                                            []                                           |
+|                unbond               |                                                                              []                                                                              |                                            []                                           |
+|         unbondWithSignature         |                                                                 ['mapOperatorUnbondNonces']                                                                  |                              ['msg.sender != serviceOwner']                             |
+|     registerAgentsWithSignature     |                                                             ['mapOperatorRegisterAgentsNonces']                                                              |                              ['msg.sender != serviceOwner']                             |
+| slitherConstructorConstantVariables |             ['BOND_WRAPPER', 'DOMAIN_SEPARATOR_TYPE_HASH', 'ETH_TOKEN_ADDRESS', 'MAGIC_VALUE', 'REGISTER_AGENTS_TYPE_HASH', 'UNBOND_TYPE_HASH']              |                                            []                                           |
++-------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------+
+
+INFO:Slither:. analyzed (9 contracts)

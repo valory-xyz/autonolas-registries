@@ -1,0 +1,39 @@
+INFO:Printers:
+###################################
+####### ServiceManagerToken #######
+###################################
+
+## Constructor Call Sequence
+	- OperatorSignedHashes
+	- ServiceManagerToken
+
+## Constructor Definitions
+
+### OperatorSignedHashes
+
+     constructor(string memory _name, string memory _version) {
+        name = _name;
+        version = _version;
+        nameHash = keccak256(bytes(_name));
+        versionHash = keccak256(bytes(_version));
+        chainId = block.chainid;
+        domainSeparator = _computeDomainSeparator();
+    }
+
+### ServiceManagerToken
+
+     constructor(address _serviceRegistry, address _serviceRegistryTokenUtility, address _operatorWhitelist)
+        OperatorSignedHashes("Service Manager Token", "1.1.1")
+    {
+        // Check for the Service Registry related contract zero addresses
+        if (_serviceRegistry == address(0) || _serviceRegistryTokenUtility == address(0)) {
+            revert ZeroAddress();
+        }
+
+        serviceRegistry = _serviceRegistry;
+        serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
+        operatorWhitelist = _operatorWhitelist;
+        owner = msg.sender;
+    }
+
+INFO:Slither:. analyzed (9 contracts)

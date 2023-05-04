@@ -1,0 +1,79 @@
+INFO:Printers:
+Contract IService
++----------------------+-------------------+
+|       Function       | require or assert |
++----------------------+-------------------+
+|        create        |                   |
+|        update        |                   |
+| activateRegistration |                   |
+|    registerAgents    |                   |
+|        deploy        |                   |
+|      terminate       |                   |
+|        unbond        |                   |
++----------------------+-------------------+
+INFO:Printers:
+Contract IServiceTokenUtility
++----------------------------------+-------------------+
+|             Function             | require or assert |
++----------------------------------+-------------------+
+|         createWithToken          |                   |
+|        resetServiceToken         |                   |
+| activateRegistrationTokenDeposit |                   |
+|    registerAgentsTokenDeposit    |                   |
+|       terminateTokenRefund       |                   |
+|        unbondTokenRefund         |                   |
+|      isTokenSecuredService       |                   |
++----------------------------------+-------------------+
+INFO:Printers:
+Contract ISignatureValidator
++------------------+-------------------+
+|     Function     | require or assert |
++------------------+-------------------+
+| isValidSignature |                   |
++------------------+-------------------+
+INFO:Printers:
+Contract IOperatorWhitelist
++-----------------------+-------------------+
+|        Function       | require or assert |
++-----------------------+-------------------+
+| isOperatorWhitelisted |                   |
++-----------------------+-------------------+
+INFO:Printers:
+Contract IToken
++----------+-------------------+
+| Function | require or assert |
++----------+-------------------+
+| ownerOf  |                   |
++----------+-------------------+
+INFO:Printers:
+Contract ServiceManagerToken
++-------------------------------------+-------------------+
+|               Function              | require or assert |
++-------------------------------------+-------------------+
+|             constructor             |                   |
+|          _verifySignedHash          |                   |
+|         operatorApproveHash         |                   |
+|       _computeDomainSeparator       |                   |
+|          getDomainSeparator         |                   |
+|            getUnbondHash            |                   |
+|        getRegisterAgentsHash        |                   |
+|        isOperatorHashApproved       |                   |
+|        getOperatorUnbondNonce       |                   |
+|    getOperatorRegisterAgentsNonce   |                   |
+|             changeOwner             |                   |
+|                pause                |                   |
+|               unpause               |                   |
+|             constructor             |                   |
+|         setOperatorWhitelist        |                   |
+|                create               |                   |
+|                update               |                   |
+|         activateRegistration        |                   |
+|            registerAgents           |                   |
+|                deploy               |                   |
+|              terminate              |                   |
+|                unbond               |                   |
+|         unbondWithSignature         |                   |
+|     registerAgentsWithSignature     |                   |
+| slitherConstructorConstantVariables |                   |
++-------------------------------------+-------------------+
+INFO:Slither:. analyzed (9 contracts)

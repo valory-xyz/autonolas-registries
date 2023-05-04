@@ -1,0 +1,2721 @@
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract GenericManager
++----------+-----------------------+
+| Variable |      Dependencies     |
++----------+-----------------------+
+|  owner   | ['newOwner', 'owner'] |
+|  paused  |           []          |
++----------+-----------------------+
+
+Function changeOwner(address)
++-----------------------+-----------------------+
+|        Variable       |      Dependencies     |
++-----------------------+-----------------------+
+|        newOwner       |           []          |
+|  GenericManager.owner | ['newOwner', 'owner'] |
+| GenericManager.paused |           []          |
++-----------------------+-----------------------+
+Function pause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Function unpause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract GenericManager
++----------+-----------------------+
+| Variable |      Dependencies     |
++----------+-----------------------+
+|  owner   | ['newOwner', 'owner'] |
+|  paused  |           []          |
++----------+-----------------------+
+
+Function changeOwner(address)
++-----------------------+-----------------------+
+|        Variable       |      Dependencies     |
++-----------------------+-----------------------+
+|        newOwner       |           []          |
+|  GenericManager.owner | ['newOwner', 'owner'] |
+| GenericManager.paused |           []          |
++-----------------------+-----------------------+
+Function pause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Function unpause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Contract IService
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function create(address,bytes32,uint32[],IService.AgentParams[],uint32)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
++--------------+--------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function activateRegistration(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function registerAgents(address,uint256,address[],uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+| agentInstances |      []      |
+|    agentIds    |      []      |
+|    success     |      []      |
++----------------+--------------+
+Function deploy(address,uint256,address,bytes)
++------------------------+--------------+
+|        Variable        | Dependencies |
++------------------------+--------------+
+|      serviceOwner      |      []      |
+|       serviceId        |      []      |
+| multisigImplementation |      []      |
+|          data          |      []      |
+|        multisig        |      []      |
++------------------------+--------------+
+Function terminate(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
+|    refund    |      []      |
++--------------+--------------+
+Function unbond(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|  success  |      []      |
+|   refund  |      []      |
++-----------+--------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract GenericManager
++----------+-----------------------+
+| Variable |      Dependencies     |
++----------+-----------------------+
+|  owner   | ['newOwner', 'owner'] |
+|  paused  |           []          |
++----------+-----------------------+
+
+Function changeOwner(address)
++-----------------------+-----------------------+
+|        Variable       |      Dependencies     |
++-----------------------+-----------------------+
+|        newOwner       |           []          |
+|  GenericManager.owner | ['newOwner', 'owner'] |
+| GenericManager.paused |           []          |
++-----------------------+-----------------------+
+Function pause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Function unpause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Contract IService
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function create(address,bytes32,uint32[],IService.AgentParams[],uint32)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
++--------------+--------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function activateRegistration(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function registerAgents(address,uint256,address[],uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+| agentInstances |      []      |
+|    agentIds    |      []      |
+|    success     |      []      |
++----------------+--------------+
+Function deploy(address,uint256,address,bytes)
++------------------------+--------------+
+|        Variable        | Dependencies |
++------------------------+--------------+
+|      serviceOwner      |      []      |
+|       serviceId        |      []      |
+| multisigImplementation |      []      |
+|          data          |      []      |
+|        multisig        |      []      |
++------------------------+--------------+
+Function terminate(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
+|    refund    |      []      |
++--------------+--------------+
+Function unbond(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|  success  |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Contract IServiceTokenUtility
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function createWithToken(uint256,address,uint32[],uint256[])
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|   token   |      []      |
+|  agentIds |      []      |
+|   bonds   |      []      |
++-----------+--------------+
+Function resetServiceToken(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
++-----------+--------------+
+Function activateRegistrationTokenDeposit(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function registerAgentsTokenDeposit(address,uint256,uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+|    agentIds    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function terminateTokenRefund(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| securityRefund |      []      |
++----------------+--------------+
+Function unbondTokenRefund(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Function isTokenSecuredService(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|           |      []      |
++-----------+--------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract GenericManager
++----------+-----------------------+
+| Variable |      Dependencies     |
++----------+-----------------------+
+|  owner   | ['newOwner', 'owner'] |
+|  paused  |           []          |
++----------+-----------------------+
+
+Function changeOwner(address)
++-----------------------+-----------------------+
+|        Variable       |      Dependencies     |
++-----------------------+-----------------------+
+|        newOwner       |           []          |
+|  GenericManager.owner | ['newOwner', 'owner'] |
+| GenericManager.paused |           []          |
++-----------------------+-----------------------+
+Function pause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Function unpause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Contract IService
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function create(address,bytes32,uint32[],IService.AgentParams[],uint32)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
++--------------+--------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function activateRegistration(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function registerAgents(address,uint256,address[],uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+| agentInstances |      []      |
+|    agentIds    |      []      |
+|    success     |      []      |
++----------------+--------------+
+Function deploy(address,uint256,address,bytes)
++------------------------+--------------+
+|        Variable        | Dependencies |
++------------------------+--------------+
+|      serviceOwner      |      []      |
+|       serviceId        |      []      |
+| multisigImplementation |      []      |
+|          data          |      []      |
+|        multisig        |      []      |
++------------------------+--------------+
+Function terminate(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
+|    refund    |      []      |
++--------------+--------------+
+Function unbond(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|  success  |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Contract IServiceTokenUtility
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function createWithToken(uint256,address,uint32[],uint256[])
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|   token   |      []      |
+|  agentIds |      []      |
+|   bonds   |      []      |
++-----------+--------------+
+Function resetServiceToken(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
++-----------+--------------+
+Function activateRegistrationTokenDeposit(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function registerAgentsTokenDeposit(address,uint256,uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+|    agentIds    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function terminateTokenRefund(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| securityRefund |      []      |
++----------------+--------------+
+Function unbondTokenRefund(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Function isTokenSecuredService(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|           |      []      |
++-----------+--------------+
+Contract ISignatureValidator
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function isValidSignature(bytes32,bytes)
++------------+--------------+
+|  Variable  | Dependencies |
++------------+--------------+
+|    hash    |      []      |
+| signature  |      []      |
+| magicValue |      []      |
++------------+--------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract GenericManager
++----------+-----------------------+
+| Variable |      Dependencies     |
++----------+-----------------------+
+|  owner   | ['newOwner', 'owner'] |
+|  paused  |           []          |
++----------+-----------------------+
+
+Function changeOwner(address)
++-----------------------+-----------------------+
+|        Variable       |      Dependencies     |
++-----------------------+-----------------------+
+|        newOwner       |           []          |
+|  GenericManager.owner | ['newOwner', 'owner'] |
+| GenericManager.paused |           []          |
++-----------------------+-----------------------+
+Function pause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Function unpause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Contract IService
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function create(address,bytes32,uint32[],IService.AgentParams[],uint32)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
++--------------+--------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function activateRegistration(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function registerAgents(address,uint256,address[],uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+| agentInstances |      []      |
+|    agentIds    |      []      |
+|    success     |      []      |
++----------------+--------------+
+Function deploy(address,uint256,address,bytes)
++------------------------+--------------+
+|        Variable        | Dependencies |
++------------------------+--------------+
+|      serviceOwner      |      []      |
+|       serviceId        |      []      |
+| multisigImplementation |      []      |
+|          data          |      []      |
+|        multisig        |      []      |
++------------------------+--------------+
+Function terminate(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
+|    refund    |      []      |
++--------------+--------------+
+Function unbond(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|  success  |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Contract IServiceTokenUtility
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function createWithToken(uint256,address,uint32[],uint256[])
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|   token   |      []      |
+|  agentIds |      []      |
+|   bonds   |      []      |
++-----------+--------------+
+Function resetServiceToken(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
++-----------+--------------+
+Function activateRegistrationTokenDeposit(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function registerAgentsTokenDeposit(address,uint256,uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+|    agentIds    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function terminateTokenRefund(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| securityRefund |      []      |
++----------------+--------------+
+Function unbondTokenRefund(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Function isTokenSecuredService(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|           |      []      |
++-----------+--------------+
+Contract ISignatureValidator
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function isValidSignature(bytes32,bytes)
++------------+--------------+
+|  Variable  | Dependencies |
++------------+--------------+
+|    hash    |      []      |
+| signature  |      []      |
+| magicValue |      []      |
++------------+--------------+
+Contract OperatorSignedHashes
++---------------------------------+----------------------------------------------------------------------------------------------------------------------------+
+|             Variable            |                                                        Dependencies                                                        |
++---------------------------------+----------------------------------------------------------------------------------------------------------------------------+
+|           MAGIC_VALUE           |                                                      ['MAGIC_VALUE']                                                       |
+|    DOMAIN_SEPARATOR_TYPE_HASH   |                                               ['DOMAIN_SEPARATOR_TYPE_HASH']                                               |
+|         UNBOND_TYPE_HASH        |                                                    ['UNBOND_TYPE_HASH']                                                    |
+|    REGISTER_AGENTS_TYPE_HASH    |                                               ['REGISTER_AGENTS_TYPE_HASH']                                                |
+|         domainSeparator         | ['DOMAIN_SEPARATOR_TYPE_HASH', '_name', '_version', 'block.chainid', 'domainSeparator', 'nameHash', 'this', 'versionHash'] |
+|             chainId             |                                                ['block.chainid', 'chainId']                                                |
+|             nameHash            |                                                   ['_name', 'nameHash']                                                    |
+|           versionHash           |                                                ['_version', 'versionHash']                                                 |
+|               name              |                                                         ['_name']                                                          |
+|             version             |                                                        ['_version']                                                        |
+|     mapOperatorUnbondNonces     |                                                ['mapOperatorUnbondNonces']                                                 |
+| mapOperatorRegisterAgentsNonces |                                            ['mapOperatorRegisterAgentsNonces']                                             |
+|    mapOperatorApprovedHashes    |                                               ['mapOperatorApprovedHashes']                                                |
++---------------------------------+----------------------------------------------------------------------------------------------------------------------------+
+
+Function constructor(string,string)
++------------------------------------------------------+-------------------+
+|                       Variable                       |    Dependencies   |
++------------------------------------------------------+-------------------+
+|                        _name                         |         []        |
+|                       _version                       |         []        |
+|           OperatorSignedHashes.MAGIC_VALUE           |         []        |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |         []        |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |         []        |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |         []        |
+|         OperatorSignedHashes.domainSeparator         |         []        |
+|             OperatorSignedHashes.chainId             | ['block.chainid'] |
+|            OperatorSignedHashes.nameHash             |     ['_name']     |
+|           OperatorSignedHashes.versionHash           |    ['_version']   |
+|              OperatorSignedHashes.name               |     ['_name']     |
+|             OperatorSignedHashes.version             |    ['_version']   |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |         []        |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |         []        |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |         []        |
++------------------------------------------------------+-------------------+
+Function _verifySignedHash(address,bytes32,bytes)
++------------------------------------------------------+--------------------------------------------------------+
+|                       Variable                       |                      Dependencies                      |
++------------------------------------------------------+--------------------------------------------------------+
+|                       operator                       |                           []                           |
+|                       msgHash                        |                           []                           |
+|                      signature                       |                     ['signature']                      |
+|                          v                           |                   ['signature', 'v']                   |
+|                          r                           |                     ['signature']                      |
+|                          s                           |                     ['signature']                      |
+|                     recOperator                      | ['msgHash', 'r', 'recOperator', 's', 'signature', 'v'] |
+|           OperatorSignedHashes.MAGIC_VALUE           |                    ['MAGIC_VALUE']                     |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                           []                           |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                           []                           |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                           []                           |
+|         OperatorSignedHashes.domainSeparator         |                           []                           |
+|             OperatorSignedHashes.chainId             |                           []                           |
+|            OperatorSignedHashes.nameHash             |                           []                           |
+|           OperatorSignedHashes.versionHash           |                           []                           |
+|              OperatorSignedHashes.name               |                           []                           |
+|             OperatorSignedHashes.version             |                           []                           |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                           []                           |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                           []                           |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |             ['mapOperatorApprovedHashes']              |
++------------------------------------------------------+--------------------------------------------------------+
+Function operatorApproveHash(bytes32)
++------------------------------------------------------+-------------------------------+
+|                       Variable                       |          Dependencies         |
++------------------------------------------------------+-------------------------------+
+|                         hash                         |               []              |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []              |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |               []              |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []              |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |               []              |
+|         OperatorSignedHashes.domainSeparator         |               []              |
+|             OperatorSignedHashes.chainId             |               []              |
+|            OperatorSignedHashes.nameHash             |               []              |
+|           OperatorSignedHashes.versionHash           |               []              |
+|              OperatorSignedHashes.name               |               []              |
+|             OperatorSignedHashes.version             |               []              |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []              |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []              |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    | ['mapOperatorApprovedHashes'] |
++------------------------------------------------------+-------------------------------+
+Function _computeDomainSeparator()
++------------------------------------------------------+--------------------------------+
+|                       Variable                       |          Dependencies          |
++------------------------------------------------------+--------------------------------+
+|                                                      |               []               |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []               |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    | ['DOMAIN_SEPARATOR_TYPE_HASH'] |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []               |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |               []               |
+|         OperatorSignedHashes.domainSeparator         |               []               |
+|             OperatorSignedHashes.chainId             |               []               |
+|            OperatorSignedHashes.nameHash             |          ['nameHash']          |
+|           OperatorSignedHashes.versionHash           |        ['versionHash']         |
+|              OperatorSignedHashes.name               |               []               |
+|             OperatorSignedHashes.version             |               []               |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []               |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []               |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |               []               |
++------------------------------------------------------+--------------------------------+
+Function getDomainSeparator()
++------------------------------------------------------+---------------------+
+|                       Variable                       |     Dependencies    |
++------------------------------------------------------+---------------------+
+|                                                      |          []         |
+|           OperatorSignedHashes.MAGIC_VALUE           |          []         |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |          []         |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |          []         |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |          []         |
+|         OperatorSignedHashes.domainSeparator         | ['domainSeparator'] |
+|             OperatorSignedHashes.chainId             |     ['chainId']     |
+|            OperatorSignedHashes.nameHash             |          []         |
+|           OperatorSignedHashes.versionHash           |          []         |
+|              OperatorSignedHashes.name               |          []         |
+|             OperatorSignedHashes.version             |          []         |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |          []         |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |          []         |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |          []         |
++------------------------------------------------------+---------------------+
+Function getUnbondHash(address,address,uint256,uint256)
++------------------------------------------------------+----------------------+
+|                       Variable                       |     Dependencies     |
++------------------------------------------------------+----------------------+
+|                       operator                       |          []          |
+|                     serviceOwner                     |          []          |
+|                      serviceId                       |          []          |
+|                        nonce                         |          []          |
+|                                                      |          []          |
+|           OperatorSignedHashes.MAGIC_VALUE           |          []          |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |          []          |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         | ['UNBOND_TYPE_HASH'] |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |          []          |
+|         OperatorSignedHashes.domainSeparator         |          []          |
+|             OperatorSignedHashes.chainId             |          []          |
+|            OperatorSignedHashes.nameHash             |          []          |
+|           OperatorSignedHashes.versionHash           |          []          |
+|              OperatorSignedHashes.name               |          []          |
+|             OperatorSignedHashes.version             |          []          |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |          []          |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |          []          |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |          []          |
++------------------------------------------------------+----------------------+
+Function getRegisterAgentsHash(address,address,uint256,address[],uint32[],uint256)
++------------------------------------------------------+-------------------------------+
+|                       Variable                       |          Dependencies         |
++------------------------------------------------------+-------------------------------+
+|                       operator                       |               []              |
+|                     serviceOwner                     |               []              |
+|                      serviceId                       |               []              |
+|                    agentInstances                    |               []              |
+|                       agentIds                       |               []              |
+|                        nonce                         |               []              |
+|                                                      |               []              |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []              |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |               []              |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []              |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    | ['REGISTER_AGENTS_TYPE_HASH'] |
+|         OperatorSignedHashes.domainSeparator         |               []              |
+|             OperatorSignedHashes.chainId             |               []              |
+|            OperatorSignedHashes.nameHash             |               []              |
+|           OperatorSignedHashes.versionHash           |               []              |
+|              OperatorSignedHashes.name               |               []              |
+|             OperatorSignedHashes.version             |               []              |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []              |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []              |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |               []              |
++------------------------------------------------------+-------------------------------+
+Function isOperatorHashApproved(address,bytes32)
++------------------------------------------------------+-------------------------------+
+|                       Variable                       |          Dependencies         |
++------------------------------------------------------+-------------------------------+
+|                       operator                       |               []              |
+|                         hash                         |               []              |
+|                                                      |               []              |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []              |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |               []              |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []              |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |               []              |
+|         OperatorSignedHashes.domainSeparator         |               []              |
+|             OperatorSignedHashes.chainId             |               []              |
+|            OperatorSignedHashes.nameHash             |               []              |
+|           OperatorSignedHashes.versionHash           |               []              |
+|              OperatorSignedHashes.name               |               []              |
+|             OperatorSignedHashes.version             |               []              |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []              |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []              |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    | ['mapOperatorApprovedHashes'] |
++------------------------------------------------------+-------------------------------+
+Function getOperatorUnbondNonce(address,uint256)
++------------------------------------------------------+----------------------------------------------+
+|                       Variable                       |                 Dependencies                 |
++------------------------------------------------------+----------------------------------------------+
+|                       operator                       |                      []                      |
+|                      serviceId                       |                      []                      |
+|                        nonce                         |         ['mapOperatorUnbondNonces']          |
+|                   operatorService                    | ['operator', 'operatorService', 'serviceId'] |
+|           OperatorSignedHashes.MAGIC_VALUE           |                      []                      |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                      []                      |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                      []                      |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                      []                      |
+|         OperatorSignedHashes.domainSeparator         |                      []                      |
+|             OperatorSignedHashes.chainId             |                      []                      |
+|            OperatorSignedHashes.nameHash             |                      []                      |
+|           OperatorSignedHashes.versionHash           |                      []                      |
+|              OperatorSignedHashes.name               |                      []                      |
+|             OperatorSignedHashes.version             |                      []                      |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |         ['mapOperatorUnbondNonces']          |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                      []                      |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                      []                      |
++------------------------------------------------------+----------------------------------------------+
+Function getOperatorRegisterAgentsNonce(address,uint256)
++------------------------------------------------------+----------------------------------------------+
+|                       Variable                       |                 Dependencies                 |
++------------------------------------------------------+----------------------------------------------+
+|                       operator                       |                      []                      |
+|                      serviceId                       |                      []                      |
+|                        nonce                         |     ['mapOperatorRegisterAgentsNonces']      |
+|                   operatorService                    | ['operator', 'operatorService', 'serviceId'] |
+|           OperatorSignedHashes.MAGIC_VALUE           |                      []                      |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                      []                      |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                      []                      |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                      []                      |
+|         OperatorSignedHashes.domainSeparator         |                      []                      |
+|             OperatorSignedHashes.chainId             |                      []                      |
+|            OperatorSignedHashes.nameHash             |                      []                      |
+|           OperatorSignedHashes.versionHash           |                      []                      |
+|              OperatorSignedHashes.name               |                      []                      |
+|             OperatorSignedHashes.version             |                      []                      |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                      []                      |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |     ['mapOperatorRegisterAgentsNonces']      |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                      []                      |
++------------------------------------------------------+----------------------------------------------+
+Function slitherConstructorConstantVariables()
++------------------------------------------------------+--------------+
+|                       Variable                       | Dependencies |
++------------------------------------------------------+--------------+
+|           OperatorSignedHashes.MAGIC_VALUE           |      []      |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |      []      |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |      []      |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |      []      |
+|         OperatorSignedHashes.domainSeparator         |      []      |
+|             OperatorSignedHashes.chainId             |      []      |
+|            OperatorSignedHashes.nameHash             |      []      |
+|           OperatorSignedHashes.versionHash           |      []      |
+|              OperatorSignedHashes.name               |      []      |
+|             OperatorSignedHashes.version             |      []      |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |      []      |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |      []      |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |      []      |
++------------------------------------------------------+--------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract GenericManager
++----------+-----------------------+
+| Variable |      Dependencies     |
++----------+-----------------------+
+|  owner   | ['newOwner', 'owner'] |
+|  paused  |           []          |
++----------+-----------------------+
+
+Function changeOwner(address)
++-----------------------+-----------------------+
+|        Variable       |      Dependencies     |
++-----------------------+-----------------------+
+|        newOwner       |           []          |
+|  GenericManager.owner | ['newOwner', 'owner'] |
+| GenericManager.paused |           []          |
++-----------------------+-----------------------+
+Function pause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Function unpause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Contract IService
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function create(address,bytes32,uint32[],IService.AgentParams[],uint32)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
++--------------+--------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function activateRegistration(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function registerAgents(address,uint256,address[],uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+| agentInstances |      []      |
+|    agentIds    |      []      |
+|    success     |      []      |
++----------------+--------------+
+Function deploy(address,uint256,address,bytes)
++------------------------+--------------+
+|        Variable        | Dependencies |
++------------------------+--------------+
+|      serviceOwner      |      []      |
+|       serviceId        |      []      |
+| multisigImplementation |      []      |
+|          data          |      []      |
+|        multisig        |      []      |
++------------------------+--------------+
+Function terminate(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
+|    refund    |      []      |
++--------------+--------------+
+Function unbond(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|  success  |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Contract IServiceTokenUtility
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function createWithToken(uint256,address,uint32[],uint256[])
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|   token   |      []      |
+|  agentIds |      []      |
+|   bonds   |      []      |
++-----------+--------------+
+Function resetServiceToken(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
++-----------+--------------+
+Function activateRegistrationTokenDeposit(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function registerAgentsTokenDeposit(address,uint256,uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+|    agentIds    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function terminateTokenRefund(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| securityRefund |      []      |
++----------------+--------------+
+Function unbondTokenRefund(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Function isTokenSecuredService(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|           |      []      |
++-----------+--------------+
+Contract ISignatureValidator
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function isValidSignature(bytes32,bytes)
++------------+--------------+
+|  Variable  | Dependencies |
++------------+--------------+
+|    hash    |      []      |
+| signature  |      []      |
+| magicValue |      []      |
++------------+--------------+
+Contract OperatorSignedHashes
++---------------------------------+----------------------------------------------------------------------------------------------------------------------------+
+|             Variable            |                                                        Dependencies                                                        |
++---------------------------------+----------------------------------------------------------------------------------------------------------------------------+
+|           MAGIC_VALUE           |                                                      ['MAGIC_VALUE']                                                       |
+|    DOMAIN_SEPARATOR_TYPE_HASH   |                                               ['DOMAIN_SEPARATOR_TYPE_HASH']                                               |
+|         UNBOND_TYPE_HASH        |                                                    ['UNBOND_TYPE_HASH']                                                    |
+|    REGISTER_AGENTS_TYPE_HASH    |                                               ['REGISTER_AGENTS_TYPE_HASH']                                                |
+|         domainSeparator         | ['DOMAIN_SEPARATOR_TYPE_HASH', '_name', '_version', 'block.chainid', 'domainSeparator', 'nameHash', 'this', 'versionHash'] |
+|             chainId             |                                                ['block.chainid', 'chainId']                                                |
+|             nameHash            |                                                   ['_name', 'nameHash']                                                    |
+|           versionHash           |                                                ['_version', 'versionHash']                                                 |
+|               name              |                                                         ['_name']                                                          |
+|             version             |                                                        ['_version']                                                        |
+|     mapOperatorUnbondNonces     |                                                ['mapOperatorUnbondNonces']                                                 |
+| mapOperatorRegisterAgentsNonces |                                            ['mapOperatorRegisterAgentsNonces']                                             |
+|    mapOperatorApprovedHashes    |                                               ['mapOperatorApprovedHashes']                                                |
++---------------------------------+----------------------------------------------------------------------------------------------------------------------------+
+
+Function constructor(string,string)
++------------------------------------------------------+-------------------+
+|                       Variable                       |    Dependencies   |
++------------------------------------------------------+-------------------+
+|                        _name                         |         []        |
+|                       _version                       |         []        |
+|           OperatorSignedHashes.MAGIC_VALUE           |         []        |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |         []        |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |         []        |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |         []        |
+|         OperatorSignedHashes.domainSeparator         |         []        |
+|             OperatorSignedHashes.chainId             | ['block.chainid'] |
+|            OperatorSignedHashes.nameHash             |     ['_name']     |
+|           OperatorSignedHashes.versionHash           |    ['_version']   |
+|              OperatorSignedHashes.name               |     ['_name']     |
+|             OperatorSignedHashes.version             |    ['_version']   |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |         []        |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |         []        |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |         []        |
++------------------------------------------------------+-------------------+
+Function _verifySignedHash(address,bytes32,bytes)
++------------------------------------------------------+--------------------------------------------------------+
+|                       Variable                       |                      Dependencies                      |
++------------------------------------------------------+--------------------------------------------------------+
+|                       operator                       |                           []                           |
+|                       msgHash                        |                           []                           |
+|                      signature                       |                     ['signature']                      |
+|                          v                           |                   ['signature', 'v']                   |
+|                          r                           |                     ['signature']                      |
+|                          s                           |                     ['signature']                      |
+|                     recOperator                      | ['msgHash', 'r', 'recOperator', 's', 'signature', 'v'] |
+|           OperatorSignedHashes.MAGIC_VALUE           |                    ['MAGIC_VALUE']                     |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                           []                           |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                           []                           |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                           []                           |
+|         OperatorSignedHashes.domainSeparator         |                           []                           |
+|             OperatorSignedHashes.chainId             |                           []                           |
+|            OperatorSignedHashes.nameHash             |                           []                           |
+|           OperatorSignedHashes.versionHash           |                           []                           |
+|              OperatorSignedHashes.name               |                           []                           |
+|             OperatorSignedHashes.version             |                           []                           |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                           []                           |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                           []                           |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |             ['mapOperatorApprovedHashes']              |
++------------------------------------------------------+--------------------------------------------------------+
+Function operatorApproveHash(bytes32)
++------------------------------------------------------+-------------------------------+
+|                       Variable                       |          Dependencies         |
++------------------------------------------------------+-------------------------------+
+|                         hash                         |               []              |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []              |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |               []              |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []              |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |               []              |
+|         OperatorSignedHashes.domainSeparator         |               []              |
+|             OperatorSignedHashes.chainId             |               []              |
+|            OperatorSignedHashes.nameHash             |               []              |
+|           OperatorSignedHashes.versionHash           |               []              |
+|              OperatorSignedHashes.name               |               []              |
+|             OperatorSignedHashes.version             |               []              |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []              |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []              |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    | ['mapOperatorApprovedHashes'] |
++------------------------------------------------------+-------------------------------+
+Function _computeDomainSeparator()
++------------------------------------------------------+--------------------------------+
+|                       Variable                       |          Dependencies          |
++------------------------------------------------------+--------------------------------+
+|                                                      |               []               |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []               |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    | ['DOMAIN_SEPARATOR_TYPE_HASH'] |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []               |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |               []               |
+|         OperatorSignedHashes.domainSeparator         |               []               |
+|             OperatorSignedHashes.chainId             |               []               |
+|            OperatorSignedHashes.nameHash             |          ['nameHash']          |
+|           OperatorSignedHashes.versionHash           |        ['versionHash']         |
+|              OperatorSignedHashes.name               |               []               |
+|             OperatorSignedHashes.version             |               []               |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []               |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []               |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |               []               |
++------------------------------------------------------+--------------------------------+
+Function getDomainSeparator()
++------------------------------------------------------+---------------------+
+|                       Variable                       |     Dependencies    |
++------------------------------------------------------+---------------------+
+|                                                      |          []         |
+|           OperatorSignedHashes.MAGIC_VALUE           |          []         |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |          []         |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |          []         |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |          []         |
+|         OperatorSignedHashes.domainSeparator         | ['domainSeparator'] |
+|             OperatorSignedHashes.chainId             |     ['chainId']     |
+|            OperatorSignedHashes.nameHash             |          []         |
+|           OperatorSignedHashes.versionHash           |          []         |
+|              OperatorSignedHashes.name               |          []         |
+|             OperatorSignedHashes.version             |          []         |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |          []         |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |          []         |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |          []         |
++------------------------------------------------------+---------------------+
+Function getUnbondHash(address,address,uint256,uint256)
++------------------------------------------------------+----------------------+
+|                       Variable                       |     Dependencies     |
++------------------------------------------------------+----------------------+
+|                       operator                       |          []          |
+|                     serviceOwner                     |          []          |
+|                      serviceId                       |          []          |
+|                        nonce                         |          []          |
+|                                                      |          []          |
+|           OperatorSignedHashes.MAGIC_VALUE           |          []          |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |          []          |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         | ['UNBOND_TYPE_HASH'] |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |          []          |
+|         OperatorSignedHashes.domainSeparator         |          []          |
+|             OperatorSignedHashes.chainId             |          []          |
+|            OperatorSignedHashes.nameHash             |          []          |
+|           OperatorSignedHashes.versionHash           |          []          |
+|              OperatorSignedHashes.name               |          []          |
+|             OperatorSignedHashes.version             |          []          |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |          []          |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |          []          |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |          []          |
++------------------------------------------------------+----------------------+
+Function getRegisterAgentsHash(address,address,uint256,address[],uint32[],uint256)
++------------------------------------------------------+-------------------------------+
+|                       Variable                       |          Dependencies         |
++------------------------------------------------------+-------------------------------+
+|                       operator                       |               []              |
+|                     serviceOwner                     |               []              |
+|                      serviceId                       |               []              |
+|                    agentInstances                    |               []              |
+|                       agentIds                       |               []              |
+|                        nonce                         |               []              |
+|                                                      |               []              |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []              |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |               []              |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []              |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    | ['REGISTER_AGENTS_TYPE_HASH'] |
+|         OperatorSignedHashes.domainSeparator         |               []              |
+|             OperatorSignedHashes.chainId             |               []              |
+|            OperatorSignedHashes.nameHash             |               []              |
+|           OperatorSignedHashes.versionHash           |               []              |
+|              OperatorSignedHashes.name               |               []              |
+|             OperatorSignedHashes.version             |               []              |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []              |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []              |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |               []              |
++------------------------------------------------------+-------------------------------+
+Function isOperatorHashApproved(address,bytes32)
++------------------------------------------------------+-------------------------------+
+|                       Variable                       |          Dependencies         |
++------------------------------------------------------+-------------------------------+
+|                       operator                       |               []              |
+|                         hash                         |               []              |
+|                                                      |               []              |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []              |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |               []              |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []              |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |               []              |
+|         OperatorSignedHashes.domainSeparator         |               []              |
+|             OperatorSignedHashes.chainId             |               []              |
+|            OperatorSignedHashes.nameHash             |               []              |
+|           OperatorSignedHashes.versionHash           |               []              |
+|              OperatorSignedHashes.name               |               []              |
+|             OperatorSignedHashes.version             |               []              |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []              |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []              |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    | ['mapOperatorApprovedHashes'] |
++------------------------------------------------------+-------------------------------+
+Function getOperatorUnbondNonce(address,uint256)
++------------------------------------------------------+----------------------------------------------+
+|                       Variable                       |                 Dependencies                 |
++------------------------------------------------------+----------------------------------------------+
+|                       operator                       |                      []                      |
+|                      serviceId                       |                      []                      |
+|                        nonce                         |         ['mapOperatorUnbondNonces']          |
+|                   operatorService                    | ['operator', 'operatorService', 'serviceId'] |
+|           OperatorSignedHashes.MAGIC_VALUE           |                      []                      |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                      []                      |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                      []                      |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                      []                      |
+|         OperatorSignedHashes.domainSeparator         |                      []                      |
+|             OperatorSignedHashes.chainId             |                      []                      |
+|            OperatorSignedHashes.nameHash             |                      []                      |
+|           OperatorSignedHashes.versionHash           |                      []                      |
+|              OperatorSignedHashes.name               |                      []                      |
+|             OperatorSignedHashes.version             |                      []                      |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |         ['mapOperatorUnbondNonces']          |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                      []                      |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                      []                      |
++------------------------------------------------------+----------------------------------------------+
+Function getOperatorRegisterAgentsNonce(address,uint256)
++------------------------------------------------------+----------------------------------------------+
+|                       Variable                       |                 Dependencies                 |
++------------------------------------------------------+----------------------------------------------+
+|                       operator                       |                      []                      |
+|                      serviceId                       |                      []                      |
+|                        nonce                         |     ['mapOperatorRegisterAgentsNonces']      |
+|                   operatorService                    | ['operator', 'operatorService', 'serviceId'] |
+|           OperatorSignedHashes.MAGIC_VALUE           |                      []                      |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                      []                      |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                      []                      |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                      []                      |
+|         OperatorSignedHashes.domainSeparator         |                      []                      |
+|             OperatorSignedHashes.chainId             |                      []                      |
+|            OperatorSignedHashes.nameHash             |                      []                      |
+|           OperatorSignedHashes.versionHash           |                      []                      |
+|              OperatorSignedHashes.name               |                      []                      |
+|             OperatorSignedHashes.version             |                      []                      |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                      []                      |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |     ['mapOperatorRegisterAgentsNonces']      |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                      []                      |
++------------------------------------------------------+----------------------------------------------+
+Function slitherConstructorConstantVariables()
++------------------------------------------------------+--------------+
+|                       Variable                       | Dependencies |
++------------------------------------------------------+--------------+
+|           OperatorSignedHashes.MAGIC_VALUE           |      []      |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |      []      |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |      []      |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |      []      |
+|         OperatorSignedHashes.domainSeparator         |      []      |
+|             OperatorSignedHashes.chainId             |      []      |
+|            OperatorSignedHashes.nameHash             |      []      |
+|           OperatorSignedHashes.versionHash           |      []      |
+|              OperatorSignedHashes.name               |      []      |
+|             OperatorSignedHashes.version             |      []      |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |      []      |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |      []      |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |      []      |
++------------------------------------------------------+--------------+
+Contract IOperatorWhitelist
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function isOperatorWhitelisted(uint256,address)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|  operator |      []      |
+|   status  |      []      |
++-----------+--------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract GenericManager
++----------+-----------------------+
+| Variable |      Dependencies     |
++----------+-----------------------+
+|  owner   | ['newOwner', 'owner'] |
+|  paused  |           []          |
++----------+-----------------------+
+
+Function changeOwner(address)
++-----------------------+-----------------------+
+|        Variable       |      Dependencies     |
++-----------------------+-----------------------+
+|        newOwner       |           []          |
+|  GenericManager.owner | ['newOwner', 'owner'] |
+| GenericManager.paused |           []          |
++-----------------------+-----------------------+
+Function pause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Function unpause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Contract IService
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function create(address,bytes32,uint32[],IService.AgentParams[],uint32)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
++--------------+--------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function activateRegistration(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function registerAgents(address,uint256,address[],uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+| agentInstances |      []      |
+|    agentIds    |      []      |
+|    success     |      []      |
++----------------+--------------+
+Function deploy(address,uint256,address,bytes)
++------------------------+--------------+
+|        Variable        | Dependencies |
++------------------------+--------------+
+|      serviceOwner      |      []      |
+|       serviceId        |      []      |
+| multisigImplementation |      []      |
+|          data          |      []      |
+|        multisig        |      []      |
++------------------------+--------------+
+Function terminate(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
+|    refund    |      []      |
++--------------+--------------+
+Function unbond(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|  success  |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Contract IServiceTokenUtility
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function createWithToken(uint256,address,uint32[],uint256[])
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|   token   |      []      |
+|  agentIds |      []      |
+|   bonds   |      []      |
++-----------+--------------+
+Function resetServiceToken(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
++-----------+--------------+
+Function activateRegistrationTokenDeposit(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function registerAgentsTokenDeposit(address,uint256,uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+|    agentIds    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function terminateTokenRefund(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| securityRefund |      []      |
++----------------+--------------+
+Function unbondTokenRefund(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Function isTokenSecuredService(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|           |      []      |
++-----------+--------------+
+Contract ISignatureValidator
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function isValidSignature(bytes32,bytes)
++------------+--------------+
+|  Variable  | Dependencies |
++------------+--------------+
+|    hash    |      []      |
+| signature  |      []      |
+| magicValue |      []      |
++------------+--------------+
+Contract OperatorSignedHashes
++---------------------------------+----------------------------------------------------------------------------------------------------------------------------+
+|             Variable            |                                                        Dependencies                                                        |
++---------------------------------+----------------------------------------------------------------------------------------------------------------------------+
+|           MAGIC_VALUE           |                                                      ['MAGIC_VALUE']                                                       |
+|    DOMAIN_SEPARATOR_TYPE_HASH   |                                               ['DOMAIN_SEPARATOR_TYPE_HASH']                                               |
+|         UNBOND_TYPE_HASH        |                                                    ['UNBOND_TYPE_HASH']                                                    |
+|    REGISTER_AGENTS_TYPE_HASH    |                                               ['REGISTER_AGENTS_TYPE_HASH']                                                |
+|         domainSeparator         | ['DOMAIN_SEPARATOR_TYPE_HASH', '_name', '_version', 'block.chainid', 'domainSeparator', 'nameHash', 'this', 'versionHash'] |
+|             chainId             |                                                ['block.chainid', 'chainId']                                                |
+|             nameHash            |                                                   ['_name', 'nameHash']                                                    |
+|           versionHash           |                                                ['_version', 'versionHash']                                                 |
+|               name              |                                                         ['_name']                                                          |
+|             version             |                                                        ['_version']                                                        |
+|     mapOperatorUnbondNonces     |                                                ['mapOperatorUnbondNonces']                                                 |
+| mapOperatorRegisterAgentsNonces |                                            ['mapOperatorRegisterAgentsNonces']                                             |
+|    mapOperatorApprovedHashes    |                                               ['mapOperatorApprovedHashes']                                                |
++---------------------------------+----------------------------------------------------------------------------------------------------------------------------+
+
+Function constructor(string,string)
++------------------------------------------------------+-------------------+
+|                       Variable                       |    Dependencies   |
++------------------------------------------------------+-------------------+
+|                        _name                         |         []        |
+|                       _version                       |         []        |
+|           OperatorSignedHashes.MAGIC_VALUE           |         []        |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |         []        |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |         []        |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |         []        |
+|         OperatorSignedHashes.domainSeparator         |         []        |
+|             OperatorSignedHashes.chainId             | ['block.chainid'] |
+|            OperatorSignedHashes.nameHash             |     ['_name']     |
+|           OperatorSignedHashes.versionHash           |    ['_version']   |
+|              OperatorSignedHashes.name               |     ['_name']     |
+|             OperatorSignedHashes.version             |    ['_version']   |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |         []        |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |         []        |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |         []        |
++------------------------------------------------------+-------------------+
+Function _verifySignedHash(address,bytes32,bytes)
++------------------------------------------------------+--------------------------------------------------------+
+|                       Variable                       |                      Dependencies                      |
++------------------------------------------------------+--------------------------------------------------------+
+|                       operator                       |                           []                           |
+|                       msgHash                        |                           []                           |
+|                      signature                       |                     ['signature']                      |
+|                          v                           |                   ['signature', 'v']                   |
+|                          r                           |                     ['signature']                      |
+|                          s                           |                     ['signature']                      |
+|                     recOperator                      | ['msgHash', 'r', 'recOperator', 's', 'signature', 'v'] |
+|           OperatorSignedHashes.MAGIC_VALUE           |                    ['MAGIC_VALUE']                     |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                           []                           |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                           []                           |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                           []                           |
+|         OperatorSignedHashes.domainSeparator         |                           []                           |
+|             OperatorSignedHashes.chainId             |                           []                           |
+|            OperatorSignedHashes.nameHash             |                           []                           |
+|           OperatorSignedHashes.versionHash           |                           []                           |
+|              OperatorSignedHashes.name               |                           []                           |
+|             OperatorSignedHashes.version             |                           []                           |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                           []                           |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                           []                           |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |             ['mapOperatorApprovedHashes']              |
++------------------------------------------------------+--------------------------------------------------------+
+Function operatorApproveHash(bytes32)
++------------------------------------------------------+-------------------------------+
+|                       Variable                       |          Dependencies         |
++------------------------------------------------------+-------------------------------+
+|                         hash                         |               []              |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []              |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |               []              |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []              |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |               []              |
+|         OperatorSignedHashes.domainSeparator         |               []              |
+|             OperatorSignedHashes.chainId             |               []              |
+|            OperatorSignedHashes.nameHash             |               []              |
+|           OperatorSignedHashes.versionHash           |               []              |
+|              OperatorSignedHashes.name               |               []              |
+|             OperatorSignedHashes.version             |               []              |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []              |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []              |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    | ['mapOperatorApprovedHashes'] |
++------------------------------------------------------+-------------------------------+
+Function _computeDomainSeparator()
++------------------------------------------------------+--------------------------------+
+|                       Variable                       |          Dependencies          |
++------------------------------------------------------+--------------------------------+
+|                                                      |               []               |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []               |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    | ['DOMAIN_SEPARATOR_TYPE_HASH'] |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []               |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |               []               |
+|         OperatorSignedHashes.domainSeparator         |               []               |
+|             OperatorSignedHashes.chainId             |               []               |
+|            OperatorSignedHashes.nameHash             |          ['nameHash']          |
+|           OperatorSignedHashes.versionHash           |        ['versionHash']         |
+|              OperatorSignedHashes.name               |               []               |
+|             OperatorSignedHashes.version             |               []               |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []               |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []               |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |               []               |
++------------------------------------------------------+--------------------------------+
+Function getDomainSeparator()
++------------------------------------------------------+---------------------+
+|                       Variable                       |     Dependencies    |
++------------------------------------------------------+---------------------+
+|                                                      |          []         |
+|           OperatorSignedHashes.MAGIC_VALUE           |          []         |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |          []         |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |          []         |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |          []         |
+|         OperatorSignedHashes.domainSeparator         | ['domainSeparator'] |
+|             OperatorSignedHashes.chainId             |     ['chainId']     |
+|            OperatorSignedHashes.nameHash             |          []         |
+|           OperatorSignedHashes.versionHash           |          []         |
+|              OperatorSignedHashes.name               |          []         |
+|             OperatorSignedHashes.version             |          []         |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |          []         |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |          []         |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |          []         |
++------------------------------------------------------+---------------------+
+Function getUnbondHash(address,address,uint256,uint256)
++------------------------------------------------------+----------------------+
+|                       Variable                       |     Dependencies     |
++------------------------------------------------------+----------------------+
+|                       operator                       |          []          |
+|                     serviceOwner                     |          []          |
+|                      serviceId                       |          []          |
+|                        nonce                         |          []          |
+|                                                      |          []          |
+|           OperatorSignedHashes.MAGIC_VALUE           |          []          |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |          []          |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         | ['UNBOND_TYPE_HASH'] |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |          []          |
+|         OperatorSignedHashes.domainSeparator         |          []          |
+|             OperatorSignedHashes.chainId             |          []          |
+|            OperatorSignedHashes.nameHash             |          []          |
+|           OperatorSignedHashes.versionHash           |          []          |
+|              OperatorSignedHashes.name               |          []          |
+|             OperatorSignedHashes.version             |          []          |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |          []          |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |          []          |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |          []          |
++------------------------------------------------------+----------------------+
+Function getRegisterAgentsHash(address,address,uint256,address[],uint32[],uint256)
++------------------------------------------------------+-------------------------------+
+|                       Variable                       |          Dependencies         |
++------------------------------------------------------+-------------------------------+
+|                       operator                       |               []              |
+|                     serviceOwner                     |               []              |
+|                      serviceId                       |               []              |
+|                    agentInstances                    |               []              |
+|                       agentIds                       |               []              |
+|                        nonce                         |               []              |
+|                                                      |               []              |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []              |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |               []              |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []              |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    | ['REGISTER_AGENTS_TYPE_HASH'] |
+|         OperatorSignedHashes.domainSeparator         |               []              |
+|             OperatorSignedHashes.chainId             |               []              |
+|            OperatorSignedHashes.nameHash             |               []              |
+|           OperatorSignedHashes.versionHash           |               []              |
+|              OperatorSignedHashes.name               |               []              |
+|             OperatorSignedHashes.version             |               []              |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []              |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []              |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |               []              |
++------------------------------------------------------+-------------------------------+
+Function isOperatorHashApproved(address,bytes32)
++------------------------------------------------------+-------------------------------+
+|                       Variable                       |          Dependencies         |
++------------------------------------------------------+-------------------------------+
+|                       operator                       |               []              |
+|                         hash                         |               []              |
+|                                                      |               []              |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []              |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |               []              |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []              |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |               []              |
+|         OperatorSignedHashes.domainSeparator         |               []              |
+|             OperatorSignedHashes.chainId             |               []              |
+|            OperatorSignedHashes.nameHash             |               []              |
+|           OperatorSignedHashes.versionHash           |               []              |
+|              OperatorSignedHashes.name               |               []              |
+|             OperatorSignedHashes.version             |               []              |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []              |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []              |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    | ['mapOperatorApprovedHashes'] |
++------------------------------------------------------+-------------------------------+
+Function getOperatorUnbondNonce(address,uint256)
++------------------------------------------------------+----------------------------------------------+
+|                       Variable                       |                 Dependencies                 |
++------------------------------------------------------+----------------------------------------------+
+|                       operator                       |                      []                      |
+|                      serviceId                       |                      []                      |
+|                        nonce                         |         ['mapOperatorUnbondNonces']          |
+|                   operatorService                    | ['operator', 'operatorService', 'serviceId'] |
+|           OperatorSignedHashes.MAGIC_VALUE           |                      []                      |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                      []                      |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                      []                      |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                      []                      |
+|         OperatorSignedHashes.domainSeparator         |                      []                      |
+|             OperatorSignedHashes.chainId             |                      []                      |
+|            OperatorSignedHashes.nameHash             |                      []                      |
+|           OperatorSignedHashes.versionHash           |                      []                      |
+|              OperatorSignedHashes.name               |                      []                      |
+|             OperatorSignedHashes.version             |                      []                      |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |         ['mapOperatorUnbondNonces']          |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                      []                      |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                      []                      |
++------------------------------------------------------+----------------------------------------------+
+Function getOperatorRegisterAgentsNonce(address,uint256)
++------------------------------------------------------+----------------------------------------------+
+|                       Variable                       |                 Dependencies                 |
++------------------------------------------------------+----------------------------------------------+
+|                       operator                       |                      []                      |
+|                      serviceId                       |                      []                      |
+|                        nonce                         |     ['mapOperatorRegisterAgentsNonces']      |
+|                   operatorService                    | ['operator', 'operatorService', 'serviceId'] |
+|           OperatorSignedHashes.MAGIC_VALUE           |                      []                      |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                      []                      |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                      []                      |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                      []                      |
+|         OperatorSignedHashes.domainSeparator         |                      []                      |
+|             OperatorSignedHashes.chainId             |                      []                      |
+|            OperatorSignedHashes.nameHash             |                      []                      |
+|           OperatorSignedHashes.versionHash           |                      []                      |
+|              OperatorSignedHashes.name               |                      []                      |
+|             OperatorSignedHashes.version             |                      []                      |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                      []                      |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |     ['mapOperatorRegisterAgentsNonces']      |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                      []                      |
++------------------------------------------------------+----------------------------------------------+
+Function slitherConstructorConstantVariables()
++------------------------------------------------------+--------------+
+|                       Variable                       | Dependencies |
++------------------------------------------------------+--------------+
+|           OperatorSignedHashes.MAGIC_VALUE           |      []      |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |      []      |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |      []      |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |      []      |
+|         OperatorSignedHashes.domainSeparator         |      []      |
+|             OperatorSignedHashes.chainId             |      []      |
+|            OperatorSignedHashes.nameHash             |      []      |
+|           OperatorSignedHashes.versionHash           |      []      |
+|              OperatorSignedHashes.name               |      []      |
+|             OperatorSignedHashes.version             |      []      |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |      []      |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |      []      |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |      []      |
++------------------------------------------------------+--------------+
+Contract IOperatorWhitelist
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function isOperatorWhitelisted(uint256,address)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|  operator |      []      |
+|   status  |      []      |
++-----------+--------------+
+Contract IToken
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function ownerOf(uint256)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+| tokenId  |      []      |
+|          |      []      |
++----------+--------------+
+INFO:Printers:
+Contract IErrorsRegistries
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Contract GenericManager
++----------+-----------------------+
+| Variable |      Dependencies     |
++----------+-----------------------+
+|  owner   | ['newOwner', 'owner'] |
+|  paused  |           []          |
++----------+-----------------------+
+
+Function changeOwner(address)
++-----------------------+-----------------------+
+|        Variable       |      Dependencies     |
++-----------------------+-----------------------+
+|        newOwner       |           []          |
+|  GenericManager.owner | ['newOwner', 'owner'] |
+| GenericManager.paused |           []          |
++-----------------------+-----------------------+
+Function pause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Function unpause()
++-----------------------+--------------+
+|        Variable       | Dependencies |
++-----------------------+--------------+
+|  GenericManager.owner |  ['owner']   |
+| GenericManager.paused |      []      |
++-----------------------+--------------+
+Contract IService
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function create(address,bytes32,uint32[],IService.AgentParams[],uint32)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
++--------------+--------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  configHash  |      []      |
+|   agentIds   |      []      |
+| agentParams  |      []      |
+|  threshold   |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function activateRegistration(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
++--------------+--------------+
+Function registerAgents(address,uint256,address[],uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+| agentInstances |      []      |
+|    agentIds    |      []      |
+|    success     |      []      |
++----------------+--------------+
+Function deploy(address,uint256,address,bytes)
++------------------------+--------------+
+|        Variable        | Dependencies |
++------------------------+--------------+
+|      serviceOwner      |      []      |
+|       serviceId        |      []      |
+| multisigImplementation |      []      |
+|          data          |      []      |
+|        multisig        |      []      |
++------------------------+--------------+
+Function terminate(address,uint256)
++--------------+--------------+
+|   Variable   | Dependencies |
++--------------+--------------+
+| serviceOwner |      []      |
+|  serviceId   |      []      |
+|   success    |      []      |
+|    refund    |      []      |
++--------------+--------------+
+Function unbond(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|  success  |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Contract IServiceTokenUtility
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function createWithToken(uint256,address,uint32[],uint256[])
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|   token   |      []      |
+|  agentIds |      []      |
+|   bonds   |      []      |
++-----------+--------------+
+Function resetServiceToken(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
++-----------+--------------+
+Function activateRegistrationTokenDeposit(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function registerAgentsTokenDeposit(address,uint256,uint32[])
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|    operator    |      []      |
+|   serviceId    |      []      |
+|    agentIds    |      []      |
+| isTokenSecured |      []      |
++----------------+--------------+
+Function terminateTokenRefund(uint256)
++----------------+--------------+
+|    Variable    | Dependencies |
++----------------+--------------+
+|   serviceId    |      []      |
+| securityRefund |      []      |
++----------------+--------------+
+Function unbondTokenRefund(address,uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+|  operator |      []      |
+| serviceId |      []      |
+|   refund  |      []      |
++-----------+--------------+
+Function isTokenSecuredService(uint256)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|           |      []      |
++-----------+--------------+
+Contract ISignatureValidator
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function isValidSignature(bytes32,bytes)
++------------+--------------+
+|  Variable  | Dependencies |
++------------+--------------+
+|    hash    |      []      |
+| signature  |      []      |
+| magicValue |      []      |
++------------+--------------+
+Contract OperatorSignedHashes
++---------------------------------+----------------------------------------------------------------------------------------------------------------------------+
+|             Variable            |                                                        Dependencies                                                        |
++---------------------------------+----------------------------------------------------------------------------------------------------------------------------+
+|           MAGIC_VALUE           |                                                      ['MAGIC_VALUE']                                                       |
+|    DOMAIN_SEPARATOR_TYPE_HASH   |                                               ['DOMAIN_SEPARATOR_TYPE_HASH']                                               |
+|         UNBOND_TYPE_HASH        |                                                    ['UNBOND_TYPE_HASH']                                                    |
+|    REGISTER_AGENTS_TYPE_HASH    |                                               ['REGISTER_AGENTS_TYPE_HASH']                                                |
+|         domainSeparator         | ['DOMAIN_SEPARATOR_TYPE_HASH', '_name', '_version', 'block.chainid', 'domainSeparator', 'nameHash', 'this', 'versionHash'] |
+|             chainId             |                                                ['block.chainid', 'chainId']                                                |
+|             nameHash            |                                                   ['_name', 'nameHash']                                                    |
+|           versionHash           |                                                ['_version', 'versionHash']                                                 |
+|               name              |                                                         ['_name']                                                          |
+|             version             |                                                        ['_version']                                                        |
+|     mapOperatorUnbondNonces     |                                                ['mapOperatorUnbondNonces']                                                 |
+| mapOperatorRegisterAgentsNonces |                                            ['mapOperatorRegisterAgentsNonces']                                             |
+|    mapOperatorApprovedHashes    |                                               ['mapOperatorApprovedHashes']                                                |
++---------------------------------+----------------------------------------------------------------------------------------------------------------------------+
+
+Function constructor(string,string)
++------------------------------------------------------+-------------------+
+|                       Variable                       |    Dependencies   |
++------------------------------------------------------+-------------------+
+|                        _name                         |         []        |
+|                       _version                       |         []        |
+|           OperatorSignedHashes.MAGIC_VALUE           |         []        |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |         []        |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |         []        |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |         []        |
+|         OperatorSignedHashes.domainSeparator         |         []        |
+|             OperatorSignedHashes.chainId             | ['block.chainid'] |
+|            OperatorSignedHashes.nameHash             |     ['_name']     |
+|           OperatorSignedHashes.versionHash           |    ['_version']   |
+|              OperatorSignedHashes.name               |     ['_name']     |
+|             OperatorSignedHashes.version             |    ['_version']   |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |         []        |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |         []        |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |         []        |
++------------------------------------------------------+-------------------+
+Function _verifySignedHash(address,bytes32,bytes)
++------------------------------------------------------+--------------------------------------------------------+
+|                       Variable                       |                      Dependencies                      |
++------------------------------------------------------+--------------------------------------------------------+
+|                       operator                       |                           []                           |
+|                       msgHash                        |                           []                           |
+|                      signature                       |                     ['signature']                      |
+|                          v                           |                   ['signature', 'v']                   |
+|                          r                           |                     ['signature']                      |
+|                          s                           |                     ['signature']                      |
+|                     recOperator                      | ['msgHash', 'r', 'recOperator', 's', 'signature', 'v'] |
+|           OperatorSignedHashes.MAGIC_VALUE           |                    ['MAGIC_VALUE']                     |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                           []                           |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                           []                           |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                           []                           |
+|         OperatorSignedHashes.domainSeparator         |                           []                           |
+|             OperatorSignedHashes.chainId             |                           []                           |
+|            OperatorSignedHashes.nameHash             |                           []                           |
+|           OperatorSignedHashes.versionHash           |                           []                           |
+|              OperatorSignedHashes.name               |                           []                           |
+|             OperatorSignedHashes.version             |                           []                           |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                           []                           |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                           []                           |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |             ['mapOperatorApprovedHashes']              |
++------------------------------------------------------+--------------------------------------------------------+
+Function operatorApproveHash(bytes32)
++------------------------------------------------------+-------------------------------+
+|                       Variable                       |          Dependencies         |
++------------------------------------------------------+-------------------------------+
+|                         hash                         |               []              |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []              |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |               []              |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []              |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |               []              |
+|         OperatorSignedHashes.domainSeparator         |               []              |
+|             OperatorSignedHashes.chainId             |               []              |
+|            OperatorSignedHashes.nameHash             |               []              |
+|           OperatorSignedHashes.versionHash           |               []              |
+|              OperatorSignedHashes.name               |               []              |
+|             OperatorSignedHashes.version             |               []              |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []              |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []              |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    | ['mapOperatorApprovedHashes'] |
++------------------------------------------------------+-------------------------------+
+Function _computeDomainSeparator()
++------------------------------------------------------+--------------------------------+
+|                       Variable                       |          Dependencies          |
++------------------------------------------------------+--------------------------------+
+|                                                      |               []               |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []               |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    | ['DOMAIN_SEPARATOR_TYPE_HASH'] |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []               |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |               []               |
+|         OperatorSignedHashes.domainSeparator         |               []               |
+|             OperatorSignedHashes.chainId             |               []               |
+|            OperatorSignedHashes.nameHash             |          ['nameHash']          |
+|           OperatorSignedHashes.versionHash           |        ['versionHash']         |
+|              OperatorSignedHashes.name               |               []               |
+|             OperatorSignedHashes.version             |               []               |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []               |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []               |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |               []               |
++------------------------------------------------------+--------------------------------+
+Function getDomainSeparator()
++------------------------------------------------------+---------------------+
+|                       Variable                       |     Dependencies    |
++------------------------------------------------------+---------------------+
+|                                                      |          []         |
+|           OperatorSignedHashes.MAGIC_VALUE           |          []         |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |          []         |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |          []         |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |          []         |
+|         OperatorSignedHashes.domainSeparator         | ['domainSeparator'] |
+|             OperatorSignedHashes.chainId             |     ['chainId']     |
+|            OperatorSignedHashes.nameHash             |          []         |
+|           OperatorSignedHashes.versionHash           |          []         |
+|              OperatorSignedHashes.name               |          []         |
+|             OperatorSignedHashes.version             |          []         |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |          []         |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |          []         |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |          []         |
++------------------------------------------------------+---------------------+
+Function getUnbondHash(address,address,uint256,uint256)
++------------------------------------------------------+----------------------+
+|                       Variable                       |     Dependencies     |
++------------------------------------------------------+----------------------+
+|                       operator                       |          []          |
+|                     serviceOwner                     |          []          |
+|                      serviceId                       |          []          |
+|                        nonce                         |          []          |
+|                                                      |          []          |
+|           OperatorSignedHashes.MAGIC_VALUE           |          []          |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |          []          |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         | ['UNBOND_TYPE_HASH'] |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |          []          |
+|         OperatorSignedHashes.domainSeparator         |          []          |
+|             OperatorSignedHashes.chainId             |          []          |
+|            OperatorSignedHashes.nameHash             |          []          |
+|           OperatorSignedHashes.versionHash           |          []          |
+|              OperatorSignedHashes.name               |          []          |
+|             OperatorSignedHashes.version             |          []          |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |          []          |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |          []          |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |          []          |
++------------------------------------------------------+----------------------+
+Function getRegisterAgentsHash(address,address,uint256,address[],uint32[],uint256)
++------------------------------------------------------+-------------------------------+
+|                       Variable                       |          Dependencies         |
++------------------------------------------------------+-------------------------------+
+|                       operator                       |               []              |
+|                     serviceOwner                     |               []              |
+|                      serviceId                       |               []              |
+|                    agentInstances                    |               []              |
+|                       agentIds                       |               []              |
+|                        nonce                         |               []              |
+|                                                      |               []              |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []              |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |               []              |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []              |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    | ['REGISTER_AGENTS_TYPE_HASH'] |
+|         OperatorSignedHashes.domainSeparator         |               []              |
+|             OperatorSignedHashes.chainId             |               []              |
+|            OperatorSignedHashes.nameHash             |               []              |
+|           OperatorSignedHashes.versionHash           |               []              |
+|              OperatorSignedHashes.name               |               []              |
+|             OperatorSignedHashes.version             |               []              |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []              |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []              |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |               []              |
++------------------------------------------------------+-------------------------------+
+Function isOperatorHashApproved(address,bytes32)
++------------------------------------------------------+-------------------------------+
+|                       Variable                       |          Dependencies         |
++------------------------------------------------------+-------------------------------+
+|                       operator                       |               []              |
+|                         hash                         |               []              |
+|                                                      |               []              |
+|           OperatorSignedHashes.MAGIC_VALUE           |               []              |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |               []              |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |               []              |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |               []              |
+|         OperatorSignedHashes.domainSeparator         |               []              |
+|             OperatorSignedHashes.chainId             |               []              |
+|            OperatorSignedHashes.nameHash             |               []              |
+|           OperatorSignedHashes.versionHash           |               []              |
+|              OperatorSignedHashes.name               |               []              |
+|             OperatorSignedHashes.version             |               []              |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |               []              |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |               []              |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    | ['mapOperatorApprovedHashes'] |
++------------------------------------------------------+-------------------------------+
+Function getOperatorUnbondNonce(address,uint256)
++------------------------------------------------------+----------------------------------------------+
+|                       Variable                       |                 Dependencies                 |
++------------------------------------------------------+----------------------------------------------+
+|                       operator                       |                      []                      |
+|                      serviceId                       |                      []                      |
+|                        nonce                         |         ['mapOperatorUnbondNonces']          |
+|                   operatorService                    | ['operator', 'operatorService', 'serviceId'] |
+|           OperatorSignedHashes.MAGIC_VALUE           |                      []                      |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                      []                      |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                      []                      |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                      []                      |
+|         OperatorSignedHashes.domainSeparator         |                      []                      |
+|             OperatorSignedHashes.chainId             |                      []                      |
+|            OperatorSignedHashes.nameHash             |                      []                      |
+|           OperatorSignedHashes.versionHash           |                      []                      |
+|              OperatorSignedHashes.name               |                      []                      |
+|             OperatorSignedHashes.version             |                      []                      |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |         ['mapOperatorUnbondNonces']          |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                      []                      |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                      []                      |
++------------------------------------------------------+----------------------------------------------+
+Function getOperatorRegisterAgentsNonce(address,uint256)
++------------------------------------------------------+----------------------------------------------+
+|                       Variable                       |                 Dependencies                 |
++------------------------------------------------------+----------------------------------------------+
+|                       operator                       |                      []                      |
+|                      serviceId                       |                      []                      |
+|                        nonce                         |     ['mapOperatorRegisterAgentsNonces']      |
+|                   operatorService                    | ['operator', 'operatorService', 'serviceId'] |
+|           OperatorSignedHashes.MAGIC_VALUE           |                      []                      |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                      []                      |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                      []                      |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                      []                      |
+|         OperatorSignedHashes.domainSeparator         |                      []                      |
+|             OperatorSignedHashes.chainId             |                      []                      |
+|            OperatorSignedHashes.nameHash             |                      []                      |
+|           OperatorSignedHashes.versionHash           |                      []                      |
+|              OperatorSignedHashes.name               |                      []                      |
+|             OperatorSignedHashes.version             |                      []                      |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                      []                      |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |     ['mapOperatorRegisterAgentsNonces']      |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                      []                      |
++------------------------------------------------------+----------------------------------------------+
+Function slitherConstructorConstantVariables()
++------------------------------------------------------+--------------+
+|                       Variable                       | Dependencies |
++------------------------------------------------------+--------------+
+|           OperatorSignedHashes.MAGIC_VALUE           |      []      |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |      []      |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |      []      |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |      []      |
+|         OperatorSignedHashes.domainSeparator         |      []      |
+|             OperatorSignedHashes.chainId             |      []      |
+|            OperatorSignedHashes.nameHash             |      []      |
+|           OperatorSignedHashes.versionHash           |      []      |
+|              OperatorSignedHashes.name               |      []      |
+|             OperatorSignedHashes.version             |      []      |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |      []      |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |      []      |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |      []      |
++------------------------------------------------------+--------------+
+Contract IOperatorWhitelist
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function isOperatorWhitelisted(uint256,address)
++-----------+--------------+
+|  Variable | Dependencies |
++-----------+--------------+
+| serviceId |      []      |
+|  operator |      []      |
+|   status  |      []      |
++-----------+--------------+
+Contract IToken
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
++----------+--------------+
+
+Function ownerOf(uint256)
++----------+--------------+
+| Variable | Dependencies |
++----------+--------------+
+| tokenId  |      []      |
+|          |      []      |
++----------+--------------+
+Contract ServiceManagerToken
++---------------------------------+----------------------------------------------------------------------------------------------------------------------------+
+|             Variable            |                                                        Dependencies                                                        |
++---------------------------------+----------------------------------------------------------------------------------------------------------------------------+
+|              owner              |                                            ['msg.sender', 'newOwner', 'owner']                                             |
+|              paused             |                                                         ['paused']                                                         |
+|           MAGIC_VALUE           |                                                      ['MAGIC_VALUE']                                                       |
+|    DOMAIN_SEPARATOR_TYPE_HASH   |                                               ['DOMAIN_SEPARATOR_TYPE_HASH']                                               |
+|         UNBOND_TYPE_HASH        |                                                    ['UNBOND_TYPE_HASH']                                                    |
+|    REGISTER_AGENTS_TYPE_HASH    |                                               ['REGISTER_AGENTS_TYPE_HASH']                                                |
+|         domainSeparator         | ['DOMAIN_SEPARATOR_TYPE_HASH', '_name', '_version', 'block.chainid', 'domainSeparator', 'nameHash', 'this', 'versionHash'] |
+|             chainId             |                                                ['block.chainid', 'chainId']                                                |
+|             nameHash            |                                                   ['_name', 'nameHash']                                                    |
+|           versionHash           |                                                ['_version', 'versionHash']                                                 |
+|               name              |                                                         ['_name']                                                          |
+|             version             |                                                        ['_version']                                                        |
+|     mapOperatorUnbondNonces     |                                            ['mapOperatorUnbondNonces', 'nonce']                                            |
+| mapOperatorRegisterAgentsNonces |                                        ['mapOperatorRegisterAgentsNonces', 'nonce']                                        |
+|    mapOperatorApprovedHashes    |                                               ['mapOperatorApprovedHashes']                                                |
+|         serviceRegistry         |                                          ['_serviceRegistry', 'serviceRegistry']                                           |
+|   serviceRegistryTokenUtility   |                              ['_serviceRegistryTokenUtility', 'serviceRegistryTokenUtility']                               |
+|        ETH_TOKEN_ADDRESS        |                                                   ['ETH_TOKEN_ADDRESS']                                                    |
+|           BOND_WRAPPER          |                                                      ['BOND_WRAPPER']                                                      |
+|        operatorWhitelist        |                            ['_operatorWhitelist', 'newOperatorWhitelist', 'operatorWhitelist']                             |
++---------------------------------+----------------------------------------------------------------------------------------------------------------------------+
+
+Function constructor(address,address,address)
++------------------------------------------------------+----------------------------------+
+|                       Variable                       |           Dependencies           |
++------------------------------------------------------+----------------------------------+
+|                   _serviceRegistry                   |                []                |
+|             _serviceRegistryTokenUtility             |                []                |
+|                  _operatorWhitelist                  |                []                |
+|                 GenericManager.owner                 |          ['msg.sender']          |
+|                GenericManager.paused                 |                []                |
+|           OperatorSignedHashes.MAGIC_VALUE           |                []                |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                []                |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                []                |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                []                |
+|         OperatorSignedHashes.domainSeparator         |                []                |
+|             OperatorSignedHashes.chainId             |                []                |
+|            OperatorSignedHashes.nameHash             |                []                |
+|           OperatorSignedHashes.versionHash           |                []                |
+|              OperatorSignedHashes.name               |                []                |
+|             OperatorSignedHashes.version             |                []                |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                []                |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                []                |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                []                |
+|         ServiceManagerToken.serviceRegistry          |       ['_serviceRegistry']       |
+|   ServiceManagerToken.serviceRegistryTokenUtility    | ['_serviceRegistryTokenUtility'] |
+|        ServiceManagerToken.ETH_TOKEN_ADDRESS         |                []                |
+|           ServiceManagerToken.BOND_WRAPPER           |                []                |
+|        ServiceManagerToken.operatorWhitelist         |      ['_operatorWhitelist']      |
++------------------------------------------------------+----------------------------------+
+Function setOperatorWhitelist(address)
++------------------------------------------------------+--------------------------+
+|                       Variable                       |       Dependencies       |
++------------------------------------------------------+--------------------------+
+|                 newOperatorWhitelist                 |            []            |
+|                 GenericManager.owner                 |        ['owner']         |
+|                GenericManager.paused                 |            []            |
+|           OperatorSignedHashes.MAGIC_VALUE           |            []            |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |            []            |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |            []            |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |            []            |
+|         OperatorSignedHashes.domainSeparator         |            []            |
+|             OperatorSignedHashes.chainId             |            []            |
+|            OperatorSignedHashes.nameHash             |            []            |
+|           OperatorSignedHashes.versionHash           |            []            |
+|              OperatorSignedHashes.name               |            []            |
+|             OperatorSignedHashes.version             |            []            |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |            []            |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |            []            |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |            []            |
+|         ServiceManagerToken.serviceRegistry          |            []            |
+|   ServiceManagerToken.serviceRegistryTokenUtility    |            []            |
+|        ServiceManagerToken.ETH_TOKEN_ADDRESS         |            []            |
+|           ServiceManagerToken.BOND_WRAPPER           |            []            |
+|        ServiceManagerToken.operatorWhitelist         | ['newOperatorWhitelist'] |
++------------------------------------------------------+--------------------------+
+Function create(address,address,bytes32,uint32[],IService.AgentParams[],uint32)
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+|                       Variable                       |                                        Dependencies                                       |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+|                     serviceOwner                     |                                             []                                            |
+|                        token                         |                                             []                                            |
+|                      configHash                      |                                             []                                            |
+|                       agentIds                       |                                             []                                            |
+|                     agentParams                      |                                      ['agentParams']                                      |
+|                      threshold                       |                                             []                                            |
+|                      serviceId                       | ['agentIds', 'agentParams', 'configHash', 'serviceOwner', 'serviceRegistry', 'threshold'] |
+|                      numAgents                       |                                      ['agentParams']                                      |
+|                        bonds                         |                           ['agentParams', 'bonds', 'numAgents']                           |
+|                          i                           |                                           ['i']                                           |
+|                 GenericManager.owner                 |                                             []                                            |
+|                GenericManager.paused                 |                                         ['paused']                                        |
+|           OperatorSignedHashes.MAGIC_VALUE           |                                             []                                            |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                                             []                                            |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                                             []                                            |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                                             []                                            |
+|         OperatorSignedHashes.domainSeparator         |                                             []                                            |
+|             OperatorSignedHashes.chainId             |                                             []                                            |
+|            OperatorSignedHashes.nameHash             |                                             []                                            |
+|           OperatorSignedHashes.versionHash           |                                             []                                            |
+|              OperatorSignedHashes.name               |                                             []                                            |
+|             OperatorSignedHashes.version             |                                             []                                            |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                                             []                                            |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                                             []                                            |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                                             []                                            |
+|         ServiceManagerToken.serviceRegistry          |                                    ['serviceRegistry']                                    |
+|   ServiceManagerToken.serviceRegistryTokenUtility    |                              ['serviceRegistryTokenUtility']                              |
+|        ServiceManagerToken.ETH_TOKEN_ADDRESS         |                                   ['ETH_TOKEN_ADDRESS']                                   |
+|           ServiceManagerToken.BOND_WRAPPER           |                                      ['BOND_WRAPPER']                                     |
+|        ServiceManagerToken.operatorWhitelist         |                                             []                                            |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+Function update(address,bytes32,uint32[],IService.AgentParams[],uint32,uint256)
++------------------------------------------------------+------------------------------------------------------------------------------------------------------+
+|                       Variable                       |                                             Dependencies                                             |
++------------------------------------------------------+------------------------------------------------------------------------------------------------------+
+|                        token                         |                                                  []                                                  |
+|                      configHash                      |                                                  []                                                  |
+|                       agentIds                       |                                                  []                                                  |
+|                     agentParams                      |                                           ['agentParams']                                            |
+|                      threshold                       |                                                  []                                                  |
+|                      serviceId                       |                                                  []                                                  |
+|                       success                        | ['agentIds', 'agentParams', 'configHash', 'msg.sender', 'serviceId', 'serviceRegistry', 'threshold'] |
+|                      numAgents                       |                                           ['agentParams']                                            |
+|                          i                           |                                                ['i']                                                 |
+|                        bonds                         |                                ['agentParams', 'bonds', 'numAgents']                                 |
+|                      i_scope_0                       |                                            ['i_scope_0']                                             |
+|                 GenericManager.owner                 |                                                  []                                                  |
+|                GenericManager.paused                 |                                                  []                                                  |
+|           OperatorSignedHashes.MAGIC_VALUE           |                                                  []                                                  |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                                                  []                                                  |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                                                  []                                                  |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                                                  []                                                  |
+|         OperatorSignedHashes.domainSeparator         |                                                  []                                                  |
+|             OperatorSignedHashes.chainId             |                                                  []                                                  |
+|            OperatorSignedHashes.nameHash             |                                                  []                                                  |
+|           OperatorSignedHashes.versionHash           |                                                  []                                                  |
+|              OperatorSignedHashes.name               |                                                  []                                                  |
+|             OperatorSignedHashes.version             |                                                  []                                                  |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                                                  []                                                  |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                                                  []                                                  |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                                                  []                                                  |
+|         ServiceManagerToken.serviceRegistry          |                                         ['serviceRegistry']                                          |
+|   ServiceManagerToken.serviceRegistryTokenUtility    |                                   ['serviceRegistryTokenUtility']                                    |
+|        ServiceManagerToken.ETH_TOKEN_ADDRESS         |                                        ['ETH_TOKEN_ADDRESS']                                         |
+|           ServiceManagerToken.BOND_WRAPPER           |                                           ['BOND_WRAPPER']                                           |
+|        ServiceManagerToken.operatorWhitelist         |                                                  []                                                  |
++------------------------------------------------------+------------------------------------------------------------------------------------------------------+
+Function activateRegistration(uint256)
++------------------------------------------------------+-----------------------------------------------------------------------------+
+|                       Variable                       |                                 Dependencies                                |
++------------------------------------------------------+-----------------------------------------------------------------------------+
+|                      serviceId                       |                                      []                                     |
+|                       success                        | ['BOND_WRAPPER', 'msg.sender', 'msg.value', 'serviceId', 'serviceRegistry'] |
+|                    isTokenSecured                    |                 ['serviceId', 'serviceRegistryTokenUtility']                |
+|                 GenericManager.owner                 |                                      []                                     |
+|                GenericManager.paused                 |                                      []                                     |
+|           OperatorSignedHashes.MAGIC_VALUE           |                                      []                                     |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                                      []                                     |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                                      []                                     |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                                      []                                     |
+|         OperatorSignedHashes.domainSeparator         |                                      []                                     |
+|             OperatorSignedHashes.chainId             |                                      []                                     |
+|            OperatorSignedHashes.nameHash             |                                      []                                     |
+|           OperatorSignedHashes.versionHash           |                                      []                                     |
+|              OperatorSignedHashes.name               |                                      []                                     |
+|             OperatorSignedHashes.version             |                                      []                                     |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                                      []                                     |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                                      []                                     |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                                      []                                     |
+|         ServiceManagerToken.serviceRegistry          |                             ['serviceRegistry']                             |
+|   ServiceManagerToken.serviceRegistryTokenUtility    |                       ['serviceRegistryTokenUtility']                       |
+|        ServiceManagerToken.ETH_TOKEN_ADDRESS         |                                      []                                     |
+|           ServiceManagerToken.BOND_WRAPPER           |                               ['BOND_WRAPPER']                              |
+|        ServiceManagerToken.operatorWhitelist         |                                      []                                     |
++------------------------------------------------------+-----------------------------------------------------------------------------+
+Function registerAgents(uint256,address[],uint32[])
++------------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+|                       Variable                       |                                                Dependencies                                               |
++------------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+|                      serviceId                       |                                                     []                                                    |
+|                    agentInstances                    |                                             ['agentInstances']                                            |
+|                       agentIds                       |                                                     []                                                    |
+|                       success                        | ['BOND_WRAPPER', 'agentIds', 'agentInstances', 'msg.sender', 'msg.value', 'serviceId', 'serviceRegistry'] |
+|                    isTokenSecured                    |                   ['agentIds', 'msg.sender', 'serviceId', 'serviceRegistryTokenUtility']                  |
+|                 GenericManager.owner                 |                                                     []                                                    |
+|                GenericManager.paused                 |                                                     []                                                    |
+|           OperatorSignedHashes.MAGIC_VALUE           |                                                     []                                                    |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                                                     []                                                    |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                                                     []                                                    |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                                                     []                                                    |
+|         OperatorSignedHashes.domainSeparator         |                                                     []                                                    |
+|             OperatorSignedHashes.chainId             |                                                     []                                                    |
+|            OperatorSignedHashes.nameHash             |                                                     []                                                    |
+|           OperatorSignedHashes.versionHash           |                                                     []                                                    |
+|              OperatorSignedHashes.name               |                                                     []                                                    |
+|             OperatorSignedHashes.version             |                                                     []                                                    |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                                                     []                                                    |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                                                     []                                                    |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                                                     []                                                    |
+|         ServiceManagerToken.serviceRegistry          |                                            ['serviceRegistry']                                            |
+|   ServiceManagerToken.serviceRegistryTokenUtility    |                                      ['serviceRegistryTokenUtility']                                      |
+|        ServiceManagerToken.ETH_TOKEN_ADDRESS         |                                                     []                                                    |
+|           ServiceManagerToken.BOND_WRAPPER           |                                              ['BOND_WRAPPER']                                             |
+|        ServiceManagerToken.operatorWhitelist         |                                           ['operatorWhitelist']                                           |
++------------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+Function deploy(uint256,address,bytes)
++------------------------------------------------------+----------------------------------------------------------------------------------+
+|                       Variable                       |                                   Dependencies                                   |
++------------------------------------------------------+----------------------------------------------------------------------------------+
+|                      serviceId                       |                                        []                                        |
+|                multisigImplementation                |                                        []                                        |
+|                         data                         |                                        []                                        |
+|                       multisig                       | ['data', 'msg.sender', 'multisigImplementation', 'serviceId', 'serviceRegistry'] |
+|                 GenericManager.owner                 |                                        []                                        |
+|                GenericManager.paused                 |                                        []                                        |
+|           OperatorSignedHashes.MAGIC_VALUE           |                                        []                                        |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                                        []                                        |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                                        []                                        |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                                        []                                        |
+|         OperatorSignedHashes.domainSeparator         |                                        []                                        |
+|             OperatorSignedHashes.chainId             |                                        []                                        |
+|            OperatorSignedHashes.nameHash             |                                        []                                        |
+|           OperatorSignedHashes.versionHash           |                                        []                                        |
+|              OperatorSignedHashes.name               |                                        []                                        |
+|             OperatorSignedHashes.version             |                                        []                                        |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                                        []                                        |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                                        []                                        |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                                        []                                        |
+|         ServiceManagerToken.serviceRegistry          |                               ['serviceRegistry']                                |
+|   ServiceManagerToken.serviceRegistryTokenUtility    |                                        []                                        |
+|        ServiceManagerToken.ETH_TOKEN_ADDRESS         |                                        []                                        |
+|           ServiceManagerToken.BOND_WRAPPER           |                                        []                                        |
+|        ServiceManagerToken.operatorWhitelist         |                                        []                                        |
++------------------------------------------------------+----------------------------------------------------------------------------------+
+Function terminate(uint256)
++------------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+|                       Variable                       |                                               Dependencies                                              |
++------------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+|                      serviceId                       |                                                    []                                                   |
+|                       success                        |                        ['TUPLE_0', 'msg.sender', 'serviceId', 'serviceRegistry']                        |
+|                        refund                        | ['TUPLE_0', 'msg.sender', 'serviceId', 'serviceRegistry', 'serviceRegistryTokenUtility', 'tokenRefund'] |
+|                     tokenRefund                      |                               ['serviceId', 'serviceRegistryTokenUtility']                              |
+|                 GenericManager.owner                 |                                                    []                                                   |
+|                GenericManager.paused                 |                                                    []                                                   |
+|           OperatorSignedHashes.MAGIC_VALUE           |                                                    []                                                   |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                                                    []                                                   |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                                                    []                                                   |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                                                    []                                                   |
+|         OperatorSignedHashes.domainSeparator         |                                                    []                                                   |
+|             OperatorSignedHashes.chainId             |                                                    []                                                   |
+|            OperatorSignedHashes.nameHash             |                                                    []                                                   |
+|           OperatorSignedHashes.versionHash           |                                                    []                                                   |
+|              OperatorSignedHashes.name               |                                                    []                                                   |
+|             OperatorSignedHashes.version             |                                                    []                                                   |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                                                    []                                                   |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                                                    []                                                   |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                                                    []                                                   |
+|         ServiceManagerToken.serviceRegistry          |                                           ['serviceRegistry']                                           |
+|   ServiceManagerToken.serviceRegistryTokenUtility    |                                     ['serviceRegistryTokenUtility']                                     |
+|        ServiceManagerToken.ETH_TOKEN_ADDRESS         |                                                    []                                                   |
+|           ServiceManagerToken.BOND_WRAPPER           |                                                    []                                                   |
+|        ServiceManagerToken.operatorWhitelist         |                                                    []                                                   |
++------------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+Function unbond(uint256)
++------------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+|                       Variable                       |                                               Dependencies                                              |
++------------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+|                      serviceId                       |                                                    []                                                   |
+|                       success                        |                        ['TUPLE_1', 'msg.sender', 'serviceId', 'serviceRegistry']                        |
+|                        refund                        | ['TUPLE_1', 'msg.sender', 'serviceId', 'serviceRegistry', 'serviceRegistryTokenUtility', 'tokenRefund'] |
+|                     tokenRefund                      |                        ['msg.sender', 'serviceId', 'serviceRegistryTokenUtility']                       |
+|                 GenericManager.owner                 |                                                    []                                                   |
+|                GenericManager.paused                 |                                                    []                                                   |
+|           OperatorSignedHashes.MAGIC_VALUE           |                                                    []                                                   |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                                                    []                                                   |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                                                    []                                                   |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                                                    []                                                   |
+|         OperatorSignedHashes.domainSeparator         |                                                    []                                                   |
+|             OperatorSignedHashes.chainId             |                                                    []                                                   |
+|            OperatorSignedHashes.nameHash             |                                                    []                                                   |
+|           OperatorSignedHashes.versionHash           |                                                    []                                                   |
+|              OperatorSignedHashes.name               |                                                    []                                                   |
+|             OperatorSignedHashes.version             |                                                    []                                                   |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                                                    []                                                   |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                                                    []                                                   |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                                                    []                                                   |
+|         ServiceManagerToken.serviceRegistry          |                                           ['serviceRegistry']                                           |
+|   ServiceManagerToken.serviceRegistryTokenUtility    |                                     ['serviceRegistryTokenUtility']                                     |
+|        ServiceManagerToken.ETH_TOKEN_ADDRESS         |                                                    []                                                   |
+|           ServiceManagerToken.BOND_WRAPPER           |                                                    []                                                   |
+|        ServiceManagerToken.operatorWhitelist         |                                                    []                                                   |
++------------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+Function unbondWithSignature(address,uint256,bytes)
++------------------------------------------------------+-------------------------------------------------------------------------------------------------------+
+|                       Variable                       |                                              Dependencies                                             |
++------------------------------------------------------+-------------------------------------------------------------------------------------------------------+
+|                       operator                       |                                                   []                                                  |
+|                      serviceId                       |                                                   []                                                  |
+|                      signature                       |                                                   []                                                  |
+|                       success                        |                        ['TUPLE_2', 'operator', 'serviceId', 'serviceRegistry']                        |
+|                        refund                        | ['TUPLE_2', 'operator', 'serviceId', 'serviceRegistry', 'serviceRegistryTokenUtility', 'tokenRefund'] |
+|                     serviceOwner                     |                                    ['serviceId', 'serviceRegistry']                                   |
+|                   operatorService                    |                              ['operator', 'operatorService', 'serviceId']                             |
+|                        nonce                         |                                  ['mapOperatorUnbondNonces', 'nonce']                                 |
+|                       msgHash                        |                                                   []                                                  |
+|                     tokenRefund                      |                        ['operator', 'serviceId', 'serviceRegistryTokenUtility']                       |
+|                 GenericManager.owner                 |                                                   []                                                  |
+|                GenericManager.paused                 |                                                   []                                                  |
+|           OperatorSignedHashes.MAGIC_VALUE           |                                                   []                                                  |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                                                   []                                                  |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                                                   []                                                  |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                                                   []                                                  |
+|         OperatorSignedHashes.domainSeparator         |                                                   []                                                  |
+|             OperatorSignedHashes.chainId             |                                                   []                                                  |
+|            OperatorSignedHashes.nameHash             |                                                   []                                                  |
+|           OperatorSignedHashes.versionHash           |                                                   []                                                  |
+|              OperatorSignedHashes.name               |                                                   []                                                  |
+|             OperatorSignedHashes.version             |                                                   []                                                  |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                                  ['mapOperatorUnbondNonces', 'nonce']                                 |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                                                   []                                                  |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                                                   []                                                  |
+|         ServiceManagerToken.serviceRegistry          |                                          ['serviceRegistry']                                          |
+|   ServiceManagerToken.serviceRegistryTokenUtility    |                                    ['serviceRegistryTokenUtility']                                    |
+|        ServiceManagerToken.ETH_TOKEN_ADDRESS         |                                                   []                                                  |
+|           ServiceManagerToken.BOND_WRAPPER           |                                                   []                                                  |
+|        ServiceManagerToken.operatorWhitelist         |                                                   []                                                  |
++------------------------------------------------------+-------------------------------------------------------------------------------------------------------+
+Function registerAgentsWithSignature(address,uint256,address[],uint32[],bytes)
++------------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+|                       Variable                       |                                               Dependencies                                              |
++------------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+|                       operator                       |                                                    []                                                   |
+|                      serviceId                       |                                                    []                                                   |
+|                    agentInstances                    |                                            ['agentInstances']                                           |
+|                       agentIds                       |                                                    []                                                   |
+|                      signature                       |                                                    []                                                   |
+|                       success                        | ['BOND_WRAPPER', 'agentIds', 'agentInstances', 'msg.value', 'operator', 'serviceId', 'serviceRegistry'] |
+|                     serviceOwner                     |                                     ['serviceId', 'serviceRegistry']                                    |
+|                   operatorService                    |                               ['operator', 'operatorService', 'serviceId']                              |
+|                        nonce                         |                               ['mapOperatorRegisterAgentsNonces', 'nonce']                              |
+|                       msgHash                        |                                                    []                                                   |
+|                    isTokenSecured                    |                   ['agentIds', 'operator', 'serviceId', 'serviceRegistryTokenUtility']                  |
+|                 GenericManager.owner                 |                                                    []                                                   |
+|                GenericManager.paused                 |                                                    []                                                   |
+|           OperatorSignedHashes.MAGIC_VALUE           |                                                    []                                                   |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |                                                    []                                                   |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |                                                    []                                                   |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |                                                    []                                                   |
+|         OperatorSignedHashes.domainSeparator         |                                                    []                                                   |
+|             OperatorSignedHashes.chainId             |                                                    []                                                   |
+|            OperatorSignedHashes.nameHash             |                                                    []                                                   |
+|           OperatorSignedHashes.versionHash           |                                                    []                                                   |
+|              OperatorSignedHashes.name               |                                                    []                                                   |
+|             OperatorSignedHashes.version             |                                                    []                                                   |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |                                                    []                                                   |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |                               ['mapOperatorRegisterAgentsNonces', 'nonce']                              |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |                                                    []                                                   |
+|         ServiceManagerToken.serviceRegistry          |                                           ['serviceRegistry']                                           |
+|   ServiceManagerToken.serviceRegistryTokenUtility    |                                     ['serviceRegistryTokenUtility']                                     |
+|        ServiceManagerToken.ETH_TOKEN_ADDRESS         |                                                    []                                                   |
+|           ServiceManagerToken.BOND_WRAPPER           |                                             ['BOND_WRAPPER']                                            |
+|        ServiceManagerToken.operatorWhitelist         |                                                    []                                                   |
++------------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+Function slitherConstructorConstantVariables()
++------------------------------------------------------+--------------+
+|                       Variable                       | Dependencies |
++------------------------------------------------------+--------------+
+|                 GenericManager.owner                 |      []      |
+|                GenericManager.paused                 |      []      |
+|           OperatorSignedHashes.MAGIC_VALUE           |      []      |
+|   OperatorSignedHashes.DOMAIN_SEPARATOR_TYPE_HASH    |      []      |
+|        OperatorSignedHashes.UNBOND_TYPE_HASH         |      []      |
+|    OperatorSignedHashes.REGISTER_AGENTS_TYPE_HASH    |      []      |
+|         OperatorSignedHashes.domainSeparator         |      []      |
+|             OperatorSignedHashes.chainId             |      []      |
+|            OperatorSignedHashes.nameHash             |      []      |
+|           OperatorSignedHashes.versionHash           |      []      |
+|              OperatorSignedHashes.name               |      []      |
+|             OperatorSignedHashes.version             |      []      |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |      []      |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |      []      |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    |      []      |
+|         ServiceManagerToken.serviceRegistry          |      []      |
+|   ServiceManagerToken.serviceRegistryTokenUtility    |      []      |
+|        ServiceManagerToken.ETH_TOKEN_ADDRESS         |      []      |
+|           ServiceManagerToken.BOND_WRAPPER           |      []      |
+|        ServiceManagerToken.operatorWhitelist         |      []      |
++------------------------------------------------------+--------------+
+INFO:Slither:. analyzed (9 contracts)

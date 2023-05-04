@@ -1,0 +1,27 @@
+INFO:Printers:
+Compiled with solc
+Number of lines: 1003 (+ 0 in dependencies, + 0 in tests)
+Number of assembly lines: 0
+Number of contracts: 9 (+ 0 in dependencies, + 0 tests) 
+
+Number of optimization issues: 0
+Number of informational issues: 3
+Number of low issues: 3
+Number of medium issues: 0
+Number of high issues: 2
+
++----------------------+-------------+------+------------+--------------+--------------------+
+|         Name         | # functions | ERCS | ERC20 info | Complex code |      Features      |
++----------------------+-------------+------+------------+--------------+--------------------+
+|       IService       |      7      |      |            |      No      |    Receive ETH     |
+| IServiceTokenUtility |      7      |      |            |      No      |                    |
+| ISignatureValidator  |      1      |      |            |      No      |                    |
+|  IOperatorWhitelist  |      1      |      |            |      No      |                    |
+|        IToken        |      1      |      |            |      No      |                    |
+| ServiceManagerToken  |      25     |      |            |     Yes      |    Receive ETH     |
+|                      |             |      |            |              |      Send ETH      |
+|                      |             |      |            |              |     Ecrecover      |
+|                      |             |      |            |              | Tokens interaction |
+|                      |             |      |            |              |      Assembly      |
++----------------------+-------------+------+------------+--------------+--------------------+
+INFO:Slither:. analyzed (9 contracts)

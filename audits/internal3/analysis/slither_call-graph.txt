@@ -1,0 +1,9 @@
+INFO:Printers:Call Graph: ./ServiceManagerToken-flatten.sol.all_contracts.call-graph.dot
+Call Graph: ./ServiceManagerToken-flatten.sol.IService.call-graph.dot
+Call Graph: ./ServiceManagerToken-flatten.sol.IServiceTokenUtility.call-graph.dot
+Call Graph: ./ServiceManagerToken-flatten.sol.ISignatureValidator.call-graph.dot
+Call Graph: ./ServiceManagerToken-flatten.sol.IOperatorWhitelist.call-graph.dot
+Call Graph: ./ServiceManagerToken-flatten.sol.IToken.call-graph.dot
+Call Graph: ./ServiceManagerToken-flatten.sol.ServiceManagerToken.call-graph.dot
+
+INFO:Slither:. analyzed (9 contracts)

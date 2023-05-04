@@ -7,7 +7,7 @@ commit: `v1.1.4.pre-internal-audit` <br>
 The audit focused on `managing services with custom ERC20 tokens` contracts in this repo.
 
 ### Flatten version
-Flatten version of contracts. [contracts](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal1/analysis/contracts) 
+Flatten version of contracts. [contracts](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal2/analysis/contracts) 
 
 ### ERC20/ERC721 checks
 N/A
