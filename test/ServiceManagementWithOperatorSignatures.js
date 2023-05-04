@@ -2,6 +2,7 @@
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const helpers = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("ServiceManagementWithOperatorSignatures", function () {
     let componentRegistry;
@@ -106,6 +107,9 @@ describe("ServiceManagementWithOperatorSignatures", function () {
 
     context("Redeployment of services", async function () {
         it("Changing the service owner and redeploying with the new multisig owner", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
             const agentInstances = [signers[2], signers[3], signers[4], signers[5]];
             const agentInstancesAddresses = [signers[2].address, signers[3].address, signers[4].address, signers[5].address];
             const maxThreshold = 1;
@@ -309,9 +313,15 @@ describe("ServiceManagementWithOperatorSignatures", function () {
             // Check that the service is deployed
             const service = await serviceRegistry.getService(serviceId);
             expect(service.state).to.equal(4);
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
         });
 
         it("Several scenarios with errors when unbonding using operator signatures with the token-secured service", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
             const agentInstances = [signers[2], signers[3], signers[4], signers[5]];
             const agentInstancesAddresses = [signers[2].address, signers[3].address, signers[4].address, signers[5].address];
             const maxThreshold = 1;
@@ -395,14 +405,23 @@ describe("ServiceManagementWithOperatorSignatures", function () {
 
             // Unbond the agent instance in order to update the service using a pre-signed operator message
             // Case 1. Simulate the unbond when the message was signed by the ledger (change v value to zero)
-            const ledgerSignatureBytes = signatureBytes.substring(0, signatureBytes.length - 2) + "00";
+            // Take last byte of the v value and subtract 27
+            const lastByte = signatureBytes.slice(-2);
+            const lastByteValue = parseInt(lastByte, 16) - 27;
+            let ledgerSignatureBytes;
+            if (lastByteValue == 0) {
+                ledgerSignatureBytes = signatureBytes.substring(0, signatureBytes.length - 2) + "00";
+            } else {
+                ledgerSignatureBytes = signatureBytes.substring(0, signatureBytes.length - 2) + "01";
+            }
+
             result = await serviceManager.connect(serviceOwner).callStatic.unbondWithSignature(operator.address, serviceId, ledgerSignatureBytes);
             expect(result.success).to.be.true;
 
             // Case 2. Approve the hash and provide the signature to follow the approved hash path
             // Build the signature to follow the approved hash path
             const approveSignatureBytes = "0x000000000000000000000000" + operator.address.slice(2) +
-                "0000000000000000000000000000000000000000000000000000000000000000" + "01";
+                "0000000000000000000000000000000000000000000000000000000000000000" + "03";
 
             // Try to unbond agent instances on behalf of the operator without the hash being pre-approved
             await expect(
@@ -422,7 +441,7 @@ describe("ServiceManagementWithOperatorSignatures", function () {
             // Case 3. Provide the signature to follow the isValidSignature() path when the operator is the contract
             // Build the signature to follow the contract hash verification path
             const verifySignatureBytes = "0x000000000000000000000000" + operatorContract.address.slice(2) +
-                "0000000000000000000000000000000000000000000000000000000000000000" + "00";
+                "0000000000000000000000000000000000000000000000000000000000000000" + "02";
 
             // Try to unbond agent instances on behalf of the operator without the hash being validated
             await expect(
@@ -441,7 +460,7 @@ describe("ServiceManagementWithOperatorSignatures", function () {
 
             // Try to use a different operator address
             await expect(
-                serviceManager.connect(serviceOwner).callStatic.unbondWithSignature(operator.address, serviceId, verifySignatureBytes)
+                serviceManager.connect(serviceOwner).callStatic.unbondWithSignature(serviceOwnerAddress, serviceId, signatureBytes)
             ).to.be.revertedWithCustomError(serviceManager, "WrongOperatorAddress");
 
             // Perform the actual unbond
@@ -547,9 +566,15 @@ describe("ServiceManagementWithOperatorSignatures", function () {
             // Check that the service is deployed
             const service = await serviceRegistry.getService(serviceId);
             expect(service.state).to.equal(4);
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
         });
 
         it("Redeploy service in one shot via the timelock contract", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
             const agentInstances = [signers[2], signers[3], signers[4], signers[5]];
             const agentInstancesAddresses = [signers[2].address, signers[3].address, signers[4].address, signers[5].address];
             const maxThreshold = 1;
@@ -757,6 +782,9 @@ describe("ServiceManagementWithOperatorSignatures", function () {
             // Check that the service is deployed
             const service = await serviceRegistry.getService(serviceId);
             expect(service.state).to.equal(4);
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
         });
     });
 });
