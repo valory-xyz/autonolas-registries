@@ -7,6 +7,10 @@ The latest internal audit is located in this folder: [internal audit](https://gi
 An internal audit with a focus on securing services with custom ERC20 tokens and operating services in a permissioned manner
 contracts is located in this folder: [internal audit 2](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal2).
 
+An internal audit with a focus on one-shot upgrade and operating services with signatures
+contracts is located in this folder: [internal audit 3](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal3).
+
+
 ### External audit
 
 Following the initial contracts [audit report](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/Valory%20Review%20Final.pdf),

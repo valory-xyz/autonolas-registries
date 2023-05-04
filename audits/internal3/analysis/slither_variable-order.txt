@@ -1,0 +1,46 @@
+INFO:Printers:
+IService:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+IServiceTokenUtility:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+ISignatureValidator:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+IOperatorWhitelist:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+IToken:
++------+------+------+--------+
+| Name | Type | Slot | Offset |
++------+------+------+--------+
++------+------+------+--------+
+
+ServiceManagerToken:
++------------------------------------------------------+----------------------------------------------+------+--------+
+|                         Name                         |                     Type                     | Slot | Offset |
++------------------------------------------------------+----------------------------------------------+------+--------+
+|                 GenericManager.owner                 |                   address                    |  0   |   0    |
+|                GenericManager.paused                 |                     bool                     |  0   |   20   |
+|              OperatorSignedHashes.name               |                    string                    |  1   |   0    |
+|             OperatorSignedHashes.version             |                    string                    |  2   |   0    |
+|     OperatorSignedHashes.mapOperatorUnbondNonces     |         mapping(uint256 => uint256)          |  3   |   0    |
+| OperatorSignedHashes.mapOperatorRegisterAgentsNonces |         mapping(uint256 => uint256)          |  4   |   0    |
+|    OperatorSignedHashes.mapOperatorApprovedHashes    | mapping(address => mapping(bytes32 => bool)) |  5   |   0    |
+|        ServiceManagerToken.operatorWhitelist         |                   address                    |  6   |   0    |
++------------------------------------------------------+----------------------------------------------+------+--------+
+
+INFO:Slither:. analyzed (9 contracts)

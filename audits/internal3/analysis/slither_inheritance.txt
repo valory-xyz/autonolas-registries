@@ -1,0 +1,50 @@
+INFO:Printers:Inheritance
+Child_Contract -> Immediate_Base_Contracts [Not_Immediate_Base_Contracts]
++ IErrorsRegistries
+
++ GenericManager
+ -> IErrorsRegistries
+
++ IService
+
++ IServiceTokenUtility
+
++ ISignatureValidator
+
++ OperatorSignedHashes
+
++ IOperatorWhitelist
+
++ IToken
+
++ ServiceManagerToken
+ -> GenericManager, OperatorSignedHashes
+, [IErrorsRegistries]
+
+
+Base_Contract -> Immediate_Child_Contracts
+ [Not_Immediate_Child_Contracts]
+
++ IErrorsRegistries
+ -> GenericManager
+, [ServiceManagerToken]
+
++ GenericManager
+ -> ServiceManagerToken
+
++ IService
+
++ IServiceTokenUtility
+
++ ISignatureValidator
+
++ OperatorSignedHashes
+ -> ServiceManagerToken
+
++ IOperatorWhitelist
+
++ IToken
+
++ ServiceManagerToken
+
+INFO:Slither:. analyzed (9 contracts)

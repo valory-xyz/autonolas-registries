@@ -1,0 +1,3 @@
+INFO:Printers:Inheritance Graph: ./ServiceManagerToken-flatten.sol.inheritance-graph.dot
+
+INFO:Slither:. analyzed (9 contracts)

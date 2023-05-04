@@ -1,0 +1,32 @@
+Notes: false positive
+INFO:Detectors:
+ServiceManagerToken.activateRegistration(uint256) (ServiceManagerToken-flatten.sol#791-803) sends eth to arbitrary user
+	Dangerous calls:
+	- success = IService(serviceRegistry).activateRegistration{value: BOND_WRAPPER}(msg.sender,serviceId) (ServiceManagerToken-flatten.sol#798)
+ServiceManagerToken.registerAgents(uint256,address[],uint32[]) (ServiceManagerToken-flatten.sol#810-836) sends eth to arbitrary user
+	Dangerous calls:
+	- success = IService(serviceRegistry).registerAgents{value: agentInstances.length * BOND_WRAPPER}(msg.sender,serviceId,agentInstances,agentIds) (ServiceManagerToken-flatten.sol#830-831)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#functions-that-send-ether-to-arbitrary-destinations
+
+Notes: false positive. address _operatorWhitelist can be zero by design
+INFO:Detectors:
+ServiceManagerToken.constructor(address,address,address)._operatorWhitelist (ServiceManagerToken-flatten.sol#644) lacks a zero-check on :
+		- operatorWhitelist = _operatorWhitelist (ServiceManagerToken-flatten.sol#654)
+ServiceManagerToken.setOperatorWhitelist(address).newOperatorWhitelist (ServiceManagerToken-flatten.sol#660) lacks a zero-check on :
+		- operatorWhitelist = newOperatorWhitelist (ServiceManagerToken-flatten.sol#666)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#missing-zero-address-validation
+
+Notes: false positive.  IService(serviceRegistry).deploy already has protection agains Reentrancy
+INFO:Detectors:
+Reentrancy in ServiceManagerToken.deploy(uint256,address,bytes) (ServiceManagerToken-flatten.sol#843-851):
+	External calls:
+	- multisig = IService(serviceRegistry).deploy(msg.sender,serviceId,multisigImplementation,data) (ServiceManagerToken-flatten.sol#849)
+	Event emitted after the call(s):
+	- CreateMultisig(multisig) (ServiceManagerToken-flatten.sol#850)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+Notes: no issue
+INFO:Detectors:
+OperatorSignedHashes._verifySignedHash(address,bytes32,bytes) (ServiceManagerToken-flatten.sol#424-478) uses assembly
+	- INLINE ASM (ServiceManagerToken-flatten.sol#446-449)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#assembly-usage
