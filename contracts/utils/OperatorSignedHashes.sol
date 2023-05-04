@@ -99,15 +99,16 @@ contract OperatorSignedHashes {
         }
 
         // Check for the signature length
-        if (signature.length < 65) {
+        if (signature.length != 65) {
             revert IncorrectSignatureLength(signature, signature.length, 65);
         }
 
         // Decode the signature
         uint8 v = uint8(signature[64]);
         // For the correct ecrecover() function execution, the v value must be set to {0,1} + 27
+        // Although v in a very rare case can be equal to {2,3} (with a probability of 3.73e-37%)
         // If v is set to just 0 or 1 when signing  by the EOA, it is most likely signed by the ledger and must be adjusted
-        if (v < 2 && operator.code.length == 0) {
+        if (v < 4 && operator.code.length == 0) {
             // In case of a non-contract, adjust v to follow the standard ecrecover case
             v += 27;
         }
@@ -121,7 +122,7 @@ contract OperatorSignedHashes {
 
         address recOperator;
         // Go through signature cases based on the value of v
-        if (v == 2) {
+        if (v == 4) {
             // Contract signature case, where the address of the contract is encoded into r
             recOperator = address(uint160(uint256(r)));
 
@@ -129,7 +130,7 @@ contract OperatorSignedHashes {
             if (ISignatureValidator(recOperator).isValidSignature(msgHash, signature) != MAGIC_VALUE) {
                 revert HashNotValidated(recOperator, msgHash, signature);
             }
-        } else if (v == 3) {
+        } else if (v == 5) {
             // Case of an approved hash, where the address of the operator is encoded into r
             recOperator = address(uint160(uint256(r)));
 
