@@ -12,6 +12,32 @@ interface ISignatureValidator {
     function isValidSignature(bytes32 hash, bytes memory signature) external view returns (bytes4 magicValue);
 }
 
+/// @dev Provided zero address.
+error ZeroOperatorAddress();
+
+/// @dev Incorrect signature length provided.
+/// @param signature Signature bytes.
+/// @param provided Provided signature length.
+/// @param expected Expected signature length.
+error IncorrectSignatureLength(bytes signature, uint256 provided, uint256 expected);
+
+/// @dev Hash is not validated.
+/// @param operator Operator contract address.
+/// @param msgHash Message hash.
+/// @param signature Signature bytes associated with the message hash.
+error HashNotValidated(address operator, bytes32 msgHash, bytes signature);
+
+/// @dev Hash is not approved.
+/// @param operator Operator address.
+/// @param msgHash Message hash.
+/// @param signature Signature bytes associated with the message hash.
+error HashNotApproved(address operator, bytes32 msgHash, bytes signature);
+
+/// @dev Obtained wrong operator address.
+/// @param provided Provided address.
+/// @param expected Expected address.
+error WrongOperatorAddress(address provided, address expected);
+
 /// @title OperatorSignedHashes - Smart contract for managing operator signed hashes
 /// @author AL
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -66,16 +92,15 @@ contract OperatorSignedHashes {
     /// @param operator Operator address.
     /// @param msgHash Message hash.
     /// @param signature Signature bytes associated with the signed message hash.
-    /// @return True, if the signature verification is successful.
-    function _verifySignedHash(
-        address operator,
-        bytes32 msgHash,
-        bytes memory signature
-    ) internal view returns (bool)
-    {
-        // Check for the operator zero address and for the signature length
-        if (operator == address(0) || signature.length < 65) {
-            return false;
+    function _verifySignedHash(address operator, bytes32 msgHash, bytes memory signature) internal view {
+        // Check for the operator zero address
+        if (operator == address(0)) {
+            revert ZeroOperatorAddress();
+        }
+
+        // Check for the signature length
+        if (signature.length < 65) {
+            revert IncorrectSignatureLength(signature, signature.length, 65);
         }
 
         // Decode the signature
@@ -101,7 +126,7 @@ contract OperatorSignedHashes {
 
             // Check for the signature validity in the contract
             if (ISignatureValidator(recOperator).isValidSignature(msgHash, signature) != MAGIC_VALUE) {
-                return false;
+                revert HashNotValidated(recOperator, msgHash, signature);
             }
         } else if (v == 1) {
             // Case of an approved hash, where the address of the operator is encoded into r
@@ -109,15 +134,17 @@ contract OperatorSignedHashes {
 
             // Hashes have been pre-approved by the operator via a separate message, see operatorApproveHash() function
             if (!mapOperatorApprovedHashes[recOperator][msgHash]) {
-                return false;
+                revert HashNotApproved(recOperator, msgHash, signature);
             }
         } else {
             // Case of ecrecover with the message hash for EOA signatures
             recOperator = ecrecover(msgHash, v, r, s);
         }
 
-        // Final check is fo the operator address itself
-        return recOperator == operator;
+        // Final check is for the operator address itself
+        if (recOperator != operator) {
+            revert WrongOperatorAddress(recOperator, operator);
+        }
     }
 
     /// @dev Approves message hash for the operator address.
@@ -143,7 +170,7 @@ contract OperatorSignedHashes {
 
     /// @dev Gets the already computed domain separator of recomputes one if the chain Id is different.
     /// @return Original or recomputed domain separator.
-    function DOMAIN_SEPARATOR() public view returns (bytes32) {
+    function getDomainSeparator() public view returns (bytes32) {
         return block.chainid == chainId ? domainSeparator : _computeDomainSeparator();
     }
 
@@ -163,7 +190,7 @@ contract OperatorSignedHashes {
         return keccak256(
             abi.encodePacked(
                 "\x19\x01",
-                DOMAIN_SEPARATOR(),
+                getDomainSeparator(),
                 keccak256(
                     abi.encode(
                         UNBOND_TYPE_HASH,
@@ -197,7 +224,7 @@ contract OperatorSignedHashes {
         return keccak256(
             abi.encodePacked(
                 "\x19\x01",
-                DOMAIN_SEPARATOR(),
+                getDomainSeparator(),
                 keccak256(
                     abi.encode(
                         REGISTER_AGENTS_TYPE_HASH,

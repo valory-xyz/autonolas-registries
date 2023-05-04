@@ -137,6 +137,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     function safeTransferFrom(address token, address from, address to, uint256 amount) internal {
         bool success;
 
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             // We'll write our calldata to this slot below, but restore it later.
             let memPointer := mload(0x40)
@@ -178,6 +179,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
     function safeTransfer(address token, address to, uint256 amount) internal {
         bool success;
 
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             // We'll write our calldata to this slot below, but restore it later.
             let memPointer := mload(0x40)
@@ -283,6 +285,7 @@ contract ServiceRegistryTokenUtility is IErrorsRegistries {
         bytes memory data = abi.encodeWithSelector(selector, address(0));
 
         if (token.code.length > 0) {
+            // solhint-disable-next-line no-inline-assembly
             assembly {
                 success := staticcall(
                     gas(),            // gas remaining

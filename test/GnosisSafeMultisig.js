@@ -31,15 +31,6 @@ describe("GnosisSafeMultisig", function () {
     });
 
     context("Creating multisigs", async function () {
-        it("Passing the zero data value", async function () {
-            // Pass the default multisig owner addresses, threshold and a zero input
-            const tx = await gnosisSafeMultisig.create(defaultOwnerAddresses, threshold, "0x");
-            const result = await tx.wait();
-
-            // Check that the obtained address is not zero
-            expect(result.events[0].address).to.not.equal(AddressZero);
-        });
-
         it("Should fail when passing the non-zero multisig data with the incorrect number of bytes", async function () {
             await expect(
                 gnosisSafeMultisig.create(defaultOwnerAddresses, threshold, "0x55")

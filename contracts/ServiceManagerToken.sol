@@ -323,9 +323,7 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
         bytes32 msgHash = getUnbondHash(operator, serviceOwner, serviceId, nonce);
 
         // Verify the signed hash against the operator address
-        if (!_verifySignedHash(operator, msgHash, signature)) {
-            revert WrongOperator(serviceId);
-        }
+        _verifySignedHash(operator, msgHash, signature);
 
         // Update corresponding nonce value
         nonce++;
@@ -381,9 +379,7 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
         bytes32 msgHash = getRegisterAgentsHash(operator, serviceOwner, serviceId, agentInstances, agentIds, nonce);
 
         // Verify the signed hash against the operator address
-        if (!_verifySignedHash(operator, msgHash, signature)) {
-            revert WrongOperator(serviceId);
-        }
+        _verifySignedHash(operator, msgHash, signature);
 
         // Update corresponding nonce value
         nonce++;

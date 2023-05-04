@@ -24,6 +24,7 @@ contract MockTimelock {
             address target = targets[i];
             uint256 value = values[i];
             bytes calldata payload = payloads[i];
+            // solhint-disable-next-line avoid-low-level-calls
             (bool success, ) = target.call{value: value}(payload);
             if (!success) {
                 revert ExecFailed(i, payload);

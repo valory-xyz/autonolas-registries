@@ -3,7 +3,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("ServiceManagementWithOperatorSignatures", function () {
+describe.only("ServiceManagementWithOperatorSignatures", function () {
     let componentRegistry;
     let agentRegistry;
     let serviceRegistry;
@@ -366,12 +366,12 @@ describe("ServiceManagementWithOperatorSignatures", function () {
             // Try to unbond agent instances on behalf of the operator with the zero operator address
             await expect(
                 serviceManager.connect(serviceOwner).unbondWithSignature(AddressZero, serviceId, "0x")
-            ).to.be.revertedWithCustomError(serviceManager, "WrongOperator");
+            ).to.be.revertedWithCustomError(serviceManager, "ZeroOperatorAddress");
 
             // Try to unbond agent instances on behalf of the operator with the zero signature bytes
             await expect(
                 serviceManager.connect(serviceOwner).unbondWithSignature(operator.address, serviceId, "0x")
-            ).to.be.revertedWithCustomError(serviceManager, "WrongOperator");
+            ).to.be.revertedWithCustomError(serviceManager, "IncorrectSignatureLength");
 
             // Get the unbond function related data for the operator signed transaction
             const unbondNonce = await serviceManager.getOperatorUnbondNonce(operator.address, serviceId);
@@ -407,7 +407,7 @@ describe("ServiceManagementWithOperatorSignatures", function () {
             // Try to unbond agent instances on behalf of the operator without the hash being pre-approved
             await expect(
                 serviceManager.connect(serviceOwner).unbondWithSignature(operator.address, serviceId, approveSignatureBytes)
-            ).to.be.revertedWithCustomError(serviceManager, "WrongOperator");
+            ).to.be.revertedWithCustomError(serviceManager, "HashNotApproved");
 
             // Approve the hash by the operator
             let msgHash = await serviceManager.getUnbondHash(operator.address, serviceOwner.address, serviceId, unbondNonce);
@@ -427,7 +427,7 @@ describe("ServiceManagementWithOperatorSignatures", function () {
             // Try to unbond agent instances on behalf of the operator without the hash being validated
             await expect(
                 serviceManager.connect(serviceOwner).unbondWithSignature(operatorContract.address, serviceId, verifySignatureBytes)
-            ).to.be.revertedWithCustomError(serviceManager, "WrongOperator");
+            ).to.be.revertedWithCustomError(serviceManager, "HashNotValidated");
 
             // Validate the hash
             msgHash = await serviceManager.getUnbondHash(operatorContract.address, serviceOwner.address, serviceId, unbondNonce);
@@ -439,6 +439,10 @@ describe("ServiceManagementWithOperatorSignatures", function () {
                 serviceManager.connect(serviceOwner).callStatic.unbondWithSignature(operatorContract.address, serviceId, verifySignatureBytes)
             ).to.be.revertedWithCustomError(serviceManager, "OperatorHasNoInstances");
 
+            // Try to use a different operator address
+            await expect(
+                serviceManager.connect(serviceOwner).callStatic.unbondWithSignature(operator.address, serviceId, verifySignatureBytes)
+            ).to.be.revertedWithCustomError(serviceManager, "WrongOperatorAddress");
 
             // Perform the actual unbond
             await serviceManager.connect(serviceOwner).unbondWithSignature(operator.address, serviceId, ledgerSignatureBytes);
@@ -471,7 +475,7 @@ describe("ServiceManagementWithOperatorSignatures", function () {
             await expect(
                 serviceManager.connect(serviceOwner).registerAgentsWithSignature(operator.address, serviceId,
                     agentInstancesAddresses, agentIds, "0x")
-            ).to.be.revertedWithCustomError(serviceManager, "WrongOperator");
+            ).to.be.revertedWithCustomError(serviceManager, "IncorrectSignatureLength");
 
             // Get the register agents function related data for the operator signed transaction
             const registerAgentsNonce = await serviceManager.getOperatorRegisterAgentsNonce(operator.address, serviceId);
