@@ -1,5 +1,4 @@
-
-Pre-deploy steps:
+Pre-deployment steps:
 1. Release version of all contracts in `autonolas-registries` with the final bytecode;
 2. Test the deployment flow with closest to real environment;
 3. Contract Timelock is already deployed on the mainnet during the `autonolas-governance` deployment.

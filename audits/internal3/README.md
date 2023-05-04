@@ -35,7 +35,8 @@ https://en.bitcoin.it/wiki/Secp256k1
 field size p = FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE FFFFFC2F ~= 2^256 - 2^32
 curve order n = FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364141 ~= 2^256 - 2^128 < p
 ref: ECDSA sign R = k * G and take its x-coordinate: r = R.x
-When R.x is between n and p, r is reduced to R.x-n. Thus, if you have an r value below 2^128-2^32, there may be 2 valid R.x values corresponding to it.
+When R.x is between n and p, r is reduced to R.x % n. Thus, if you have an r value below 2^128-2^32,
+there may be 2 valid R.x values corresponding to it.
 In result mathematically v (http://www.secg.org/sec1-v2.pdf):
 0 y-parity 0, magnitude of x lower than the curve order
 1 y-parity 1, magnitude of x lower than the curve order
@@ -118,3 +119,5 @@ function registerAgentsWithSignature(
 ```
 [x] fixed by design: the ServiceRegistry contract has a check for the unbonded number of agent instances of the operator in the service:
 https://github.com/valory-xyz/autonolas-registries/blob/784d312b0eb34ff7dcb4a7d4639d51a7eb76d77e/contracts/ServiceRegistry.sol#L687-L697
+Also, the unbond and register agents with signature can be only called by the service owner that provides the dedicated
+operator address as well, meaning that the service owner is responsible to verify the data before calling these functions.
