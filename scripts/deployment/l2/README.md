@@ -54,6 +54,7 @@ If a contract is deployed with arguments, these arguments are taken from the cor
 
 ## Deployment of supplemental contracts
 For deploying supplemental contracts listed in [deployment.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deploymentL2.md),
-run all the scripts sequentially from `deploy_10_operator_whitelist.js` to `deploy_14_15_change_ownerships.js`.
+run all the scripts sequentially from `deploy_10_operator_whitelist.js` to `deploy_13_change_managers.js`.
+The script `deploy_14_15_change_ownerships.js` can be run after the approval of an off-chain vote.
 
 

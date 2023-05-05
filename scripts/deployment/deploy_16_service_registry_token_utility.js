@@ -50,7 +50,7 @@ async function main() {
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --contract contracts/ServiceRegistryTokenUtility.sol:ServiceRegistryTokenUtility --constructor-args scripts/deployment/verify_16_service_registry_token_utility.js --network " + providerName + " " + serviceRegistryTokenUtility.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/verify_16_service_registry_token_utility.js --network " + providerName + " " + serviceRegistryTokenUtility.address, { encoding: "utf-8" });
     }
 }
 

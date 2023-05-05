@@ -62,6 +62,7 @@ The deployment scripts are located in the corresponding folder: [deployment L2](
 
 ## Deployment of supplemental contracts
 For deploying supplemental contracts listed in [deployment.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deployment.md),
-run all the scripts sequentially from `deploy_15_operator_whitelist.js` to `deploy_19_20_change_ownerships.js`.
+run all the scripts sequentially from `deploy_15_operator_whitelist.js` to `deploy_18_change_managers.js`.
+The script `deploy_19_20_change_ownerships.js` can be run after the approval of an off-chain vote.
 
 

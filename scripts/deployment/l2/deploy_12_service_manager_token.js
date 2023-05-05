@@ -58,14 +58,17 @@ async function main() {
     console.log("Contract address:", serviceManagerToken.address);
     console.log("Transaction:", result.deployTransaction.hash);
 
+    // Wait half a minute for the transaction completion
+    await new Promise(r => setTimeout(r, 30000));
+
     // Writing updated parameters back to the JSON file
-    parsedData.serviceManagerAddress = serviceManagerToken.address;
+    parsedData.serviceManagerTokenAddress = serviceManagerToken.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
 
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify contracts/ServiceManagerToken.sol:ServiceManagerToken --constructor-args scripts/deployment/verify_17_service_manager_token.js --network " + providerName + " " + serviceManagerToken.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_12_service_manager_token.js --network " + providerName + " " + serviceManagerToken.address, { encoding: "utf-8" });
     }
 }
 

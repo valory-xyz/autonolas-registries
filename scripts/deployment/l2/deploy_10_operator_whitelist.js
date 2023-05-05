@@ -44,7 +44,7 @@ async function main() {
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
 
     // Transaction signing and execution
-    console.log("15. EOA to deploy OperatorWhitelist");
+    console.log("10. EOA to deploy OperatorWhitelist");
     const OperatorWhitelist = await ethers.getContractFactory("OperatorWhitelist");
     console.log("You are signing the following transaction: OperatorWhitelist.connect(EOA).deploy(serviceRegistryAddress)");
     const operatorWhitelist = await OperatorWhitelist.connect(EOA).deploy(serviceRegistryAddress, { gasPrice });
@@ -55,6 +55,9 @@ async function main() {
     console.log("Contract address:", operatorWhitelist.address);
     console.log("Transaction:", result.deployTransaction.hash);
 
+    // Wait half a minute for the transaction completion
+    await new Promise(r => setTimeout(r, 30000));
+
     // Writing updated parameters back to the JSON file
     parsedData.operatorWhitelistAddress = operatorWhitelist.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
@@ -62,7 +65,7 @@ async function main() {
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --contract contracts/utils/OperatorWhitelist.sol:OperatorWhitelist --network " + providerName + " " + operatorWhitelist.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_10_operator_whitelist.js --network " + providerName + " " + operatorWhitelist.address, { encoding: "utf-8" });
     }
 }
 

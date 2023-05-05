@@ -55,6 +55,9 @@ async function main() {
     console.log("Contract address:", serviceRegistryTokenUtility.address);
     console.log("Transaction:", result.deployTransaction.hash);
 
+    // Wait half a minute for the transaction completion
+    await new Promise(r => setTimeout(r, 30000));
+
     // Writing updated parameters back to the JSON file
     parsedData.serviceRegistryTokenUtilityAddress = serviceRegistryTokenUtility.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
@@ -62,7 +65,7 @@ async function main() {
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --contract contracts/ServiceRegistryTokenUtility.sol:ServiceRegistryTokenUtility --constructor-args scripts/deployment/verify_16_service_registry_token_utility.js --network " + providerName + " " + serviceRegistryTokenUtility.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_11_service_registry_token_utility.js --network " + providerName + " " + serviceRegistryTokenUtility.address, { encoding: "utf-8" });
     }
 }
 
