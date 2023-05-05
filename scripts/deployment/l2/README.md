@@ -52,7 +52,8 @@ where `script_name` is a script name, i.e. `deploy_01_service_registry.js`, `net
 Each script controls the obtained values by checking them against the expected ones. Also, each script has a contract verification procedure.
 If a contract is deployed with arguments, these arguments are taken from the corresponding `verify_number_and_name` file, where `number_and_name` corresponds to the deployment script number and name.
 
-
-
+## Deployment of supplemental contracts
+For deploying supplemental contracts listed in [deployment.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deploymentL2.md),
+run all the scripts sequentially from `deploy_10_operator_whitelist.js` to `deploy_14_15_change_ownerships.js`.
 
 
