@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "./GenericManager.sol";
+import {GenericManager} from "./GenericManager.sol";
+import {OperatorSignedHashes} from "./utils/OperatorSignedHashes.sol";
 import "./interfaces/IService.sol";
 import "./interfaces/IServiceTokenUtility.sol";
-import "./utils/OperatorSignedHashes.sol";
 
 // Operator whitelist interface
 interface IOperatorWhitelist {

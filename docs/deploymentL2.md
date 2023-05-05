@@ -1,5 +1,5 @@
-The steps of deploying the light protocol contracts are as follows:
-
+# Deployment of the light protocol contracts
+## Steps for deploying original contracts.
 1. EOA to deploy ServiceRegistry;
 2. EOA to deploy ServiceManager pointed to ServiceRegistry;
 3. EOA to deploy GnosisSafeMultisig;
@@ -9,3 +9,11 @@ The steps of deploying the light protocol contracts are as follows:
 7. EOA to whitelist GnosisSafeSameAddressMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeSameAddressMultisig)`;
 8. EOA to transfer ownership rights of ServiceRegistry to FxGovernorTunnel calling `changeOwner(FxGovernorTunnel)`;
 9. EOA to transfer ownership rights of ServiceManager to FxGovernorTunnel calling `changeOwner(FxGovernorTunnel)`.
+
+## Steps for deploying supplemental contracts.
+10. EOA to deploy OperatorWhitelist;
+11. EOA to deploy ServiceRegistryTokenUtility;
+12. EOA to deploy ServiceManagerToken pointed to ServiceRegistry, ServiceRegistryTokenUtility and OperatorWhitelist;
+13. EOA to change the manager of ServiceRegistryTokenUtility to ServiceManagerToken calling `changeManager(ServiceManagerToken)`;
+14. EOA to transfer ownership rights of ServiceRegistryTokenUtility to FxGovernorTunnel calling `changeOwner(FxGovernorTunnel)`;
+15. EOA to transfer ownership rights of ServiceManagerToken to FxGovernorTunnel calling `changeOwner(FxGovernorTunnel)`.

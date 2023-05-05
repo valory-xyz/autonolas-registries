@@ -60,7 +60,9 @@ Create this file or copy it from the one with pre-defined parameters (i.e., `scr
 The L2 Light Protocol deployment procedure is described in [deploymentL2.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deploymentL2.md).
 The deployment scripts are located in the corresponding folder: [deployment L2](https://github.com/valory-xyz/autonolas-registries/blob/main/scripts/deployment/l2).
 
-
-
+## Deployment of supplemental contracts
+For deploying supplemental contracts listed in [deployment.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deployment.md),
+run all the scripts sequentially from `deploy_15_operator_whitelist.js` to `deploy_18_change_managers.js`.
+The script `deploy_19_20_change_ownerships.js` can be run after the approval of an off-chain vote.
 
 

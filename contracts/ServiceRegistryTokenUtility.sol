@@ -2,7 +2,6 @@
 pragma solidity ^0.8.19;
 
 import "./interfaces/IErrorsRegistries.sol";
-import "./interfaces/IService.sol";
 
 // Generic token interface
 interface IToken {
