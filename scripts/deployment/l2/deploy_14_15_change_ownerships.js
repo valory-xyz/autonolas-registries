@@ -1,6 +1,5 @@
 /*global process*/
 
-const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { LedgerSigner } = require("@anders-t/ethers-ledger");
 
@@ -53,14 +52,14 @@ async function main() {
     // Transaction signing and execution
     // 14. EOA to transfer ownership rights of ServiceRegistryTokenUtility to FxGovernorTunnel calling `changeOwner(FxGovernorTunnel)`;
     console.log("You are signing the following transaction: ServiceRegistryTokenUtility.connect(EOA).changeOwner()");
-    let result = await serviceRegistryTokenUtility.connect(EOA).changeOwner(fxGovernorTunnelAddress);
+    let result = await serviceRegistryTokenUtility.connect(EOA).changeOwner(fxGovernorTunnelAddress, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceRegistryTokenUtilityAddress);
     console.log("Transaction:", result.hash);
 
     // 15. EOA to transfer ownership rights of ServiceManagerToken to FxGovernorTunnel calling `changeOwner(FxGovernorTunnel)`.
     console.log("You are signing the following transaction: serviceManagerToken.connect(EOA).changeOwner()");
-    result = await serviceManagerToken.connect(EOA).changeOwner(fxGovernorTunnelAddress);
+    result = await serviceManagerToken.connect(EOA).changeOwner(fxGovernorTunnelAddress, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceManagerTokenAddress);
     console.log("Transaction:", result.hash);
