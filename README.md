@@ -20,7 +20,8 @@ A graphical overview of the whole on-chain architecture is available here:
 
 ![architecture](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/On-chain_architecture_v4.png?raw=true)
 
-An overview of the design, details on how securing services with ETH or a custom ERC20 token, how service owners can opt for a set of authorized operators, as well as how DAOs can manage their autonomous services are provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/AgentServicesFunctionality.pdf?raw=true).
+An overview of the design, details on how securing services with ETH or a custom ERC20 token, how service owners can opt for a set of authorized operators,
+as well as how DAOs can manage their autonomous services are provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/AgentServicesFunctionality.pdf?raw=true).
 
 We have a core periphery architecture for both the components/agents and services. The core contracts are ERC721s primarily accessed via the peripheral manager contracts.
 
