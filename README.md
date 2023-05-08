@@ -167,6 +167,10 @@ Please note that for the correct mainnet interaction the `ALCHEMY_API_KEY` needs
 
 NOTE: whilst the snapshot does maintain the exact dependency structure between components, agents and services, it does not conserve the ownership structure.
 
+## DAO service ownership
+A specific service can be owned by a DAO-governed protocol. In order to construct a DAO proposal for the service (re-)deployment,
+the following step-by-step guide is advised to be observed [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/DAO_service_deloyment_FSM?raw=true).
+
 ## Acknowledgements
 The registries contracts were inspired and based on the following sources:
 - [Rari-Capital](https://github.com/Rari-Capital/solmate). Last known audited version: `a9e3ea26a2dc73bfa87f0cb189687d029028e0c5`;
