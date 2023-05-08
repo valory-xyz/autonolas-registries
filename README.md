@@ -20,7 +20,8 @@ A graphical overview of the whole on-chain architecture is available here:
 
 ![architecture](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/On-chain_architecture_v4.png?raw=true)
 
-An overview of the design, details on how securing services with ETH or a custom ERC20 token, how service owners can opt for a set of authorized operators, as well as how DAOs can manage their autonomous services are provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/AgentServicesFunctionality.pdf?raw=true).
+An overview of the design, details on how securing services with ETH or a custom ERC20 token, how service owners can opt for a set of authorized operators,
+as well as how DAOs can manage their autonomous services are provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/AgentServicesFunctionality.pdf?raw=true).
 
 We have a core periphery architecture for both the components/agents and services. The core contracts are ERC721s primarily accessed via the peripheral manager contracts.
 
@@ -166,6 +167,10 @@ npx hardhat run scripts/mainnet_snapshot.js --network mainnet
 Please note that for the correct mainnet interaction the `ALCHEMY_API_KEY` needs to be exported as an environment variable.
 
 NOTE: whilst the snapshot does maintain the exact dependency structure between components, agents and services, it does not conserve the ownership structure.
+
+## Protocol-owned-services
+A specific service can be owned by a DAO-governed protocol. In order to construct a DAO proposal for the service (re-)deployment,
+the following step-by-step guide is advised to be observed [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/DAO_service_deloyment_FSM?raw=true).
 
 ## Acknowledgements
 The registries contracts were inspired and based on the following sources:
