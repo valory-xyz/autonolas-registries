@@ -5,7 +5,12 @@ const { expect } = require("chai");
 module.exports = async () => {
     // Read configs from the JSON file
     const fs = require("fs");
-    const snapshotFile = "/base/scripts/mainnet_snapshot.json";
+    // Account for the default docker-originated behavior
+    let snapshotFile = "/base/scripts/mainnet_snapshot.json";
+    if (!fs.existsSync(snapshotFile)) {
+        // If the file does not exist, take the original snapshot file
+        snapshotFile = "./scripts/mainnet_snapshot.json";
+    }
     const dataFromJSON = fs.readFileSync(snapshotFile, "utf8");
     const snapshotJSON = JSON.parse(dataFromJSON);
 
