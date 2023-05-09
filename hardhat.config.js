@@ -10,19 +10,24 @@ require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-etherscan");
 require("@nomicfoundation/hardhat-toolbox");
 
-const accounts = {
-    // Generated with bip39
-    mnemonic: "velvet deliver grief train result fortune travel voice over subject subject staff nominee bone name",
-    accountsBalance: "100000000000000000000000000",
-};
-
 const ALCHEMY_API_KEY_MAINNET = process.env.ALCHEMY_API_KEY_MAINNET;
 const ALCHEMY_API_KEY_MATIC = process.env.ALCHEMY_API_KEY_MATIC;
 const ALCHEMY_API_KEY_GOERLI = process.env.ALCHEMY_API_KEY_GOERLI;
 const ALCHEMY_API_KEY_MUMBAI = process.env.ALCHEMY_API_KEY_MUMBAI;
+const GNOSIS_CHAIN_API_KEY = process.env.GNOSIS_CHAIN_API_KEY;
 let TESTNET_MNEMONIC = process.env.TESTNET_MNEMONIC;
+
+const accounts = {
+    mnemonic: TESTNET_MNEMONIC,
+    path: "m/44'/60'/0'/0",
+    initialIndex: 0,
+    count: 20,
+}
+
 if (!TESTNET_MNEMONIC) {
-    TESTNET_MNEMONIC = accounts.mnemonic;
+    // Generated with bip39
+    accounts.mnemonic = "velvet deliver grief train result fortune travel voice over subject subject staff nominee bone name";
+    accounts.accountsBalance = "100000000000000000000000000";
 }
 
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
@@ -41,37 +46,53 @@ module.exports = {
             url: "https://polygon-mainnet.g.alchemy.com/v2/" + ALCHEMY_API_KEY_MATIC,
             chainId: 137,
         },
+        gnosis: {
+            url: "https://rpc.gnosischain.com",
+            accounts: accounts,
+        },
         goerli: {
             url: "https://eth-goerli.g.alchemy.com/v2/" + ALCHEMY_API_KEY_GOERLI,
             chainId: 5,
-            accounts: {
-                mnemonic: TESTNET_MNEMONIC,
-                path: "m/44'/60'/0'/0",
-                initialIndex: 0,
-                count: 20,
-                passphrase: "",
-            },
+            accounts: accounts,
         },
         polygonMumbai: {
             url: "https://polygon-mumbai.g.alchemy.com/v2/" + ALCHEMY_API_KEY_MUMBAI,
-            accounts: {
-                mnemonic: TESTNET_MNEMONIC,
-                path: "m/44'/60'/0'/0",
-                initialIndex: 0,
-                count: 20,
-                passphrase: "",
-            },
+            accounts: accounts,
+        },
+        chiado: {
+            url: "https://rpc.chiadochain.net",
+            accounts: accounts,
         },
         hardhat: {
             allowUnlimitedContractSize: true
         },
     },
     etherscan: {
+        customChains: [
+            {
+                network: "chiado",
+                chainId: 10200,
+                urls: {
+                    apiURL: "https://blockscout.com/gnosis/chiado/api",
+                    browserURL: "https://blockscout.com/gnosis/chiado",
+                },
+            },
+            {
+                network: "gnosis",
+                chainId: 100,
+                urls: {
+                    apiURL: "https://api.gnosisscan.io/api",
+                    browserURL: "https://gnosisscan.io/"
+                },
+            },
+        ],
         apiKey: {
             mainnet: ETHERSCAN_API_KEY,
             polygon: POLYGONSCAN_API_KEY,
+            gnosis: GNOSIS_CHAIN_API_KEY,
             goerli: ETHERSCAN_API_KEY,
-            polygonMumbai: POLYGONSCAN_API_KEY
+            polygonMumbai: POLYGONSCAN_API_KEY,
+            chiado: "10200",
         }
     },
     solidity: {

@@ -29,6 +29,7 @@ Parameters of the `globals.json` file:
 - `useLedger`: a flag whether to use the hardware wallet (`true`) or proceed with the seed-phrase accounts (`false`);
 - `derivationPath`: a string with the derivation path;
 - `providerName`: a network type (see `hardhat.config.js` for the network configurations);
+- `gasPriceInGwei`: gas price in gwei, check with the specific network for the correct gas price during the deployment.
 - `fxGovernorTunnelAddress`: FxGovernorTunnelAddress contract address deployed for the L1-L2 bridge-related deployment.
 
 The Gnosis Safe contracts addresses are provided in order to deploy a Gnosis Safe multisig implementation contract. The deployment
