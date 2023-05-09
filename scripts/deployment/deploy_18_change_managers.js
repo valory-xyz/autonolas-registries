@@ -32,7 +32,7 @@ async function main() {
 
     // Transaction signing and execution
     // 18. EOA to change the manager of ServiceRegistryTokenUtility to ServiceManagerToken calling `changeManager(ServiceManagerToken)`;
-    console.log("You are signing the following transaction: componentRegistry.connect(EOA).changeManager()");
+    console.log("You are signing the following transaction: serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerTokenAddress)");
     let result = await serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerTokenAddress);
     // Transaction details
     console.log("Contract address:", serviceRegistryTokenUtilityAddress);
