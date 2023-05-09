@@ -11,6 +11,7 @@ async function main() {
     const useLedger = parsedData.useLedger;
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
+    const gasPriceInGwei = parsedData.gasPriceInGwei;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceManagerAddress = parsedData.serviceManagerAddress;
     const gnosisSafeMultisigImplementationAddress = parsedData.gnosisSafeMultisigImplementationAddress;
@@ -23,13 +24,25 @@ async function main() {
             console.log("set ALCHEMY_API_KEY_MATIC env variable");
         }
         networkURL = "https://polygon-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MATIC;
-    } else {
+    } else if (providerName === "polygonMumbai") {
         if (!process.env.ALCHEMY_API_KEY_MUMBAI) {
             console.log("set ALCHEMY_API_KEY_MUMBAI env variable");
             return;
         }
         networkURL = "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MUMBAI;
+    } else if (providerName === "gnosis") {
+        if (!process.env.GNOSIS_CHAIN_API_KEY) {
+            console.log("set GNOSIS_CHAIN_API_KEY env variable");
+            return;
+        }
+        networkURL = "https://api.gnosisscan.io/api" + process.env.GNOSIS_CHAIN_API_KEY;
+    } else if (providerName === "chiado") {
+        networkURL = "https://blockscout.com/gnosis/chiado/api";
+    } else {
+        console.log("Unknown network provider", providerName);
+        return;
     }
+
     const provider = new ethers.providers.JsonRpcProvider(networkURL);
     const signers = await ethers.getSigners();
 
@@ -46,7 +59,6 @@ async function main() {
     const serviceRegistry = await ethers.getContractAt("ServiceRegistryL2", serviceRegistryAddress);
 
     // Gas pricing
-    const gasPriceInGwei = "270";
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
 
     // Transaction signing and execution
