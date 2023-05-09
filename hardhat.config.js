@@ -22,7 +22,7 @@ const accounts = {
     path: "m/44'/60'/0'/0",
     initialIndex: 0,
     count: 20,
-}
+};
 
 if (!TESTNET_MNEMONIC) {
     // Generated with bip39
