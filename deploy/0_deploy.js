@@ -143,20 +143,20 @@ module.exports = async () => {
     await serviceRegistry.changeMultisigPermission("0x26Ea2dC7ce1b41d0AD0E0521535655d7a94b684c", true);
 
     // Polygon Mumbai
-     await serviceRegistryL2.changeMultisigPermission("0x9dEc6B62c197268242A768dc3b153AE7a2701396", true);
-     await serviceRegistryL2.changeMultisigPermission("0xB575dd20281c63288428DD58e5f579CC7d6aae4d", true);
+    await serviceRegistryL2.changeMultisigPermission("0x9dEc6B62c197268242A768dc3b153AE7a2701396", true);
+    await serviceRegistryL2.changeMultisigPermission("0xB575dd20281c63288428DD58e5f579CC7d6aae4d", true);
 
     // Polygon Mainnet
-     await serviceRegistryL2.changeMultisigPermission("0x3d77596beb0f130a4415df3D2D8232B3d3D31e44", true);
-     await serviceRegistryL2.changeMultisigPermission("0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5", true);
+    await serviceRegistryL2.changeMultisigPermission("0x3d77596beb0f130a4415df3D2D8232B3d3D31e44", true);
+    await serviceRegistryL2.changeMultisigPermission("0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5", true);
 
     // Gnosis Chiado
-     await serviceRegistryL2.changeMultisigPermission("0xeB49bE5DF00F74bd240DE4535DDe6Bc89CEfb994", true);
-     await serviceRegistryL2.changeMultisigPermission("0x5BA58970c2Ae16Cf6218783018100aF2dCcFc915", true);
+    await serviceRegistryL2.changeMultisigPermission("0xeB49bE5DF00F74bd240DE4535DDe6Bc89CEfb994", true);
+    await serviceRegistryL2.changeMultisigPermission("0x5BA58970c2Ae16Cf6218783018100aF2dCcFc915", true);
 
     // Gnosis Mainnet
-     await serviceRegistryL2.changeMultisigPermission("0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE", true);
-     await serviceRegistryL2.changeMultisigPermission("0x3d77596beb0f130a4415df3D2D8232B3d3D31e44", true);
+    await serviceRegistryL2.changeMultisigPermission("0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE", true);
+    await serviceRegistryL2.changeMultisigPermission("0x3d77596beb0f130a4415df3D2D8232B3d3D31e44", true);
 
     // For simplicity, deployer is the manager for service registry
     await serviceRegistry.changeManager(deployer.address);
