@@ -36,14 +36,14 @@ async function main() {
         }
         networkURL = "https://rpc.gnosischain.com";
     } else if (providerName === "chiado") {
-        networkURL = "https://blockscout.com/gnosis/chiado/api";
+        networkURL = "https://rpc.chiadochain.net";
     } else {
         console.log("Unknown network provider", providerName);
         return;
     }
 
     const provider = new ethers.providers.JsonRpcProvider(networkURL);
-    console.log(provider)
+    console.log(provider);
     const signers = await ethers.getSigners();
 
     if (useLedger) {

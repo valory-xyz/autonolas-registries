@@ -115,6 +115,7 @@ module.exports = async () => {
     console.log("RegistriesManager deployed to:", registriesManager.address);
     console.log("ServiceRegistry deployed to:", serviceRegistry.address);
     console.log("ServiceManager deployed to:", serviceManager.address);
+    console.log("ServiceRegistryL2 deployed to:", serviceRegistryL2.address);
     console.log("Gnosis Safe master copy deployed to:", gnosisSafe.address);
     console.log("Gnosis Safe proxy factory deployed to:", gnosisSafeProxyFactory.address);
     console.log("Gnosis Safe Multisig deployed to:", gnosisSafeMultisig.address);
@@ -124,19 +125,38 @@ module.exports = async () => {
     // Whitelist gnosis multisig implementations
     await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
     await serviceRegistry.changeMultisigPermission(gnosisSafeSameAddressMultisig.address, true);
-    // Also whitelist multisigs from goerli and mainnet
+    await serviceRegistryL2.changeMultisigPermission(gnosisSafeMultisig.address, true);
+    await serviceRegistryL2.changeMultisigPermission(gnosisSafeSameAddressMultisig.address, true);
 
-    // Goerli
+
+    // Also whitelist multisigs for all the other networks
+    // ETH Goerli
     // Multisig implementation that creates a new multisig
     await serviceRegistry.changeMultisigPermission("0x65dD51b02049ad1B6FF7fa9Ea3322E1D2CAb1176", true);
     // Multisig implementation that changes the existent multisig
     await serviceRegistry.changeMultisigPermission("0x92499E80f50f06C4078794C179986907e7822Ea1", true);
 
-    // Mainnet
+    // EHT Mainnet
     // Multisig implementation that creates a new multisig
     await serviceRegistry.changeMultisigPermission("0x46C0D07F55d4F9B5Eed2Fc9680B5953e5fd7b461", true);
     // Multisig implementation that changes the existent multisig
     await serviceRegistry.changeMultisigPermission("0x26Ea2dC7ce1b41d0AD0E0521535655d7a94b684c", true);
+
+    // Polygon Mumbai
+     await serviceRegistryL2.changeMultisigPermission("0x9dEc6B62c197268242A768dc3b153AE7a2701396", true);
+     await serviceRegistryL2.changeMultisigPermission("0xB575dd20281c63288428DD58e5f579CC7d6aae4d", true);
+
+    // Polygon Mainnet
+     await serviceRegistryL2.changeMultisigPermission("0x3d77596beb0f130a4415df3D2D8232B3d3D31e44", true);
+     await serviceRegistryL2.changeMultisigPermission("0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5", true);
+
+    // Gnosis Chiado
+     await serviceRegistryL2.changeMultisigPermission("0xeB49bE5DF00F74bd240DE4535DDe6Bc89CEfb994", true);
+     await serviceRegistryL2.changeMultisigPermission("0x5BA58970c2Ae16Cf6218783018100aF2dCcFc915", true);
+
+    // Gnosis Mainnet
+     await serviceRegistryL2.changeMultisigPermission("0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE", true);
+     await serviceRegistryL2.changeMultisigPermission("0x3d77596beb0f130a4415df3D2D8232B3d3D31e44", true);
 
     // For simplicity, deployer is the manager for service registry
     await serviceRegistry.changeManager(deployer.address);
@@ -255,6 +275,7 @@ module.exports = async () => {
         "registriesManager": registriesManager.address,
         "serviceRegistry": serviceRegistry.address,
         "serviceManager": serviceManager.address,
+        "serviceRegistryL2": serviceRegistryL2.address,
         "gnosisSafe": gnosisSafe.address,
         "gnosisSafeProxyFactory": gnosisSafeProxyFactory.address,
         "Multisig implementation": gnosisSafeMultisig.address,

@@ -15,6 +15,7 @@ const ALCHEMY_API_KEY_MATIC = process.env.ALCHEMY_API_KEY_MATIC;
 const ALCHEMY_API_KEY_GOERLI = process.env.ALCHEMY_API_KEY_GOERLI;
 const ALCHEMY_API_KEY_MUMBAI = process.env.ALCHEMY_API_KEY_MUMBAI;
 const GNOSIS_CHAIN_API_KEY = process.env.GNOSIS_CHAIN_API_KEY;
+const CHIADO_CHAIN_API_KEY = "10200";
 let TESTNET_MNEMONIC = process.env.TESTNET_MNEMONIC;
 
 const accounts = {
@@ -93,7 +94,7 @@ module.exports = {
             gnosis: GNOSIS_CHAIN_API_KEY,
             goerli: ETHERSCAN_API_KEY,
             polygonMumbai: POLYGONSCAN_API_KEY,
-            chiado: "10200",
+            chiado: CHIADO_CHAIN_API_KEY,
         }
     },
     solidity: {
