@@ -49,6 +49,7 @@ module.exports = {
         gnosis: {
             url: "https://rpc.gnosischain.com",
             accounts: accounts,
+            chainId: 100,
         },
         goerli: {
             url: "https://eth-goerli.g.alchemy.com/v2/" + ALCHEMY_API_KEY_GOERLI,
