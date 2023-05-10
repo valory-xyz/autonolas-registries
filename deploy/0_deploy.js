@@ -104,6 +104,11 @@ module.exports = async () => {
     const multiSend = await MultiSend.deploy();
     await multiSend.deployed();
 
+    const ServiceRegistryL2 = await ethers.getContractFactory("ServiceRegistryL2");
+    const serviceRegistryL2 = await ServiceRegistryL2.deploy("Service Registry L2", "AUTONOLAS-SERVICE-L2-V1",
+        "https://gateway.autonolas.tech/ipfs/");
+    await serviceRegistryL2.deployed();
+
     console.log("==========================================");
     console.log("ComponentRegistry deployed to:", componentRegistry.address);
     console.log("AgentRegistry deployed to:", agentRegistry.address);
