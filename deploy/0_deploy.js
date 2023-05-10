@@ -267,6 +267,8 @@ module.exports = async () => {
     console.log("RegistriesManager is now a manager of ComponentRegistry and AgentRegistry contracts");
     await serviceRegistry.changeManager(serviceManager.address);
     console.log("ServiceManager is now a manager of ServiceRegistry contract");
+    await serviceRegistryL2.changeManager(serviceManager.address);
+    console.log("ServiceManager is now a manager of ServiceRegistryL2 contract");
 
     // Writing the JSON with the initial deployment data
     let initDeployJSON = {
