@@ -14,3 +14,5 @@ cec8ade4805901c836ecf8759a35eca146bad5d9:scripts/deployment/globals_mainnet.json
 ea89efbb35787bce49244a8a9bc6e9ea55899049:scripts/deployment/l2/globals_polygon_mumbai.json:generic-api-key:2
 ea89efbb35787bce49244a8a9bc6e9ea55899049:scripts/deployment/l2/globals_polygon_mumbai.json:generic-api-key:1
 65cb5382b42475edc71c40abf5ce58bcced56d8b:scripts/deployment/l2/globals_polygon_mumbai.json:generic-api-key:2
+4de4e77e55da0726d13dd843b34e0926eb93e4a:scripts/deployment/l2/globals_polygon_mumbai.json:generic-api-key:2
+d4de4e77e55da0726d13dd843b34e0926eb93e4a:scripts/deployment/l2/globals_polygon_mumbai.json:generic-api-key:1
