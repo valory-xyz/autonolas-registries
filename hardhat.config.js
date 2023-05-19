@@ -41,10 +41,12 @@ module.exports = {
         },
         mainnet: {
             url: "https://eth-mainnet.g.alchemy.com/v2/" + ALCHEMY_API_KEY_MAINNET,
+            accounts: accounts,
             chainId: 1,
         },
         polygon: {
             url: "https://polygon-mainnet.g.alchemy.com/v2/" + ALCHEMY_API_KEY_MATIC,
+            accounts: accounts,
             chainId: 137,
         },
         gnosis: {

@@ -1,7 +1,12 @@
 module.exports = {
     skipFiles: ["test/ComponentRegistryTest.sol",
+        "test/ERC20Token.sol",
         "test/GnosisSafeABICreator.sol",
+        "test/MockOperatorContract.sol",
+        "test/MockServiceRegistry.sol",
+        "test/MockTimelock.sol",
         "test/ReentrancyAttacker.sol",
+        "test/ReentrancyTokenAttacker.sol",
         "flatten/AgentRegistry-flatten.sol",
         "flatten/ComponentRegistry-flatten.sol",
         "flatten/GenericManager-flatten.sol",

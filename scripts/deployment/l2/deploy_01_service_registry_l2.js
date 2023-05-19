@@ -43,7 +43,6 @@ async function main() {
     }
 
     const provider = new ethers.providers.JsonRpcProvider(networkURL);
-    console.log(provider);
     const signers = await ethers.getSigners();
 
     if (useLedger) {

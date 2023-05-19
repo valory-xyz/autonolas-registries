@@ -30,7 +30,7 @@ Parameters of the `globals.json` file:
 - `derivationPath`: a string with the derivation path;
 - `providerName`: a network type (see `hardhat.config.js` for the network configurations);
 - `gasPriceInGwei`: gas price in gwei, check with the specific network for the correct gas price during the deployment.
-- `fxGovernorTunnelAddress`: FxGovernorTunnelAddress contract address deployed for the L1-L2 bridge-related deployment.
+- `bridgeMediatorAddress`: corresponding Bridge Mediator contract address deployed for the L1-L2 bridge-related deployment.
 
 The Gnosis Safe contracts addresses are provided in order to deploy a Gnosis Safe multisig implementation contract. The deployment
 accounts for the address of the Gnosis Safe master copy [v1.3.0](https://github.com/safe-global/safe-deployments/blob/main/src/assets/v1.3.0/gnosis_safe.json).
