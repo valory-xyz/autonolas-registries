@@ -128,6 +128,10 @@ module.exports = async () => {
         serviceRegistryTokenUtility.address, operatorWhitelist.address);
     await serviceManagerToken.deployed();
 
+    const Token = await ethers.getContractFactory("ERC20Token");
+    const token = await Token.deploy();
+    await token.deployed();
+
     console.log("==========================================");
     console.log("ComponentRegistry deployed to:", componentRegistry.address);
     console.log("AgentRegistry deployed to:", agentRegistry.address);
@@ -139,6 +143,7 @@ module.exports = async () => {
     console.log("ServiceRegistryTokenUtility deployed to:", serviceRegistryTokenUtility.address);
     console.log("ServiceManagerToken deployed to:", serviceManagerToken.address);
     console.log("OperatorWhitelist deployed to:", operatorWhitelist.address);
+    console.log("ERC20Token deployed to:", token.address);
     console.log("Gnosis Safe master copy deployed to:", gnosisSafe.address);
     console.log("Gnosis Safe proxy factory deployed to:", gnosisSafeProxyFactory.address);
     console.log("Gnosis Safe Multisig deployed to:", gnosisSafeMultisig.address);
@@ -310,6 +315,7 @@ module.exports = async () => {
         "serviceRegistryTokenUtility": serviceRegistryTokenUtility.address,
         "serviceManagerToken": serviceManagerToken.address,
         "operatorWhitelist": operatorWhitelist.address,
+        "ERC20Token": token.address,
         "gnosisSafe": gnosisSafe.address,
         "gnosisSafeProxyFactory": gnosisSafeProxyFactory.address,
         "Multisig implementation": gnosisSafeMultisig.address,
