@@ -116,11 +116,11 @@ module.exports = async () => {
     await serviceRegistryForToken.deployed();
 
     const ServiceRegistryTokenUtility = await ethers.getContractFactory("ServiceRegistryTokenUtility");
-    serviceRegistryTokenUtility = await ServiceRegistryTokenUtility.deploy(serviceRegistryForToken.address);
+    const serviceRegistryTokenUtility = await ServiceRegistryTokenUtility.deploy(serviceRegistryForToken.address);
     await serviceRegistryTokenUtility.deployed();
 
     const OperatorWhitelist = await ethers.getContractFactory("OperatorWhitelist");
-    operatorWhitelist = await OperatorWhitelist.deploy(serviceRegistryForToken.address);
+    const operatorWhitelist = await OperatorWhitelist.deploy(serviceRegistryForToken.address);
     await operatorWhitelist.deployed();
 
     const ServiceManagerToken = await ethers.getContractFactory("ServiceManagerToken");
