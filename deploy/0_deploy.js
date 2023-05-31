@@ -124,7 +124,7 @@ module.exports = async () => {
     await operatorWhitelist.deployed();
 
     const ServiceManagerToken = await ethers.getContractFactory("ServiceManagerToken");
-    const serviceManagerToken = await ServiceManagerToken.deploy(serviceRegistry.address,
+    const serviceManagerToken = await ServiceManagerToken.deploy(serviceRegistryForToken.address,
         serviceRegistryTokenUtility.address, operatorWhitelist.address);
     await serviceManagerToken.deployed();
 
