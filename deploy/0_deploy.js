@@ -109,6 +109,25 @@ module.exports = async () => {
         "https://gateway.autonolas.tech/ipfs/");
     await serviceRegistryL2.deployed();
 
+    // Deploying service registry and service registry token utility along with the service manager token contracts
+    const ServiceRegistryForToken = await ethers.getContractFactory("ServiceRegistry");
+    const serviceRegistryForToken = await ServiceRegistryForToken.deploy("Service Registry", "AUTONOLAS-SERVICE-V1",
+        "https://gateway.autonolas.tech/ipfs/", agentRegistry.address);
+    await serviceRegistryForToken.deployed();
+
+    const ServiceRegistryTokenUtility = await ethers.getContractFactory("ServiceRegistryTokenUtility");
+    serviceRegistryTokenUtility = await ServiceRegistryTokenUtility.deploy(serviceRegistryForToken.address);
+    await serviceRegistryTokenUtility.deployed();
+
+    const OperatorWhitelist = await ethers.getContractFactory("OperatorWhitelist");
+    operatorWhitelist = await OperatorWhitelist.deploy(serviceRegistryForToken.address);
+    await operatorWhitelist.deployed();
+
+    const ServiceManagerToken = await ethers.getContractFactory("ServiceManagerToken");
+    const serviceManagerToken = await ServiceManagerToken.deploy(serviceRegistry.address,
+        serviceRegistryTokenUtility.address, operatorWhitelist.address);
+    await serviceManagerToken.deployed();
+
     console.log("==========================================");
     console.log("ComponentRegistry deployed to:", componentRegistry.address);
     console.log("AgentRegistry deployed to:", agentRegistry.address);
@@ -116,6 +135,10 @@ module.exports = async () => {
     console.log("ServiceRegistry deployed to:", serviceRegistry.address);
     console.log("ServiceManager deployed to:", serviceManager.address);
     console.log("ServiceRegistryL2 deployed to:", serviceRegistryL2.address);
+    console.log("ServiceRegistryForToken deployed to:", serviceRegistryForToken.address);
+    console.log("ServiceRegistryTokenUtility deployed to:", serviceRegistryTokenUtility.address);
+    console.log("ServiceManagerToken deployed to:", serviceManagerToken.address);
+    console.log("OperatorWhitelist deployed to:", operatorWhitelist.address);
     console.log("Gnosis Safe master copy deployed to:", gnosisSafe.address);
     console.log("Gnosis Safe proxy factory deployed to:", gnosisSafeProxyFactory.address);
     console.log("Gnosis Safe Multisig deployed to:", gnosisSafeMultisig.address);
@@ -127,7 +150,8 @@ module.exports = async () => {
     await serviceRegistry.changeMultisigPermission(gnosisSafeSameAddressMultisig.address, true);
     await serviceRegistryL2.changeMultisigPermission(gnosisSafeMultisig.address, true);
     await serviceRegistryL2.changeMultisigPermission(gnosisSafeSameAddressMultisig.address, true);
-
+    await serviceRegistryForToken.changeMultisigPermission(gnosisSafeMultisig.address, true);
+    await serviceRegistryForToken.changeMultisigPermission(gnosisSafeSameAddressMultisig.address, true);
 
     // Also whitelist multisigs for all the other networks
     // ETH Goerli
@@ -269,6 +293,10 @@ module.exports = async () => {
     console.log("ServiceManager is now a manager of ServiceRegistry contract");
     await serviceRegistryL2.changeManager(serviceManager.address);
     console.log("ServiceManager is now a manager of ServiceRegistryL2 contract");
+    await serviceRegistryForToken.changeManager(serviceManagerToken.address);
+    console.log("ServiceManagerToken is now a manager of ServiceRegistryForToken contract");
+    await serviceRegistryTokenUtility.changeManager(serviceManagerToken.address);
+    console.log("ServiceManagerToken is now a manager of ServiceRegistryTokenUtility contract");
 
     // Writing the JSON with the initial deployment data
     let initDeployJSON = {
@@ -278,6 +306,10 @@ module.exports = async () => {
         "serviceRegistry": serviceRegistry.address,
         "serviceManager": serviceManager.address,
         "serviceRegistryL2": serviceRegistryL2.address,
+        "serviceRegistryForToken": serviceRegistryForToken.address,
+        "serviceRegistryTokenUtility": serviceRegistryTokenUtility.address,
+        "serviceManagerToken": serviceManagerToken.address,
+        "operatorWhitelist": operatorWhitelist.address,
         "gnosisSafe": gnosisSafe.address,
         "gnosisSafeProxyFactory": gnosisSafeProxyFactory.address,
         "Multisig implementation": gnosisSafeMultisig.address,
