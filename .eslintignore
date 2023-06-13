@@ -1,3 +1,4 @@
-coverage*
 audits/*
+coverage*
+integrations/*
 lib/*
