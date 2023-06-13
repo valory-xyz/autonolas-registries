@@ -6,7 +6,7 @@ import fs from 'fs';
 
 const endpoint: string = process.env.RPC_URL || "http://127.0.0.1:8899";
 
-export async function loadContract(name: string, args: any[] = [], space: number = 8192):
+export async function loadContract(name: string, args: any[] = [], space: number = 8600):
     Promise<{ program: Program, payer: Keypair, provider: AnchorProvider, storage: Keypair, program_key: PublicKey }> {
 
     const idl = JSON.parse(fs.readFileSync(`${name}.json`, 'utf8'));
