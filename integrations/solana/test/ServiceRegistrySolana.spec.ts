@@ -25,6 +25,7 @@ describe("ServiceRegistrySolana", function () {
     let storage : Keypair;
     let metadataAuthority : Keypair;
     let serviceAuthority : Keypair;
+    const emptyPayload = Buffer.from("", "hex");
 
     this.timeout(500000);
 
@@ -103,5 +104,239 @@ describe("ServiceRegistrySolana", function () {
         expect(result.agentIds).toEqual(newAgentIds);
         expect(result.slots).toEqual(newSlots);
         expect(result.bonds).toEqual(newBonds);
+    });
+
+    it("Crating a service and activating it", async function () {
+        // Create a service
+        await program.methods.create(serviceAuthority.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
+
+        // Activate the service
+        await program.methods.activateRegistration(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
+
+        // Check the obtained service
+        const result = await program.methods.getService(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .view();
+
+        expect(result.state).toEqual({"activeRegistration": {}});
+    });
+
+    it("Crating a service, activating it and registering agent instances", async function () {
+        // Create a service
+        await program.methods.create(serviceAuthority.publicKey, configHash, [1], [1], [regBond], 1)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
+
+        // Activate the service
+        await program.methods.activateRegistration(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
+
+        const operator = Keypair.generate();
+        const agentInstance = Keypair.generate();
+        // Register agent instance
+        await program.methods.registerAgents(operator.publicKey, serviceId, [agentInstance.publicKey], [1])
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: operator.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([operator])
+            .rpc();
+
+        // Check the obtained service
+        const result = await program.methods.getService(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .view();
+
+        expect(result.state).toEqual({"finishedRegistration": {}});
+    });
+
+    it("Crating a service, activating it, registering agent instances and terminating", async function () {
+        // Create a service
+        await program.methods.create(serviceAuthority.publicKey, configHash, [1], [1], [regBond], 1)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
+
+        // Activate the service
+        await program.methods.activateRegistration(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
+
+        const operator = Keypair.generate();
+        const agentInstance = Keypair.generate();
+        // Register agent instance
+        await program.methods.registerAgents(operator.publicKey, serviceId, [agentInstance.publicKey], [1])
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: operator.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([operator])
+            .rpc();
+
+        // Terminate the service
+        await program.methods.terminate(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
+
+        // Check the obtained service
+        const result = await program.methods.getService(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .view();
+
+        expect(result.state).toEqual({"terminatedBonded": {}});
+    });
+
+    it("Crating a service, activating it, registering agent instances, terminating and unbonding", async function () {
+        // Create a service
+        await program.methods.create(serviceAuthority.publicKey, configHash, [1], [1], [regBond], 1)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
+
+        // Activate the service
+        await program.methods.activateRegistration(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
+
+        const operator = Keypair.generate();
+        const agentInstance = Keypair.generate();
+        // Register agent instance
+        await program.methods.registerAgents(operator.publicKey, serviceId, [agentInstance.publicKey], [1])
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: operator.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([operator])
+            .rpc();
+
+        // Terminate the service
+        await program.methods.terminate(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
+
+        // Unbond agent instances
+        await program.methods.unbond(operator.publicKey, serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: operator.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([operator])
+            .rpc();
+
+        // Check the obtained service
+        const result = await program.methods.getService(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .view();
+
+        expect(result.state).toEqual({"preRegistration": {}});
+    });
+
+    it.only("Crating a service, activating it, registering agent instances and deploying", async function () {
+        // Create a service
+        await program.methods.create(serviceAuthority.publicKey, configHash, [1], [1], [regBond], 1)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
+
+        // Activate the service
+        await program.methods.activateRegistration(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
+
+        const operator = Keypair.generate();
+        const agentInstance = Keypair.generate();
+        // Register agent instance
+        await program.methods.registerAgents(operator.publicKey, serviceId, [agentInstance.publicKey], [1])
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: operator.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([operator])
+            .rpc();
+
+        // Terminate the service
+        await program.methods.terminate(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
+
+        // Whitelist the multisig implementation
+        const multisigImplementation = Keypair.generate();
+        await program.methods.changeMultisigPermission(multisigImplementation.publicKey, true)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
+
+        // Deploy the service
+        await program.methods.deploy(serviceId, multisigImplementation.publicKey, emptyPayload)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
+
+        // Check the obtained service
+        const result = await program.methods.getService(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .view();
+
+        expect(result.state).toEqual({"deployed": {}});
     });
 });

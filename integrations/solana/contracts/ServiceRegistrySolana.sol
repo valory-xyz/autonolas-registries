@@ -56,6 +56,7 @@ contract ServiceRegistrySolana {
         uint32[] agentIds;
         uint32[] slots;
         uint32[] bonds;
+        //uint32[type(uint32).max] idx;
     }
 
     // The public key for the authority that should sign every change to the NFT's URI
@@ -194,6 +195,13 @@ contract ServiceRegistrySolana {
             }
             lastId = agentIds[i];
         }
+
+        // Check that there are no zero number of slots for a specific canonical agent id and no zero registration bond
+        for (uint32 i = 0; i < agentIds.length; i++) {
+            if (slots[i] == 0 || bonds[i] == 0) {
+                revert("ZeroValue");
+            }
+        }
     }
 
     /// @dev Sets the service data.
@@ -201,14 +209,12 @@ contract ServiceRegistrySolana {
     /// @param agentIds Canonical agent Ids.
     /// @param slots Set of agent instances number for each agent Id.
     /// @param bonds Corresponding set of required bonds to register an agent instance in the service.
-    /// @param size Size of a canonical agent ids set.
     /// @param serviceId ServiceId.
     function _setServiceData(
         Service memory service,
         uint32[] memory agentIds,
         uint32[] memory slots,
         uint32[] memory bonds,
-        uint32 size,
         uint32 serviceId
     ) private
     {
@@ -218,7 +224,7 @@ contract ServiceRegistrySolana {
         service.agentIds = agentIds;
         service.slots = slots;
         service.bonds = bonds;
-        for (uint32 i = 0; i < size; i++) {
+        for (uint32 i = 0; i < agentIds.length; i++) {
             service.maxNumAgentInstances += slots[i];
             // Security deposit is the maximum of the canonical agent registration bond
             if (bonds[i] > securityDeposit) {
@@ -271,19 +277,12 @@ contract ServiceRegistrySolana {
         // Execute initial checks
         _initialChecks(configHash, agentIds, slots, bonds);
 
-        // Check that there are no zero number of slots for a specific canonical agent id and no zero registration bond
-        for (uint32 i = 0; i < agentIds.length; i++) {
-            if (slots[i] == 0 || bonds[i] == 0) {
-                revert("ZeroValue");
-            }
-        }
-
         // Create a new service Id
         serviceId = totalSupply;
         serviceId++;
 
         // Set high-level data components of the service instance
-        Service service;
+        Service memory service;
         // Updating high-level data components of the service
         service.threshold = threshold;
         // Assigning the initial hash
@@ -292,7 +291,7 @@ contract ServiceRegistrySolana {
         service.state = ServiceState.PreRegistration;
 
         // Set service data
-        _setServiceData(service, agentIds, slots, bonds, agentIds.length, serviceId);
+        _setServiceData(service, agentIds, slots, bonds, serviceId);
 
         // Mint the service instance to the service owner and record the service structure
         service.serviceOwner = serviceOwner;
@@ -305,7 +304,6 @@ contract ServiceRegistrySolana {
         _locked = 1;
     }
 
-    // TODO: Fix update how we fixed it in the updated manager
     /// @dev Updates a service in a CRUD way.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids in a sorted ascending order.
@@ -324,7 +322,7 @@ contract ServiceRegistrySolana {
         uint32 serviceId
     ) external returns (bool success)
     {
-        Service service = services[serviceId];
+        Service memory service = services[serviceId];
 
         // Check for the service authority
         address serviceOwner = service.serviceOwner;
@@ -349,8 +347,7 @@ contract ServiceRegistrySolana {
         }
 
         // Set service data and record the modified service struct
-        uint32 size = agentIds.length;
-        _setServiceData(service, agentIds, slots, bonds, size, serviceId);
+        _setServiceData(service, agentIds, slots, bonds, serviceId);
         services[serviceId] = service;
 
         emit UpdateService(serviceId, configHash);
@@ -362,7 +359,7 @@ contract ServiceRegistrySolana {
     /// @return success True, if function executed successfully.
     function activateRegistration(uint32 serviceId) external payable returns (bool success)
     {
-        Service service = services[serviceId];
+        Service storage service = services[serviceId];
 
         // Check for the service authority
         address serviceOwner = service.serviceOwner;
@@ -412,14 +409,20 @@ contract ServiceRegistrySolana {
         // Check for the sufficient amount of bond fee is provided
         uint32 numAgents = agentInstances.length;
         uint32 totalBond = 0;
+        uint32[] memory serviceAgentIds = service.agentIds;
         for (uint32 i = 0; i < numAgents; ++i) {
             // Check if canonical agent Id exists in the service
-            // TODO: correct
-            uint32 slots = service.slots[i];
-            uint32 bond = service.bonds[i];
-            if (slots == 0) {
+            uint32 idx = 0;
+            for (; idx < serviceAgentIds.length; ++idx) {
+                if (serviceAgentIds[idx] == agentIds[i]) {
+                    break;
+                }
+            }
+            // If the index reached the length of service agent Ids, the agent Id does not exist in the service
+            if (idx == service.agentIds.length) {
                 revert("AgentNotInService");
             }
+            uint32 bond = service.bonds[idx];
             totalBond += bond;
         }
         // TODO: Check the escrow balance
@@ -490,7 +493,7 @@ contract ServiceRegistrySolana {
         }
         _locked = 2;
 
-        Service service = services[serviceId];
+        Service storage service = services[serviceId];
 
         // Check for the service authority
         address serviceOwner = service.serviceOwner;
@@ -534,7 +537,7 @@ contract ServiceRegistrySolana {
         // If the service is deployed, it definitely exists and is running. We do not want this function to be abused
         // when the service was deployed, then terminated, then in a sleep mode or before next deployment somebody
         // could use this function and try to slash operators.
-        Service service = services[serviceId];
+        Service storage service = services[serviceId];
         if (service.state != ServiceState.Deployed) {
             revert("WrongServiceState");
         }
@@ -581,7 +584,7 @@ contract ServiceRegistrySolana {
         }
         _locked = 2;
 
-        Service service = services[serviceId];
+        Service storage service = services[serviceId];
 
         // Check for the service authority
         address serviceOwner = service.serviceOwner;
@@ -636,7 +639,7 @@ contract ServiceRegistrySolana {
             revert("ZeroAddress");
         }
 
-        Service service = services[serviceId];
+        Service storage service = services[serviceId];
         // Service can only be in the terminated-bonded state or expired-registration in order to proceed
         if (service.state != ServiceState.TerminatedBonded) {
             revert("WrongServiceState");
