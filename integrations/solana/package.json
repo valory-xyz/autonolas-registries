@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Solana Integration of Autonolas registries L2",
   "scripts": {
-    "test": "cd test; rm *.key *.js; tsc; ts-node setup.ts; mocha --parallel ServiceRegistrySolana.spec.ts; cd -",
+    "test": "cd test; rm *.key *.js; tsc; ts-node setup.ts; mocha ServiceRegistrySolana.spec.ts; cd -",
     "build": "solang compile contracts/ServiceRegistrySolana.sol -o test --target solana -v"
   },
   "author": "Aleksandr Kuperman <aleksandr.kuperman@valory.xyz>",

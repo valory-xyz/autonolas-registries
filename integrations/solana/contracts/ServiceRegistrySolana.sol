@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+import "solana";
+
 /// @title Service Registry Solana - Smart contract for registering services on the Solana chain.
 /// @dev Underlying canonical agents and components are not checked for their validity since they are set up on the L1 mainnet.
 ///      The architecture is optimistic, in the sense that service owners are assumed to reference existing and relevant agents.
@@ -52,6 +54,8 @@ contract ServiceRegistrySolana {
         ServiceState state;
         // Canonical agent Ids for the service. Individual agent Id is bounded by the max number of agent Id
         uint32[] agentIds;
+        uint32[] slots;
+        uint32[] bonds;
     }
 
     // The public key for the authority that should sign every change to the NFT's URI
@@ -96,8 +100,9 @@ contract ServiceRegistrySolana {
     mapping (address => address) public mapAgentInstanceOperators;
     // Map of policy for multisig implementations
     mapping (address => bool) public mapMultisigs;
-    // Map of service counter => service
-    mapping (uint32 => Service) public mapServices;
+    // Set of services
+    Service[type(uint32).max] services;
+
 
     /// @dev Service registry constructor.
     /// @param _metadataAuthority Agent contract symbol.
@@ -119,7 +124,7 @@ contract ServiceRegistrySolana {
 
         revert("The authority is missing");
     }
-    
+
     /// @dev Changes the metadataAuthority address.
     /// @param newOwner Address of a new metadataAuthority.
     function changeOwner(address newOwner) external {
@@ -134,7 +139,7 @@ contract ServiceRegistrySolana {
         metadataAuthority = newOwner;
         emit OwnerUpdated(newOwner);
     }
-    
+
     /// @dev Changes the drainer.
     /// @param newDrainer Address of a drainer.
     function changeDrainer(address newDrainer) external {
@@ -152,13 +157,13 @@ contract ServiceRegistrySolana {
 
     function transfer(uint32 serviceId, address newServiceOwner) public {
         // Check for the service authority
-        address serviceOwner = mapServices[serviceId].serviceOwner;
+        address serviceOwner = services[serviceId].serviceOwner;
         requireSigner(serviceOwner);
 
-        mapServices[serviceId].serviceOwner = newServiceOwner;
+        services[serviceId].serviceOwner = newServiceOwner;
 
     }
-    
+
     /// @dev Going through basic initial service checks.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids.
@@ -210,12 +215,10 @@ contract ServiceRegistrySolana {
         // Security deposit
         uint32 securityDeposit = 0;
         // Add canonical agent Ids for the service and the slots map
-        service.agentIds = new uint32[](size);
+        service.agentIds = agentIds;
+        service.slots = slots;
+        service.bonds = bonds;
         for (uint32 i = 0; i < size; i++) {
-            service.agentIds[i] = agentIds[i];
-            // Record slots and bonds for a specific service Id corresponding to an agent Id
-            mapServiceAndAgentIdAgentSlots[serviceId][agentIds[i]] = slots[i];
-            mapServiceAndAgentIdAgentBonds[serviceId][agentIds[i]] = bonds[i];
             service.maxNumAgentInstances += slots[i];
             // Security deposit is the maximum of the canonical agent registration bond
             if (bonds[i] > securityDeposit) {
@@ -235,40 +238,6 @@ contract ServiceRegistrySolana {
             revert("WrongThreshold");
         }
     }
-
-//    function create2(
-//        address serviceOwner,
-//        bytes32 configHash,
-//        uint32[] memory agentIds,
-//        AgentParams[] memory agentParams,
-//        uint32 threshold
-//    ) external returns (uint32 serviceId)
-//    {
-//        // Reentrancy guard
-//        if (_locked > 1) {
-//            revert("ReentrancyGuard");
-//        }
-//        _locked = 2;
-//
-//        // Check for the non-empty service owner address
-//        if (serviceOwner == address(0)) {
-//            revert("ZeroAddress");
-//        }
-//
-//        serviceId = totalSupply;
-//        serviceId++;
-//        Service service;
-//        service.serviceOwner = serviceOwner;
-//        service.configHash = configHash;
-//        service.threshold = threshold;
-//        service.agentIds = agentIds;
-//        mapServiceAndAgentIdAgentParams[serviceId][agentIds[0]] = agentParams[0];
-//        mapServiceAndAgentIdAgentParams[serviceId][agentIds[1]] = agentParams[1];
-//        mapServices[serviceId] = service;
-//        totalSupply = serviceId;
-//
-//        _locked = 1;
-//    }
 
     /// @dev Creates a new service.
     /// @notice If agentIds are not sorted in ascending order then the function that executes initial checks gets reverted.
@@ -328,7 +297,7 @@ contract ServiceRegistrySolana {
         // Mint the service instance to the service owner and record the service structure
         service.serviceOwner = serviceOwner;
 
-        mapServices[serviceId] = service;
+        services[serviceId] = service;
         totalSupply = serviceId;
 
         emit CreateService(serviceId, configHash);
@@ -355,7 +324,7 @@ contract ServiceRegistrySolana {
         uint32 serviceId
     ) external returns (bool success)
     {
-        Service service = mapServices[serviceId];
+        Service service = services[serviceId];
 
         // Check for the service authority
         address serviceOwner = service.serviceOwner;
@@ -372,23 +341,6 @@ contract ServiceRegistrySolana {
         service.threshold = threshold;
         service.maxNumAgentInstances = 0;
 
-        // Collect non-zero canonical agent ids and slots / costs, remove any canonical agent Ids from the params map
-        uint32[] memory newAgentIds = new uint32[](agentIds.length);
-        uint32[] memory newSlots = new uint32[](agentIds.length);
-        uint32[] memory newBonds = new uint32[](agentIds.length);
-        uint32 size = 0;
-        for (uint32 i = 0; i < agentIds.length; i++) {
-            if (slots[i] == 0) {
-                // Delete slots and bonds for a specific service Id corresponding to an agent Id
-                delete mapServiceAndAgentIdAgentSlots[serviceId][agentIds[i]];
-                delete mapServiceAndAgentIdAgentBonds[serviceId][agentIds[i]];
-            } else {
-                newAgentIds[size] = agentIds[i];
-                newSlots[size] = slots[i];
-                newBonds[size] = bonds[i];
-                size++;
-            }
-        }
         // Check if the previous hash is the same / hash was not updated
         bytes32 lastConfigHash = service.configHash;
         if (lastConfigHash != configHash) {
@@ -397,8 +349,9 @@ contract ServiceRegistrySolana {
         }
 
         // Set service data and record the modified service struct
-        _setServiceData(service, newAgentIds, newSlots, newBonds, size, serviceId);
-        mapServices[serviceId] = service;
+        uint32 size = agentIds.length;
+        _setServiceData(service, agentIds, slots, bonds, size, serviceId);
+        services[serviceId] = service;
 
         emit UpdateService(serviceId, configHash);
         success = true;
@@ -409,7 +362,7 @@ contract ServiceRegistrySolana {
     /// @return success True, if function executed successfully.
     function activateRegistration(uint32 serviceId) external payable returns (bool success)
     {
-        Service service = mapServices[serviceId];
+        Service service = services[serviceId];
 
         // Check for the service authority
         address serviceOwner = service.serviceOwner;
@@ -450,7 +403,7 @@ contract ServiceRegistrySolana {
             revert("WrongArrayLength");
         }
 
-        Service storage service = mapServices[serviceId];
+        Service storage service = services[serviceId];
         // The service has to be active to register agents
         if (service.state != ServiceState.ActiveRegistration) {
             revert("WrongServiceState");
@@ -461,9 +414,9 @@ contract ServiceRegistrySolana {
         uint32 totalBond = 0;
         for (uint32 i = 0; i < numAgents; ++i) {
             // Check if canonical agent Id exists in the service
-
-            uint32 slots = mapServiceAndAgentIdAgentSlots[serviceId][agentIds[i]];
-            uint32 bond = mapServiceAndAgentIdAgentBonds[serviceId][agentIds[i]];
+            // TODO: correct
+            uint32 slots = service.slots[i];
+            uint32 bond = service.bonds[i];
             if (slots == 0) {
                 revert("AgentNotInService");
             }
@@ -494,7 +447,7 @@ contract ServiceRegistrySolana {
             }
 
             // Check if there is an empty slot for the agent instance in this specific service
-            if (mapServiceAndAgentIdAgentInstances[serviceId][agentIds[i]].length == mapServiceAndAgentIdAgentSlots[serviceId][agentIds[i]]) {
+            if (mapServiceAndAgentIdAgentInstances[serviceId][agentIds[i]].length == service.slots[i]) {
                 revert("AgentInstancesSlotsFilled");
             }
 
@@ -537,7 +490,7 @@ contract ServiceRegistrySolana {
         }
         _locked = 2;
 
-        Service service = mapServices[serviceId];
+        Service service = services[serviceId];
 
         // Check for the service authority
         address serviceOwner = service.serviceOwner;
@@ -581,7 +534,7 @@ contract ServiceRegistrySolana {
         // If the service is deployed, it definitely exists and is running. We do not want this function to be abused
         // when the service was deployed, then terminated, then in a sleep mode or before next deployment somebody
         // could use this function and try to slash operators.
-        Service service = mapServices[serviceId];
+        Service service = services[serviceId];
         if (service.state != ServiceState.Deployed) {
             revert("WrongServiceState");
         }
@@ -628,7 +581,7 @@ contract ServiceRegistrySolana {
         }
         _locked = 2;
 
-        Service service = mapServices[serviceId];
+        Service service = services[serviceId];
 
         // Check for the service authority
         address serviceOwner = service.serviceOwner;
@@ -683,7 +636,7 @@ contract ServiceRegistrySolana {
             revert("ZeroAddress");
         }
 
-        Service service = mapServices[serviceId];
+        Service service = services[serviceId];
         // Service can only be in the terminated-bonded state or expired-registration in order to proceed
         if (service.state != ServiceState.TerminatedBonded) {
             revert("WrongServiceState");
@@ -708,7 +661,8 @@ contract ServiceRegistrySolana {
 
         // Calculate registration refund and free all agent instances
         for (uint32 i = 0; i < numAgentsUnbond; i++) {
-            refund += mapServiceAndAgentIdAgentBonds[serviceId][service.agentIds[i]];
+            // TODO: correct
+            refund += service.bonds[i];
             // Clean-up the sensitive data such that it is not reused later
             delete mapAgentInstanceOperators[agentInstances[i]];
         }
@@ -746,7 +700,7 @@ contract ServiceRegistrySolana {
     /// @param serviceId Service Id.
     /// @return service Corresponding Service struct.
     function getService(uint32 serviceId) external view returns (Service memory service) {
-        service = mapServices[serviceId];
+        service = services[serviceId];
     }
 
     /// @dev Gets service agent parameters: number of agent instances (slots) and a bond amount.
@@ -757,13 +711,13 @@ contract ServiceRegistrySolana {
     function getAgentParams(uint32 serviceId) external view
         returns (uint32 numAgentIds, uint32[] memory slots, uint32[] memory bonds)
     {
-        Service memory service = mapServices[serviceId];
+        Service memory service = services[serviceId];
         numAgentIds = service.agentIds.length;
         slots = new uint32[](numAgentIds);
         bonds = new uint32[](numAgentIds);
         for (uint32 i = 0; i < numAgentIds; ++i) {
-            slots[i] = mapServiceAndAgentIdAgentSlots[serviceId][service.agentIds[i]];
-            bonds[i] = mapServiceAndAgentIdAgentBonds[serviceId][service.agentIds[i]];
+            slots[i] = service.slots[i];
+            bonds[i] = service.bonds[i];
         }
     }
 
@@ -806,7 +760,7 @@ contract ServiceRegistrySolana {
     function getAgentInstances(uint32 serviceId) external view
         returns (uint32 numAgentInstances, address[] memory agentInstances)
     {
-        Service memory service = mapServices[serviceId];
+        Service memory service = services[serviceId];
         agentInstances = _getAgentInstances(service, serviceId);
         numAgentInstances = agentInstances.length;
     }
@@ -875,7 +829,7 @@ contract ServiceRegistrySolana {
     }
 
     function ownerOf(uint32 serviceId) public view returns (address) {
-        return mapServices[serviceId].serviceOwner;
+        return services[serviceId].serviceOwner;
     }
     
     /// @dev Checks for the service existence.
@@ -938,7 +892,7 @@ contract ServiceRegistrySolana {
     /// @param serviceId Service Id.
     /// @return Service token URI string.
     function tokenURI(uint32 serviceId) public view returns (string memory) {
-        bytes32 serviceHash = mapServices[serviceId].configHash;
+        bytes32 serviceHash = services[serviceId].configHash;
         // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
         // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
         return string(abi.encodePacked(baseURI, CID_PREFIX, _toHex16(bytes16(serviceHash)),
