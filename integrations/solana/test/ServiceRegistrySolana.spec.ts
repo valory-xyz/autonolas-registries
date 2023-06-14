@@ -23,7 +23,7 @@ describe("ServiceRegistrySolana", function () {
     let provider : any;
     let program : any;
     let storage : Keypair;
-    let metadataAuthority : Keypair;
+    let deployer : Keypair;
     let serviceAuthority : Keypair;
     const emptyPayload = Buffer.from("", "hex");
 
@@ -31,11 +31,11 @@ describe("ServiceRegistrySolana", function () {
 
     beforeEach(async function () {
         // Allocate accounts
-        metadataAuthority = Keypair.generate();
+        deployer = Keypair.generate();
         serviceAuthority = Keypair.generate();
 
         // Deploy ServiceRegistrySolana
-        const deployment = await loadContract("ServiceRegistrySolana", [metadataAuthority.publicKey, baseURI]);
+        const deployment = await loadContract("ServiceRegistrySolana", [deployer.publicKey, baseURI]);
         provider = deployment.provider;
         program = deployment.program;
         storage = deployment.storage;
@@ -65,7 +65,7 @@ describe("ServiceRegistrySolana", function () {
         expect(result.bonds).toEqual(bonds);
     });
 
-    it("Updating a service", async function () {
+    it.only("Updating a service", async function () {
 //        try {
 //        } catch (error) {
 //              //console.error("Error:", error);
@@ -218,7 +218,7 @@ describe("ServiceRegistrySolana", function () {
         expect(result.state).toEqual({"terminatedBonded": {}});
     });
 
-    it.only("Crating a service, activating it, registering agent instances, terminating and unbonding", async function () {
+    it("Crating a service, activating it, registering agent instances, terminating and unbonding", async function () {
         // Create a service
         await program.methods.create(serviceAuthority.publicKey, configHash, [1], [1], [regBond], 1)
             .accounts({ dataAccount: storage.publicKey })
@@ -289,9 +289,9 @@ describe("ServiceRegistrySolana", function () {
         await program.methods.changeMultisigPermission(multisigImplementation.publicKey, true)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
-                { pubkey: metadataAuthority.publicKey, isSigner: true, isWritable: true }
+                { pubkey: deployer.publicKey, isSigner: true, isWritable: true }
             ])
-            .signers([metadataAuthority])
+            .signers([deployer])
             .rpc();
 
         // Activate the service
@@ -346,9 +346,9 @@ describe("ServiceRegistrySolana", function () {
         await program.methods.changeMultisigPermission(multisigImplementation.publicKey, true)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
-                { pubkey: metadataAuthority.publicKey, isSigner: true, isWritable: true }
+                { pubkey: deployer.publicKey, isSigner: true, isWritable: true }
             ])
-            .signers([metadataAuthority])
+            .signers([deployer])
             .rpc();
 
         // Activate the service
@@ -412,9 +412,9 @@ describe("ServiceRegistrySolana", function () {
         await program.methods.changeMultisigPermission(multisigImplementation.publicKey, true)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
-                { pubkey: metadataAuthority.publicKey, isSigner: true, isWritable: true }
+                { pubkey: deployer.publicKey, isSigner: true, isWritable: true }
             ])
-            .signers([metadataAuthority])
+            .signers([deployer])
             .rpc();
 
         // Activate the service

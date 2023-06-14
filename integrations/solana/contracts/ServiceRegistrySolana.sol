@@ -8,7 +8,7 @@ import "solana";
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 contract ServiceRegistrySolana {
-    event OwnerUpdated(address indexed metadataAuthority);
+    event OwnerUpdated(address indexed owner);
     event BaseURIChanged(string baseURI);
     event DrainerUpdated(address indexed drainer);
     event Deposit(address indexed sender, uint32 amount);
@@ -56,11 +56,10 @@ contract ServiceRegistrySolana {
         uint32[] agentIds;
         uint32[] slots;
         uint32[] bonds;
-        //uint32[type(uint32).max] idx;
     }
 
-    // The public key for the authority that should sign every change to the NFT's URI
-    address public metadataAuthority;
+    // The public key for the storage authority (owner) that should sign every change to the contract
+    address public owner;
     // Base URI
     string public baseURI;
     // Service counter
@@ -83,16 +82,10 @@ contract ServiceRegistrySolana {
     address public drainer;
     // Service registry version number
     string public constant VERSION = "1.0.0";
-    // Map of service Id => set of IPFS hashes pointing to the config metadata
-    mapping(uint32 => bytes32[]) public mapConfigHashes;
     // Map of operator address => (serviceId => set of registered agent instance addresses)
     mapping(address => mapping(uint32 => address[])) public mapOperatorAndServiceIdAgentInstanceAddresses;
     // Map of operator address => (serviceId => set of registered agent Ids)
     mapping(address => mapping(uint32 => uint32[])) public mapOperatorAndServiceIdAgentInstanceAgentIds;
-    // Map of service Id => (canonical agent Id => number of agent instances)
-    mapping(uint32 => mapping(uint32 => uint32)) public mapServiceAndAgentIdAgentSlots;
-    // Map of service Id => (canonical agent Id => instance registration bond)
-    mapping(uint32 => mapping(uint32 => uint32)) public mapServiceAndAgentIdAgentBonds;
     // Actual agent instance addresses. Map of service Id => (canonical agent Id => Set of agent instance addresses).
     mapping(uint32 => mapping(uint32 => address[])) public mapServiceAndAgentIdAgentInstances;
     // Map of operator address => (serviceId => agent instance bonding / escrow balance)
@@ -102,15 +95,15 @@ contract ServiceRegistrySolana {
     // Map of policy for multisig implementations
     mapping (address => bool) public mapMultisigs;
     // Set of services
-    Service[type(uint32).max] services;
+    Service[type(uint32).max] public services;
 
 
     /// @dev Service registry constructor.
-    /// @param _metadataAuthority Agent contract symbol.
+    /// @param _owner Agent contract symbol.
     /// @param _baseURI Agent registry token base URI.
-    constructor(address _metadataAuthority, string memory _baseURI)
+    constructor(address _owner, string memory _baseURI)
     {
-        metadataAuthority = _metadataAuthority;
+        owner = _owner;
         baseURI = _baseURI;
     }
 
@@ -126,18 +119,18 @@ contract ServiceRegistrySolana {
         revert("The authority is missing");
     }
 
-    /// @dev Changes the metadataAuthority address.
-    /// @param newOwner Address of a new metadataAuthority.
+    /// @dev Changes the owner address.
+    /// @param newOwner Address of a new owner.
     function changeOwner(address newOwner) external {
         // Check for the metadata authority
-        requireSigner(metadataAuthority);
+        requireSigner(owner);
 
         // Check for the zero address
         if (newOwner == address(0)) {
             revert("Zero Address");
         }
 
-        metadataAuthority = newOwner;
+        owner = newOwner;
         emit OwnerUpdated(newOwner);
     }
 
@@ -145,7 +138,7 @@ contract ServiceRegistrySolana {
     /// @param newDrainer Address of a drainer.
     function changeDrainer(address newDrainer) external {
         // Check for the metadata authority
-        requireSigner(metadataAuthority);
+        requireSigner(owner);
 
         // Check for the zero address
         if (newDrainer == address(0)) {
@@ -209,13 +202,11 @@ contract ServiceRegistrySolana {
     /// @param agentIds Canonical agent Ids.
     /// @param slots Set of agent instances number for each agent Id.
     /// @param bonds Corresponding set of required bonds to register an agent instance in the service.
-    /// @param serviceId ServiceId.
     function _setServiceData(
         Service memory service,
         uint32[] memory agentIds,
         uint32[] memory slots,
-        uint32[] memory bonds,
-        uint32 serviceId
+        uint32[] memory bonds
     ) private
     {
         // Security deposit
@@ -291,7 +282,7 @@ contract ServiceRegistrySolana {
         service.state = ServiceState.PreRegistration;
 
         // Set service data
-        _setServiceData(service, agentIds, slots, bonds, serviceId);
+        _setServiceData(service, agentIds, slots, bonds);
 
         // Mint the service instance to the service owner and record the service structure
         service.serviceOwner = serviceOwner;
@@ -342,12 +333,11 @@ contract ServiceRegistrySolana {
         // Check if the previous hash is the same / hash was not updated
         bytes32 lastConfigHash = service.configHash;
         if (lastConfigHash != configHash) {
-            mapConfigHashes[serviceId].push(lastConfigHash);
             service.configHash = configHash;
         }
 
         // Set service data and record the modified service struct
-        _setServiceData(service, agentIds, slots, bonds, serviceId);
+        _setServiceData(service, agentIds, slots, bonds);
         services[serviceId] = service;
 
         emit UpdateService(serviceId, configHash);
@@ -768,17 +758,6 @@ contract ServiceRegistrySolana {
         numAgentInstances = agentInstances.length;
     }
 
-    /// @dev Gets previous service config hashes.
-    /// @param serviceId Service Id.
-    /// @return numHashes Number of hashes.
-    /// @return configHashes The list of previous component hashes (excluding the current one).
-    function getPreviousHashes(uint32 serviceId) external view
-        returns (uint32 numHashes, bytes32[] memory configHashes)
-    {
-        configHashes = mapConfigHashes[serviceId];
-        numHashes = configHashes.length;
-    }
-
     /// @dev Gets the operator's balance in a specific service.
     /// @param operator Operator address.
     /// @param serviceId Service Id.
@@ -794,7 +773,7 @@ contract ServiceRegistrySolana {
     /// @return success True, if function executed successfully.
     function changeMultisigPermission(address multisig, bool permission) external returns (bool success) {
         // Check for the contract authority
-        requireSigner(metadataAuthority);
+        requireSigner(owner);
 
         if (multisig == address(0)) {
             revert("ZeroAddress");
@@ -846,7 +825,7 @@ contract ServiceRegistrySolana {
     /// @dev Sets service base URI.
     /// @param bURI Base URI string.
     function setBaseURI(string memory bURI) external {
-        requireSigner(metadataAuthority);
+        requireSigner(owner);
 
         // Check for the zero value
         if (bytes(bURI).length == 0) {
