@@ -10,6 +10,17 @@ import { createMint, getOrCreateAssociatedTokenAccount, TOKEN_PROGRAM_ID } from 
 import expect from "expect";
 
 describe("ServiceRegistrySolana", function () {
+    const configHash = Buffer.from("5".repeat(64), "hex");
+    const regBond = 1000;
+    const regDeposit = 1000;
+    const agentIds = [1, 2];
+    const slots = [3, 4];
+    const bonds = [regBond, regBond];
+    const agentParams = [[3, regBond], [4, regBond]];
+    const serviceId = 1;
+    const agentId = 1;
+    const maxThreshold = agentParams[0][0] + agentParams[1][0];
+
     this.timeout(500000);
 
     it("Creating a service", async function mint_nft() {
@@ -45,17 +56,44 @@ describe("ServiceRegistrySolana", function () {
         // Each contract in this example is a unique NFT
         const { provider, program, storage } = await loadContract("ServiceRegistrySolana", [metadata_authority.publicKey, baseURI]);
 
-        let result = await program.methods.baseUri()
+//        try {
+//        } catch (error) {
+//              //console.error("Error:", error);
+//        }
+
+        // Create a service
+        await program.methods.create(mint_authority.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: mint_authority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([mint_authority])
+            .rpc();
+
+        let result = await program.methods.tokenUri(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .view();
+        console.log(result);
+
+        result = await program.methods.getService(serviceId)
             .accounts({ dataAccount: storage.publicKey })
             .view();
         console.log(result);
         return;
 
-        const number = new BN(1);
-        result = await program.methods.tokenUri(number)
+        // Create a service
+        await program.methods.create(
+            mint_authority.publicKey,
+            configHash,
+            agentIds,
+            agentParams,
+            maxThreshold)
             .accounts({ dataAccount: storage.publicKey })
-            .view();
-        console.log(result);
+            .remainingAccounts([
+                { pubkey: mint_authority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([mint_authority])
+            .rpc();
         return;
 
         // Create a collectible for an owner given a mint authority.
