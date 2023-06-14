@@ -1,13 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-// This struct is 192 bits in total
-struct AgentInstance {
-    // Address of an agent instance
-    address instance;
-    // Canonical agent Id. This number is limited by the max number of agent Ids (see ServiceRegistry contract)
-    uint32 agentId;
-}
-
 /// @title Service Registry Solana - Smart contract for registering services on the Solana chain.
 /// @dev Underlying canonical agents and components are not checked for their validity since they are set up on the L1 mainnet.
 ///      The architecture is optimistic, in the sense that service owners are assumed to reference existing and relevant agents.
@@ -89,7 +81,9 @@ contract ServiceRegistrySolana {
     // Map of service Id => set of IPFS hashes pointing to the config metadata
     mapping(uint32 => bytes32[]) public mapConfigHashes;
     // Map of operator address => (serviceId => set of registered agent instance addresses)
-    mapping(address => mapping(uint32 => AgentInstance[])) public mapOperatorAndServiceIdAgentInstances;
+    mapping(address => mapping(uint32 => address[])) public mapOperatorAndServiceIdAgentInstanceAddresses;
+    // Map of operator address => (serviceId => set of registered agent Ids)
+    mapping(address => mapping(uint32 => uint32[])) public mapOperatorAndServiceIdAgentInstanceAgentIds;
     // Map of service Id => (canonical agent Id => number of agent instances)
     mapping(uint32 => mapping(uint32 => uint32)) public mapServiceAndAgentIdAgentSlots;
     // Map of service Id => (canonical agent Id => instance registration bond)
@@ -506,7 +500,8 @@ contract ServiceRegistrySolana {
 
             // Add agent instance and operator and set the instance engagement
             mapServiceAndAgentIdAgentInstances[serviceId][agentIds[i]].push(agentInstance);
-            mapOperatorAndServiceIdAgentInstances[operator][serviceId].push(AgentInstance(agentInstance, agentId));
+            mapOperatorAndServiceIdAgentInstanceAddresses[operator][serviceId].push(agentInstance);
+            mapOperatorAndServiceIdAgentInstanceAgentIds[operator][serviceId].push(agentId);
             service.numAgentInstances++;
             mapAgentInstanceOperators[agentInstance] = operator;
 
@@ -695,7 +690,7 @@ contract ServiceRegistrySolana {
         }
 
         // Check for the operator and unbond all its agent instances
-        AgentInstance[] memory agentInstances = mapOperatorAndServiceIdAgentInstances[operator][serviceId];
+        address[] memory agentInstances = mapOperatorAndServiceIdAgentInstanceAddresses[operator][serviceId];
         uint32 numAgentsUnbond = agentInstances.length;
         if (numAgentsUnbond == 0) {
             revert("OperatorHasNoInstances");
@@ -715,10 +710,11 @@ contract ServiceRegistrySolana {
         for (uint32 i = 0; i < numAgentsUnbond; i++) {
             refund += mapServiceAndAgentIdAgentBonds[serviceId][service.agentIds[i]];
             // Clean-up the sensitive data such that it is not reused later
-            delete mapAgentInstanceOperators[agentInstances[i].instance];
+            delete mapAgentInstanceOperators[agentInstances[i]];
         }
         // Clean all the operator agent instances records for this service
-        delete mapOperatorAndServiceIdAgentInstances[operator][serviceId];
+        delete mapOperatorAndServiceIdAgentInstanceAddresses[operator][serviceId];
+        delete mapOperatorAndServiceIdAgentInstanceAgentIds[operator][serviceId];
 
         // Calculate the refund
         uint32 balance = mapOperatorAndServiceIdOperatorBalances[operator][serviceId];
