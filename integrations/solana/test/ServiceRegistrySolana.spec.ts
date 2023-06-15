@@ -4,7 +4,7 @@
 // Use it at your own risk.
 
 import { loadContract, newConnectionAndPayer } from "./setup";
-import { Keypair } from "@solana/web3.js";
+import { Connection, Commitment, Transaction, TransactionInstruction, Keypair } from "@solana/web3.js";
 import BN from "bn.js";
 import { createMint, getOrCreateAssociatedTokenAccount, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import expect from "expect";
@@ -12,11 +12,11 @@ import expect from "expect";
 describe("ServiceRegistrySolana", function () {
     const baseURI = "https://localhost/service/";
     const configHash = Buffer.from("5".repeat(64), "hex");
-    const regBond = 1000;
-    const regDeposit = 1000;
+    const regBond = new BN(1000);
+    const regDeposit = new BN(1000);
     const agentIds = [1, 2];
     const slots = [3, 4];
-    const bonds = [regBond, 2 * regBond];
+    const bonds = [regBond, regBond];
     const serviceId = 1;
     const agentId = 1;
     const maxThreshold = slots[0] + slots[1];
@@ -44,7 +44,7 @@ describe("ServiceRegistrySolana", function () {
 
     it("Creating a service", async function () {
         // Create a service
-        await program.methods.create(serviceAuthority.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
+        const tx = await program.methods.create(serviceAuthority.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
                 { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
@@ -62,15 +62,44 @@ describe("ServiceRegistrySolana", function () {
         expect(result.threshold).toEqual(maxThreshold);
         expect(result.agentIds).toEqual(agentIds);
         expect(result.slots).toEqual(slots);
-        expect(result.bonds).toEqual(bonds);
+        const compareBonds = result.bonds.every((value: BN, index: number) => value.eq(bonds[index]));
+        expect(compareBonds).toEqual(true);
     });
 
-    it.only("Updating a service", async function () {
-//        try {
-//        } catch (error) {
-//              //console.error("Error:", error);
-//        }
+    it("Shoudl fail when incorrectly updating a service", async function () {
+        // Create a service
+        await program.methods.create(serviceAuthority.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceAuthority])
+            .rpc();
 
+        // Update the service
+        const newAgentIds = [1, 0, 4];
+        const newSlots = [2, 1, 5];
+        const newBonds = [regBond, regBond, regBond];
+        const newMaxThreshold = newSlots[0] + newSlots[1] + newSlots[2];
+        try {
+            await program.methods.update(configHash, newAgentIds, newSlots, newBonds, newMaxThreshold, serviceId)
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
+                ])
+                .signers([serviceAuthority])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                //console.error("Program Error:", error);
+                //console.error("Error Message:", error.message);
+            } else {
+                //console.error("Transaction Error:", error);
+            }
+        }
+    });
+
+    it("Updating a service", async function () {
         // Create a service
         await program.methods.create(serviceAuthority.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storage.publicKey })
@@ -103,7 +132,8 @@ describe("ServiceRegistrySolana", function () {
         expect(result.threshold).toEqual(newMaxThreshold);
         expect(result.agentIds).toEqual(newAgentIds);
         expect(result.slots).toEqual(newSlots);
-        expect(result.bonds).toEqual(newBonds);
+        const compareBonds = result.bonds.every((value: BN, index: number) => value.eq(newBonds[index]));
+        expect(compareBonds).toEqual(true);
     });
 
     it("Crating a service and activating it", async function () {
@@ -399,13 +429,32 @@ describe("ServiceRegistrySolana", function () {
 
     it("Crating a service, activating it, registering agent instances, deploying, terminating and unbonding", async function () {
         // Create a service
-        await program.methods.create(serviceAuthority.publicKey, configHash, [1], [1], [regBond], 1)
+        const transactionHash = await program.methods.create(serviceAuthority.publicKey, configHash, [1], [1], [regBond], 1)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
                 { pubkey: serviceAuthority.publicKey, isSigner: true, isWritable: true }
             ])
             .signers([serviceAuthority])
             .rpc();
+
+        /****************************************************************************************************/
+        // Get the transaction details and fees
+        const commitment: Commitment = "confirmed";
+        const confirmationStatus = await provider.connection.confirmTransaction(transactionHash, commitment);
+
+        const transaction = await provider.connection.getParsedConfirmedTransaction(transactionHash, commitment);
+        //console.log("Transaction:", transaction);
+
+        const transactionInstance: TransactionInstruction | undefined = transaction.transaction?.message.instructions[0];
+        //console.log("Transaction Instance:", transactionInstance);
+
+        const transactionMetadata = await provider.connection.getTransaction(transactionHash, commitment);
+        //console.log("Transaction Metadata:", transactionMetadata);
+
+        const blockHash = transactionMetadata.transaction.message.recentBlockhash;
+        const feeCalculator = await provider.connection.getFeeCalculatorForBlockhash(blockHash);
+        //console.log("feeCalculator", feeCalculator);
+        /****************************************************************************************************/
 
         // Whitelist the multisig implementation
         const multisigImplementation = Keypair.generate();

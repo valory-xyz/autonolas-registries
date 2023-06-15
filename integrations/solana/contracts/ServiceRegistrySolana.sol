@@ -11,18 +11,18 @@ contract ServiceRegistrySolana {
     event OwnerUpdated(address indexed owner);
     event BaseURIChanged(string baseURI);
     event DrainerUpdated(address indexed drainer);
-    event Deposit(address indexed sender, uint32 amount);
-    event Refund(address indexed receiver, uint32 amount);
+    event Deposit(address indexed sender, uint64 amount);
+    event Refund(address indexed receiver, uint64 amount);
     event CreateService(uint32 indexed serviceId, bytes32 configHash);
     event UpdateService(uint32 indexed serviceId, bytes32 configHash);
     event RegisterInstance(address indexed operator, uint32 indexed serviceId, address indexed agentInstance, uint32 agentId);
     event CreateMultisigWithAgents(uint32 indexed serviceId, address indexed multisig);
     event ActivateRegistration(uint32 indexed serviceId);
     event TerminateService(uint32 indexed serviceId);
-    event OperatorSlashed(uint32 amount, address indexed operator, uint32 indexed serviceId);
+    event OperatorSlashed(uint64 amount, address indexed operator, uint32 indexed serviceId);
     event OperatorUnbond(address indexed operator, uint32 indexed serviceId);
     event DeployService(uint32 indexed serviceId);
-    event Drain(address indexed drainer, uint32 amount);
+    event Drain(address indexed drainer, uint64 amount);
 
     enum ServiceState {
         NonExistent,
@@ -38,7 +38,7 @@ contract ServiceRegistrySolana {
         address serviceOwner;
         // Registration activation deposit
         // This is enough for 1b+ ETH or 1e27
-        uint32 securityDeposit;
+        uint64 securityDeposit;
         // Multisig address for agent instances
         address multisig;
         // IPFS hashes pointing to the config metadata
@@ -55,7 +55,10 @@ contract ServiceRegistrySolana {
         // Canonical agent Ids for the service. Individual agent Id is bounded by the max number of agent Id
         uint32[] agentIds;
         uint32[] slots;
-        uint32[] bonds;
+        uint64[] bonds;
+        address[] operators;
+        address[] agentInstances;
+        uint32[] agentIdForAgentInstances;
     }
 
     // The public key for the storage authority (owner) that should sign every change to the contract
@@ -77,19 +80,13 @@ contract ServiceRegistrySolana {
     // multihash-length = 256 bits = "0x20"
     string public constant CID_PREFIX = "f01701220";
     // The amount of funds slashed. This is enough for 1b+ ETH or 1e27
-    uint32 public slashedFunds;
+    uint64 public slashedFunds;
     // Drainer address: set by the government and is allowed to drain ETH funds accumulated in this contract
     address public drainer;
     // Service registry version number
     string public constant VERSION = "1.0.0";
-    // Map of operator address => (serviceId => set of registered agent instance addresses)
-    mapping(address => mapping(uint32 => address[])) public mapOperatorAndServiceIdAgentInstanceAddresses;
-    // Map of operator address => (serviceId => set of registered agent Ids)
-    mapping(address => mapping(uint32 => uint32[])) public mapOperatorAndServiceIdAgentInstanceAgentIds;
-    // Actual agent instance addresses. Map of service Id => (canonical agent Id => Set of agent instance addresses).
-    mapping(uint32 => mapping(uint32 => address[])) public mapServiceAndAgentIdAgentInstances;
-    // Map of operator address => (serviceId => agent instance bonding / escrow balance)
-    mapping(address => mapping(uint32 => uint32)) public mapOperatorAndServiceIdOperatorBalances;
+    // Map of hash(operator address and serviceId) => agent instance bonding / escrow balance
+    mapping(bytes32 => uint64) public mapOperatorAndServiceIdOperatorBalances;
     // Map of agent instance address => service id it is registered with and operator address that supplied the instance
     mapping (address => address) public mapAgentInstanceOperators;
     // Map of policy for multisig implementations
@@ -167,7 +164,7 @@ contract ServiceRegistrySolana {
         bytes32 configHash,
         uint32[] memory agentIds,
         uint32[] memory slots,
-        uint32[] memory bonds
+        uint64[] memory bonds
     ) private pure
     {
         // Check for the non-zero hash value
@@ -206,11 +203,11 @@ contract ServiceRegistrySolana {
         Service memory service,
         uint32[] memory agentIds,
         uint32[] memory slots,
-        uint32[] memory bonds
+        uint64[] memory bonds
     ) private
     {
         // Security deposit
-        uint32 securityDeposit = 0;
+        uint64 securityDeposit = 0;
         // Add canonical agent Ids for the service and the slots map
         service.agentIds = agentIds;
         service.slots = slots;
@@ -250,7 +247,7 @@ contract ServiceRegistrySolana {
         bytes32 configHash,
         uint32[] memory agentIds,
         uint32[] memory slots,
-        uint32[] memory bonds,
+        uint64[] memory bonds,
         uint32 threshold
     ) external returns (uint32 serviceId)
     {
@@ -308,7 +305,7 @@ contract ServiceRegistrySolana {
         bytes32 configHash,
         uint32[] memory agentIds,
         uint32[] memory slots,
-        uint32[] memory bonds,
+        uint64[] memory bonds,
         uint32 threshold,
         uint32 serviceId
     ) external returns (bool success)
@@ -398,7 +395,7 @@ contract ServiceRegistrySolana {
 
         // Check for the sufficient amount of bond fee is provided
         uint32 numAgents = agentInstances.length;
-        uint32 totalBond = 0;
+        uint64 totalBond = 0;
         uint32[] memory serviceAgentIds = service.agentIds;
         for (uint32 i = 0; i < numAgents; ++i) {
             // Check if canonical agent Id exists in the service
@@ -412,8 +409,7 @@ contract ServiceRegistrySolana {
             if (idx == service.agentIds.length) {
                 revert("AgentNotInService");
             }
-            uint32 bond = service.bonds[idx];
-            totalBond += bond;
+            totalBond += service.bonds[idx];
         }
         // TODO: Check the escrow balance
 //        if (msg.value != totalBond) {
@@ -440,14 +436,38 @@ contract ServiceRegistrySolana {
             }
 
             // Check if there is an empty slot for the agent instance in this specific service
-            if (mapServiceAndAgentIdAgentInstances[serviceId][agentIds[i]].length == service.slots[i]) {
+            uint32 numRegAgentInstances = 0;
+            for (uint32 j = 0; j < service.agentIdForAgentInstances.length; ++j) {
+                if (service.agentIdForAgentInstances[j] == agentId) {
+                    numRegAgentInstances++;
+                }
+            }
+            if (numRegAgentInstances == service.slots[i]) {
                 revert("AgentInstancesSlotsFilled");
             }
 
+            // Copy new operator and agent instance information to the new one
+            address[] memory oldOperators = service.operators;
+            address[] memory oldAgentInstances = service.agentInstances;
+            uint32[] memory oldAgentIdForAgentInstances = service.agentIdForAgentInstances;
+            address[] memory newOperators = new address[](oldOperators.length + 1);
+            address[] memory newAgentInstances = new address[](oldOperators.length + 1);
+            uint32[] memory newAgentIdForAgentInstances = new uint32[](oldOperators.length + 1);
+            for (uint32 j = 0; j < oldOperators.length; ++j) {
+                newOperators[j] = oldOperators[j];
+                newAgentInstances[j] = oldAgentInstances[j];
+                newAgentIdForAgentInstances[j] = oldAgentIdForAgentInstances[j];
+            }
+
             // Add agent instance and operator and set the instance engagement
-            mapServiceAndAgentIdAgentInstances[serviceId][agentIds[i]].push(agentInstance);
-            mapOperatorAndServiceIdAgentInstanceAddresses[operator][serviceId].push(agentInstance);
-            mapOperatorAndServiceIdAgentInstanceAgentIds[operator][serviceId].push(agentId);
+            newOperators[oldOperators.length] = operator;
+            newAgentInstances[oldOperators.length] = agentInstance;
+            newAgentIdForAgentInstances[oldOperators.length] = agentId;
+            // Update service arrays
+            service.operators = newOperators;
+            service.agentInstances = newAgentInstances;
+            service.agentIdForAgentInstances = newAgentIdForAgentInstances;
+            // Increase the total number of agent instances in the service
             service.numAgentInstances++;
             mapAgentInstanceOperators[agentInstance] = operator;
 
@@ -460,7 +480,8 @@ contract ServiceRegistrySolana {
         }
 
         // Update operator's bonding balance
-        mapOperatorAndServiceIdOperatorBalances[operator][serviceId] += totalBond;
+        bytes32 operatorServiceIdHash = keccak256(abi.encode(operator, serviceId));
+        mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash] += totalBond;
 
         emit Deposit(operator, totalBond);
         success = true;
@@ -499,7 +520,7 @@ contract ServiceRegistrySolana {
         }
 
         // Get all agent instances for the multisig
-        address[] memory agentInstances = _getAgentInstances(service, serviceId);
+        address[] memory agentInstances = service.agentInstances;
 
         // TODO: Understand the multisig workflow
         // Create a multisig with agent instances
@@ -519,7 +540,7 @@ contract ServiceRegistrySolana {
     /// @param amounts Correspondent amounts to slash.
     /// @param serviceId Service Id.
     /// @return success True, if function executed successfully.
-    function slash(address[] memory agentInstances, uint32[] memory amounts, uint32 serviceId) external
+    function slash(address[] memory agentInstances, uint64[] memory amounts, uint32 serviceId) external
         returns (bool success)
     {
         // Check if the service is deployed
@@ -546,7 +567,8 @@ contract ServiceRegistrySolana {
             // Get the service Id from the agentInstance map
             address operator = mapAgentInstanceOperators[agentInstances[i]];
             // Slash the balance of the operator, make sure it does not go below zero
-            uint32 balance = mapOperatorAndServiceIdOperatorBalances[operator][serviceId];
+            bytes32 operatorServiceIdHash = keccak256(abi.encode(operator, serviceId));
+            uint64 balance = mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash];
             if ((amounts[i] + 1) > balance) {
                 // We cannot add to the slashed amount more than the balance of the operator
                 slashedFunds += balance;
@@ -555,7 +577,7 @@ contract ServiceRegistrySolana {
                 slashedFunds += amounts[i];
                 balance -= amounts[i];
             }
-            mapOperatorAndServiceIdOperatorBalances[operator][serviceId] = balance;
+            mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash] = balance;
 
             emit OperatorSlashed(amounts[i], operator, serviceId);
         }
@@ -566,7 +588,7 @@ contract ServiceRegistrySolana {
     /// @param serviceId Service Id to be updated.
     /// @return success True, if function executed successfully.
     /// @return refund Refund to return to the service owner.
-    function terminate(uint32 serviceId) external returns (bool success, uint32 refund)
+    function terminate(uint32 serviceId) external returns (bool success, uint64 refund)
     {
         // Reentrancy guard
         if (_locked > 1) {
@@ -591,11 +613,6 @@ contract ServiceRegistrySolana {
             service.state = ServiceState.PreRegistration;
         }
 
-        // Delete the sensitive data
-        for (uint32 i = 0; i < service.agentIds.length; ++i) {
-            delete mapServiceAndAgentIdAgentInstances[serviceId][service.agentIds[i]];
-        }
-
         // Return registration deposit back to the service owner
         refund = service.securityDeposit;
         // TODO: Figure out the escrow release
@@ -617,7 +634,7 @@ contract ServiceRegistrySolana {
     /// @param serviceId Service Id.
     /// @return success True, if function executed successfully.
     /// @return refund The amount of refund returned to the operator.
-    function unbond(address operator, uint32 serviceId) external returns (bool success, uint32 refund) {
+    function unbond(address operator, uint32 serviceId) external returns (bool success, uint64 refund) {
         // Reentrancy guard
         if (_locked > 1) {
             revert("ReentrancyGuard");
@@ -636,35 +653,44 @@ contract ServiceRegistrySolana {
         }
 
         // Check for the operator and unbond all its agent instances
-        address[] memory agentInstances = mapOperatorAndServiceIdAgentInstanceAddresses[operator][serviceId];
-        uint32 numAgentsUnbond = agentInstances.length;
+        uint32 numAgentsUnbond = 0;
+        for (uint32 j = 0; j < service.operators.length; ++j) {
+            if (operator == service.operators[j]) {
+                // Get the agent Id of the agent instance
+                uint32 agentId = service.agentIdForAgentInstances[j];
+                // Remove the operator from the set of service operators
+                service.operators[j] = address(0);
+                numAgentsUnbond++;
+
+                // Add the bond associated with the agent Id to the refund
+                for (uint32 idx = 0; idx < service.agentIds.length; ++idx) {
+                    if (service.agentIds[idx] == agentId) {
+                        refund += uint64(service.bonds[idx]);
+                        break;
+                    }
+                }
+            }
+        }
         if (numAgentsUnbond == 0) {
             revert("OperatorHasNoInstances");
         }
 
         // Subtract number of unbonded agent instances
-        service.numAgentInstances -= uint32(numAgentsUnbond);
+        service.numAgentInstances -= numAgentsUnbond;
         // When number of instances is equal to zero, all the operators have unbonded and the service is moved into
         // the PreRegistration state, from where it can be updated / start registration / get deployed again
         if (service.numAgentInstances == 0) {
+            delete service.operators;
+            delete service.agentInstances;
+            delete service.agentIdForAgentInstances;
             service.state = ServiceState.PreRegistration;
         }
         // else condition is redundant here, since the service is either in the TerminatedBonded state, or moved
         // into the PreRegistration state and unbonding is not possible before the new TerminatedBonded state is reached
 
-        // Calculate registration refund and free all agent instances
-        for (uint32 i = 0; i < numAgentsUnbond; i++) {
-            // TODO: correct
-            refund += service.bonds[i];
-            // Clean-up the sensitive data such that it is not reused later
-            delete mapAgentInstanceOperators[agentInstances[i]];
-        }
-        // Clean all the operator agent instances records for this service
-        delete mapOperatorAndServiceIdAgentInstanceAddresses[operator][serviceId];
-        delete mapOperatorAndServiceIdAgentInstanceAgentIds[operator][serviceId];
-
         // Calculate the refund
-        uint32 balance = mapOperatorAndServiceIdOperatorBalances[operator][serviceId];
+        bytes32 operatorServiceIdHash = keccak256(abi.encode(operator, serviceId));
+        uint64 balance = mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash];
         // This situation is possible if the operator was slashed for the agent instance misbehavior
         if (refund > balance) {
             refund = balance;
@@ -673,7 +699,7 @@ contract ServiceRegistrySolana {
         // Refund the operator
         if (refund > 0) {
             // Operator's balance is essentially zero after the refund
-            mapOperatorAndServiceIdOperatorBalances[operator][serviceId] = 0;
+            mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash] = 0;
             // TODO: Figure out the escrow release
 //            // Send the refund
 //            (bool result, ) = operator.call{value: refund}("");
@@ -702,49 +728,32 @@ contract ServiceRegistrySolana {
     /// @return slots Set of agent instances number for each agent Id.
     /// @return bonds Corresponding set of required bonds to register an agent instance in the service.
     function getAgentParams(uint32 serviceId) external view
-        returns (uint32 numAgentIds, uint32[] memory slots, uint32[] memory bonds)
+        returns (uint32 numAgentIds, uint32[] memory slots, uint64[] memory bonds)
     {
         Service memory service = services[serviceId];
         numAgentIds = service.agentIds.length;
         slots = new uint32[](numAgentIds);
-        bonds = new uint32[](numAgentIds);
+        bonds = new uint64[](numAgentIds);
         for (uint32 i = 0; i < numAgentIds; ++i) {
             slots[i] = service.slots[i];
             bonds[i] = service.bonds[i];
         }
     }
 
-    /// @dev Lists all the instances of a given canonical agent Id if the service.
-    /// @param serviceId Service Id.
-    /// @param agentId Canonical agent Id.
-    /// @return numAgentInstances Number of agent instances.
-    /// @return agentInstances Set of agent instances for a specified canonical agent Id.
-    function getInstancesForAgentId(uint32 serviceId, uint32 agentId) external view
-        returns (uint32 numAgentInstances, address[] memory agentInstances)
-    {
-        numAgentInstances = mapServiceAndAgentIdAgentInstances[serviceId][agentId].length;
-        agentInstances = new address[](numAgentInstances);
-        for (uint32 i = 0; i < numAgentInstances; i++) {
-            agentInstances[i] = mapServiceAndAgentIdAgentInstances[serviceId][agentId][i];
-        }
-    }
-
-    /// @dev Gets all agent instances.
-    /// @param service Service instance.
-    /// @param serviceId ServiceId.
-    /// @return agentInstances Pre-allocated list of agent instance addresses.
-    function _getAgentInstances(Service memory service, uint32 serviceId) private view
-        returns (address[] memory agentInstances)
-    {
-        agentInstances = new address[](service.numAgentInstances);
-        uint32 count = 0;
-        for (uint32 i = 0; i < service.agentIds.length; i++) {
-            for (uint32 j = 0; j < mapServiceAndAgentIdAgentInstances[serviceId][service.agentIds[i]].length; j++) {
-                agentInstances[count] = mapServiceAndAgentIdAgentInstances[serviceId][service.agentIds[i]][j];
-                count++;
-            }
-        }
-    }
+//    /// @dev Lists all the instances of a given canonical agent Id if the service.
+//    /// @param serviceId Service Id.
+//    /// @param agentId Canonical agent Id.
+//    /// @return numAgentInstances Number of agent instances.
+//    /// @return agentInstances Set of agent instances for a specified canonical agent Id.
+//    function getInstancesForAgentId(uint32 serviceId, uint32 agentId) external view
+//        returns (uint32 numAgentInstances, address[] memory agentInstances)
+//    {
+//        numAgentInstances = mapServiceAndAgentIdAgentInstances[serviceId][agentId].length;
+//        agentInstances = new address[](numAgentInstances);
+//        for (uint32 i = 0; i < numAgentInstances; i++) {
+//            agentInstances[i] = mapServiceAndAgentIdAgentInstances[serviceId][agentId][i];
+//        }
+//    }
 
     /// @dev Gets service agent instances.
     /// @param serviceId ServiceId.
@@ -754,7 +763,7 @@ contract ServiceRegistrySolana {
         returns (uint32 numAgentInstances, address[] memory agentInstances)
     {
         Service memory service = services[serviceId];
-        agentInstances = _getAgentInstances(service, serviceId);
+        agentInstances = service.agentInstances;
         numAgentInstances = agentInstances.length;
     }
 
@@ -762,9 +771,10 @@ contract ServiceRegistrySolana {
     /// @param operator Operator address.
     /// @param serviceId Service Id.
     /// @return balance The balance of the operator.
-    function getOperatorBalance(address operator, uint32 serviceId) external view returns (uint32 balance)
+    function getOperatorBalance(address operator, uint32 serviceId) external view returns (uint64 balance)
     {
-        balance = mapOperatorAndServiceIdOperatorBalances[operator][serviceId];
+        bytes32 operatorServiceIdHash = keccak256(abi.encode(operator, serviceId));
+        balance = mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash];
     }
 
     /// @dev Controls multisig implementation address permission.
@@ -784,7 +794,7 @@ contract ServiceRegistrySolana {
 
     /// @dev Drains slashed funds.
     /// @return amount Drained amount.
-    function drain() external returns (uint32 amount) {
+    function drain() external returns (uint64 amount) {
         // Reentrancy guard
         if (_locked > 1) {
             revert("ReentrancyGuard");
