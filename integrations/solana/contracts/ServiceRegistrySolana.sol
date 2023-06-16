@@ -99,11 +99,10 @@ contract ServiceRegistrySolana {
     /// @dev Service registry constructor.
     /// @param _owner Agent contract symbol.
     /// @param _baseURI Agent registry token base URI.
-    constructor(address _owner, string memory _baseURI, address _escrow)
+    constructor(address _owner, string memory _baseURI)
     {
         owner = _owner;
         baseURI = _baseURI;
-        escrow = _escrow;
     }
 
     /// Requires the signature of the metadata authority.
@@ -116,6 +115,13 @@ contract ServiceRegistrySolana {
         }
 
         revert("The authority is missing");
+    }
+
+    function initEscrow(address _escrow) public {
+        if (escrow != address(0)) {
+            revert("ExcrowAlreadyInitialized");
+        }
+        escrow = _escrow;
     }
 
     /// @dev Changes the owner address.
@@ -370,13 +376,11 @@ contract ServiceRegistrySolana {
     }
 
     /// @dev Registers agent instances.
-    /// @param operator Address of the operator.
     /// @param serviceId Service Id to register agent instances for.
     /// @param agentInstances Agent instance addresses.
     /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
     /// @return success True, if function executed successfully.
     function registerAgents(
-        address operator,
         uint32 serviceId,
         address[] memory agentInstances,
         uint32[] memory agentIds
@@ -391,6 +395,18 @@ contract ServiceRegistrySolana {
         // The service has to be active to register agents
         if (service.state != ServiceState.ActiveRegistration) {
             revert("WrongServiceState");
+        }
+
+        // Get the operator address as the singing account address
+        address operator = address(0);
+        for (uint32 i=0; i < tx.accounts.length; i++) {
+            if (tx.accounts[i].is_signer) {
+                operator = tx.accounts[i].key;
+                break;
+            }
+        }
+        if (operator == address(0)) {
+            revert("ZeroAddress");
         }
 
         // Check for the sufficient amount of bond fee is provided
