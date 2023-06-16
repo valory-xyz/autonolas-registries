@@ -64,6 +64,7 @@ contract ServiceRegistrySolana {
     // The public key for the storage authority (owner) that should sign every change to the contract
     address public owner;
     address public escrow;
+    address programStorage;
     // Base URI
     string public baseURI;
     // Service counter
@@ -117,11 +118,12 @@ contract ServiceRegistrySolana {
         revert("The authority is missing");
     }
 
-    function initEscrow(address _escrow) public {
+    function initEscrow(address _escrow, address _programStorage) public {
         if (escrow != address(0)) {
             revert("ExcrowAlreadyInitialized");
         }
         escrow = _escrow;
+        programStorage = _programStorage;
     }
 
     /// @dev Changes the owner address.
@@ -360,13 +362,29 @@ contract ServiceRegistrySolana {
         address serviceOwner = service.serviceOwner;
         requireSigner(serviceOwner);
 
+        // Get the escrow address and making sure our program Id is the owner (but not the storage)
+        address serviceOwnerEscrow = address(0);
+        for (uint32 i=0; i < tx.accounts.length; i++) {
+            if (tx.accounts[i].owner == tx.program_id && tx.accounts[i].key != programStorage) {
+                // Check the lamports balance
+                if (tx.accounts[i].lamports < 1e8) {
+                    revert("InsufficientBalance");
+                }
+                serviceOwnerEscrow = tx.accounts[i].key;
+                break;
+            }
+        }
+        if (serviceOwnerEscrow == address(0)) {
+            revert("ZeroAddress");
+        }
+
         // Service must be inactive
         if (service.state != ServiceState.PreRegistration) {
             revert("ServiceMustBeInactive");
         }
 
         // Send security deposit to the escrow account
-        SystemInstruction.transfer(serviceOwner, escrow, service.securityDeposit);
+        SystemInstruction.transfer(serviceOwner, serviceOwnerEscrow, service.securityDeposit);
 
         // Activate the agent instance registration
         service.state = ServiceState.ActiveRegistration;
@@ -399,13 +417,29 @@ contract ServiceRegistrySolana {
 
         // Get the operator address as the singing account address
         address operator = address(0);
-        for (uint32 i=0; i < tx.accounts.length; i++) {
+        for (uint32 i = 0; i < tx.accounts.length; i++) {
             if (tx.accounts[i].is_signer) {
                 operator = tx.accounts[i].key;
                 break;
             }
         }
         if (operator == address(0)) {
+            revert("ZeroAddress");
+        }
+
+        // Get the escrow address and making sure our program Id is the owner (but not the storage)
+        address operatorEscrow = address(0);
+        for (uint32 i=0; i < tx.accounts.length; i++) {
+            if (tx.accounts[i].owner == tx.program_id && tx.accounts[i].key != programStorage) {
+                // Check the lamports balance
+                if (tx.accounts[i].lamports < 1e8) {
+                    revert("InsufficientBalance");
+                }
+                operatorEscrow = tx.accounts[i].key;
+                break;
+            }
+        }
+        if (operatorEscrow == address(0)) {
             revert("ZeroAddress");
         }
 
@@ -492,7 +526,7 @@ contract ServiceRegistrySolana {
         }
 
         // Send the total bond to the escrow account
-        SystemInstruction.transfer(operator, escrow, service.securityDeposit);
+        SystemInstruction.transfer(operator, operatorEscrow, service.securityDeposit);
 
         // Update operator's bonding balance
         bytes32 operatorServiceIdHash = keccak256(abi.encode(operator, serviceId));
@@ -599,11 +633,15 @@ contract ServiceRegistrySolana {
         success = true;
     }
 
+//    function transferWithSeed(address from_pubkey, address from_base, string seed, address from_owner, address to_pubkey, uint64 lamports) external {
+//        SystemInstruction.transfer_with_seed(from_pubkey, from_base, seed, from_owner, to_pubkey, lamports);
+//    }
+
     /// @dev Terminates the service.
     /// @param serviceId Service Id to be updated.
     /// @return success True, if function executed successfully.
     /// @return refund Refund to return to the service owner.
-    function terminate(uint32 serviceId) external returns (bool success, uint64 refund)
+    function terminate(uint32 serviceId, string seed) external returns (bool success, uint64 refund)
     {
         // Reentrancy guard
         if (_locked > 1) {
@@ -616,6 +654,22 @@ contract ServiceRegistrySolana {
         // Check for the service authority
         address serviceOwner = service.serviceOwner;
         requireSigner(serviceOwner);
+
+        // Get the escrow address and making sure our program Id is the owner (but not the storage)
+        address serviceOwnerEscrow = address(0);
+        for (uint32 i=0; i < tx.accounts.length; i++) {
+            if (tx.accounts[i].owner == tx.program_id && tx.accounts[i].key != programStorage) {
+                // Check the lamports balance
+                if (tx.accounts[i].lamports < 1e8) {
+                    revert("InsufficientBalance");
+                }
+                serviceOwnerEscrow = tx.accounts[i].key;
+                break;
+            }
+        }
+        if (serviceOwnerEscrow == address(0)) {
+            revert("ZeroAddress");
+        }
 
         // Check if the service is already terminated
         if (service.state == ServiceState.PreRegistration || service.state == ServiceState.TerminatedBonded) {
@@ -630,12 +684,9 @@ contract ServiceRegistrySolana {
 
         // Return registration deposit back to the service owner
         refund = service.securityDeposit;
-        // TODO: Figure out the escrow release
-//        // By design, the refund is always a non-zero value, so no check is needed here fo that
-//        (bool result, ) = serviceOwner.call{value: refund}("");
-//        if (!result) {
-//            revert TransferFailed(address(0), address(this), serviceOwner, refund);
-//        }
+        // Send the refund to the service owner account
+        address programId = tx.program_id;
+        SystemInstruction.transfer_with_seed(serviceOwnerEscrow, serviceOwner, seed, programId, serviceOwner, refund);
 
         emit Refund(serviceOwner, refund);
         emit TerminateService(serviceId);
@@ -721,12 +772,8 @@ contract ServiceRegistrySolana {
         if (refund > 0) {
             // Operator's balance is essentially zero after the refund
             mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash] = 0;
-            // TODO: Figure out the escrow release
-//            // Send the refund
-//            (bool result, ) = operator.call{value: refund}("");
-//            if (!result) {
-//                revert("TransferFailed");
-//            }
+            // Send the total bond to the escrow account
+            SystemInstruction.transfer(escrow, operator, refund);
             emit Refund(operator, refund);
         }
 
@@ -813,102 +860,102 @@ contract ServiceRegistrySolana {
         success = true;
     }
 
-    /// @dev Drains slashed funds.
-    /// @return amount Drained amount.
-    function drain() external returns (uint64 amount) {
-        // Reentrancy guard
-        if (_locked > 1) {
-            revert("ReentrancyGuard");
-        }
-        _locked = 2;
-
-        // Check for the drainer address
-        requireSigner(drainer);
-
-        // Drain the slashed funds
-        amount = slashedFunds;
-        if (amount > 0) {
-            slashedFunds = 0;
-            // TODO: Figure out the amount send
-            // Send the amount
-//            (bool result, ) = msg.sender.call{value: amount}("");
-//            if (!result) {
-//                revert TransferFailed(address(0), address(this), msg.sender, amount);
-//            }
-            emit Drain(drainer, amount);
-        }
-
-        _locked = 1;
-    }
-
-    function ownerOf(uint32 serviceId) public view returns (address) {
-        return services[serviceId].serviceOwner;
-    }
-
-    /// @dev Checks for the service existence.
-    /// @notice Service counter starts from 1.
-    /// @param serviceId Service Id.
-    /// @return true if the service exists, false otherwise.
-    function exists(uint32 serviceId) public view returns (bool) {
-        return serviceId > 0 && serviceId < (totalSupply + 1);
-    }
-
-    /// @dev Sets service base URI.
-    /// @param bURI Base URI string.
-    function setBaseURI(string memory bURI) external {
-        requireSigner(owner);
-
-        // Check for the zero value
-        if (bytes(bURI).length == 0) {
-            revert("Zero Value");
-        }
-
-        baseURI = bURI;
-        emit BaseURIChanged(bURI);
-    }
-
-    /// @dev Gets the valid service Id from the provided index.
-    /// @notice Service counter starts from 1.
-    /// @param id Service counter.
-    /// @return serviceId Service Id.
-    function tokenByIndex(uint32 id) external view returns (uint32 serviceId) {
-        serviceId = id + 1;
-        if (serviceId > totalSupply) {
-            revert("Overflow");
-        }
-    }
-
-    // Open sourced from: https://stackoverflow.com/questions/67893318/solidity-how-to-represent-bytes32-as-string
-    /// @dev Converts bytes16 input data to hex16.
-    /// @notice This method converts bytes into the same bytes-character hex16 representation.
-    /// @param data bytes16 input data.
-    /// @return result hex16 conversion from the input bytes16 data.
-    function _toHex16(bytes16 data) internal pure returns (bytes32 result) {
-        result = bytes32 (data) & 0xFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000 |
-        (bytes32 (data) & 0x0000000000000000FFFFFFFFFFFFFFFF00000000000000000000000000000000) >> 64;
-        result = result & 0xFFFFFFFF000000000000000000000000FFFFFFFF000000000000000000000000 |
-        (result & 0x00000000FFFFFFFF000000000000000000000000FFFFFFFF0000000000000000) >> 32;
-        result = result & 0xFFFF000000000000FFFF000000000000FFFF000000000000FFFF000000000000 |
-        (result & 0x0000FFFF000000000000FFFF000000000000FFFF000000000000FFFF00000000) >> 16;
-        result = result & 0xFF000000FF000000FF000000FF000000FF000000FF000000FF000000FF000000 |
-        (result & 0x00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0000) >> 8;
-        result = (result & 0xF000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000) >> 4 |
-        (result & 0x0F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F00) >> 8;
-        result = bytes32 (0x3030303030303030303030303030303030303030303030303030303030303030 +
-        uint256 (result) +
-            (uint256 (result) + 0x0606060606060606060606060606060606060606060606060606060606060606 >> 4 &
-            0x0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F) * 39);
-    }
-
-    /// @dev Returns service token URI.
-    /// @notice Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.
-    /// @param serviceId Service Id.
-    /// @return Service token URI string.
-    function tokenURI(uint32 serviceId) public view returns (string memory) {
-        bytes32 serviceHash = services[serviceId].configHash;
-        // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
-        // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
-        return string(abi.encodePacked(baseURI, CID_PREFIX, _toHex16(bytes16(serviceHash)),
-            _toHex16(bytes16(serviceHash << 128))));
-    }
+//    /// @dev Drains slashed funds.
+//    /// @return amount Drained amount.
+//    function drain() external returns (uint64 amount) {
+//        // Reentrancy guard
+//        if (_locked > 1) {
+//            revert("ReentrancyGuard");
+//        }
+//        _locked = 2;
+//
+//        // Check for the drainer address
+//        requireSigner(drainer);
+//
+//        // Drain the slashed funds
+//        amount = slashedFunds;
+//        if (amount > 0) {
+//            slashedFunds = 0;
+//            // TODO: Figure out the amount send
+//            // Send the amount
+////            (bool result, ) = msg.sender.call{value: amount}("");
+////            if (!result) {
+////                revert TransferFailed(address(0), address(this), msg.sender, amount);
+////            }
+//            emit Drain(drainer, amount);
+//        }
+//
+//        _locked = 1;
+//    }
+//
+//    function ownerOf(uint32 serviceId) public view returns (address) {
+//        return services[serviceId].serviceOwner;
+//    }
+//
+//    /// @dev Checks for the service existence.
+//    /// @notice Service counter starts from 1.
+//    /// @param serviceId Service Id.
+//    /// @return true if the service exists, false otherwise.
+//    function exists(uint32 serviceId) public view returns (bool) {
+//        return serviceId > 0 && serviceId < (totalSupply + 1);
+//    }
+//
+//    /// @dev Sets service base URI.
+//    /// @param bURI Base URI string.
+//    function setBaseURI(string memory bURI) external {
+//        requireSigner(owner);
+//
+//        // Check for the zero value
+//        if (bytes(bURI).length == 0) {
+//            revert("Zero Value");
+//        }
+//
+//        baseURI = bURI;
+//        emit BaseURIChanged(bURI);
+//    }
+//
+//    /// @dev Gets the valid service Id from the provided index.
+//    /// @notice Service counter starts from 1.
+//    /// @param id Service counter.
+//    /// @return serviceId Service Id.
+//    function tokenByIndex(uint32 id) external view returns (uint32 serviceId) {
+//        serviceId = id + 1;
+//        if (serviceId > totalSupply) {
+//            revert("Overflow");
+//        }
+//    }
+//
+//    // Open sourced from: https://stackoverflow.com/questions/67893318/solidity-how-to-represent-bytes32-as-string
+//    /// @dev Converts bytes16 input data to hex16.
+//    /// @notice This method converts bytes into the same bytes-character hex16 representation.
+//    /// @param data bytes16 input data.
+//    /// @return result hex16 conversion from the input bytes16 data.
+//    function _toHex16(bytes16 data) internal pure returns (bytes32 result) {
+//        result = bytes32 (data) & 0xFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000 |
+//        (bytes32 (data) & 0x0000000000000000FFFFFFFFFFFFFFFF00000000000000000000000000000000) >> 64;
+//        result = result & 0xFFFFFFFF000000000000000000000000FFFFFFFF000000000000000000000000 |
+//        (result & 0x00000000FFFFFFFF000000000000000000000000FFFFFFFF0000000000000000) >> 32;
+//        result = result & 0xFFFF000000000000FFFF000000000000FFFF000000000000FFFF000000000000 |
+//        (result & 0x0000FFFF000000000000FFFF000000000000FFFF000000000000FFFF00000000) >> 16;
+//        result = result & 0xFF000000FF000000FF000000FF000000FF000000FF000000FF000000FF000000 |
+//        (result & 0x00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0000) >> 8;
+//        result = (result & 0xF000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000) >> 4 |
+//        (result & 0x0F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F00) >> 8;
+//        result = bytes32 (0x3030303030303030303030303030303030303030303030303030303030303030 +
+//        uint256 (result) +
+//            (uint256 (result) + 0x0606060606060606060606060606060606060606060606060606060606060606 >> 4 &
+//            0x0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F) * 39);
+//    }
+//
+//    /// @dev Returns service token URI.
+//    /// @notice Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.
+//    /// @param serviceId Service Id.
+//    /// @return Service token URI string.
+//    function tokenURI(uint32 serviceId) public view returns (string memory) {
+//        bytes32 serviceHash = services[serviceId].configHash;
+//        // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
+//        // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
+//        return string(abi.encodePacked(baseURI, CID_PREFIX, _toHex16(bytes16(serviceHash)),
+//            _toHex16(bytes16(serviceHash << 128))));
+//    }
 }

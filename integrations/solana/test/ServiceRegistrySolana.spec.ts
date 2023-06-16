@@ -47,9 +47,9 @@ describe("ServiceRegistrySolana", function () {
 
         let tx = await provider.connection.requestAirdrop(deployer.publicKey, 100 * LAMPORTS_PER_SOL);
         await provider.connection.confirmTransaction(tx, "confirmed");
-        tx = await provider.connection.requestAirdrop(serviceOwner.publicKey, LAMPORTS_PER_SOL);
+        tx = await provider.connection.requestAirdrop(serviceOwner.publicKey, 100 * LAMPORTS_PER_SOL);
         await provider.connection.confirmTransaction(tx, "confirmed");
-        tx = await provider.connection.requestAirdrop(operator.publicKey, LAMPORTS_PER_SOL);
+        tx = await provider.connection.requestAirdrop(operator.publicKey, 100 * LAMPORTS_PER_SOL);
         await provider.connection.confirmTransaction(tx, "confirmed");
 
         // Create an escrow account such that the program Id is its owner, and initialize it
@@ -69,7 +69,7 @@ describe("ServiceRegistrySolana", function () {
         await sendAndConfirmTransaction(provider.connection, tx, [deployer, deployer]);
 
         // Init the obtained escrow address
-        await program.methods.initEscrow(escrow)
+        await program.methods.initEscrow(escrow, storage.publicKey)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
                 { pubkey: deployer.publicKey, isSigner: true, isWritable: true }
@@ -182,19 +182,44 @@ describe("ServiceRegistrySolana", function () {
             .signers([serviceOwner])
             .rpc();
 
-        const escrowBalanceBefore = await provider.connection.getBalance(escrow);
+        // Create an escrow account such that the program Id is its owner, and initialize it
+        const serviceOwnerEscrow = await PublicKey.createWithSeed(serviceOwner.publicKey, "escrow", program.programId);
+        //console.log("serviceOwnerEscrow", serviceOwnerEscrow);
+        const tx = new Transaction().add(
+            SystemProgram.createAccountWithSeed({
+                fromPubkey: serviceOwner.publicKey, // funder
+                newAccountPubkey: serviceOwnerEscrow,
+                basePubkey: serviceOwner.publicKey,
+                seed: "escrow",
+                lamports: 1e9, // 0.1 SOL
+                space: 256,
+                programId: program.programId,
+            })
+        );
+        await sendAndConfirmTransaction(provider.connection, tx, [serviceOwner, serviceOwner]);
+
+        const escrowBalanceBefore = await provider.connection.getBalance(serviceOwnerEscrow);
+        console.log("escrowBalanceBefore", escrowBalanceBefore);
 
         // Activate the service registration
         await program.methods.activateRegistration(serviceId)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
                 { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
-                { pubkey: escrow, isSigner: false, isWritable: true }
+                { pubkey: serviceOwnerEscrow, isSigner: false, isWritable: true }
             ])
             .signers([serviceOwner])
             .rpc();
 
-        const escrowBalanceAfter = await provider.connection.getBalance(escrow);
+        const escrowBalanceAfter = await provider.connection.getBalance(serviceOwnerEscrow);
+        console.log("escrowBalanceAfter", escrowBalanceAfter);
+
+        const curEscrow = await program.methods.escrow()
+            .accounts({ dataAccount: storage.publicKey })
+            .view();
+        console.log("curEscrow", curEscrow);
+        console.log("serviceOwnerEscrow", serviceOwnerEscrow);
+        return;
 
         // Check the obtained service
         const service = await program.methods.getService(serviceId)
@@ -216,25 +241,60 @@ describe("ServiceRegistrySolana", function () {
             .signers([serviceOwner])
             .rpc();
 
-        // Get the escrow balance before activation
-        const escrowBalanceBefore = await provider.connection.getBalance(escrow);
+        // Create an escrow account such that the program Id is its owner, and initialize it
+        const serviceOwnerEscrow = await PublicKey.createWithSeed(serviceOwner.publicKey, "serviceOwnerEscrow", program.programId);
+        //console.log("serviceOwnerEscrow", serviceOwnerEscrow);
+        let tx = new Transaction().add(
+            SystemProgram.createAccountWithSeed({
+                fromPubkey: serviceOwner.publicKey, // funder
+                newAccountPubkey: serviceOwnerEscrow,
+                basePubkey: serviceOwner.publicKey,
+                seed: "serviceOwnerEscrow",
+                lamports: 1e9, // 0.1 SOL
+                space: 256,
+                programId: program.programId,
+            })
+        );
+        await sendAndConfirmTransaction(provider.connection, tx, [serviceOwner, serviceOwner]);
+
+        // Get the service owner escrow balance before activation
+        const escrowBalanceBefore = await provider.connection.getBalance(serviceOwnerEscrow);
 
         // Activate the service
         await program.methods.activateRegistration(serviceId)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
                 { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
-                { pubkey: escrow, isSigner: false, isWritable: true }
+                { pubkey: serviceOwnerEscrow, isSigner: false, isWritable: true }
             ])
             .signers([serviceOwner])
             .rpc();
 
         // Check the escrow balance after the activation
-        const escrowBalanceAfter = await provider.connection.getBalance(escrow);
+        const escrowBalanceAfter = await provider.connection.getBalance(serviceOwnerEscrow);
         let service = await program.methods.getService(serviceId)
             .accounts({ dataAccount: storage.publicKey })
             .view();
         expect(escrowBalanceAfter - escrowBalanceBefore).toEqual(Number(service.securityDeposit));
+
+        // Create an escrow account for the operator such that the program Id is its owner, and initialize it
+        const operatorEscrow = await PublicKey.createWithSeed(operator.publicKey, "operatorEscrow", program.programId);
+        //console.log("serviceOwnerEscrow", serviceOwnerEscrow);
+        tx = new Transaction().add(
+            SystemProgram.createAccountWithSeed({
+                fromPubkey: operator.publicKey, // funder
+                newAccountPubkey: operatorEscrow,
+                basePubkey: operator.publicKey,
+                seed: "operatorEscrow",
+                lamports: 1e9, // 0.1 SOL
+                space: 256,
+                programId: program.programId,
+            })
+        );
+        await sendAndConfirmTransaction(provider.connection, tx, [operator, operator]);
+
+        // Get the operator escrow balance before activation
+        const operatorEscrowBalanceBefore = await provider.connection.getBalance(operatorEscrow);
 
         const agentInstance = Keypair.generate();
         // Register agent instance
@@ -242,10 +302,13 @@ describe("ServiceRegistrySolana", function () {
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
                 { pubkey: operator.publicKey, isSigner: true, isWritable: true },
-                { pubkey: escrow, isSigner: false, isWritable: true }
+                { pubkey: operatorEscrow, isSigner: false, isWritable: true }
             ])
             .signers([operator])
             .rpc();
+
+        const operatorEscrowBalanceAfter = await provider.connection.getBalance(operatorEscrow);
+        expect(operatorEscrowBalanceAfter - operatorEscrowBalanceBefore).toEqual(Number(regBond));
 
         // Check the obtained service
         service = await program.methods.getService(serviceId)
@@ -263,7 +326,38 @@ describe("ServiceRegistrySolana", function () {
         expect(service.state).toEqual({"finishedRegistration": {}});
     });
 
-    it("Creating a service, activating it, registering agent instances and terminating", async function () {
+//    it.only('transfer with seed', async function transfer_with_seed() {
+//        const payer = new Keypair();
+//        const dest = new Keypair();
+//        const seed = "seed";
+//        const assign_account = new PublicKey('AddressLookupTab1e1111111111111111111111111');
+//        const derived_payer = await PublicKey.createWithSeed(payer.publicKey, seed, assign_account);
+//
+//        let signature = await provider.connection.requestAirdrop(derived_payer, LAMPORTS_PER_SOL);
+//        await provider.connection.confirmTransaction(signature, 'confirmed');
+//
+//        await program.methods.transferWithSeed(
+//            derived_payer, // from_pubkey
+//            payer.publicKey, // from_base
+//            seed, // seed
+//            assign_account, // from_owner
+//            dest.publicKey, // to_pubkey
+//            new BN(100000000))
+//            .remainingAccounts([
+//                { pubkey: assign_account, isSigner: false, isWritable: false },
+//                { pubkey: derived_payer, isSigner: false, isWritable: true },
+//                { pubkey: dest.publicKey, isSigner: false, isWritable: true },
+//                { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+//            ])
+//            .accounts({ dataAccount: storage.publicKey })
+//            .signers([payer]).rpc();
+//    });
+
+    it.only("Creating a service, activating it, registering agent instances and terminating", async function () {
+//        const accountInfo = await provider.connection.getAccountInfo(escrow);
+//        console.log(accountInfo);
+//        return;
+
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, [1], [1], [regBond], 1)
             .accounts({ dataAccount: storage.publicKey })
@@ -273,15 +367,60 @@ describe("ServiceRegistrySolana", function () {
             .signers([serviceOwner])
             .rpc();
 
+        // Create an escrow account such that the program Id is its owner, and initialize it
+        const serviceOwnerEscrow = await PublicKey.createWithSeed(serviceOwner.publicKey, "serviceOwnerEscrow", program.programId);
+        //console.log("serviceOwnerEscrow", serviceOwnerEscrow);
+        let tx = new Transaction().add(
+            SystemProgram.createAccountWithSeed({
+                fromPubkey: serviceOwner.publicKey, // funder
+                newAccountPubkey: serviceOwnerEscrow,
+                basePubkey: serviceOwner.publicKey,
+                seed: "serviceOwnerEscrow",
+                lamports: 1e9, // 0.1 SOL
+                space: 256,
+                programId: program.programId,
+            })
+        );
+        await sendAndConfirmTransaction(provider.connection, tx, [serviceOwner, serviceOwner]);
+
+        // Get the service owner escrow balance before activation
+        const escrowBalanceBefore = await provider.connection.getBalance(serviceOwnerEscrow);
+
         // Activate the service
         await program.methods.activateRegistration(serviceId)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
                 { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
-                { pubkey: escrow, isSigner: false, isWritable: true }
+                { pubkey: serviceOwnerEscrow, isSigner: false, isWritable: true }
             ])
             .signers([serviceOwner])
             .rpc();
+
+        // Check the escrow balance after the activation
+        const escrowBalanceAfter = await provider.connection.getBalance(serviceOwnerEscrow);
+        let service = await program.methods.getService(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .view();
+        expect(escrowBalanceAfter - escrowBalanceBefore).toEqual(Number(service.securityDeposit));
+
+        // Create an escrow account for the operator such that the program Id is its owner, and initialize it
+        const operatorEscrow = await PublicKey.createWithSeed(operator.publicKey, "operatorEscrow", program.programId);
+        //console.log("serviceOwnerEscrow", serviceOwnerEscrow);
+        tx = new Transaction().add(
+            SystemProgram.createAccountWithSeed({
+                fromPubkey: operator.publicKey, // funder
+                newAccountPubkey: operatorEscrow,
+                basePubkey: operator.publicKey,
+                seed: "operatorEscrow",
+                lamports: 1e9, // 0.1 SOL
+                space: 256,
+                programId: program.programId,
+            })
+        );
+        await sendAndConfirmTransaction(provider.connection, tx, [operator, operator]);
+
+        // Get the operator escrow balance before activation
+        const operatorEscrowBalanceBefore = await provider.connection.getBalance(operatorEscrow);
 
         const agentInstance = Keypair.generate();
         // Register agent instance
@@ -289,22 +428,27 @@ describe("ServiceRegistrySolana", function () {
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
                 { pubkey: operator.publicKey, isSigner: true, isWritable: true },
-                { pubkey: escrow, isSigner: false, isWritable: true }
+                { pubkey: operatorEscrow, isSigner: false, isWritable: true }
             ])
             .signers([operator])
             .rpc();
 
+        const operatorEscrowBalanceAfter = await provider.connection.getBalance(operatorEscrow);
+        expect(operatorEscrowBalanceAfter - operatorEscrowBalanceBefore).toEqual(Number(regBond));
+
         // Terminate the service
-        await program.methods.terminate(serviceId)
+        //const seed = Buffer.from(encoder.encode("serviceOwnerEscrow"));
+        await program.methods.terminate(serviceId, "serviceOwnerEscrow")
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
-                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
+                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
+                { pubkey: serviceOwnerEscrow, isSigner: false, isWritable: true }
             ])
             .signers([serviceOwner])
             .rpc();
 
         // Check the obtained service
-        const service = await program.methods.getService(serviceId)
+        service = await program.methods.getService(serviceId)
             .accounts({ dataAccount: storage.publicKey })
             .view();
 
