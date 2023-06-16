@@ -172,7 +172,7 @@ describe("ServiceRegistrySolana", function () {
         expect(compareBonds).toEqual(true);
     });
 
-    it("Crating a service and activating it", async function () {
+    it("Creating a service and activating it", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storage.publicKey })
@@ -206,7 +206,7 @@ describe("ServiceRegistrySolana", function () {
         expect(service.state).toEqual({"activeRegistration": {}});
     });
 
-    it.only("Crating a service, activating it and registering agent instances", async function () {
+    it("Creating a service, activating it and registering agent instances", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, [1], [1], [regBond], 1)
             .accounts({ dataAccount: storage.publicKey })
@@ -263,7 +263,7 @@ describe("ServiceRegistrySolana", function () {
         expect(service.state).toEqual({"finishedRegistration": {}});
     });
 
-    it("Crating a service, activating it, registering agent instances and terminating", async function () {
+    it("Creating a service, activating it, registering agent instances and terminating", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, [1], [1], [regBond], 1)
             .accounts({ dataAccount: storage.publicKey })
@@ -277,18 +277,19 @@ describe("ServiceRegistrySolana", function () {
         await program.methods.activateRegistration(serviceId)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
-                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
+                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
+                { pubkey: escrow, isSigner: false, isWritable: true }
             ])
             .signers([serviceOwner])
             .rpc();
 
-        const operator = Keypair.generate();
         const agentInstance = Keypair.generate();
         // Register agent instance
-        await program.methods.registerAgents(operator.publicKey, serviceId, [agentInstance.publicKey], [1])
+        await program.methods.registerAgents(serviceId, [agentInstance.publicKey], [1])
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
-                { pubkey: operator.publicKey, isSigner: true, isWritable: true }
+                { pubkey: operator.publicKey, isSigner: true, isWritable: true },
+                { pubkey: escrow, isSigner: false, isWritable: true }
             ])
             .signers([operator])
             .rpc();
@@ -310,7 +311,7 @@ describe("ServiceRegistrySolana", function () {
         expect(service.state).toEqual({"terminatedBonded": {}});
     });
 
-    it("Crating a service, activating it, registering agent instances, terminating and unbonding", async function () {
+    it("Creating a service, activating it, registering agent instances, terminating and unbonding", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, [1], [1], [regBond], 1)
             .accounts({ dataAccount: storage.publicKey })
@@ -324,18 +325,19 @@ describe("ServiceRegistrySolana", function () {
         await program.methods.activateRegistration(serviceId)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
-                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
+                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
+                { pubkey: escrow, isSigner: false, isWritable: true }
             ])
             .signers([serviceOwner])
             .rpc();
 
-        const operator = Keypair.generate();
         const agentInstance = Keypair.generate();
         // Register agent instance
-        await program.methods.registerAgents(operator.publicKey, serviceId, [agentInstance.publicKey], [1])
+        await program.methods.registerAgents(serviceId, [agentInstance.publicKey], [1])
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
-                { pubkey: operator.publicKey, isSigner: true, isWritable: true }
+                { pubkey: operator.publicKey, isSigner: true, isWritable: true },
+                { pubkey: escrow, isSigner: false, isWritable: true }
             ])
             .signers([operator])
             .rpc();
@@ -350,7 +352,7 @@ describe("ServiceRegistrySolana", function () {
             .rpc();
 
         // Unbond agent instances
-        await program.methods.unbond(operator.publicKey, serviceId)
+        await program.methods.unbond(serviceId)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
                 { pubkey: operator.publicKey, isSigner: true, isWritable: true }
@@ -366,7 +368,7 @@ describe("ServiceRegistrySolana", function () {
         expect(service.state).toEqual({"preRegistration": {}});
     });
 
-    it("Crating a service, activating it, registering agent instances and deploying", async function () {
+    it("Creating a service, activating it, registering agent instances and deploying", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, [1], [1], [regBond], 1)
             .accounts({ dataAccount: storage.publicKey })
@@ -390,18 +392,19 @@ describe("ServiceRegistrySolana", function () {
         await program.methods.activateRegistration(serviceId)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
-                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
+                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
+                { pubkey: escrow, isSigner: false, isWritable: true }
             ])
             .signers([serviceOwner])
             .rpc();
 
-        const operator = Keypair.generate();
         const agentInstance = Keypair.generate();
         // Register agent instance
-        await program.methods.registerAgents(operator.publicKey, serviceId, [agentInstance.publicKey], [1])
+        await program.methods.registerAgents(serviceId, [agentInstance.publicKey], [1])
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
-                { pubkey: operator.publicKey, isSigner: true, isWritable: true }
+                { pubkey: operator.publicKey, isSigner: true, isWritable: true },
+                { pubkey: escrow, isSigner: false, isWritable: true }
             ])
             .signers([operator])
             .rpc();
@@ -423,7 +426,7 @@ describe("ServiceRegistrySolana", function () {
         expect(service.state).toEqual({"deployed": {}});
     });
 
-    it("Crating a service, activating it, registering agent instances, deploying and terminating", async function () {
+    it("Creating a service, activating it, registering agent instances, deploying and terminating", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, [1], [1], [regBond], 1)
             .accounts({ dataAccount: storage.publicKey })
@@ -447,18 +450,19 @@ describe("ServiceRegistrySolana", function () {
         await program.methods.activateRegistration(serviceId)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
-                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
+                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
+                { pubkey: escrow, isSigner: false, isWritable: true }
             ])
             .signers([serviceOwner])
             .rpc();
 
-        const operator = Keypair.generate();
         const agentInstance = Keypair.generate();
         // Register agent instance
-        await program.methods.registerAgents(operator.publicKey, serviceId, [agentInstance.publicKey], [1])
+        await program.methods.registerAgents(serviceId, [agentInstance.publicKey], [1])
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
-                { pubkey: operator.publicKey, isSigner: true, isWritable: true }
+                { pubkey: operator.publicKey, isSigner: true, isWritable: true },
+                { pubkey: escrow, isSigner: false, isWritable: true }
             ])
             .signers([operator])
             .rpc();
@@ -489,7 +493,7 @@ describe("ServiceRegistrySolana", function () {
         expect(service.state).toEqual({"terminatedBonded": {}});
     });
 
-    it("Crating a service, activating it, registering agent instances, deploying, terminating and unbonding", async function () {
+    it("Creating a service, activating it, registering agent instances, deploying, terminating and unbonding", async function () {
         // Create a service
         const transactionHash = await program.methods.create(serviceOwner.publicKey, configHash, [1], [1], [regBond], 1)
             .accounts({ dataAccount: storage.publicKey })
@@ -532,18 +536,19 @@ describe("ServiceRegistrySolana", function () {
         await program.methods.activateRegistration(serviceId)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
-                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
+                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
+                { pubkey: escrow, isSigner: false, isWritable: true }
             ])
             .signers([serviceOwner])
             .rpc();
 
-        const operator = Keypair.generate();
         const agentInstance = Keypair.generate();
         // Register agent instance
-        await program.methods.registerAgents(operator.publicKey, serviceId, [agentInstance.publicKey], [1])
+        await program.methods.registerAgents(serviceId, [agentInstance.publicKey], [1])
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
-                { pubkey: operator.publicKey, isSigner: true, isWritable: true }
+                { pubkey: operator.publicKey, isSigner: true, isWritable: true },
+                { pubkey: escrow, isSigner: false, isWritable: true }
             ])
             .signers([operator])
             .rpc();
@@ -567,7 +572,7 @@ describe("ServiceRegistrySolana", function () {
             .rpc();
 
         // Unbond agent instances
-        await program.methods.unbond(operator.publicKey, serviceId)
+        await program.methods.unbond(serviceId)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
                 { pubkey: operator.publicKey, isSigner: true, isWritable: true }

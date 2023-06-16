@@ -645,18 +645,24 @@ contract ServiceRegistrySolana {
     }
 
     /// @dev Unbonds agent instances of the operator from the service.
-    /// @param operator Operator of agent instances.
     /// @param serviceId Service Id.
     /// @return success True, if function executed successfully.
     /// @return refund The amount of refund returned to the operator.
-    function unbond(address operator, uint32 serviceId) external returns (bool success, uint64 refund) {
+    function unbond(uint32 serviceId) external returns (bool success, uint64 refund) {
         // Reentrancy guard
         if (_locked > 1) {
             revert("ReentrancyGuard");
         }
         _locked = 2;
 
-        // Checks if the operator address is not zero
+        // Get the operator address as the singing account address
+        address operator = address(0);
+        for (uint32 i=0; i < tx.accounts.length; i++) {
+            if (tx.accounts[i].is_signer) {
+                operator = tx.accounts[i].key;
+                break;
+            }
+        }
         if (operator == address(0)) {
             revert("ZeroAddress");
         }
@@ -791,22 +797,22 @@ contract ServiceRegistrySolana {
         bytes32 operatorServiceIdHash = keccak256(abi.encode(operator, serviceId));
         balance = mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash];
     }
-//
-//    /// @dev Controls multisig implementation address permission.
-//    /// @param multisig Address of a multisig implementation.
-//    /// @param permission Grant or revoke permission.
-//    /// @return success True, if function executed successfully.
-//    function changeMultisigPermission(address multisig, bool permission) external returns (bool success) {
-//        // Check for the contract authority
-//        requireSigner(owner);
-//
-//        if (multisig == address(0)) {
-//            revert("ZeroAddress");
-//        }
-//        mapMultisigs[multisig] = permission;
-//        success = true;
-//    }
-//
+
+    /// @dev Controls multisig implementation address permission.
+    /// @param multisig Address of a multisig implementation.
+    /// @param permission Grant or revoke permission.
+    /// @return success True, if function executed successfully.
+    function changeMultisigPermission(address multisig, bool permission) external returns (bool success) {
+        // Check for the contract authority
+        requireSigner(owner);
+
+        if (multisig == address(0)) {
+            revert("ZeroAddress");
+        }
+        mapMultisigs[multisig] = permission;
+        success = true;
+    }
+
     /// @dev Drains slashed funds.
     /// @return amount Drained amount.
     function drain() external returns (uint64 amount) {
