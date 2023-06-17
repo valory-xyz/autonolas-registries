@@ -118,11 +118,10 @@ contract ServiceRegistrySolana {
         revert("The authority is missing");
     }
 
-    function initEscrow(address _escrow, address _programStorage) public {
-        if (escrow != address(0)) {
-            revert("ExcrowAlreadyInitialized");
+    function initProgramStorage(address _programStorage) external {
+        if (programStorage != address(0)) {
+            revert("AlreadyInitialized");
         }
-        escrow = _escrow;
         programStorage = _programStorage;
     }
 
@@ -156,14 +155,14 @@ contract ServiceRegistrySolana {
         emit DrainerUpdated(newDrainer);
     }
 
-    function transfer(uint32 serviceId, address newServiceOwner) public {
-        // Check for the service authority
-        address serviceOwner = services[serviceId].serviceOwner;
-        requireSigner(serviceOwner);
-
-        services[serviceId].serviceOwner = newServiceOwner;
-
-    }
+//    function transfer(uint32 serviceId, address newServiceOwner) public {
+//        // Check for the service authority
+//        address serviceOwner = services[serviceId].serviceOwner;
+//        requireSigner(serviceOwner);
+//
+//        services[serviceId].serviceOwner = newServiceOwner;
+//
+//    }
 
     /// @dev Going through basic initial service checks.
     /// @param configHash IPFS hash pointing to the config metadata.
@@ -365,7 +364,7 @@ contract ServiceRegistrySolana {
         // Get the escrow address and making sure our program Id is the owner (but not the storage)
         address serviceOwnerEscrow = address(0);
         for (uint32 i=0; i < tx.accounts.length; i++) {
-            if (tx.accounts[i].owner == tx.program_id && tx.accounts[i].key != programStorage) {
+            if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
                 // Check the lamports balance
                 if (tx.accounts[i].lamports < 1e8) {
                     revert("InsufficientBalance");
@@ -430,7 +429,7 @@ contract ServiceRegistrySolana {
         // Get the escrow address and making sure our program Id is the owner (but not the storage)
         address operatorEscrow = address(0);
         for (uint32 i=0; i < tx.accounts.length; i++) {
-            if (tx.accounts[i].owner == tx.program_id && tx.accounts[i].key != programStorage) {
+            if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
                 // Check the lamports balance
                 if (tx.accounts[i].lamports < 1e8) {
                     revert("InsufficientBalance");
@@ -633,6 +632,10 @@ contract ServiceRegistrySolana {
         success = true;
     }
 
+//    function transfer(address from, address to, uint64 lamports) external {
+//        SystemInstruction.transfer(from, to, lamports);
+//    }
+//
 //    function transferWithSeed(address from_pubkey, address from_base, string seed, address from_owner, address to_pubkey, uint64 lamports) external {
 //        SystemInstruction.transfer_with_seed(from_pubkey, from_base, seed, from_owner, to_pubkey, lamports);
 //    }
@@ -657,8 +660,8 @@ contract ServiceRegistrySolana {
 
         // Get the escrow address and making sure our program Id is the owner (but not the storage)
         address serviceOwnerEscrow = address(0);
-        for (uint32 i=0; i < tx.accounts.length; i++) {
-            if (tx.accounts[i].owner == tx.program_id && tx.accounts[i].key != programStorage) {
+        for (uint32 i = 0; i < tx.accounts.length; i++) {
+            if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
                 // Check the lamports balance
                 if (tx.accounts[i].lamports < 1e8) {
                     revert("InsufficientBalance");
@@ -685,8 +688,8 @@ contract ServiceRegistrySolana {
         // Return registration deposit back to the service owner
         refund = service.securityDeposit;
         // Send the refund to the service owner account
-        address programId = tx.program_id;
-        SystemInstruction.transfer_with_seed(serviceOwnerEscrow, serviceOwner, seed, programId, serviceOwner, refund);
+        //address programId = address"11111111111111111111111111111111";
+        SystemInstruction.transfer_with_seed(serviceOwnerEscrow, serviceOwner, seed, tx.program_id, serviceOwner, refund);
 
         emit Refund(serviceOwner, refund);
         emit TerminateService(serviceId);
