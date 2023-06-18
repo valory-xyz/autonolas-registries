@@ -62,7 +62,7 @@ describe("ServiceRegistrySolana", function () {
             .rpc();
     });
 
-    it.only("Creating a service", async function () {
+    it("Creating a service", async function () {
         // Create a service
         const tx = await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storage.publicKey })
@@ -86,7 +86,7 @@ describe("ServiceRegistrySolana", function () {
         expect(compareBonds).toEqual(true);
     });
 
-    it("Shoudl fail when incorrectly updating a service", async function () {
+    it("Should fail when incorrectly updating a service", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storage.publicKey })

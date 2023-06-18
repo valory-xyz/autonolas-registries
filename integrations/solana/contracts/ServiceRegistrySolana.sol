@@ -63,7 +63,6 @@ contract ServiceRegistrySolana {
 
     // The public key for the storage authority (owner) that should sign every change to the contract
     address public owner;
-    address public escrow;
     address programStorage;
     // Base URI
     string public baseURI;
@@ -156,14 +155,14 @@ contract ServiceRegistrySolana {
         emit DrainerUpdated(newDrainer);
     }
 
-//    function transfer(uint32 serviceId, address newServiceOwner) public {
-//        // Check for the service authority
-//        address serviceOwner = services[serviceId].serviceOwner;
-//        requireSigner(serviceOwner);
-//
-//        services[serviceId].serviceOwner = newServiceOwner;
-//
-//    }
+    function transfer(uint32 serviceId, address newServiceOwner) external {
+        // Check for the service authority
+        address serviceOwner = services[serviceId].serviceOwner;
+        requireSigner(serviceOwner);
+
+        services[serviceId].serviceOwner = newServiceOwner;
+
+    }
 
     /// @dev Going through basic initial service checks.
     /// @param configHash IPFS hash pointing to the config metadata.
@@ -362,7 +361,7 @@ contract ServiceRegistrySolana {
         address serviceOwner = service.serviceOwner;
         requireSigner(serviceOwner);
 
-        // Get the escrow address and making sure our program Id is the owner (but not the storage)
+        // Get the service owner escrow address and mak sure our program Id is the owner (but not the storage)
         address serviceOwnerEscrow = address(0);
         for (uint32 i=0; i < tx.accounts.length; i++) {
             if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
@@ -383,7 +382,7 @@ contract ServiceRegistrySolana {
             revert("ServiceMustBeInactive");
         }
 
-        // Send security deposit to the escrow account
+        // Send security deposit to the service owner escrow account
         SystemInstruction.transfer(serviceOwner, serviceOwnerEscrow, service.securityDeposit);
 
         // Activate the agent instance registration
@@ -427,7 +426,7 @@ contract ServiceRegistrySolana {
             revert("ZeroAddress");
         }
 
-        // Get the escrow address and making sure our program Id is the owner (but not the storage)
+        // Get the operator escrow address and make sure our program Id is the owner (but not the storage)
         address operatorEscrow = address(0);
         for (uint32 i=0; i < tx.accounts.length; i++) {
             if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
@@ -525,8 +524,8 @@ contract ServiceRegistrySolana {
             service.state = ServiceState.FinishedRegistration;
         }
 
-        // Send the total bond to the escrow account
-        SystemInstruction.transfer(operator, operatorEscrow, service.securityDeposit);
+        // Send the total bond to the operator escrow account
+        SystemInstruction.transfer(operator, operatorEscrow, totalBond);
 
         // Update operator's bonding balance
         bytes32 operatorServiceIdHash = keccak256(abi.encode(operator, serviceId));
@@ -633,14 +632,6 @@ contract ServiceRegistrySolana {
         success = true;
     }
 
-//    function transfer(address from, address to, uint64 lamports) external {
-//        SystemInstruction.transfer(from, to, lamports);
-//    }
-//
-//    function transferWithSeed(address from_pubkey, address from_base, string seed, address from_owner, address to_pubkey, uint64 lamports) external {
-//        SystemInstruction.transfer_with_seed(from_pubkey, from_base, seed, from_owner, to_pubkey, lamports);
-//    }
-
     /// @dev Terminates the service.
     /// @param serviceId Service Id to be updated.
     /// @return success True, if function executed successfully.
@@ -659,7 +650,7 @@ contract ServiceRegistrySolana {
         address serviceOwner = service.serviceOwner;
         requireSigner(serviceOwner);
 
-        // Get the escrow address and making sure our program Id is the owner (but not the storage)
+        // Get the service owner escrow address and make sure our program Id is the owner (but not the storage)
         address serviceOwnerEscrow = address(0);
         for (uint32 i = 0; i < tx.accounts.length; i++) {
             if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
@@ -689,7 +680,6 @@ contract ServiceRegistrySolana {
         // Return registration deposit back to the service owner
         refund = service.securityDeposit;
         // Send the refund to the service owner account
-        //address programId = address"11111111111111111111111111111111";
         SystemInstruction.transfer_with_seed(serviceOwnerEscrow, serviceOwner, seed, tx.program_id, serviceOwner, refund);
 
         emit Refund(serviceOwner, refund);
@@ -703,7 +693,7 @@ contract ServiceRegistrySolana {
     /// @param serviceId Service Id.
     /// @return success True, if function executed successfully.
     /// @return refund The amount of refund returned to the operator.
-    function unbond(uint32 serviceId) external returns (bool success, uint64 refund) {
+    function unbond(uint32 serviceId, string seed) external returns (bool success, uint64 refund) {
         // Reentrancy guard
         if (_locked > 1) {
             revert("ReentrancyGuard");
@@ -719,6 +709,22 @@ contract ServiceRegistrySolana {
             }
         }
         if (operator == address(0)) {
+            revert("ZeroAddress");
+        }
+
+        // Get the operator escrow address and make sure our program Id is the owner (but not the storage)
+        address operatorEscrow = address(0);
+        for (uint32 i=0; i < tx.accounts.length; i++) {
+            if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
+                // Check the lamports balance
+                if (tx.accounts[i].lamports < 1e8) {
+                    revert("InsufficientBalance");
+                }
+                operatorEscrow = tx.accounts[i].key;
+                break;
+            }
+        }
+        if (operatorEscrow == address(0)) {
             revert("ZeroAddress");
         }
 
@@ -776,8 +782,8 @@ contract ServiceRegistrySolana {
         if (refund > 0) {
             // Operator's balance is essentially zero after the refund
             mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash] = 0;
-            // Send the total bond to the escrow account
-            SystemInstruction.transfer(escrow, operator, refund);
+            // Send the total bond back to the operator account
+            SystemInstruction.transfer_with_seed(operatorEscrow, operator, seed, tx.program_id, operator, refund);
             emit Refund(operator, refund);
         }
 
@@ -864,46 +870,46 @@ contract ServiceRegistrySolana {
         success = true;
     }
 
-//    /// @dev Drains slashed funds.
-//    /// @return amount Drained amount.
-//    function drain() external returns (uint64 amount) {
-//        // Reentrancy guard
-//        if (_locked > 1) {
-//            revert("ReentrancyGuard");
-//        }
-//        _locked = 2;
-//
-//        // Check for the drainer address
-//        requireSigner(drainer);
-//
-//        // Drain the slashed funds
-//        amount = slashedFunds;
-//        if (amount > 0) {
-//            slashedFunds = 0;
-//            // TODO: Figure out the amount send
-//            // Send the amount
-////            (bool result, ) = msg.sender.call{value: amount}("");
-////            if (!result) {
-////                revert TransferFailed(address(0), address(this), msg.sender, amount);
-////            }
-//            emit Drain(drainer, amount);
-//        }
-//
-//        _locked = 1;
-//    }
-//
-//    function ownerOf(uint32 serviceId) public view returns (address) {
-//        return services[serviceId].serviceOwner;
-//    }
-//
-//    /// @dev Checks for the service existence.
-//    /// @notice Service counter starts from 1.
-//    /// @param serviceId Service Id.
-//    /// @return true if the service exists, false otherwise.
-//    function exists(uint32 serviceId) public view returns (bool) {
-//        return serviceId > 0 && serviceId < (totalSupply + 1);
-//    }
-//
+    /// @dev Drains slashed funds.
+    /// @return amount Drained amount.
+    function drain() external returns (uint64 amount) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert("ReentrancyGuard");
+        }
+        _locked = 2;
+
+        // Check for the drainer address
+        requireSigner(drainer);
+
+        // Drain the slashed funds
+        amount = slashedFunds;
+        if (amount > 0) {
+            slashedFunds = 0;
+            // TODO: Figure out the amount send
+            // Send the amount
+//            (bool result, ) = msg.sender.call{value: amount}("");
+//            if (!result) {
+//                revert TransferFailed(address(0), address(this), msg.sender, amount);
+//            }
+            emit Drain(drainer, amount);
+        }
+
+        _locked = 1;
+    }
+
+    function ownerOf(uint32 serviceId) public view returns (address) {
+        return services[serviceId].serviceOwner;
+    }
+
+    /// @dev Checks for the service existence.
+    /// @notice Service counter starts from 1.
+    /// @param serviceId Service Id.
+    /// @return true if the service exists, false otherwise.
+    function exists(uint32 serviceId) public view returns (bool) {
+        return serviceId > 0 && serviceId < (totalSupply + 1);
+    }
+
 //    /// @dev Sets service base URI.
 //    /// @param bURI Base URI string.
 //    function setBaseURI(string memory bURI) external {
