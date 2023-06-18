@@ -62,7 +62,7 @@ describe("ServiceRegistrySolana", function () {
             .rpc();
     });
 
-    it("Creating a service", async function () {
+    it.only("Creating a service", async function () {
         // Create a service
         const tx = await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storage.publicKey })
@@ -346,7 +346,7 @@ describe("ServiceRegistrySolana", function () {
             .signers([operator]).rpc();
     });
 
-    it.only("Creating a service, activating it, registering agent instances and terminating", async function () {
+    it("Creating a service, activating it, registering agent instances and terminating", async function () {
 //        const accountInfo = await provider.connection.getAccountInfo(escrow);
 //        console.log(accountInfo);
 //        return;

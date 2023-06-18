@@ -106,7 +106,7 @@ contract ServiceRegistrySolana {
         baseURI = _baseURI;
     }
 
-    /// Requires the signature of the metadata authority.
+    /// @dev Requires the signature of the metadata authority.
     function requireSigner(address authority) internal view {
         for(uint32 i=0; i < tx.accounts.length; i++) {
             if (tx.accounts[i].key == authority) {
@@ -118,6 +118,7 @@ contract ServiceRegistrySolana {
         revert("The authority is missing");
     }
 
+    /// @dev Inits the program storage.
     function initProgramStorage(address _programStorage) external {
         if (programStorage != address(0)) {
             revert("AlreadyInitialized");
