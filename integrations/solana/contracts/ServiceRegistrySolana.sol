@@ -537,14 +537,11 @@ contract ServiceRegistrySolana {
 
     /// @dev Creates multisig instance controlled by the set of service agent instances and deploys the service.
     /// @param serviceId Correspondent service Id.
-    /// @param multisigImplementation Multisig implementation address.
-    /// @param data Data payload for the multisig creation.
-    /// @return multisig Address of the created multisig.
+    /// @param multisig Address of the initialized and created multisig.
     function deploy(
         uint32 serviceId,
-        address multisigImplementation,
-        bytes memory data
-    ) external returns (address multisig)
+        address multisig
+    ) external
     {
         // Reentrancy guard
         if (_locked > 1) {
@@ -558,11 +555,6 @@ contract ServiceRegistrySolana {
         address serviceOwner = service.serviceOwner;
         requireSigner(serviceOwner);
 
-        // Check for the whitelisted multisig implementation
-        if (!mapMultisigs[multisigImplementation]) {
-            revert("UnauthorizedMultisig");
-        }
-
         if (service.state != ServiceState.FinishedRegistration) {
             revert("WrongServiceState");
         }
@@ -570,10 +562,13 @@ contract ServiceRegistrySolana {
         // Get all agent instances for the multisig
         address[] memory agentInstances = service.agentInstances;
 
-        // TODO: Understand the multisig workflow
-        // Create a multisig with agent instances
-        multisig = address(0);//IMultisig(multisigImplementation).create(agentInstances, service.threshold, data);
+        // TODO Create a multisig
+        // Check the multisig address
+        if (multisig == address(0)) {
+            revert("ZeroAddress");
+        }
 
+        // Set the multisig
         service.multisig = multisig;
         service.state = ServiceState.Deployed;
 
