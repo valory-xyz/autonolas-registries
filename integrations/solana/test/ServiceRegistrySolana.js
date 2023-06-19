@@ -124,195 +124,6 @@ describe("ServiceRegistrySolana", function () {
         expect(owners.length).toEqual(multisigAccountData.n);
     });
 
-    it.only("Creating a multisig and transferring lamports from it to another account", async function () {
-        const owners = [web3.Keypair.generate(), web3.Keypair.generate(), web3.Keypair.generate()];
-        const m = 2;
-        const multisig = await spl.createMultisig(provider.connection, deployer, owners, m);
-
-        const mint = await spl.createMint(
-            provider.connection,
-            deployer,
-            multisig,
-            multisig,
-            9
-          );
-
-        const associatedTokenAccount = await spl.getOrCreateAssociatedTokenAccount(
-          provider.connection,
-          deployer,
-          mint,
-          owners[0].publicKey
-        );
-
-        await spl.mintTo(
-          provider.connection,
-          deployer,
-          mint,
-          associatedTokenAccount.address,
-          multisig,
-          1,
-          [
-            owners[0],
-            owners[1]
-          ]
-        )
-
-        const mintInfo = await spl.getMint(
-          provider.connection,
-          mint
-        )
-    });
-
-//    it.only("Creating a multisig and transferring lamports from it to another account", async function () {
-//        const owners = [web3.Keypair.generate(), web3.Keypair.generate(), web3.Keypair.generate()];
-//        const m = 2;
-//        const multisig = await spl.createMultisig(provider.connection, deployer, owners, m);
-//        //const multisigAccountInfo = await provider.connection.getAccountInfo(multisig);
-//        //console.log(multisigAccountInfo);
-//        //const multisigAccountData = spl.MultisigLayout.decode(multisigAccountInfo.data);
-//        //console.log(multisigAccountData);
-//
-//        let signature = await provider.connection.requestAirdrop(multisig, web3.LAMPORTS_PER_SOL);
-//        await provider.connection.confirmTransaction(signature, "confirmed");
-//
-//        // Send lamports via a multisig
-//      // Fetch the owner account keys and convert them to PublicKey objects
-//      const ownerKeys = owners.map((owner) => owner.publicKey);
-//      //console.log(ownerKeys);
-//
-//      // Create a new transaction and add the Transfer instruction
-//      const transaction = new web3.Transaction().add(
-//        web3.SystemProgram.transfer({
-//          fromPubkey: multisig,
-//          toPubkey: deployer.publicKey,
-//          lamports: 1e8,
-//        })
-//      );
-//
-//      // Fetch the recent blockhash
-//      const { blockhash } = await provider.connection.getRecentBlockhash();
-//
-//      // Add the multisig account and owner accounts as signers
-////      transaction.setSigners(
-////        multisig,
-////        ...ownerKeys
-////      );
-//
-//      // Define the multisig account as the fee payer
-//      transaction.feePayer = multisig;
-//
-//      // Set the recent blockhash
-//      transaction.recentBlockhash = blockhash;
-//
-//
-//      // Collect the signatures of the multisig owners
-//      for (const owner of owners) {
-//        console.log('Owner:', owner);
-//        transaction.partialSign(owner);
-//      }
-////
-////      // Sign and send the transaction
-////      signature = await web3.sendAndConfirmTransaction(
-////        provider.connection,
-////        transaction,
-////        owners,
-////        { commitment: "confirmed" }
-////      );
-//
-////        transaction.partialSign(multisig, ...ownerKeys);
-//
-//        // Sign and send the transaction
-//        signature = await web3.sendAndConfirmTransaction(
-//          provider.connection,
-//          transaction,
-//          owners.map((owner) => owner.secretKey),
-//          { commitment: "confirmed" }
-//        );
-//
-//    });
-
-//    it.only("Creating a multisig and change its owners", async function () {
-//        const owners = [web3.Keypair.generate(), web3.Keypair.generate(), web3.Keypair.generate()];
-//        const m = 2;
-//        const multisig = await spl.createMultisig(provider.connection, deployer, owners, m);
-//        const multisigAccountInfo = await provider.connection.getAccountInfo(multisig);
-//        //console.log(multisigAccountInfo);
-//        const multisigAccountData = spl.MultisigLayout.decode(multisigAccountInfo.data);
-//        //console.log(multisigAccountData);
-//
-//        // Change the data
-//        console.log(multisig);
-//        const newData = "aaa";
-//        const instruc = new web3.TransactionInstruction({
-//            keys: [{ pubkey: multisig, isSigner: false, isWritable: true }],
-//            programId: new web3.PublicKey('11111111111111111111111111111111'), // System Program ID
-//            data: Buffer.from(newData),
-//        });
-////        const transaction = new web3.Transaction().add(instruc);
-//
-//          // Fetch the owner account keys and convert them to PublicKey objects
-//          const ownerKeys = owners.map((owner) => owner.publicKey);
-//
-//          // Create a new transaction and add the multisig account as a signer
-//          const transactionWithSigners = new web3.Transaction().add(instruc);
-//          transactionWithSigners.setSigners(
-//            multisig,
-//            ...ownerKeys
-//          );
-//
-//          // Define the multisig account as the fee payer
-//          transactionWithSigners.feePayer = multisig;
-//
-//          const { blockhash } = await provider.connection.getRecentBlockhash();
-//            // Set the recent blockhash
-//            transactionWithSigners.recentBlockhash = blockhash;
-//
-//          // Collect the signatures of the multisig owners
-//          for (const owner of owners) {
-//            transactionWithSigners.partialSign(owner);
-//          }
-//
-//          // Sign and send the transaction
-//          const signature = await web3.sendAndConfirmTransaction(
-//            provider.connection,
-//            transactionWithSigners,
-//            owners,
-//            { commitment: 'confirmed' }
-//          );
-//
-//        return;
-//
-//        const newOwners = [web3.Keypair.generate(), web3.Keypair.generate(), web3.Keypair.generate()];
-//        // Create an instruction to change the multisig owners
-////        const data = Buffer.alloc(spl.exports.initializeMultisigInstructionData.span);
-////        spl.exports.initializeMultisigInstructionData.encode({
-////            instruction: spl.types_js_1.TokenInstruction.InitializeMultisig,
-////            m,
-////        }, data);
-//        const instr = spl.createInitializeMultisigInstruction(multisig, newOwners, m);
-//        console.log(instr);
-//        return;
-//        const instruction = new web3.TransactionInstruction({
-//            keys: [
-//              { pubkey: multisig, isSigner: false, isWritable: true },
-//              { pubkey: spl.TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
-//              { pubkey: spl.ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
-//              ...owners.map((ownerPubkey) => ({ pubkey: ownerPubkey.publicKey, isSigner: true, isWritable: false })),
-//              ...newOwners.map((ownerPubkey) => ({ pubkey: ownerPubkey.publicKey, isSigner: false, isWritable: false })),
-//            ],
-//            programId: spl.TOKEN_PROGRAM_ID,
-////            data: data,
-//            data: spl.createMultisigInstructionData({
-//              m: m,
-//              n: newOwners.length,
-//              isWritable: true,
-//              newSignerPubkeys: newOwners.map((ownerPubkey) => ownerPubkey.publicKey),
-//            }),
-//        });
-////        const instruction = await spl.createSetAuthorityInstruction(multisig, spl.TOKEN_PROGRAM_ID, "M", spl.TOKEN_PROGRAM_ID, newOwners);
-////        console.log(instruction);
-//    });
-
     it("Creating a service", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
@@ -792,16 +603,6 @@ describe("ServiceRegistrySolana", function () {
             .signers([serviceOwner])
             .rpc();
 
-        // Whitelist the multisig implementation
-        const multisigImplementation = web3.Keypair.generate();
-        await program.methods.changeMultisigPermission(multisigImplementation.publicKey, true)
-            .accounts({ dataAccount: storage.publicKey })
-            .remainingAccounts([
-                { pubkey: deployer.publicKey, isSigner: true, isWritable: true }
-            ])
-            .signers([deployer])
-            .rpc();
-
         // Create an escrow account such that the program Id is its owner, and initialize it
         const serviceOwnerEscrow = await web3.PublicKey.createWithSeed(serviceOwner.publicKey, "serviceOwnerEscrow", program.programId);
         let signature = await provider.connection.requestAirdrop(serviceOwnerEscrow, web3.LAMPORTS_PER_SOL);
@@ -859,7 +660,8 @@ describe("ServiceRegistrySolana", function () {
         expect(operatorEscrowBalanceAfter - operatorEscrowBalanceBefore).toEqual(Number(regBond));
 
         // Deploy the service
-        await program.methods.deploy(serviceId, multisigImplementation.publicKey, emptyPayload)
+        const multisig = web3.Keypair.generate();
+        await program.methods.deploy(serviceId, multisig.publicKey)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
                 { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
@@ -885,16 +687,6 @@ describe("ServiceRegistrySolana", function () {
             .signers([serviceOwner])
             .rpc();
 
-        // Whitelist the multisig implementation
-        const multisigImplementation = web3.Keypair.generate();
-        await program.methods.changeMultisigPermission(multisigImplementation.publicKey, true)
-            .accounts({ dataAccount: storage.publicKey })
-            .remainingAccounts([
-                { pubkey: deployer.publicKey, isSigner: true, isWritable: true }
-            ])
-            .signers([deployer])
-            .rpc();
-
         // Create an escrow account such that the program Id is its owner, and initialize it
         const serviceOwnerEscrow = await web3.PublicKey.createWithSeed(serviceOwner.publicKey, "serviceOwnerEscrow", program.programId);
         let signature = await provider.connection.requestAirdrop(serviceOwnerEscrow, web3.LAMPORTS_PER_SOL);
@@ -952,7 +744,8 @@ describe("ServiceRegistrySolana", function () {
         expect(operatorEscrowBalanceAfter - operatorEscrowBalanceBefore).toEqual(Number(regBond));
 
         // Deploy the service
-        await program.methods.deploy(serviceId, multisigImplementation.publicKey, emptyPayload)
+        const multisig = web3.Keypair.generate();
+        await program.methods.deploy(serviceId, multisig.publicKey)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
                 { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
@@ -1016,16 +809,6 @@ describe("ServiceRegistrySolana", function () {
         //console.log("feeCalculator", feeCalculator);
         /****************************************************************************************************/
 
-        // Whitelist the multisig implementation
-        const multisigImplementation = web3.Keypair.generate();
-        await program.methods.changeMultisigPermission(multisigImplementation.publicKey, true)
-            .accounts({ dataAccount: storage.publicKey })
-            .remainingAccounts([
-                { pubkey: deployer.publicKey, isSigner: true, isWritable: true }
-            ])
-            .signers([deployer])
-            .rpc();
-
         // Create an escrow account such that the program Id is its owner, and initialize it
         const serviceOwnerEscrow = await web3.PublicKey.createWithSeed(serviceOwner.publicKey, "serviceOwnerEscrow", program.programId);
         let signature = await provider.connection.requestAirdrop(serviceOwnerEscrow, web3.LAMPORTS_PER_SOL);
@@ -1083,7 +866,8 @@ describe("ServiceRegistrySolana", function () {
         expect(operatorEscrowBalanceAfter - operatorEscrowBalanceBefore).toEqual(Number(regBond));
 
         // Deploy the service
-        await program.methods.deploy(serviceId, multisigImplementation.publicKey, emptyPayload)
+        const multisig = web3.Keypair.generate();
+        await program.methods.deploy(serviceId, multisig.publicKey)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
                 { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }

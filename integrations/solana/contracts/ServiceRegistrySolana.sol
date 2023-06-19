@@ -850,21 +850,6 @@ contract ServiceRegistrySolana {
         balance = mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash];
     }
 
-    /// @dev Controls multisig implementation address permission.
-    /// @param multisig Address of a multisig implementation.
-    /// @param permission Grant or revoke permission.
-    /// @return success True, if function executed successfully.
-    function changeMultisigPermission(address multisig, bool permission) external returns (bool success) {
-        // Check for the contract authority
-        requireSigner(owner);
-
-        if (multisig == address(0)) {
-            revert("ZeroAddress");
-        }
-        mapMultisigs[multisig] = permission;
-        success = true;
-    }
-
     /// @dev Drains slashed funds.
     /// @return amount Drained amount.
     function drain() external returns (uint64 amount) {
@@ -905,62 +890,62 @@ contract ServiceRegistrySolana {
         return serviceId > 0 && serviceId < (totalSupply + 1);
     }
 
-//    /// @dev Sets service base URI.
-//    /// @param bURI Base URI string.
-//    function setBaseURI(string memory bURI) external {
-//        requireSigner(owner);
-//
-//        // Check for the zero value
-//        if (bytes(bURI).length == 0) {
-//            revert("Zero Value");
-//        }
-//
-//        baseURI = bURI;
-//        emit BaseURIChanged(bURI);
-//    }
-//
-//    /// @dev Gets the valid service Id from the provided index.
-//    /// @notice Service counter starts from 1.
-//    /// @param id Service counter.
-//    /// @return serviceId Service Id.
-//    function tokenByIndex(uint32 id) external view returns (uint32 serviceId) {
-//        serviceId = id + 1;
-//        if (serviceId > totalSupply) {
-//            revert("Overflow");
-//        }
-//    }
-//
-//    // Open sourced from: https://stackoverflow.com/questions/67893318/solidity-how-to-represent-bytes32-as-string
-//    /// @dev Converts bytes16 input data to hex16.
-//    /// @notice This method converts bytes into the same bytes-character hex16 representation.
-//    /// @param data bytes16 input data.
-//    /// @return result hex16 conversion from the input bytes16 data.
-//    function _toHex16(bytes16 data) internal pure returns (bytes32 result) {
-//        result = bytes32 (data) & 0xFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000 |
-//        (bytes32 (data) & 0x0000000000000000FFFFFFFFFFFFFFFF00000000000000000000000000000000) >> 64;
-//        result = result & 0xFFFFFFFF000000000000000000000000FFFFFFFF000000000000000000000000 |
-//        (result & 0x00000000FFFFFFFF000000000000000000000000FFFFFFFF0000000000000000) >> 32;
-//        result = result & 0xFFFF000000000000FFFF000000000000FFFF000000000000FFFF000000000000 |
-//        (result & 0x0000FFFF000000000000FFFF000000000000FFFF000000000000FFFF00000000) >> 16;
-//        result = result & 0xFF000000FF000000FF000000FF000000FF000000FF000000FF000000FF000000 |
-//        (result & 0x00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0000) >> 8;
-//        result = (result & 0xF000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000) >> 4 |
-//        (result & 0x0F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F00) >> 8;
-//        result = bytes32 (0x3030303030303030303030303030303030303030303030303030303030303030 +
-//        uint256 (result) +
-//            (uint256 (result) + 0x0606060606060606060606060606060606060606060606060606060606060606 >> 4 &
-//            0x0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F) * 39);
-//    }
-//
-//    /// @dev Returns service token URI.
-//    /// @notice Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.
-//    /// @param serviceId Service Id.
-//    /// @return Service token URI string.
-//    function tokenURI(uint32 serviceId) public view returns (string memory) {
-//        bytes32 serviceHash = services[serviceId].configHash;
-//        // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
-//        // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
-//        return string(abi.encodePacked(baseURI, CID_PREFIX, _toHex16(bytes16(serviceHash)),
-//            _toHex16(bytes16(serviceHash << 128))));
-//    }
+    /// @dev Sets service base URI.
+    /// @param bURI Base URI string.
+    function setBaseURI(string memory bURI) external {
+        requireSigner(owner);
+
+        // Check for the zero value
+        if (bytes(bURI).length == 0) {
+            revert("Zero Value");
+        }
+
+        baseURI = bURI;
+        emit BaseURIChanged(bURI);
+    }
+
+    /// @dev Gets the valid service Id from the provided index.
+    /// @notice Service counter starts from 1.
+    /// @param id Service counter.
+    /// @return serviceId Service Id.
+    function tokenByIndex(uint32 id) external view returns (uint32 serviceId) {
+        serviceId = id + 1;
+        if (serviceId > totalSupply) {
+            revert("Overflow");
+        }
+    }
+
+    // Open sourced from: https://stackoverflow.com/questions/67893318/solidity-how-to-represent-bytes32-as-string
+    /// @dev Converts bytes16 input data to hex16.
+    /// @notice This method converts bytes into the same bytes-character hex16 representation.
+    /// @param data bytes16 input data.
+    /// @return result hex16 conversion from the input bytes16 data.
+    function _toHex16(bytes16 data) internal pure returns (bytes32 result) {
+        result = bytes32 (data) & 0xFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000 |
+        (bytes32 (data) & 0x0000000000000000FFFFFFFFFFFFFFFF00000000000000000000000000000000) >> 64;
+        result = result & 0xFFFFFFFF000000000000000000000000FFFFFFFF000000000000000000000000 |
+        (result & 0x00000000FFFFFFFF000000000000000000000000FFFFFFFF0000000000000000) >> 32;
+        result = result & 0xFFFF000000000000FFFF000000000000FFFF000000000000FFFF000000000000 |
+        (result & 0x0000FFFF000000000000FFFF000000000000FFFF000000000000FFFF00000000) >> 16;
+        result = result & 0xFF000000FF000000FF000000FF000000FF000000FF000000FF000000FF000000 |
+        (result & 0x00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0000) >> 8;
+        result = (result & 0xF000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000) >> 4 |
+        (result & 0x0F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F00) >> 8;
+        result = bytes32 (0x3030303030303030303030303030303030303030303030303030303030303030 +
+        uint256 (result) +
+            (uint256 (result) + 0x0606060606060606060606060606060606060606060606060606060606060606 >> 4 &
+            0x0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F) * 39);
+    }
+
+    /// @dev Returns service token URI.
+    /// @notice Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.
+    /// @param serviceId Service Id.
+    /// @return Service token URI string.
+    function tokenURI(uint32 serviceId) public view returns (string memory) {
+        bytes32 serviceHash = services[serviceId].configHash;
+        // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
+        // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
+        return string(abi.encodePacked(baseURI, CID_PREFIX, _toHex16(bytes16(serviceHash)),
+            _toHex16(bytes16(serviceHash << 128))));
+    }
 }
