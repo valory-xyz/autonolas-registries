@@ -97,6 +97,62 @@ describe("ServiceRegistrySolana", function () {
             .rpc();
     });
 
+    it.only("Creating a service and activating it", async function () {
+        // Create a service
+        await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceOwner])
+            .rpc();
+
+        // Find a PDA account
+        const [pda, bump] = await web3.PublicKey.findProgramAddress([Buffer.from("serviceOwnerEscrow", "utf-8")], program.programId);
+
+        // Activate the service registration
+        const bumpBytes = Buffer.from(new Uint8Array([bump]));
+        console.log(bumpBytes);
+        try {
+        await program.methods.activateRegistration(serviceId, pda, bumpBytes)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
+                { pubkey: pda, isSigner: false, isWritable: true },
+            ])
+            .signers([serviceOwner])
+            .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
+
+        const pdaInfo = await provider.connection.getAccountInfo(pda);
+        console.log(pdaInfo);
+
+        try {
+            await program.methods.terminate(serviceId, pda, bumpBytes)
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
+                    { pubkey: pda, isSigner: false, isWritable: true }
+                ])
+                .signers([serviceOwner])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
+    });
+
     it("Creating a multisig", async function () {
         const owners = [web3.Keypair.generate(), web3.Keypair.generate(), web3.Keypair.generate()];
         const m = 2;
@@ -277,71 +333,6 @@ describe("ServiceRegistrySolana", function () {
         expect(escrowBalanceAfter - escrowBalanceBefore).toEqual(Number(service.securityDeposit));
 
         expect(service.state).toEqual({"activeRegistration": {}});
-    });
-
-    it.only("Creating a service and activating it", async function () {
-        // Create a service
-        await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
-            .accounts({ dataAccount: storage.publicKey })
-            .remainingAccounts([
-                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
-            ])
-            .signers([serviceOwner])
-            .rpc();
-
-        // Find a PDA account
-        const [pda, bump] = await web3.PublicKey.findProgramAddress([Buffer.from("serviceOwnerEscrow", "utf-8")], program.programId);
-
-        // Activate the service registration
-        const bumpBytes = Buffer.from(new Uint8Array([bump]));
-        console.log(bumpBytes);
-        try {
-        await program.methods.activateRegistration(serviceId, pda, bumpBytes)
-            .accounts({ dataAccount: storage.publicKey })
-            .remainingAccounts([
-                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
-                { pubkey: pda, isSigner: false, isWritable: true },
-            ])
-            .signers([serviceOwner])
-            .rpc();
-        } catch (error) {
-            if (error instanceof Error && "message" in error) {
-                console.error("Program Error:", error);
-                console.error("Error Message:", error.message);
-            } else {
-                console.error("Transaction Error:", error);
-            }
-        }
-
-        const pdaInfo = await provider.connection.getAccountInfo(pda);
-        console.log(pdaInfo);
-
-        try {
-            await program.methods.terminate(serviceId, pda, bumpBytes)
-                .accounts({ dataAccount: storage.publicKey })
-                .remainingAccounts([
-                    { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
-                    { pubkey: pda, isSigner: false, isWritable: true }
-                ])
-                .signers([serviceOwner])
-                .rpc();
-        } catch (error) {
-            if (error instanceof Error && "message" in error) {
-                console.error("Program Error:", error);
-                console.error("Error Message:", error.message);
-            } else {
-                console.error("Transaction Error:", error);
-            }
-        }
-
-//        // Check the obtained service
-//        const service = await program.methods.getService(serviceId)
-//            .accounts({ dataAccount: storage.publicKey })
-//            .view();
-//
-//        expect(escrowBalanceAfter - escrowBalanceBefore).toEqual(Number(service.securityDeposit));
-//
-//        expect(service.state).toEqual({"activeRegistration": {}});
     });
 
     it("Creating a service, activating it and registering agent instances", async function () {

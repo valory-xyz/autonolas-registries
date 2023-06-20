@@ -107,6 +107,78 @@ contract ServiceRegistrySolana {
         baseURI = _baseURI;
     }
 
+    /// @dev Activates the service.
+    /// @param serviceId Correspondent service Id.
+    /// @param pda PDA address that serves the escrow account.
+    /// @param bump Bump PDA bytes.
+    /// @return success True, if function executed successfully.
+    function activateRegistration(uint32 serviceId, address pda, bytes bump) external returns (bool success)
+    {
+        Service storage service = services[serviceId];
+
+        // Check for the service authority
+        address serviceOwner = service.serviceOwner;
+        requireSigner(serviceOwner);
+
+        // Service must be inactive
+        if (service.state != ServiceState.PreRegistration) {
+            revert("ServiceMustBeInactive");
+        }
+
+        // Send security deposit to the service owner escrow (pda) account
+        SystemInstruction.create_account_pda(serviceOwner, pda, LAMPORTS_TO_RENT + service.securityDeposit, 0, tx.program_id, bump);
+
+        // Activate the agent instance registration
+        service.state = ServiceState.ActiveRegistration;
+
+        emit ActivateRegistration(serviceId);
+        success = true;
+    }
+
+    /// @dev Terminates the service.
+    /// @param serviceId Service Id to be updated.
+    /// @param pda PDA address.
+    /// @param bump PDA bump.
+    /// @return success True, if function executed successfully.
+    /// @return refund Refund to return to the service owner.
+    function terminate(uint32 serviceId, address pda, bytes bump) external returns (bool success, uint64 refund)
+    {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert("ReentrancyGuard");
+        }
+        _locked = 2;
+
+        Service storage service = services[serviceId];
+
+        // Check for the service authority
+        address serviceOwner = service.serviceOwner;
+        requireSigner(serviceOwner);
+
+        // Check if the service is already terminated
+        if (service.state == ServiceState.PreRegistration || service.state == ServiceState.TerminatedBonded) {
+            revert("WrongServiceState");
+        }
+        // Define the state of the service depending on the number of bonded agent instances
+        if (service.numAgentInstances > 0) {
+            service.state = ServiceState.TerminatedBonded;
+        } else {
+            service.state = ServiceState.PreRegistration;
+        }
+
+        // Return registration deposit back to the service owner
+        refund = service.securityDeposit;
+        // Send the refund to the service owner account
+        SystemInstruction.transfer_pda(pda, serviceOwner, refund, bump);
+
+        emit Refund(serviceOwner, refund);
+        emit TerminateService(serviceId);
+        success = true;
+
+        _locked = 1;
+    }
+    
+
     /// @dev Requires the signature of the metadata authority.
     function requireSigner(address authority) internal view {
         for(uint32 i=0; i < tx.accounts.length; i++) {
@@ -351,34 +423,6 @@ contract ServiceRegistrySolana {
         success = true;
     }
 
-    /// @dev Activates the service.
-    /// @param serviceId Correspondent service Id.
-    /// @param pda PDA address that serves the escrow account.
-    /// @param bump Bump PDA bytes.
-    /// @return success True, if function executed successfully.
-    function activateRegistration(uint32 serviceId, address pda, bytes bump) external returns (bool success)
-    {
-        Service storage service = services[serviceId];
-
-        // Check for the service authority
-        address serviceOwner = service.serviceOwner;
-        requireSigner(serviceOwner);
-
-        // Service must be inactive
-        if (service.state != ServiceState.PreRegistration) {
-            revert("ServiceMustBeInactive");
-        }
-
-        // Send security deposit to the service owner escrow (pda) account
-        SystemInstruction.create_account_pda(serviceOwner, pda, LAMPORTS_TO_RENT + service.securityDeposit, 0, tx.program_id, bump);
-
-        // Activate the agent instance registration
-        service.state = ServiceState.ActiveRegistration;
-
-        emit ActivateRegistration(serviceId);
-        success = true;
-    }
-
     /// @dev Registers agent instances.
     /// @param serviceId Service Id to register agent instances for.
     /// @param agentInstances Agent instance addresses.
@@ -612,49 +656,6 @@ contract ServiceRegistrySolana {
             emit OperatorSlashed(amounts[i], operator, serviceId);
         }
         success = true;
-    }
-
-    /// @dev Terminates the service.
-    /// @param serviceId Service Id to be updated.
-    /// @param pda PDA address.
-    /// @param bump PDA bump.
-    /// @return success True, if function executed successfully.
-    /// @return refund Refund to return to the service owner.
-    function terminate(uint32 serviceId, address pda, bytes bump) external returns (bool success, uint64 refund)
-    {
-        // Reentrancy guard
-        if (_locked > 1) {
-            revert("ReentrancyGuard");
-        }
-        _locked = 2;
-
-        Service storage service = services[serviceId];
-
-        // Check for the service authority
-        address serviceOwner = service.serviceOwner;
-        requireSigner(serviceOwner);
-
-        // Check if the service is already terminated
-        if (service.state == ServiceState.PreRegistration || service.state == ServiceState.TerminatedBonded) {
-            revert("WrongServiceState");
-        }
-        // Define the state of the service depending on the number of bonded agent instances
-        if (service.numAgentInstances > 0) {
-            service.state = ServiceState.TerminatedBonded;
-        } else {
-            service.state = ServiceState.PreRegistration;
-        }
-
-        // Return registration deposit back to the service owner
-        refund = service.securityDeposit;
-        // Send the refund to the service owner account
-        SystemInstruction.transfer_pda(pda, serviceOwner, refund, bump);
-
-        emit Refund(serviceOwner, refund);
-        emit TerminateService(serviceId);
-        success = true;
-
-        _locked = 1;
     }
 
     /// @dev Unbonds agent instances of the operator from the service.
