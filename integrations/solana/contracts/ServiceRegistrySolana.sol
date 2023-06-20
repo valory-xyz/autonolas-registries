@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import "solana";
 import "SystemInstruction.sol";
 
 /// @title Service Registry Solana - Smart contract for registering services on the Solana chain.
@@ -82,6 +83,7 @@ contract ServiceRegistrySolana {
     string public constant CID_PREFIX = "f01701220";
     // The amount of funds slashed. This is enough for 1b+ ETH or 1e27
     uint64 public slashedFunds;
+    uint64 public constant LAMPORTS_TO_RENT = 1e8;
     // Drainer address: set by the government and is allowed to drain ETH funds accumulated in this contract
     address public drainer;
     // Service registry version number
@@ -161,7 +163,6 @@ contract ServiceRegistrySolana {
         requireSigner(serviceOwner);
 
         services[serviceId].serviceOwner = newServiceOwner;
-
     }
 
     /// @dev Going through basic initial service checks.
@@ -352,8 +353,10 @@ contract ServiceRegistrySolana {
 
     /// @dev Activates the service.
     /// @param serviceId Correspondent service Id.
+    /// @param pda PDA address that serves the escrow account.
+    /// @param bump Bump PDA bytes.
     /// @return success True, if function executed successfully.
-    function activateRegistration(uint32 serviceId) external returns (bool success)
+    function activateRegistration(uint32 serviceId, address pda, bytes bump) external returns (bool success)
     {
         Service storage service = services[serviceId];
 
@@ -361,29 +364,13 @@ contract ServiceRegistrySolana {
         address serviceOwner = service.serviceOwner;
         requireSigner(serviceOwner);
 
-        // Get the service owner escrow address and mak sure our program Id is the owner (but not the storage)
-        address serviceOwnerEscrow = address(0);
-        for (uint32 i=0; i < tx.accounts.length; i++) {
-            if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
-                // Check the lamports balance
-                if (tx.accounts[i].lamports < 1e8) {
-                    revert("InsufficientBalance");
-                }
-                serviceOwnerEscrow = tx.accounts[i].key;
-                break;
-            }
-        }
-        if (serviceOwnerEscrow == address(0)) {
-            revert("ZeroAddress");
-        }
-
         // Service must be inactive
         if (service.state != ServiceState.PreRegistration) {
             revert("ServiceMustBeInactive");
         }
 
-        // Send security deposit to the service owner escrow account
-        SystemInstruction.transfer(serviceOwner, serviceOwnerEscrow, service.securityDeposit);
+        // Send security deposit to the service owner escrow (pda) account
+        SystemInstruction.create_account_pda(serviceOwner, pda, LAMPORTS_TO_RENT + service.securityDeposit, 0, tx.program_id, bump);
 
         // Activate the agent instance registration
         service.state = ServiceState.ActiveRegistration;
@@ -629,9 +616,11 @@ contract ServiceRegistrySolana {
 
     /// @dev Terminates the service.
     /// @param serviceId Service Id to be updated.
+    /// @param pda PDA address.
+    /// @param bump PDA bump.
     /// @return success True, if function executed successfully.
     /// @return refund Refund to return to the service owner.
-    function terminate(uint32 serviceId, string seed) external returns (bool success, uint64 refund)
+    function terminate(uint32 serviceId, address pda, bytes bump) external returns (bool success, uint64 refund)
     {
         // Reentrancy guard
         if (_locked > 1) {
@@ -644,22 +633,6 @@ contract ServiceRegistrySolana {
         // Check for the service authority
         address serviceOwner = service.serviceOwner;
         requireSigner(serviceOwner);
-
-        // Get the service owner escrow address and make sure our program Id is the owner (but not the storage)
-        address serviceOwnerEscrow = address(0);
-        for (uint32 i = 0; i < tx.accounts.length; i++) {
-            if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
-                // Check the lamports balance
-                if (tx.accounts[i].lamports < 1e8) {
-                    revert("InsufficientBalance");
-                }
-                serviceOwnerEscrow = tx.accounts[i].key;
-                break;
-            }
-        }
-        if (serviceOwnerEscrow == address(0)) {
-            revert("ZeroAddress");
-        }
 
         // Check if the service is already terminated
         if (service.state == ServiceState.PreRegistration || service.state == ServiceState.TerminatedBonded) {
@@ -675,7 +648,7 @@ contract ServiceRegistrySolana {
         // Return registration deposit back to the service owner
         refund = service.securityDeposit;
         // Send the refund to the service owner account
-        SystemInstruction.transfer_with_seed(serviceOwnerEscrow, serviceOwner, seed, tx.program_id, serviceOwner, refund);
+        SystemInstruction.transfer_pda(pda, serviceOwner, refund, bump);
 
         emit Refund(serviceOwner, refund);
         emit TerminateService(serviceId);
