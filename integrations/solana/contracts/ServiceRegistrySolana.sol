@@ -10,7 +10,7 @@ import "SystemInstruction.sol";
 contract ServiceRegistrySolana {
     event OwnerUpdated(address indexed owner);
     event BaseURIChanged(string baseURI);
-    event DrainerUpdated(address indexed drainer);
+    event DrainerEscrowUpdated(address indexed drainer);
     event Deposit(address indexed sender, uint64 amount);
     event Refund(address indexed receiver, uint64 amount);
     event CreateService(uint32 indexed serviceId, bytes32 configHash);
@@ -54,10 +54,15 @@ contract ServiceRegistrySolana {
         ServiceState state;
         // Canonical agent Ids for the service. Individual agent Id is bounded by the max number of agent Id
         uint32[] agentIds;
+        // Corresponding number of agent instances slots for each agent Id
         uint32[] slots;
+        // Corresponding bond amounts for registering an agent instance for each agent Id
         uint64[] bonds;
+        // List of operators
         address[] operators;
+        // List of agent instances corresponding to operators
         address[] agentInstances;
+        // List of agent Ids corresponding to each agent instance
         uint32[] agentIdForAgentInstances;
     }
 
@@ -82,8 +87,10 @@ contract ServiceRegistrySolana {
     string public constant CID_PREFIX = "f01701220";
     // The amount of funds slashed. This is enough for 1b+ ETH or 1e27
     uint64 public slashedFunds;
-    // Drainer address: set by the government and is allowed to drain ETH funds accumulated in this contract
-    address public drainer;
+    // Drainer escrow address
+    address public drainerEscrow;
+    // Solana lamports for renting escrow accounts
+    uint64 public constant SOLANA_RENT_LAMPORTS = 1e7;
     // Service registry version number
     string public constant VERSION = "1.0.0";
     // Map of hash(operator address and serviceId) => agent instance bonding / escrow balance
@@ -107,7 +114,7 @@ contract ServiceRegistrySolana {
 
     /// @dev Requires the signature of the metadata authority.
     function requireSigner(address authority) internal view {
-        for(uint32 i=0; i < tx.accounts.length; i++) {
+        for(uint32 i = 0; i < tx.accounts.length; ++i) {
             if (tx.accounts[i].key == authority) {
                 require(tx.accounts[i].is_signer, "the authority account must sign the transaction");
                 return;
@@ -140,19 +147,30 @@ contract ServiceRegistrySolana {
         emit OwnerUpdated(newOwner);
     }
 
-    /// @dev Changes the drainer.
-    /// @param newDrainer Address of a drainer.
-    function changeDrainer(address newDrainer) external {
+    /// @dev Changes the drainer escrow.
+    /// @notice New drainer escrow must be a participating account.
+    function changeDrainerEscrow() external {
         // Check for the metadata authority
         requireSigner(owner);
 
-        // Check for the zero address
-        if (newDrainer == address(0)) {
+        // Get the drainer escrow address and mak sure our program Id is the owner (but not the storage)
+        address newDrainerEscrow = address(0);
+        for (uint32 i = 0; i < tx.accounts.length; ++i) {
+            if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
+                // Check the lamports balance
+                if (tx.accounts[i].lamports < SOLANA_RENT_LAMPORTS) {
+                    revert("InsufficientBalance");
+                }
+                newDrainerEscrow = tx.accounts[i].key;
+                break;
+            }
+        }
+        if (newDrainerEscrow == address(0)) {
             revert("ZeroAddress");
         }
 
-        drainer = newDrainer;
-        emit DrainerUpdated(newDrainer);
+        drainerEscrow = newDrainerEscrow;
+        emit DrainerEscrowUpdated(newDrainerEscrow);
     }
 
     function transfer(uint32 serviceId, address newServiceOwner) external {
@@ -188,7 +206,7 @@ contract ServiceRegistrySolana {
 
         // Check for duplicate canonical agent Ids
         uint32 lastId = 0;
-        for (uint32 i = 0; i < agentIds.length; i++) {
+        for (uint32 i = 0; i < agentIds.length; ++i) {
             if (agentIds[i] < (lastId + 1)) {
                 revert("WrongAgentId");
             }
@@ -196,7 +214,7 @@ contract ServiceRegistrySolana {
         }
 
         // Check that there are no zero number of slots for a specific canonical agent id and no zero registration bond
-        for (uint32 i = 0; i < agentIds.length; i++) {
+        for (uint32 i = 0; i < agentIds.length; ++i) {
             if (slots[i] == 0 || bonds[i] == 0) {
                 revert("ZeroValue");
             }
@@ -221,7 +239,7 @@ contract ServiceRegistrySolana {
         service.agentIds = agentIds;
         service.slots = slots;
         service.bonds = bonds;
-        for (uint32 i = 0; i < agentIds.length; i++) {
+        for (uint32 i = 0; i < agentIds.length; ++i) {
             service.maxNumAgentInstances += slots[i];
             // Security deposit is the maximum of the canonical agent registration bond
             if (bonds[i] > securityDeposit) {
@@ -363,10 +381,10 @@ contract ServiceRegistrySolana {
 
         // Get the service owner escrow address and mak sure our program Id is the owner (but not the storage)
         address serviceOwnerEscrow = address(0);
-        for (uint32 i=0; i < tx.accounts.length; i++) {
+        for (uint32 i = 0; i < tx.accounts.length; ++i) {
             if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
                 // Check the lamports balance
-                if (tx.accounts[i].lamports < 1e8) {
+                if (tx.accounts[i].lamports < SOLANA_RENT_LAMPORTS) {
                     revert("InsufficientBalance");
                 }
                 serviceOwnerEscrow = tx.accounts[i].key;
@@ -416,7 +434,7 @@ contract ServiceRegistrySolana {
 
         // Get the operator address as the singing account address
         address operator = address(0);
-        for (uint32 i = 0; i < tx.accounts.length; i++) {
+        for (uint32 i = 0; i < tx.accounts.length; ++i) {
             if (tx.accounts[i].is_signer) {
                 operator = tx.accounts[i].key;
                 break;
@@ -428,10 +446,10 @@ contract ServiceRegistrySolana {
 
         // Get the operator escrow address and make sure our program Id is the owner (but not the storage)
         address operatorEscrow = address(0);
-        for (uint32 i=0; i < tx.accounts.length; i++) {
+        for (uint32 i = 0; i < tx.accounts.length; ++i) {
             if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
                 // Check the lamports balance
-                if (tx.accounts[i].lamports < 1e8) {
+                if (tx.accounts[i].lamports < SOLANA_RENT_LAMPORTS) {
                     revert("InsufficientBalance");
                 }
                 operatorEscrow = tx.accounts[i].key;
@@ -647,10 +665,10 @@ contract ServiceRegistrySolana {
 
         // Get the service owner escrow address and make sure our program Id is the owner (but not the storage)
         address serviceOwnerEscrow = address(0);
-        for (uint32 i = 0; i < tx.accounts.length; i++) {
+        for (uint32 i = 0; i < tx.accounts.length; ++i) {
             if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
                 // Check the lamports balance
-                if (tx.accounts[i].lamports < 1e8) {
+                if (tx.accounts[i].lamports < SOLANA_RENT_LAMPORTS) {
                     revert("InsufficientBalance");
                 }
                 serviceOwnerEscrow = tx.accounts[i].key;
@@ -697,7 +715,7 @@ contract ServiceRegistrySolana {
 
         // Get the operator address as the singing account address
         address operator = address(0);
-        for (uint32 i=0; i < tx.accounts.length; i++) {
+        for (uint32 i = 0; i < tx.accounts.length; ++i) {
             if (tx.accounts[i].is_signer) {
                 operator = tx.accounts[i].key;
                 break;
@@ -709,10 +727,10 @@ contract ServiceRegistrySolana {
 
         // Get the operator escrow address and make sure our program Id is the owner (but not the storage)
         address operatorEscrow = address(0);
-        for (uint32 i=0; i < tx.accounts.length; i++) {
+        for (uint32 i = 0; i < tx.accounts.length; ++i) {
             if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
                 // Check the lamports balance
-                if (tx.accounts[i].lamports < 1e8) {
+                if (tx.accounts[i].lamports < SOLANA_RENT_LAMPORTS) {
                     revert("InsufficientBalance");
                 }
                 operatorEscrow = tx.accounts[i].key;
@@ -737,6 +755,8 @@ contract ServiceRegistrySolana {
                 uint32 agentId = service.agentIdForAgentInstances[j];
                 // Remove the operator from the set of service operators
                 service.operators[j] = address(0);
+                service.agentInstances[j] = address(0);
+                service.agentIdForAgentInstances[j] = 0;
                 numAgentsUnbond++;
 
                 // Add the bond associated with the agent Id to the refund
@@ -813,33 +833,59 @@ contract ServiceRegistrySolana {
         }
     }
 
-//    /// @dev Lists all the instances of a given canonical agent Id if the service.
-//    /// @param serviceId Service Id.
-//    /// @param agentId Canonical agent Id.
-//    /// @return numAgentInstances Number of agent instances.
-//    /// @return agentInstances Set of agent instances for a specified canonical agent Id.
-//    function getInstancesForAgentId(uint32 serviceId, uint32 agentId) external view
-//        returns (uint32 numAgentInstances, address[] memory agentInstances)
-//    {
-//        numAgentInstances = mapServiceAndAgentIdAgentInstances[serviceId][agentId].length;
-//        agentInstances = new address[](numAgentInstances);
-//        for (uint32 i = 0; i < numAgentInstances; i++) {
-//            agentInstances[i] = mapServiceAndAgentIdAgentInstances[serviceId][agentId][i];
-//        }
-//    }
+    /// @dev Gets the set of all agent instances for a given canonical agent Id in the service.
+    /// @param serviceId Service Id.
+    /// @param agentId Canonical agent Id.
+    /// @return numAgentInstances Number of agent instances.
+    /// @return agentInstances Set of agent instances for a specified canonical agent Id.
+    function getInstancesForAgentId(uint32 serviceId, uint32 agentId) external view
+        returns (uint32 numAgentInstances, address[] memory agentInstances)
+    {
+        Service memory service = services[serviceId];
+        uint32 totalNumInstances = service.agentInstances.length;
+        address[] memory totalAgentInstances = new address[](totalNumInstances);
 
-//    /// @dev Gets service agent instances.
-//    /// @param serviceId ServiceId.
-//    /// @return numAgentInstances Number of agent instances.
-//    /// @return agentInstances Pre-allocated list of agent instance addresses.
-//    function getAgentInstances(uint32 serviceId) external view
-//        returns (uint32 numAgentInstances, address[] memory agentInstances)
-//    {
-//        Service memory service = services[serviceId];
-//        agentInstances = service.agentInstances;
-//        numAgentInstances = agentInstances.length;
-//    }
-//
+        // Record agent instances of a specified agent Id, if they were not unbonded
+        for (uint32 i = 0; i < totalNumInstances; ++i) {
+            if (service.agentInstances[i] != address(0) && service.agentIdForAgentInstances[i] == agentId) {
+                totalAgentInstances[numAgentInstances] = service.agentInstances[i];
+                numAgentInstances++;
+            }
+        }
+
+        // Copy recorded agent instnces
+        agentInstances = new address[](numAgentInstances);
+        for (uint32 i = 0; i < numAgentInstances; ++i) {
+            agentInstances[i] = totalAgentInstances[i];
+        }
+    }
+
+    /// @dev Gets service agent instances.
+    /// @param serviceId ServiceId.
+    /// @return numAgentInstances Number of agent instances.
+    /// @return agentInstances Set of bonded agent instances.
+    function getAgentInstances(uint32 serviceId) external view
+        returns (uint32 numAgentInstances, address[] memory agentInstances)
+    {
+        Service memory service = services[serviceId];
+        uint32 totalNumInstances = service.agentInstances.length;
+        address[] memory totalAgentInstances = new address[](totalNumInstances);
+
+        // Record bonded agent instances
+        for (uint32 i = 0; i < totalNumInstances; ++i) {
+            if (service.agentInstances[i] != address(0)) {
+                totalAgentInstances[numAgentInstances] = service.agentInstances[i];
+                numAgentInstances++;
+            }
+        }
+
+        // Copy recorded agent instnces
+        agentInstances = new address[](numAgentInstances);
+        for (uint32 i = 0; i < numAgentInstances; ++i) {
+            agentInstances[i] = totalAgentInstances[i];
+        }
+    }
+
     /// @dev Gets the operator's balance in a specific service.
     /// @param operator Operator address.
     /// @param serviceId Service Id.
@@ -851,8 +897,10 @@ contract ServiceRegistrySolana {
     }
 
     /// @dev Drains slashed funds.
+    /// @param to Address to send funds to.
+    /// @param seed Seed of the drain escrow account.
     /// @return amount Drained amount.
-    function drain() external returns (uint64 amount) {
+    function drain(address to, string seed) external returns (uint64 amount) {
         // Reentrancy guard
         if (_locked > 1) {
             revert("ReentrancyGuard");
@@ -860,19 +908,14 @@ contract ServiceRegistrySolana {
         _locked = 2;
 
         // Check for the drainer address
-        requireSigner(drainer);
+        requireSigner(owner);
 
         // Drain the slashed funds
         amount = slashedFunds;
         if (amount > 0) {
             slashedFunds = 0;
-            // TODO: Figure out the amount send
-            // Send the amount
-//            (bool result, ) = msg.sender.call{value: amount}("");
-//            if (!result) {
-//                revert TransferFailed(address(0), address(this), msg.sender, amount);
-//            }
-            emit Drain(drainer, amount);
+            SystemInstruction.transfer_with_seed(drainerEscrow, owner, seed, tx.program_id, to, amount);
+            emit Drain(drainerEscrow, amount);
         }
 
         _locked = 1;
