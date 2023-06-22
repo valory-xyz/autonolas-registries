@@ -126,7 +126,8 @@ contract ServiceRegistrySolana {
         }
 
         // Send security deposit to the service owner escrow (pda) account
-        SystemInstruction.create_account_pda(serviceOwner, pda, LAMPORTS_TO_RENT + service.securityDeposit, 0, tx.program_id, bump);
+        SystemInstruction.transfer(serviceOwner, pda, LAMPORTS_TO_RENT + service.securityDeposit);
+        //SystemInstruction.create_account_pda(serviceOwner, pda, LAMPORTS_TO_RENT + service.securityDeposit, 0, tx.program_id, bump);
 
         // Activate the agent instance registration
         service.state = ServiceState.ActiveRegistration;
