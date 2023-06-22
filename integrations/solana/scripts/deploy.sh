@@ -7,7 +7,10 @@
 # solana-keygen grind --starts-with au:1
 
 
-NETWORK=localhost
+# networks lists: https://docs.solana.com/ru/clusters
+NETWORK=localnet
+NETWORK=https://api.devnet.solana.com
+NETWORK=https://api.testnet.solana.com
 # progmramId
 # result of generation
 PPKEYFILE=storage-deploy/auyg6wcFyEotWhgwBm5bShJW48JBQBNezSnP1ZCALUE.json
@@ -54,19 +57,22 @@ WALLETK=$(solana address -k /home/andrey/.config/solana/id.json)
 solana config set --url ${NETWORK}
 
 # run validator if not running. only for localhost
-HTTP_CODE=$(curl -sL -w "%{http_code}\n" http://127.0.0.1:8899 -o /dev/null)
-echo $HTTP_CODE
-# Analyze HTTP return code
-if [ ${HTTP_CODE} -ne 405 ] ; then
-	screen -d -m solana-test-validator --reset
-	sleep 30
+if [ ${NETWORK} == "localnet" ]; then
+	HTTP_CODE=$(curl -sL -w "%{http_code}\n" http://127.0.0.1:8899 -o /dev/null)
+	echo $HTTP_CODE
+	# Analyze HTTP return code
+	if [ ${HTTP_CODE} -ne 405 ] ; then
+		screen -d -m solana-test-validator --reset
+		sleep 30
+	fi
+	# airdrop to deployer wallet
+	solana airdrop 100
 fi
-
-# airdrop to deployer wallet
-solana airdrop 100
 solana balance ${WALLETK} -u ${NETWORK}
 
 # deploy
+# NOTES: you must (!) have enough test SOL to deploy
+# OR Error: Account xxx has insufficient funds for spend (5.90205912 SOL) + fee (0.00421 SOL)
 solana program deploy --url ${NETWORK} -v --program-id ${PPKEYFILE} storage-deploy/ServiceRegistrySolana.so
 solana balance ${PD} -u ${NETWORK}
 solana program show ${PD}
