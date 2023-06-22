@@ -21,7 +21,7 @@ contract ServiceRegistrySolana {
     event TerminateService(uint32 indexed serviceId);
     event OperatorSlashed(uint64 amount, address indexed operator, uint32 indexed serviceId);
     event OperatorUnbond(address indexed operator, uint32 indexed serviceId);
-    event DeployService(uint32 indexed serviceId);
+    event DeployService(uint32 indexed serviceId, address indexed multisig);
     event Drain(address indexed drainer, uint64 amount);
 
     enum ServiceState {
@@ -66,15 +66,6 @@ contract ServiceRegistrySolana {
         uint32[] agentIdForAgentInstances;
     }
 
-    // The public key for the storage authority (owner) that should sign every change to the contract
-    address public owner;
-    address programStorage;
-    // Base URI
-    string public baseURI;
-    // Service counter
-    uint32 public totalSupply;
-    // Reentrancy lock
-    uint32 internal _locked = 1;
     // To better understand the CID anatomy, please refer to: https://proto.school/anatomy-of-a-cid/05
     // CID = <multibase_encoding>multibase_encoding(<cid-version><multicodec><multihash-algorithm><multihash-length><multihash-hash>)
     // CID prefix = <multibase_encoding>multibase_encoding(<cid-version><multicodec><multihash-algorithm><multihash-length>)
@@ -85,31 +76,49 @@ contract ServiceRegistrySolana {
     // multihash-algorithm = sha2-256 = "0x12"
     // multihash-length = 256 bits = "0x20"
     string public constant CID_PREFIX = "f01701220";
-    // The amount of funds slashed. This is enough for 1b+ ETH or 1e27
-    uint64 public slashedFunds;
-    // Drainer escrow address
-    address public drainerEscrow;
     // Solana lamports for renting escrow accounts
     uint64 public constant SOLANA_RENT_LAMPORTS = 1e7;
     // Service registry version number
     string public constant VERSION = "1.0.0";
+
+    // Public key for the storage authority (owner) that should sign every change to the contract
+    address public owner;
+    // Public key for the program storage
+    address public programStorage;
+    // Drainer escrow address
+    address public drainerEscrow;
+    // Base URI
+    string public baseURI;
+    // Service counter
+    uint32 public totalSupply;
+    // Reentrancy lock
+    uint32 internal _locked = 1;
+    // The amount of funds slashed. This is enough for 1b+ ETH or 1e27
+    uint64 public slashedFunds;
+
+    // Map of agent instance address => operator address that supplied the instance
+    mapping (address => address) public mapAgentInstanceOperators;
     // Map of hash(operator address and serviceId) => agent instance bonding / escrow balance
     mapping(bytes32 => uint64) public mapOperatorAndServiceIdOperatorBalances;
-    // Map of agent instance address => service id it is registered with and operator address that supplied the instance
-    mapping (address => address) public mapAgentInstanceOperators;
-    // Map of policy for multisig implementations
-    mapping (address => bool) public mapMultisigs;
+    // Map of hash(operator address and serviceId) => slashed balance
+    mapping(bytes32 => uint64) public mapOperatorAndServiceIdOperatorSlashes;
     // Set of services
     Service[type(uint32).max] public services;
 
 
     /// @dev Service registry constructor.
-    /// @param _owner Agent contract symbol.
+    /// @param _owner Contract owner.
     /// @param _baseURI Agent registry token base URI.
     constructor(address _owner, string memory _baseURI)
     {
         owner = _owner;
         baseURI = _baseURI;
+
+        // It is expected that there is only one public key is passed as an account - the program storage account
+        if (tx.accounts.length > 1) {
+            revert("WrongNumberOfAccounts");
+        }
+        programStorage = tx.accounts[0].key;
     }
 
     /// @dev Requires the signature of the metadata authority.
@@ -122,14 +131,6 @@ contract ServiceRegistrySolana {
         }
 
         revert("The authority is missing");
-    }
-
-    /// @dev Inits the program storage.
-    function initProgramStorage(address _programStorage) external {
-        if (programStorage != address(0)) {
-            revert("AlreadyInitialized");
-        }
-        programStorage = _programStorage;
     }
 
     /// @dev Changes the owner address.
@@ -149,24 +150,25 @@ contract ServiceRegistrySolana {
 
     /// @dev Changes the drainer escrow.
     /// @notice New drainer escrow must be a participating account.
-    function changeDrainerEscrow() external {
+    /// @param newDrainerEscrow New drainer escrow account.
+    function changeDrainerEscrow(address newDrainerEscrow) external {
         // Check for the metadata authority
         requireSigner(owner);
 
+        // Check for the zero address
+        if (newDrainerEscrow == address(0)) {
+            revert("ZeroAddress");
+        }
+
         // Get the drainer escrow address and mak sure our program Id is the owner (but not the storage)
-        address newDrainerEscrow = address(0);
         for (uint32 i = 0; i < tx.accounts.length; ++i) {
-            if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
+            if (tx.accounts[i].key == newDrainerEscrow) {
                 // Check the lamports balance
                 if (tx.accounts[i].lamports < SOLANA_RENT_LAMPORTS) {
                     revert("InsufficientBalance");
                 }
-                newDrainerEscrow = tx.accounts[i].key;
                 break;
             }
-        }
-        if (newDrainerEscrow == address(0)) {
-            revert("ZeroAddress");
         }
 
         drainerEscrow = newDrainerEscrow;
@@ -477,6 +479,17 @@ contract ServiceRegistrySolana {
                 revert("AgentNotInService");
             }
             totalBond += service.bonds[idx];
+
+            // Check if there is an empty slot for the agent instance in this specific service
+            uint32 numRegAgentInstances = 0;
+            for (uint32 j = 0; j < service.agentIdForAgentInstances.length; ++j) {
+                if (service.agentIdForAgentInstances[j] == agentIds[i]) {
+                    numRegAgentInstances++;
+                }
+            }
+            if (numRegAgentInstances == service.slots[idx]) {
+                revert("AgentInstancesSlotsFilled");
+            }
         }
 
         // Operator address must not be used as an agent instance anywhere else
@@ -496,17 +509,6 @@ contract ServiceRegistrySolana {
             // Check if the agent instance is already engaged with another service
             if (mapAgentInstanceOperators[agentInstance] != address(0)) {
                 revert("AgentInstanceRegistered");
-            }
-
-            // Check if there is an empty slot for the agent instance in this specific service
-            uint32 numRegAgentInstances = 0;
-            for (uint32 j = 0; j < service.agentIdForAgentInstances.length; ++j) {
-                if (service.agentIdForAgentInstances[j] == agentId) {
-                    numRegAgentInstances++;
-                }
-            }
-            if (numRegAgentInstances == service.slots[i]) {
-                revert("AgentInstancesSlotsFilled");
             }
 
             // Copy new operator and agent instance information to the new one
@@ -577,10 +579,6 @@ contract ServiceRegistrySolana {
             revert("WrongServiceState");
         }
 
-        // Get all agent instances for the multisig
-        address[] memory agentInstances = service.agentInstances;
-
-        // TODO Create a multisig
         // Check the multisig address
         if (multisig == address(0)) {
             revert("ZeroAddress");
@@ -590,8 +588,7 @@ contract ServiceRegistrySolana {
         service.multisig = multisig;
         service.state = ServiceState.Deployed;
 
-        emit CreateMultisigWithAgents(serviceId, multisig);
-        emit DeployService(serviceId);
+        emit DeployService(serviceId, multisig);
 
         _locked = 1;
     }
@@ -630,16 +627,15 @@ contract ServiceRegistrySolana {
             // Slash the balance of the operator, make sure it does not go below zero
             bytes32 operatorServiceIdHash = keccak256(abi.encode(operator, serviceId));
             uint64 balance = mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash];
-            if ((amounts[i] + 1) > balance) {
+            if (amounts[i] >= balance) {
                 // We cannot add to the slashed amount more than the balance of the operator
-                slashedFunds += balance;
+                mapOperatorAndServiceIdOperatorSlashes[operatorServiceIdHash] += balance;
                 balance = 0;
             } else {
-                slashedFunds += amounts[i];
+                mapOperatorAndServiceIdOperatorSlashes[operatorServiceIdHash] += amounts[i];
                 balance -= amounts[i];
             }
             mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash] = balance;
-
             emit OperatorSlashed(amounts[i], operator, serviceId);
         }
         success = true;
@@ -802,8 +798,41 @@ contract ServiceRegistrySolana {
             emit Refund(operator, refund);
         }
 
+        // Send slashed funds to the drainer escrow, if any
+        uint64 slashed = mapOperatorAndServiceIdOperatorSlashes[operatorServiceIdHash];
+        if (slashed > 0) {
+            mapOperatorAndServiceIdOperatorSlashes[operatorServiceIdHash] = 0;
+            SystemInstruction.transfer_with_seed(operatorEscrow, operator, seed, tx.program_id, drainerEscrow, slashed);
+            slashedFunds += slashed;
+        }
+
         emit OperatorUnbond(operator, serviceId);
         success = true;
+
+        _locked = 1;
+    }
+
+    /// @dev Drains slashed funds.
+    /// @param to Address to send funds to.
+    /// @param seed Seed of the drain escrow account.
+    /// @return amount Drained amount.
+    function drain(address to, string seed) external returns (uint64 amount) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert("ReentrancyGuard");
+        }
+        _locked = 2;
+
+        // Check for the drainer address
+        requireSigner(owner);
+
+        // Drain the slashed funds
+        amount = slashedFunds;
+        if (amount > 0) {
+            slashedFunds = 0;
+            SystemInstruction.transfer_with_seed(drainerEscrow, owner, seed, tx.program_id, to, amount);
+            emit Drain(drainerEscrow, amount);
+        }
 
         _locked = 1;
     }
@@ -894,31 +923,6 @@ contract ServiceRegistrySolana {
     {
         bytes32 operatorServiceIdHash = keccak256(abi.encode(operator, serviceId));
         balance = mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash];
-    }
-
-    /// @dev Drains slashed funds.
-    /// @param to Address to send funds to.
-    /// @param seed Seed of the drain escrow account.
-    /// @return amount Drained amount.
-    function drain(address to, string seed) external returns (uint64 amount) {
-        // Reentrancy guard
-        if (_locked > 1) {
-            revert("ReentrancyGuard");
-        }
-        _locked = 2;
-
-        // Check for the drainer address
-        requireSigner(owner);
-
-        // Drain the slashed funds
-        amount = slashedFunds;
-        if (amount > 0) {
-            slashedFunds = 0;
-            SystemInstruction.transfer_with_seed(drainerEscrow, owner, seed, tx.program_id, to, amount);
-            emit Drain(drainerEscrow, amount);
-        }
-
-        _locked = 1;
     }
 
     function ownerOf(uint32 serviceId) public view returns (address) {

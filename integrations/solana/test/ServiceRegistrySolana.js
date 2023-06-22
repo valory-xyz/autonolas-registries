@@ -11,7 +11,7 @@ describe("ServiceRegistrySolana", function () {
     const regBond = new anchor.BN(1000);
     const regDeposit = new anchor.BN(1000);
     const agentIds = [1, 2];
-    const slots = [3, 4];
+    const slots = [2, 3];
     const bonds = [regBond, regBond];
     const serviceId = 1;
     const agentId = 1;
@@ -23,6 +23,7 @@ describe("ServiceRegistrySolana", function () {
     let escrow;
     let operator;
     let serviceOwner;
+    let drainerEscrow;
     const emptyPayload = Buffer.from("", "hex");
     const encoder = new TextEncoder();
 
@@ -87,11 +88,16 @@ describe("ServiceRegistrySolana", function () {
         tx = await provider.connection.requestAirdrop(operator.publicKey, 100 * web3.LAMPORTS_PER_SOL);
         await provider.connection.confirmTransaction(tx, "confirmed");
 
-        // Init program storage
-        await program.methods.initProgramStorage(storage.publicKey)
+        // Set the drainer escrow by the program owner
+        drainerEscrow = await web3.PublicKey.createWithSeed(deployer.publicKey, "drainerEscrow", program.programId);
+        let signature = await provider.connection.requestAirdrop(drainerEscrow, web3.LAMPORTS_PER_SOL);
+        await provider.connection.confirmTransaction(signature, "confirmed");
+
+        await program.methods.changeDrainerEscrow(drainerEscrow)
             .accounts({ dataAccount: storage.publicKey })
             .remainingAccounts([
-                { pubkey: deployer.publicKey, isSigner: true, isWritable: true }
+                { pubkey: deployer.publicKey, isSigner: true, isWritable: true },
+                { pubkey: drainerEscrow, isSigner: false, isWritable: true },
             ])
             .signers([deployer])
             .rpc();
@@ -229,20 +235,9 @@ describe("ServiceRegistrySolana", function () {
             .rpc();
 
         // Create an escrow account such that the program Id is its owner, and initialize it
-        const serviceOwnerEscrow = await web3.PublicKey.createWithSeed(serviceOwner.publicKey, "escrow", program.programId);
-        //console.log("serviceOwnerEscrow", serviceOwnerEscrow);
-        const tx = new web3.Transaction().add(
-            web3.SystemProgram.createAccountWithSeed({
-                fromPubkey: serviceOwner.publicKey, // funder
-                newAccountPubkey: serviceOwnerEscrow,
-                basePubkey: serviceOwner.publicKey,
-                seed: "escrow",
-                lamports: 1e9, // 0.1 SOL
-                space: 256,
-                programId: program.programId,
-            })
-        );
-        await web3.sendAndConfirmTransaction(provider.connection, tx, [serviceOwner, serviceOwner]);
+        const serviceOwnerEscrow = await web3.PublicKey.createWithSeed(serviceOwner.publicKey, "serviceOwnerEscrow", program.programId);
+        let signature = await provider.connection.requestAirdrop(serviceOwnerEscrow, web3.LAMPORTS_PER_SOL);
+        await provider.connection.confirmTransaction(signature, "confirmed");
 
         const escrowBalanceBefore = await provider.connection.getBalance(serviceOwnerEscrow);
         //console.log("escrowBalanceBefore", escrowBalanceBefore);
@@ -282,19 +277,8 @@ describe("ServiceRegistrySolana", function () {
 
         // Create an escrow account such that the program Id is its owner, and initialize it
         const serviceOwnerEscrow = await web3.PublicKey.createWithSeed(serviceOwner.publicKey, "serviceOwnerEscrow", program.programId);
-        //console.log("serviceOwnerEscrow", serviceOwnerEscrow);
-        let tx = new web3.Transaction().add(
-            web3.SystemProgram.createAccountWithSeed({
-                fromPubkey: serviceOwner.publicKey, // funder
-                newAccountPubkey: serviceOwnerEscrow,
-                basePubkey: serviceOwner.publicKey,
-                seed: "serviceOwnerEscrow",
-                lamports: 1e9, // 0.1 SOL
-                space: 256,
-                programId: program.programId,
-            })
-        );
-        await web3.sendAndConfirmTransaction(provider.connection, tx, [serviceOwner, serviceOwner]);
+        let signature = await provider.connection.requestAirdrop(serviceOwnerEscrow, web3.LAMPORTS_PER_SOL);
+        await provider.connection.confirmTransaction(signature, "confirmed");
 
         // Get the service owner escrow balance before activation
         const escrowBalanceBefore = await provider.connection.getBalance(serviceOwnerEscrow);
@@ -568,7 +552,8 @@ describe("ServiceRegistrySolana", function () {
                 .accounts({ dataAccount: storage.publicKey })
                 .remainingAccounts([
                     { pubkey: operatorEscrow, isSigner: false, isWritable: true },
-                    { pubkey: operator.publicKey, isSigner: true, isWritable: true }
+                    { pubkey: operator.publicKey, isSigner: true, isWritable: true },
+                    { pubkey: drainerEscrow, isSigner: false, isWritable: true },
                 ])
                 .signers([operator])
                 .rpc();
@@ -926,5 +911,425 @@ describe("ServiceRegistrySolana", function () {
             .view();
 
         expect(service.state).toEqual({"preRegistration": {}});
+    });
+
+    it("Creating a service, activating it, registering agent instances, deploying, terminating and unbonding with two operators", async function () {
+        // Create a service
+
+        await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceOwner])
+            .rpc();
+
+        // Create an escrow account such that the program Id is its owner, and initialize it
+        const serviceOwnerEscrow = await web3.PublicKey.createWithSeed(serviceOwner.publicKey, "serviceOwnerEscrow", program.programId);
+        let signature = await provider.connection.requestAirdrop(serviceOwnerEscrow, web3.LAMPORTS_PER_SOL);
+        await provider.connection.confirmTransaction(signature, "confirmed");
+
+        // Get the service owner escrow balance before activation
+        const escrowBalanceBefore = await provider.connection.getBalance(serviceOwnerEscrow);
+
+        // Activate the service
+        try {
+            await program.methods.activateRegistration(serviceId)
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
+                    { pubkey: serviceOwnerEscrow, isSigner: false, isWritable: true }
+                ])
+                .signers([serviceOwner])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
+
+        // Check the escrow balance after the activation
+        const escrowBalanceAfter = await provider.connection.getBalance(serviceOwnerEscrow);
+        let service = await program.methods.getService(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .view();
+        expect(escrowBalanceAfter - escrowBalanceBefore).toEqual(Number(service.securityDeposit));
+
+        // Create escrow accounts for operators such that the program Id is its owner, and initialize it
+        const operatorEscrow1 = await web3.PublicKey.createWithSeed(operator.publicKey, "operatorEscrow1", program.programId);
+        signature = await provider.connection.requestAirdrop(operatorEscrow1, web3.LAMPORTS_PER_SOL);
+        await provider.connection.confirmTransaction(signature, "confirmed");
+
+        // Get agent instances addresses
+        const agentInstances = new Array(maxThreshold);
+        for (let i = 0; i < maxThreshold; i++) {
+            agentInstances[i] = web3.Keypair.generate().publicKey;
+        }
+
+        // Register agent instances by the first operator
+        try {
+            await program.methods.registerAgents(serviceId, [agentInstances[0], agentInstances[1]], [1, 2])
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: operator.publicKey, isSigner: true, isWritable: true },
+                    { pubkey: operatorEscrow1, isSigner: false, isWritable: true }
+                ])
+                .signers([operator])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
+
+        // Get one more operator and operator bonding
+        const operator2 = web3.Keypair.generate();
+        const operatorEscrow2 = await web3.PublicKey.createWithSeed(operator2.publicKey, "operatorEscrow2", program.programId);
+        signature = await provider.connection.requestAirdrop(operatorEscrow2, web3.LAMPORTS_PER_SOL);
+        await provider.connection.confirmTransaction(signature, "confirmed");
+        tx = await provider.connection.requestAirdrop(operator2.publicKey, 100 * web3.LAMPORTS_PER_SOL);
+        await provider.connection.confirmTransaction(tx, "confirmed");
+
+        // Register agent instances by the second operator
+        try {
+            await program.methods.registerAgents(serviceId, [agentInstances[2], agentInstances[3], agentInstances[4]], [1, 2, 2])
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: operator2.publicKey, isSigner: true, isWritable: true },
+                    { pubkey: operatorEscrow2, isSigner: false, isWritable: true }
+                ])
+                .signers([operator2])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
+
+//        // Check the obtained service
+//        service = await program.methods.getService(serviceId)
+//            .accounts({ dataAccount: storage.publicKey })
+//            .view();
+//        console.log("service", service);
+
+        // Deploy the service
+        const multisig = web3.Keypair.generate();
+        await program.methods.deploy(serviceId, multisig.publicKey)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceOwner])
+            .rpc();
+
+        // Terminate the service
+        try {
+            await program.methods.terminate(serviceId, "serviceOwnerEscrow")
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: serviceOwnerEscrow, isSigner: false, isWritable: true },
+                    { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
+                ])
+                .signers([serviceOwner])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
+
+        // Get the operator balance before unbond
+        const operatorBalanceBefore = await provider.connection.getBalance(operator.publicKey);
+
+        // Unbond agent instances
+        try {
+            await program.methods.unbond(serviceId, "operatorEscrow1")
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: operatorEscrow1, isSigner: false, isWritable: true },
+                    { pubkey: operator.publicKey, isSigner: true, isWritable: true }
+                ])
+                .signers([operator])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
+
+        // Get the operator balance after unbond
+        const operatorBalanceAfter = await provider.connection.getBalance(operator.publicKey);
+        expect(operatorBalanceAfter - operatorBalanceBefore).toEqual(2 * Number(regBond));
+
+        // Get the operator2 balance before unbond
+        const operator2BalanceBefore = await provider.connection.getBalance(operator2.publicKey);
+
+        // Unbond agent instances
+        try {
+            await program.methods.unbond(serviceId, "operatorEscrow2")
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: operatorEscrow2, isSigner: false, isWritable: true },
+                    { pubkey: operator2.publicKey, isSigner: true, isWritable: true }
+                ])
+                .signers([operator2])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
+
+        // Get the operator balance after unbond
+        const operator2BalanceAfter = await provider.connection.getBalance(operator2.publicKey);
+        expect(operator2BalanceAfter - operator2BalanceBefore).toEqual(3 * Number(regBond));
+
+        // Check the obtained service
+        service = await program.methods.getService(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .view();
+//        console.log("service", service);
+
+        expect(service.state).toEqual({"preRegistration": {}});
+    });
+
+    it.only("Creating a service, activating it, registering agent instances, slashing", async function () {
+        // Create a service
+
+        await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceOwner])
+            .rpc();
+
+        // Create an escrow account such that the program Id is its owner, and initialize it
+        const serviceOwnerEscrow = await web3.PublicKey.createWithSeed(serviceOwner.publicKey, "serviceOwnerEscrow", program.programId);
+        let signature = await provider.connection.requestAirdrop(serviceOwnerEscrow, web3.LAMPORTS_PER_SOL);
+        await provider.connection.confirmTransaction(signature, "confirmed");
+
+        // Get the service owner escrow balance before activation
+        const escrowBalanceBefore = await provider.connection.getBalance(serviceOwnerEscrow);
+
+        // Activate the service
+        try {
+            await program.methods.activateRegistration(serviceId)
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
+                    { pubkey: serviceOwnerEscrow, isSigner: false, isWritable: true }
+                ])
+                .signers([serviceOwner])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
+
+        // Check the escrow balance after the activation
+        const escrowBalanceAfter = await provider.connection.getBalance(serviceOwnerEscrow);
+        let service = await program.methods.getService(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .view();
+        expect(escrowBalanceAfter - escrowBalanceBefore).toEqual(Number(service.securityDeposit));
+
+        // Create escrow accounts for operators such that the program Id is its owner, and initialize it
+        const operatorEscrow1 = await web3.PublicKey.createWithSeed(operator.publicKey, "operatorEscrow1", program.programId);
+        signature = await provider.connection.requestAirdrop(operatorEscrow1, web3.LAMPORTS_PER_SOL);
+        await provider.connection.confirmTransaction(signature, "confirmed");
+
+        // Get agent instances addresses
+        const agentInstances = new Array(maxThreshold);
+        for (let i = 0; i < maxThreshold; i++) {
+            agentInstances[i] = web3.Keypair.generate().publicKey;
+        }
+
+        // Register agent instances by the first operator
+        try {
+            await program.methods.registerAgents(serviceId, [agentInstances[0], agentInstances[1]], [1, 2])
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: operator.publicKey, isSigner: true, isWritable: true },
+                    { pubkey: operatorEscrow1, isSigner: false, isWritable: true }
+                ])
+                .signers([operator])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
+
+        // Get one more operator and operator bonding
+        const operator2 = web3.Keypair.generate();
+        const operatorEscrow2 = await web3.PublicKey.createWithSeed(operator2.publicKey, "operatorEscrow2", program.programId);
+        signature = await provider.connection.requestAirdrop(operatorEscrow2, web3.LAMPORTS_PER_SOL);
+        await provider.connection.confirmTransaction(signature, "confirmed");
+        tx = await provider.connection.requestAirdrop(operator2.publicKey, 100 * web3.LAMPORTS_PER_SOL);
+        await provider.connection.confirmTransaction(tx, "confirmed");
+
+        // Register agent instances by the second operator
+        try {
+            await program.methods.registerAgents(serviceId, [agentInstances[2], agentInstances[3], agentInstances[4]], [1, 2, 2])
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: operator2.publicKey, isSigner: true, isWritable: true },
+                    { pubkey: operatorEscrow2, isSigner: false, isWritable: true }
+                ])
+                .signers([operator2])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
+
+//        // Check the obtained service
+//        service = await program.methods.getService(serviceId)
+//            .accounts({ dataAccount: storage.publicKey })
+//            .view();
+//        console.log("service", service);
+
+        // Deploy the service
+        const multisig = web3.Keypair.generate();
+        await program.methods.deploy(serviceId, multisig.publicKey)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceOwner])
+            .rpc();
+
+        // Terminate the service
+        try {
+            await program.methods.terminate(serviceId, "serviceOwnerEscrow")
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: serviceOwnerEscrow, isSigner: false, isWritable: true },
+                    { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
+                ])
+                .signers([serviceOwner])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
+
+        // Get the operator balance before unbond
+        const operatorBalanceBefore = await provider.connection.getBalance(operator.publicKey);
+
+        // Unbond agent instances
+        try {
+            await program.methods.unbond(serviceId, "operatorEscrow1")
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: operatorEscrow1, isSigner: false, isWritable: true },
+                    { pubkey: operator.publicKey, isSigner: true, isWritable: true }
+                ])
+                .signers([operator])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
+
+        // Get the operator balance after unbond
+        const operatorBalanceAfter = await provider.connection.getBalance(operator.publicKey);
+        expect(operatorBalanceAfter - operatorBalanceBefore).toEqual(2 * Number(regBond));
+
+        // Get the operator2 balance before unbond
+        const operator2BalanceBefore = await provider.connection.getBalance(operator2.publicKey);
+
+        // Unbond agent instances
+        try {
+            await program.methods.unbond(serviceId, "operatorEscrow2")
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: operatorEscrow2, isSigner: false, isWritable: true },
+                    { pubkey: operator2.publicKey, isSigner: true, isWritable: true }
+                ])
+                .signers([operator2])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
+
+        // Get the operator balance after unbond
+        const operator2BalanceAfter = await provider.connection.getBalance(operator2.publicKey);
+        expect(operator2BalanceAfter - operator2BalanceBefore).toEqual(3 * Number(regBond));
+
+        // Check the obtained service
+        service = await program.methods.getService(serviceId)
+            .accounts({ dataAccount: storage.publicKey })
+            .view();
+//        console.log("service", service);
+
+        expect(service.state).toEqual({"preRegistration": {}});
+
+
+//        const drainerBalanceBefore = await provider.connection.getBalance(drainerEscrow);
+//        console.log("drainerBalanceBefore", Number(drainerBalanceBefore));
+//        const drainerBalanceAfter = await provider.connection.getBalance(drainerEscrow);
+//        console.log("drainerBalanceAfter", Number(drainerBalanceAfter));
+//
+//        try {
+//            await program.methods.drain(deployer.publicKey, "drainerEscrow")
+//                .accounts({ dataAccount: storage.publicKey })
+//                .remainingAccounts([
+//                    { pubkey: deployer.publicKey, isSigner: true, isWritable: true },
+//                    { pubkey: drainerEscrow, isSigner: false, isWritable: true },
+//                ])
+//                .signers([deployer])
+//                .rpc();
+//        } catch (error) {
+//            if (error instanceof Error && "message" in error) {
+//                console.error("Program Error:", error);
+//                console.error("Error Message:", error.message);
+//            } else {
+//                console.error("Transaction Error:", error);
+//            }
+//        }
     });
 });

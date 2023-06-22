@@ -32,7 +32,7 @@ fi
 
 # compile
 # progmramId = dauyg6wcFyEotWhgwBm5bShJW48JBQBNezSnP1ZCALUE in ServiceRegistrySolana.sol
-solang compile contracts/ServiceRegistrySolana.sol -o storage-deploy/ --target solana -v 
+solang compile contracts/ServiceRegistrySolana.sol --release -o storage-deploy/ --target solana -v
 
 if [ ! -f storage-deploy/ServiceRegistrySolana.so ]; then
         echo "missing storage-deploy/ServiceRegistrySolana.so"
