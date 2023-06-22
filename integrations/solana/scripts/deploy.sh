@@ -8,9 +8,9 @@
 
 
 # networks lists: https://docs.solana.com/ru/clusters
-NETWORK=localnet
-NETWORK=https://api.devnet.solana.com
-NETWORK=https://api.testnet.solana.com
+NETWORK=localhost
+# NETWORK=https://api.devnet.solana.com
+# NETWORK=https://api.testnet.solana.com
 # progmramId
 # result of generation
 PPKEYFILE=storage-deploy/auyg6wcFyEotWhgwBm5bShJW48JBQBNezSnP1ZCALUE.json
@@ -57,7 +57,7 @@ WALLETK=$(solana address -k /home/andrey/.config/solana/id.json)
 solana config set --url ${NETWORK}
 
 # run validator if not running. only for localhost
-if [ ${NETWORK} == "localnet" ]; then
+if [[ "${NETWORK}" =~ .*"localhost".* ]]; then
 	HTTP_CODE=$(curl -sL -w "%{http_code}\n" http://127.0.0.1:8899 -o /dev/null)
 	echo $HTTP_CODE
 	# Analyze HTTP return code
@@ -68,7 +68,22 @@ if [ ${NETWORK} == "localnet" ]; then
 	# airdrop to deployer wallet
 	solana airdrop 100
 fi
+# try airdrop from test/devnet
+solana airdrop 1
 solana balance ${WALLETK} -u ${NETWORK}
+
+# https://solana.stackexchange.com/questions/4083/blockhash-expired-5-retries-remaining
+# 
+v1=$(solana --version)
+v2=$(solana cluster-version)
+if [[ "${v1}" =~ .*"${v2}".* ]]; then
+	echo "solana version is OK"
+else
+	echo "solana version mismatch. deploy not possible. long life to this blockchain!"
+	echo "details: https://solana.stackexchange.com/questions/4083/blockhash-expired-5-retries-remaining"
+	exit 1
+fi
+exit
 
 # deploy
 # NOTES: you must (!) have enough test SOL to deploy
