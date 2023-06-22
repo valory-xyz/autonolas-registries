@@ -8,8 +8,8 @@
 
 
 # networks lists: https://docs.solana.com/ru/clusters
-NETWORK=localhost
-# NETWORK=https://api.devnet.solana.com
+# NETWORK=localhost
+NETWORK=https://api.devnet.solana.com
 # NETWORK=https://api.testnet.solana.com
 # progmramId
 # result of generation
@@ -81,9 +81,9 @@ if [[ "${v1}" =~ .*"${v2}".* ]]; then
 else
 	echo "solana version mismatch. deploy not possible. long life to this blockchain!"
 	echo "details: https://solana.stackexchange.com/questions/4083/blockhash-expired-5-retries-remaining"
+        # dirty fix: sh -c $(curl -sSfL https://release.solana.com/v1.14.19/install)
 	exit 1
 fi
-exit
 
 # deploy
 # NOTES: you must (!) have enough test SOL to deploy
