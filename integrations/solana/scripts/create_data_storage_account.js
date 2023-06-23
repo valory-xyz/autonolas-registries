@@ -28,12 +28,9 @@ async function createAccount(provider, account, programId, space) {
 }
 
 async function main() {
-    // Allocate accounts
-    const deployer = loadKey("deE9943tv6GqmWRmMgf1Nqt384UpzX4FrMvKrt34mmt.json");
-
     const endpoint = "https://api.devnet.solana.com";
 
-    // payer.key is setup during the setup
+    // This keypair corresponds to the deployer one
     process.env["ANCHOR_WALLET"] = "deE9943tv6GqmWRmMgf1Nqt384UpzX4FrMvKrt34mmt.json";
 
     const provider = anchor.AnchorProvider.local(endpoint);

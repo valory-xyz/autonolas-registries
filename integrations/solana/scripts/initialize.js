@@ -1,32 +1,13 @@
-/* global describe, beforeEach, it, process, Buffer */
+/* global process, Buffer */
 const anchor = require("@project-serum/anchor");
-const expect = require("expect");
 const web3 = require("@solana/web3.js");
 const fs = require("fs");
-const spl = require("@solana/spl-token");
 
 function loadKey(filename) {
     const contents = fs.readFileSync(filename).toString();
     const bs = Uint8Array.from(JSON.parse(contents));
 
     return web3.Keypair.fromSecretKey(bs);
-}
-
-async function createAccount(provider, account, programId, space) {
-    const lamports = await provider.connection.getMinimumBalanceForRentExemption(space);
-
-    const transaction = new web3.Transaction();
-
-    transaction.add(
-        web3.SystemProgram.createAccount({
-            fromPubkey: provider.wallet.publicKey,
-            newAccountPubkey: account.publicKey,
-            lamports,
-            space,
-            programId,
-        }));
-
-    await provider.sendAndConfirm(transaction, [account]);
 }
 
 async function main() {
