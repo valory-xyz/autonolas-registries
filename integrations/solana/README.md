@@ -37,7 +37,7 @@ needs to be run again, preferrably with the validator turned off / turned on, as
 
 Also note that for the correct anchor setup, the necessary `payer.key` keypair is created during the `setup` phase.
 
-## Deploy
-The deploy-ready program is located in `deploy` folder. Note that the deployed program has a pre-defined `program_id` (`declare_id`).
-The program in deploy folder can only be deployed using the corresponding keypair, and thus is not recommended for test purposes.
+## Deployment
+The program is deployed on Solana network with the following addresses:
+- devnet: AUgdetq6LMewUPfLb1tYRmhZk5TDfqDJ2jJoZXyhomhh
 
