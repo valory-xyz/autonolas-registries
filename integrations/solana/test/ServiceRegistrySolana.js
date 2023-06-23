@@ -61,8 +61,7 @@ describe("ServiceRegistrySolana", function () {
         const endpoint = process.env.RPC_URL || "http://127.0.0.1:8899";
         const idl = JSON.parse(fs.readFileSync("ServiceRegistrySolana.json", "utf8"));
 
-        //const payer = loadKey("payer.key");
-
+        // payer.key is setup during the setup
         process.env["ANCHOR_WALLET"] = "payer.key";
 
         provider = anchor.AnchorProvider.local(endpoint);
