@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 import "SystemInstruction.sol";
 
 /// @title Service Registry Solana - Smart contract for registering services on the Solana chain.
@@ -104,8 +103,6 @@ contract ServiceRegistrySolana {
     mapping (address => address) public mapAgentInstanceOperators;
     // Map of hash(operator address and serviceId) => agent instance bonding / escrow balance
     mapping(bytes32 => uint64) public mapOperatorAndServiceIdOperatorBalances;
-    // Map of hash(operator address and serviceId) => slashed balance
-    mapping(bytes32 => uint64) public mapOperatorAndServiceIdOperatorSlashes;
     // Set of services
     Service[type(uint32).max] public services;
 
@@ -572,10 +569,10 @@ contract ServiceRegistrySolana {
             uint64 balance = mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash];
             if (amounts[i] >= balance) {
                 // We cannot add to the slashed amount more than the balance of the operator
-                mapOperatorAndServiceIdOperatorSlashes[operatorServiceIdHash] += balance;
+                slashedFunds += balance;
                 balance = 0;
             } else {
-                mapOperatorAndServiceIdOperatorSlashes[operatorServiceIdHash] += amounts[i];
+                slashedFunds += amounts[i];
                 balance -= amounts[i];
             }
             mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash] = balance;
@@ -704,14 +701,6 @@ contract ServiceRegistrySolana {
             emit Refund(operator, refund);
         }
 
-        // Send slashed funds to the drainer escrow, if any
-        uint64 slashed = mapOperatorAndServiceIdOperatorSlashes[operatorServiceIdHash];
-        if (slashed > 0) {
-            mapOperatorAndServiceIdOperatorSlashes[operatorServiceIdHash] = 0;
-            SystemInstruction.transfer_pda(pdaEscrow, operator, slashed, pdaSeed, bumpBytes);
-            slashedFunds += slashed;
-        }
-
         emit OperatorUnbond(operator, serviceId);
 
         _locked = 1;
@@ -792,110 +781,110 @@ contract ServiceRegistrySolana {
         }
     }
 
-//    /// @dev Gets service agent instances.
-//    /// @param serviceId ServiceId.
-//    /// @return numAgentInstances Number of agent instances.
-//    /// @return agentInstances Set of bonded agent instances.
-//    function getAgentInstances(uint32 serviceId) external view
-//        returns (uint32 numAgentInstances, address[] memory agentInstances)
-//    {
-//        Service memory service = services[serviceId];
-//        uint32 totalNumInstances = service.agentInstances.length;
-//        address[] memory totalAgentInstances = new address[](totalNumInstances);
-//
-//        // Record bonded agent instances
-//        for (uint32 i = 0; i < totalNumInstances; ++i) {
-//            if (service.agentInstances[i] != address(0)) {
-//                totalAgentInstances[numAgentInstances] = service.agentInstances[i];
-//                numAgentInstances++;
-//            }
-//        }
-//
-//        // Copy recorded agent instnces
-//        agentInstances = new address[](numAgentInstances);
-//        for (uint32 i = 0; i < numAgentInstances; ++i) {
-//            agentInstances[i] = totalAgentInstances[i];
-//        }
-//    }
-//
-//    /// @dev Gets the operator's balance in a specific service.
-//    /// @param operator Operator address.
-//    /// @param serviceId Service Id.
-//    /// @return balance The balance of the operator.
-//    function getOperatorBalance(address operator, uint32 serviceId) external view returns (uint64 balance)
-//    {
-//        bytes32 operatorServiceIdHash = keccak256(abi.encode(operator, serviceId));
-//        balance = mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash];
-//    }
-//
-//    function ownerOf(uint32 serviceId) public view returns (address) {
-//        return services[serviceId].serviceOwner;
-//    }
-//
-//    /// @dev Checks for the service existence.
-//    /// @notice Service counter starts from 1.
-//    /// @param serviceId Service Id.
-//    /// @return true if the service exists, false otherwise.
-//    function exists(uint32 serviceId) public view returns (bool) {
-//        return serviceId > 0 && serviceId < (totalSupply + 1);
-//    }
-//
-//    /// @dev Sets service base URI.
-//    /// @param bURI Base URI string.
-//    function setBaseURI(string memory bURI) external {
-//        requireSigner(owner);
-//
-//        // Check for the zero value
-//        if (bytes(bURI).length == 0) {
-//            revert("Zero Value");
-//        }
-//
-//        baseURI = bURI;
-//        emit BaseURIChanged(bURI);
-//    }
-//
-//    /// @dev Gets the valid service Id from the provided index.
-//    /// @notice Service counter starts from 1.
-//    /// @param id Service counter.
-//    /// @return serviceId Service Id.
-//    function tokenByIndex(uint32 id) external view returns (uint32 serviceId) {
-//        serviceId = id + 1;
-//        if (serviceId > totalSupply) {
-//            revert("Overflow");
-//        }
-//    }
-//
-//    // Open sourced from: https://stackoverflow.com/questions/67893318/solidity-how-to-represent-bytes32-as-string
-//    /// @dev Converts bytes16 input data to hex16.
-//    /// @notice This method converts bytes into the same bytes-character hex16 representation.
-//    /// @param data bytes16 input data.
-//    /// @return result hex16 conversion from the input bytes16 data.
-//    function _toHex16(bytes16 data) internal pure returns (bytes32 result) {
-//        result = bytes32 (data) & 0xFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000 |
-//        (bytes32 (data) & 0x0000000000000000FFFFFFFFFFFFFFFF00000000000000000000000000000000) >> 64;
-//        result = result & 0xFFFFFFFF000000000000000000000000FFFFFFFF000000000000000000000000 |
-//        (result & 0x00000000FFFFFFFF000000000000000000000000FFFFFFFF0000000000000000) >> 32;
-//        result = result & 0xFFFF000000000000FFFF000000000000FFFF000000000000FFFF000000000000 |
-//        (result & 0x0000FFFF000000000000FFFF000000000000FFFF000000000000FFFF00000000) >> 16;
-//        result = result & 0xFF000000FF000000FF000000FF000000FF000000FF000000FF000000FF000000 |
-//        (result & 0x00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0000) >> 8;
-//        result = (result & 0xF000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000) >> 4 |
-//        (result & 0x0F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F00) >> 8;
-//        result = bytes32 (0x3030303030303030303030303030303030303030303030303030303030303030 +
-//        uint256 (result) +
-//            (uint256 (result) + 0x0606060606060606060606060606060606060606060606060606060606060606 >> 4 &
-//            0x0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F) * 39);
-//    }
-//
-//    /// @dev Returns service token URI.
-//    /// @notice Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.
-//    /// @param serviceId Service Id.
-//    /// @return Service token URI string.
-//    function tokenURI(uint32 serviceId) public view returns (string memory) {
-//        bytes32 serviceHash = services[serviceId].configHash;
-//        // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
-//        // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
-//        return string(abi.encodePacked(baseURI, CID_PREFIX, _toHex16(bytes16(serviceHash)),
-//            _toHex16(bytes16(serviceHash << 128))));
-//    }
+    /// @dev Gets service agent instances.
+    /// @param serviceId ServiceId.
+    /// @return numAgentInstances Number of agent instances.
+    /// @return agentInstances Set of bonded agent instances.
+    function getAgentInstances(uint32 serviceId) external view
+        returns (uint32 numAgentInstances, address[] memory agentInstances)
+    {
+        Service memory service = services[serviceId];
+        uint32 totalNumInstances = service.agentInstances.length;
+        address[] memory totalAgentInstances = new address[](totalNumInstances);
+
+        // Record bonded agent instances
+        for (uint32 i = 0; i < totalNumInstances; ++i) {
+            if (service.agentInstances[i] != address(0)) {
+                totalAgentInstances[numAgentInstances] = service.agentInstances[i];
+                numAgentInstances++;
+            }
+        }
+
+        // Copy recorded agent instnces
+        agentInstances = new address[](numAgentInstances);
+        for (uint32 i = 0; i < numAgentInstances; ++i) {
+            agentInstances[i] = totalAgentInstances[i];
+        }
+    }
+
+    /// @dev Gets the operator's balance in a specific service.
+    /// @param operator Operator address.
+    /// @param serviceId Service Id.
+    /// @return balance The balance of the operator.
+    function getOperatorBalance(address operator, uint32 serviceId) external view returns (uint64 balance)
+    {
+        bytes32 operatorServiceIdHash = keccak256(abi.encode(operator, serviceId));
+        balance = mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash];
+    }
+
+    function ownerOf(uint32 serviceId) public view returns (address) {
+        return services[serviceId].serviceOwner;
+    }
+
+    /// @dev Checks for the service existence.
+    /// @notice Service counter starts from 1.
+    /// @param serviceId Service Id.
+    /// @return true if the service exists, false otherwise.
+    function exists(uint32 serviceId) public view returns (bool) {
+        return serviceId > 0 && serviceId < (totalSupply + 1);
+    }
+
+    /// @dev Sets service base URI.
+    /// @param bURI Base URI string.
+    function setBaseURI(string memory bURI) external {
+        requireSigner(owner);
+
+        // Check for the zero value
+        if (bytes(bURI).length == 0) {
+            revert("Zero Value");
+        }
+
+        baseURI = bURI;
+        emit BaseURIChanged(bURI);
+    }
+
+    /// @dev Gets the valid service Id from the provided index.
+    /// @notice Service counter starts from 1.
+    /// @param id Service counter.
+    /// @return serviceId Service Id.
+    function tokenByIndex(uint32 id) external view returns (uint32 serviceId) {
+        serviceId = id + 1;
+        if (serviceId > totalSupply) {
+            revert("Overflow");
+        }
+    }
+
+    // Open sourced from: https://stackoverflow.com/questions/67893318/solidity-how-to-represent-bytes32-as-string
+    /// @dev Converts bytes16 input data to hex16.
+    /// @notice This method converts bytes into the same bytes-character hex16 representation.
+    /// @param data bytes16 input data.
+    /// @return result hex16 conversion from the input bytes16 data.
+    function _toHex16(bytes16 data) internal pure returns (bytes32 result) {
+        result = bytes32 (data) & 0xFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000 |
+        (bytes32 (data) & 0x0000000000000000FFFFFFFFFFFFFFFF00000000000000000000000000000000) >> 64;
+        result = result & 0xFFFFFFFF000000000000000000000000FFFFFFFF000000000000000000000000 |
+        (result & 0x00000000FFFFFFFF000000000000000000000000FFFFFFFF0000000000000000) >> 32;
+        result = result & 0xFFFF000000000000FFFF000000000000FFFF000000000000FFFF000000000000 |
+        (result & 0x0000FFFF000000000000FFFF000000000000FFFF000000000000FFFF00000000) >> 16;
+        result = result & 0xFF000000FF000000FF000000FF000000FF000000FF000000FF000000FF000000 |
+        (result & 0x00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0000) >> 8;
+        result = (result & 0xF000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000) >> 4 |
+        (result & 0x0F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F00) >> 8;
+        result = bytes32 (0x3030303030303030303030303030303030303030303030303030303030303030 +
+        uint256 (result) +
+            (uint256 (result) + 0x0606060606060606060606060606060606060606060606060606060606060606 >> 4 &
+            0x0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F) * 39);
+    }
+
+    /// @dev Returns service token URI.
+    /// @notice Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.
+    /// @param serviceId Service Id.
+    /// @return Service token URI string.
+    function tokenURI(uint32 serviceId) public view returns (string memory) {
+        bytes32 serviceHash = services[serviceId].configHash;
+        // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
+        // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
+        return string(abi.encodePacked(baseURI, CID_PREFIX, _toHex16(bytes16(serviceHash)),
+            _toHex16(bytes16(serviceHash << 128))));
+    }
 }

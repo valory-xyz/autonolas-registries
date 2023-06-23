@@ -6,7 +6,7 @@
     "clean-test": "cd test; rm *.key *.spec.js; tsc; ts-node setup.ts; mocha ServiceRegistrySolana.js; cd -",
     "test": "cd test; mocha ServiceRegistrySolana.js; cd -",
     "setup": "cd test; rm *.key *.spec.js; tsc; ts-node setup.ts; cd -",
-    "build": "solang compile contracts/ServiceRegistrySolana.sol -o test --target solana -v",
+    "build": "solang compile contracts/ServiceRegistrySolana.sol --release -o test --target solana -v",
     "build-debug": "solang compile contracts/ServiceRegistrySolana.sol -o test --target solana -v"
   },
   "author": "Aleksandr Kuperman <aleksandr.kuperman@valory.xyz>",
