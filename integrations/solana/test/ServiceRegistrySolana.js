@@ -70,7 +70,7 @@ describe("ServiceRegistrySolana", function () {
 
         const programKey = loadKey("ServiceRegistrySolana.key");
 
-        const space = 20000;
+        const space = 5000;
         await createAccount(provider, storage, programKey.publicKey, space);
 
         program = new anchor.Program(idl, programKey.publicKey, provider);
@@ -80,7 +80,7 @@ describe("ServiceRegistrySolana", function () {
         pdaEscrow = pda;
         bumpBytes = Buffer.from(new Uint8Array([bump]));
 
-        await program.methods.new(deployer.publicKey, pdaEscrow, bumpBytes, baseURI)
+        await program.methods.new(deployer.publicKey, storage.publicKey, pdaEscrow, bumpBytes, baseURI)
             .accounts({ dataAccount: storage.publicKey })
             .rpc();
 

@@ -6,6 +6,7 @@ import "SystemInstruction.sol";
 ///      The architecture is optimistic, in the sense that service owners are assumed to reference existing and relevant agents.
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
+//@program_id("")
 contract ServiceRegistrySolana {
     event OwnerUpdated(address indexed owner);
     event BaseURIChanged(string baseURI);
@@ -106,24 +107,23 @@ contract ServiceRegistrySolana {
     // Set of services
     Service[type(uint32).max] public services;
 
-
     /// @dev Service registry constructor.
     /// @param _owner Contract owner.
+    /// @param _programStorage Program storage address.
     /// @param _pdaEscrow PDA escrow.
     /// @param _bumpBytes PDA bump bytes.
     /// @param _baseURI Agent registry token base URI.
-    constructor(address _owner, address _pdaEscrow, bytes memory _bumpBytes, string memory _baseURI)
+    constructor(address _owner, address _programStorage, address _pdaEscrow, bytes memory _bumpBytes, string memory _baseURI)
     {
-        owner = _owner;
-        baseURI = _baseURI;
-
-        // It is expected that there is only one public key is passed as an account - the program storage account
-        if (tx.accounts.length > 1) {
-            revert("WrongNumberOfAccounts");
+        if (owner != address(0)) {
+            revert("AlreadyInitialized");
         }
-
-        // Program storage setup
-        programStorage = tx.accounts[0].key;
+        // Owner address
+        owner = _owner;
+        // Base URI
+        baseURI = _baseURI;
+        // Program storage address
+        programStorage = _programStorage;
         // PDA escrow address
         pdaEscrow = _pdaEscrow;
         // Bump bytes for the PDA escrow
