@@ -85,8 +85,10 @@ contract ServiceRegistrySolana {
     address public owner;
     // Public key for the program storage
     address public programStorage;
-    // Drainer escrow address
-    address public drainerEscrow;
+    // PDA escrow address, a program derived address that serves an ascrow account for the program
+    address public pdaEscrow;
+    // Bump bytes for the PDA escrow
+    bytes public bumpBytes;
     // Base URI
     string public baseURI;
     // Service counter
@@ -108,17 +110,28 @@ contract ServiceRegistrySolana {
 
     /// @dev Service registry constructor.
     /// @param _owner Contract owner.
+    /// @param _pdaEscrow PDA escrow.
+    /// @param _bumpBytes PDA bump bytes.
     /// @param _baseURI Agent registry token base URI.
-    constructor(address _owner, string memory _baseURI)
+    constructor(address _owner, address _pdaEscrow, bytes memory _bumpBytes, string memory _baseURI)
     {
         owner = _owner;
         baseURI = _baseURI;
 
         // It is expected that there is only one public key is passed as an account - the program storage account
-        if (tx.accounts.length > 1) {
+        if (tx.accounts.length > 2) {
             revert("WrongNumberOfAccounts");
         }
-        programStorage = tx.accounts[0].key;
+
+        // Check for the pdaEscrow and storage account
+        for (uint32 i = 0; i < tx.accounts.length; ++i) {
+            if (tx.accounts[i].key == _pdaEscrow) {
+                pdaEscrow = _pdaEscrow;
+            } else {
+                programStorage = tx.accounts[i].key;
+            }
+        }
+        bumpBytes = _bumpBytes;
     }
 
     /// @dev Requires the signature of the metadata authority.
@@ -146,33 +159,6 @@ contract ServiceRegistrySolana {
 
         owner = newOwner;
         emit OwnerUpdated(newOwner);
-    }
-
-    /// @dev Changes the drainer escrow.
-    /// @notice New drainer escrow must be a participating account.
-    /// @param newDrainerEscrow New drainer escrow account.
-    function changeDrainerEscrow(address newDrainerEscrow) external {
-        // Check for the metadata authority
-        requireSigner(owner);
-
-        // Check for the zero address
-        if (newDrainerEscrow == address(0)) {
-            revert("ZeroAddress");
-        }
-
-        // Get the drainer escrow address and mak sure our program Id is the owner (but not the storage)
-        for (uint32 i = 0; i < tx.accounts.length; ++i) {
-            if (tx.accounts[i].key == newDrainerEscrow) {
-                // Check the lamports balance
-                if (tx.accounts[i].lamports < SOLANA_RENT_LAMPORTS) {
-                    revert("InsufficientBalance");
-                }
-                break;
-            }
-        }
-
-        drainerEscrow = newDrainerEscrow;
-        emit DrainerEscrowUpdated(newDrainerEscrow);
     }
 
     function transfer(uint32 serviceId, address newServiceOwner) external {
@@ -270,7 +256,6 @@ contract ServiceRegistrySolana {
     /// @param slots Set of agent instances number for each agent Id.
     /// @param bonds Corresponding set of required bonds to register an agent instance in the service.
     /// @param threshold Signers threshold for a multisig composed by agent instances.
-    /// @return serviceId Created service Id.
     function create(
         address serviceOwner,
         bytes32 configHash,
@@ -278,7 +263,7 @@ contract ServiceRegistrySolana {
         uint32[] memory slots,
         uint64[] memory bonds,
         uint32 threshold
-    ) external returns (uint32 serviceId)
+    ) external
     {
         // Reentrancy guard
         if (_locked > 1) {
@@ -295,12 +280,12 @@ contract ServiceRegistrySolana {
         _initialChecks(configHash, agentIds, slots, bonds);
 
         // Create a new service Id
-        serviceId = totalSupply;
+        uint32 serviceId = totalSupply;
         serviceId++;
 
         // Set high-level data components of the service instance
         Service memory service;
-        // Updating high-level data components of the service
+        // UpdaEscrowting high-level data components of the service
         service.threshold = threshold;
         // Assigning the initial hash
         service.configHash = configHash;
@@ -329,7 +314,6 @@ contract ServiceRegistrySolana {
     /// @param bonds Corresponding set of required bonds to register an agent instance in the service.
     /// @param threshold Signers threshold for a multisig composed by agent instances.
     /// @param serviceId Service Id to be updated.
-    /// @return success True, if function executed successfully.
     function update(
         bytes32 configHash,
         uint32[] memory agentIds,
@@ -337,7 +321,7 @@ contract ServiceRegistrySolana {
         uint64[] memory bonds,
         uint32 threshold,
         uint32 serviceId
-    ) external returns (bool success)
+    ) external
     {
         Service memory service = services[serviceId];
 
@@ -352,7 +336,7 @@ contract ServiceRegistrySolana {
         // Execute initial checks
         _initialChecks(configHash, agentIds, slots, bonds);
 
-        // Updating high-level data components of the service
+        // UpdaEscrowting high-level data components of the service
         service.threshold = threshold;
         service.maxNumAgentInstances = 0;
 
@@ -367,13 +351,11 @@ contract ServiceRegistrySolana {
         services[serviceId] = service;
 
         emit UpdateService(serviceId, configHash);
-        success = true;
     }
 
     /// @dev Activates the service.
     /// @param serviceId Correspondent service Id.
-    /// @return success True, if function executed successfully.
-    function activateRegistration(uint32 serviceId) external returns (bool success)
+    function activateRegistration(uint32 serviceId, address pda) external
     {
         Service storage service = services[serviceId];
 
@@ -381,47 +363,29 @@ contract ServiceRegistrySolana {
         address serviceOwner = service.serviceOwner;
         requireSigner(serviceOwner);
 
-        // Get the service owner escrow address and mak sure our program Id is the owner (but not the storage)
-        address serviceOwnerEscrow = address(0);
-        for (uint32 i = 0; i < tx.accounts.length; ++i) {
-            if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
-                // Check the lamports balance
-                if (tx.accounts[i].lamports < SOLANA_RENT_LAMPORTS) {
-                    revert("InsufficientBalance");
-                }
-                serviceOwnerEscrow = tx.accounts[i].key;
-                break;
-            }
-        }
-        if (serviceOwnerEscrow == address(0)) {
-            revert("ZeroAddress");
-        }
-
         // Service must be inactive
         if (service.state != ServiceState.PreRegistration) {
             revert("ServiceMustBeInactive");
         }
 
         // Send security deposit to the service owner escrow account
-        SystemInstruction.transfer(serviceOwner, serviceOwnerEscrow, service.securityDeposit);
+        SystemInstruction.transfer(serviceOwner, pdaEscrow, service.securityDeposit);
 
         // Activate the agent instance registration
         service.state = ServiceState.ActiveRegistration;
 
         emit ActivateRegistration(serviceId);
-        success = true;
     }
 
     /// @dev Registers agent instances.
     /// @param serviceId Service Id to register agent instances for.
     /// @param agentInstances Agent instance addresses.
     /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
-    /// @return success True, if function executed successfully.
     function registerAgents(
         uint32 serviceId,
         address[] memory agentInstances,
         uint32[] memory agentIds
-    ) external payable returns (bool success)
+    ) external
     {
         // Check if the length of canonical agent instance addresses array and ids array have the same length
         if (agentInstances.length != agentIds.length) {
@@ -443,22 +407,6 @@ contract ServiceRegistrySolana {
             }
         }
         if (operator == address(0)) {
-            revert("ZeroAddress");
-        }
-
-        // Get the operator escrow address and make sure our program Id is the owner (but not the storage)
-        address operatorEscrow = address(0);
-        for (uint32 i = 0; i < tx.accounts.length; ++i) {
-            if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
-                // Check the lamports balance
-                if (tx.accounts[i].lamports < SOLANA_RENT_LAMPORTS) {
-                    revert("InsufficientBalance");
-                }
-                operatorEscrow = tx.accounts[i].key;
-                break;
-            }
-        }
-        if (operatorEscrow == address(0)) {
             revert("ZeroAddress");
         }
 
@@ -545,14 +493,13 @@ contract ServiceRegistrySolana {
         }
 
         // Send the total bond to the operator escrow account
-        SystemInstruction.transfer(operator, operatorEscrow, totalBond);
+        SystemInstruction.transfer(operator, pdaEscrow, totalBond);
 
         // Update operator's bonding balance
         bytes32 operatorServiceIdHash = keccak256(abi.encode(operator, serviceId));
         mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash] += totalBond;
 
         emit Deposit(operator, totalBond);
-        success = true;
     }
 
     /// @dev Creates multisig instance controlled by the set of service agent instances and deploys the service.
@@ -597,10 +544,7 @@ contract ServiceRegistrySolana {
     /// @param agentInstances Agent instances to slash.
     /// @param amounts Correspondent amounts to slash.
     /// @param serviceId Service Id.
-    /// @return success True, if function executed successfully.
-    function slash(address[] memory agentInstances, uint64[] memory amounts, uint32 serviceId) external
-        returns (bool success)
-    {
+    function slash(address[] memory agentInstances, uint64[] memory amounts, uint32 serviceId) external {
         // Check if the service is deployed
         // Since we do not kill (burn) services, we want this check to happen in a right service state.
         // If the service is deployed, it definitely exists and is running. We do not want this function to be abused
@@ -638,14 +582,11 @@ contract ServiceRegistrySolana {
             mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash] = balance;
             emit OperatorSlashed(amounts[i], operator, serviceId);
         }
-        success = true;
     }
 
     /// @dev Terminates the service.
     /// @param serviceId Service Id to be updated.
-    /// @return success True, if function executed successfully.
-    /// @return refund Refund to return to the service owner.
-    function terminate(uint32 serviceId, string seed) external returns (bool success, uint64 refund)
+    function terminate(uint32 serviceId) external
     {
         // Reentrancy guard
         if (_locked > 1) {
@@ -659,22 +600,6 @@ contract ServiceRegistrySolana {
         address serviceOwner = service.serviceOwner;
         requireSigner(serviceOwner);
 
-        // Get the service owner escrow address and make sure our program Id is the owner (but not the storage)
-        address serviceOwnerEscrow = address(0);
-        for (uint32 i = 0; i < tx.accounts.length; ++i) {
-            if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
-                // Check the lamports balance
-                if (tx.accounts[i].lamports < SOLANA_RENT_LAMPORTS) {
-                    revert("InsufficientBalance");
-                }
-                serviceOwnerEscrow = tx.accounts[i].key;
-                break;
-            }
-        }
-        if (serviceOwnerEscrow == address(0)) {
-            revert("ZeroAddress");
-        }
-
         // Check if the service is already terminated
         if (service.state == ServiceState.PreRegistration || service.state == ServiceState.TerminatedBonded) {
             revert("WrongServiceState");
@@ -687,22 +612,19 @@ contract ServiceRegistrySolana {
         }
 
         // Return registration deposit back to the service owner
-        refund = service.securityDeposit;
+        uint64 refund = service.securityDeposit;
         // Send the refund to the service owner account
-        SystemInstruction.transfer_with_seed(serviceOwnerEscrow, serviceOwner, seed, tx.program_id, serviceOwner, refund);
+        SystemInstruction.transfer_pda(pdaEscrow, serviceOwner, refund, bumpBytes);
 
         emit Refund(serviceOwner, refund);
         emit TerminateService(serviceId);
-        success = true;
 
         _locked = 1;
     }
 
     /// @dev Unbonds agent instances of the operator from the service.
     /// @param serviceId Service Id.
-    /// @return success True, if function executed successfully.
-    /// @return refund The amount of refund returned to the operator.
-    function unbond(uint32 serviceId, string seed) external returns (bool success, uint64 refund) {
+    function unbond(uint32 serviceId) external {
         // Reentrancy guard
         if (_locked > 1) {
             revert("ReentrancyGuard");
@@ -721,22 +643,6 @@ contract ServiceRegistrySolana {
             revert("ZeroAddress");
         }
 
-        // Get the operator escrow address and make sure our program Id is the owner (but not the storage)
-        address operatorEscrow = address(0);
-        for (uint32 i = 0; i < tx.accounts.length; ++i) {
-            if (tx.accounts[i].is_signer == false && tx.accounts[i].is_writable == true && tx.accounts[i].key != programStorage) {
-                // Check the lamports balance
-                if (tx.accounts[i].lamports < SOLANA_RENT_LAMPORTS) {
-                    revert("InsufficientBalance");
-                }
-                operatorEscrow = tx.accounts[i].key;
-                break;
-            }
-        }
-        if (operatorEscrow == address(0)) {
-            revert("ZeroAddress");
-        }
-
         Service storage service = services[serviceId];
         // Service can only be in the terminated-bonded state or expired-registration in order to proceed
         if (service.state != ServiceState.TerminatedBonded) {
@@ -744,6 +650,7 @@ contract ServiceRegistrySolana {
         }
 
         // Check for the operator and unbond all its agent instances
+        uint64 refund = 0;
         uint32 numAgentsUnbond = 0;
         for (uint32 j = 0; j < service.operators.length; ++j) {
             if (operator == service.operators[j]) {
@@ -794,7 +701,7 @@ contract ServiceRegistrySolana {
             // Operator's balance is essentially zero after the refund
             mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash] = 0;
             // Send the total bond back to the operator account
-            SystemInstruction.transfer_with_seed(operatorEscrow, operator, seed, tx.program_id, operator, refund);
+            SystemInstruction.transfer_pda(pdaEscrow, operator, refund, bumpBytes);
             emit Refund(operator, refund);
         }
 
@@ -802,21 +709,18 @@ contract ServiceRegistrySolana {
         uint64 slashed = mapOperatorAndServiceIdOperatorSlashes[operatorServiceIdHash];
         if (slashed > 0) {
             mapOperatorAndServiceIdOperatorSlashes[operatorServiceIdHash] = 0;
-            SystemInstruction.transfer_with_seed(operatorEscrow, operator, seed, tx.program_id, drainerEscrow, slashed);
+            SystemInstruction.transfer_pda(pdaEscrow, operator, slashed, bumpBytes);
             slashedFunds += slashed;
         }
 
         emit OperatorUnbond(operator, serviceId);
-        success = true;
 
         _locked = 1;
     }
 
     /// @dev Drains slashed funds.
     /// @param to Address to send funds to.
-    /// @param seed Seed of the drain escrow account.
-    /// @return amount Drained amount.
-    function drain(address to, string seed) external returns (uint64 amount) {
+    function drain(address to) external {
         // Reentrancy guard
         if (_locked > 1) {
             revert("ReentrancyGuard");
@@ -827,11 +731,11 @@ contract ServiceRegistrySolana {
         requireSigner(owner);
 
         // Drain the slashed funds
-        amount = slashedFunds;
-        if (amount > 0) {
+        uint64 amount = slashedFunds;
+        if (slashedFunds > 0) {
             slashedFunds = 0;
-            SystemInstruction.transfer_with_seed(drainerEscrow, owner, seed, tx.program_id, to, amount);
-            emit Drain(drainerEscrow, amount);
+            SystemInstruction.transfer_pda(pdaEscrow, to, amount, bumpBytes);
+            emit Drain(to, amount);
         }
 
         _locked = 1;
@@ -889,110 +793,110 @@ contract ServiceRegistrySolana {
         }
     }
 
-    /// @dev Gets service agent instances.
-    /// @param serviceId ServiceId.
-    /// @return numAgentInstances Number of agent instances.
-    /// @return agentInstances Set of bonded agent instances.
-    function getAgentInstances(uint32 serviceId) external view
-        returns (uint32 numAgentInstances, address[] memory agentInstances)
-    {
-        Service memory service = services[serviceId];
-        uint32 totalNumInstances = service.agentInstances.length;
-        address[] memory totalAgentInstances = new address[](totalNumInstances);
-
-        // Record bonded agent instances
-        for (uint32 i = 0; i < totalNumInstances; ++i) {
-            if (service.agentInstances[i] != address(0)) {
-                totalAgentInstances[numAgentInstances] = service.agentInstances[i];
-                numAgentInstances++;
-            }
-        }
-
-        // Copy recorded agent instnces
-        agentInstances = new address[](numAgentInstances);
-        for (uint32 i = 0; i < numAgentInstances; ++i) {
-            agentInstances[i] = totalAgentInstances[i];
-        }
-    }
-
-    /// @dev Gets the operator's balance in a specific service.
-    /// @param operator Operator address.
-    /// @param serviceId Service Id.
-    /// @return balance The balance of the operator.
-    function getOperatorBalance(address operator, uint32 serviceId) external view returns (uint64 balance)
-    {
-        bytes32 operatorServiceIdHash = keccak256(abi.encode(operator, serviceId));
-        balance = mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash];
-    }
-
-    function ownerOf(uint32 serviceId) public view returns (address) {
-        return services[serviceId].serviceOwner;
-    }
-
-    /// @dev Checks for the service existence.
-    /// @notice Service counter starts from 1.
-    /// @param serviceId Service Id.
-    /// @return true if the service exists, false otherwise.
-    function exists(uint32 serviceId) public view returns (bool) {
-        return serviceId > 0 && serviceId < (totalSupply + 1);
-    }
-
-    /// @dev Sets service base URI.
-    /// @param bURI Base URI string.
-    function setBaseURI(string memory bURI) external {
-        requireSigner(owner);
-
-        // Check for the zero value
-        if (bytes(bURI).length == 0) {
-            revert("Zero Value");
-        }
-
-        baseURI = bURI;
-        emit BaseURIChanged(bURI);
-    }
-
-    /// @dev Gets the valid service Id from the provided index.
-    /// @notice Service counter starts from 1.
-    /// @param id Service counter.
-    /// @return serviceId Service Id.
-    function tokenByIndex(uint32 id) external view returns (uint32 serviceId) {
-        serviceId = id + 1;
-        if (serviceId > totalSupply) {
-            revert("Overflow");
-        }
-    }
-
-    // Open sourced from: https://stackoverflow.com/questions/67893318/solidity-how-to-represent-bytes32-as-string
-    /// @dev Converts bytes16 input data to hex16.
-    /// @notice This method converts bytes into the same bytes-character hex16 representation.
-    /// @param data bytes16 input data.
-    /// @return result hex16 conversion from the input bytes16 data.
-    function _toHex16(bytes16 data) internal pure returns (bytes32 result) {
-        result = bytes32 (data) & 0xFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000 |
-        (bytes32 (data) & 0x0000000000000000FFFFFFFFFFFFFFFF00000000000000000000000000000000) >> 64;
-        result = result & 0xFFFFFFFF000000000000000000000000FFFFFFFF000000000000000000000000 |
-        (result & 0x00000000FFFFFFFF000000000000000000000000FFFFFFFF0000000000000000) >> 32;
-        result = result & 0xFFFF000000000000FFFF000000000000FFFF000000000000FFFF000000000000 |
-        (result & 0x0000FFFF000000000000FFFF000000000000FFFF000000000000FFFF00000000) >> 16;
-        result = result & 0xFF000000FF000000FF000000FF000000FF000000FF000000FF000000FF000000 |
-        (result & 0x00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0000) >> 8;
-        result = (result & 0xF000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000) >> 4 |
-        (result & 0x0F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F00) >> 8;
-        result = bytes32 (0x3030303030303030303030303030303030303030303030303030303030303030 +
-        uint256 (result) +
-            (uint256 (result) + 0x0606060606060606060606060606060606060606060606060606060606060606 >> 4 &
-            0x0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F) * 39);
-    }
-
-    /// @dev Returns service token URI.
-    /// @notice Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.
-    /// @param serviceId Service Id.
-    /// @return Service token URI string.
-    function tokenURI(uint32 serviceId) public view returns (string memory) {
-        bytes32 serviceHash = services[serviceId].configHash;
-        // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
-        // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
-        return string(abi.encodePacked(baseURI, CID_PREFIX, _toHex16(bytes16(serviceHash)),
-            _toHex16(bytes16(serviceHash << 128))));
-    }
+//    /// @dev Gets service agent instances.
+//    /// @param serviceId ServiceId.
+//    /// @return numAgentInstances Number of agent instances.
+//    /// @return agentInstances Set of bonded agent instances.
+//    function getAgentInstances(uint32 serviceId) external view
+//        returns (uint32 numAgentInstances, address[] memory agentInstances)
+//    {
+//        Service memory service = services[serviceId];
+//        uint32 totalNumInstances = service.agentInstances.length;
+//        address[] memory totalAgentInstances = new address[](totalNumInstances);
+//
+//        // Record bonded agent instances
+//        for (uint32 i = 0; i < totalNumInstances; ++i) {
+//            if (service.agentInstances[i] != address(0)) {
+//                totalAgentInstances[numAgentInstances] = service.agentInstances[i];
+//                numAgentInstances++;
+//            }
+//        }
+//
+//        // Copy recorded agent instnces
+//        agentInstances = new address[](numAgentInstances);
+//        for (uint32 i = 0; i < numAgentInstances; ++i) {
+//            agentInstances[i] = totalAgentInstances[i];
+//        }
+//    }
+//
+//    /// @dev Gets the operator's balance in a specific service.
+//    /// @param operator Operator address.
+//    /// @param serviceId Service Id.
+//    /// @return balance The balance of the operator.
+//    function getOperatorBalance(address operator, uint32 serviceId) external view returns (uint64 balance)
+//    {
+//        bytes32 operatorServiceIdHash = keccak256(abi.encode(operator, serviceId));
+//        balance = mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash];
+//    }
+//
+//    function ownerOf(uint32 serviceId) public view returns (address) {
+//        return services[serviceId].serviceOwner;
+//    }
+//
+//    /// @dev Checks for the service existence.
+//    /// @notice Service counter starts from 1.
+//    /// @param serviceId Service Id.
+//    /// @return true if the service exists, false otherwise.
+//    function exists(uint32 serviceId) public view returns (bool) {
+//        return serviceId > 0 && serviceId < (totalSupply + 1);
+//    }
+//
+//    /// @dev Sets service base URI.
+//    /// @param bURI Base URI string.
+//    function setBaseURI(string memory bURI) external {
+//        requireSigner(owner);
+//
+//        // Check for the zero value
+//        if (bytes(bURI).length == 0) {
+//            revert("Zero Value");
+//        }
+//
+//        baseURI = bURI;
+//        emit BaseURIChanged(bURI);
+//    }
+//
+//    /// @dev Gets the valid service Id from the provided index.
+//    /// @notice Service counter starts from 1.
+//    /// @param id Service counter.
+//    /// @return serviceId Service Id.
+//    function tokenByIndex(uint32 id) external view returns (uint32 serviceId) {
+//        serviceId = id + 1;
+//        if (serviceId > totalSupply) {
+//            revert("Overflow");
+//        }
+//    }
+//
+//    // Open sourced from: https://stackoverflow.com/questions/67893318/solidity-how-to-represent-bytes32-as-string
+//    /// @dev Converts bytes16 input data to hex16.
+//    /// @notice This method converts bytes into the same bytes-character hex16 representation.
+//    /// @param data bytes16 input data.
+//    /// @return result hex16 conversion from the input bytes16 data.
+//    function _toHex16(bytes16 data) internal pure returns (bytes32 result) {
+//        result = bytes32 (data) & 0xFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000 |
+//        (bytes32 (data) & 0x0000000000000000FFFFFFFFFFFFFFFF00000000000000000000000000000000) >> 64;
+//        result = result & 0xFFFFFFFF000000000000000000000000FFFFFFFF000000000000000000000000 |
+//        (result & 0x00000000FFFFFFFF000000000000000000000000FFFFFFFF0000000000000000) >> 32;
+//        result = result & 0xFFFF000000000000FFFF000000000000FFFF000000000000FFFF000000000000 |
+//        (result & 0x0000FFFF000000000000FFFF000000000000FFFF000000000000FFFF00000000) >> 16;
+//        result = result & 0xFF000000FF000000FF000000FF000000FF000000FF000000FF000000FF000000 |
+//        (result & 0x00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0000) >> 8;
+//        result = (result & 0xF000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000) >> 4 |
+//        (result & 0x0F000F000F000F000F000F000F000F000F000F000F000F000F000F000F000F00) >> 8;
+//        result = bytes32 (0x3030303030303030303030303030303030303030303030303030303030303030 +
+//        uint256 (result) +
+//            (uint256 (result) + 0x0606060606060606060606060606060606060606060606060606060606060606 >> 4 &
+//            0x0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F) * 39);
+//    }
+//
+//    /// @dev Returns service token URI.
+//    /// @notice Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.
+//    /// @param serviceId Service Id.
+//    /// @return Service token URI string.
+//    function tokenURI(uint32 serviceId) public view returns (string memory) {
+//        bytes32 serviceHash = services[serviceId].configHash;
+//        // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
+//        // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
+//        return string(abi.encodePacked(baseURI, CID_PREFIX, _toHex16(bytes16(serviceHash)),
+//            _toHex16(bytes16(serviceHash << 128))));
+//    }
 }

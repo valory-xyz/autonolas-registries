@@ -27,6 +27,42 @@ library SystemInstruction {
         UpgradeNonceAccount // This is not available on Solana v1.9.15
     }
 
+    /// Create a new PDA account on Solana
+    ///
+    /// @param from public key for the account from which to transfer lamports to the new account
+    /// @param to public key for the account to be created
+    /// @param lamports amount of lamports to be transfered to the new account
+    /// @param space the size in bytes that is going to be made available for the account
+    /// @param owner public key for the program that will own the account being created
+    /// @param bump PAD bump
+    function create_account_pda(address from, address to, uint64 lamports, uint64 space, address owner, bytes bump) internal {
+        AccountMeta[2] metas = [
+            AccountMeta({pubkey: from, is_signer: true, is_writable: true}),
+            AccountMeta({pubkey: to, is_signer: true, is_writable: true})
+        ];
+
+        bytes bincode = abi.encode(uint32(Instruction.CreateAccount), lamports, space, owner);
+
+        systemAddress.call{accounts: metas, seeds: [["serviceOwnerEscrow", bump]]}(bincode);
+    }
+
+    /// Transfer lamports from the PDA account
+    ///
+    /// @param pda pda public key for the funding account
+    /// @param to public key for the recipient account
+    /// @param lamports amount of lamports to transfer
+    /// @param bump PAD bump
+    function transfer_pda(address pda, address to, uint64 lamports, bytes bump) internal {
+        AccountMeta[2] metas = [
+            AccountMeta({pubkey: pda, is_signer: true, is_writable: true}),
+            AccountMeta({pubkey: to, is_signer: false, is_writable: true})
+        ];
+
+        bytes bincode = abi.encode(uint32(Instruction.Transfer), lamports);
+
+        systemAddress.call{accounts: metas, seeds: [["serviceOwnerEscrow", bump]]}(bincode);
+    }
+
     /// Create a new account on Solana
     ///
     /// @param from public key for the account from which to transfer lamports to the new account
