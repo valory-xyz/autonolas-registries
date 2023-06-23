@@ -80,6 +80,8 @@ contract ServiceRegistrySolana {
     uint64 public constant SOLANA_RENT_LAMPORTS = 1e7;
     // Service registry version number
     string public constant VERSION = "1.0.0";
+    // PDA seed
+    bytes public constant pdaSeed = "pdaEscrow";
 
     // Public key for the storage authority (owner) that should sign every change to the contract
     address public owner;
@@ -119,18 +121,15 @@ contract ServiceRegistrySolana {
         baseURI = _baseURI;
 
         // It is expected that there is only one public key is passed as an account - the program storage account
-        if (tx.accounts.length > 2) {
+        if (tx.accounts.length > 1) {
             revert("WrongNumberOfAccounts");
         }
 
-        // Check for the pdaEscrow and storage account
-        for (uint32 i = 0; i < tx.accounts.length; ++i) {
-            if (tx.accounts[i].key == _pdaEscrow) {
-                pdaEscrow = _pdaEscrow;
-            } else {
-                programStorage = tx.accounts[i].key;
-            }
-        }
+        // Program storage setup
+        programStorage = tx.accounts[0].key;
+        // PDA escrow address
+        pdaEscrow = _pdaEscrow;
+        // Bump bytes for the PDA escrow
         bumpBytes = _bumpBytes;
     }
 
@@ -355,7 +354,7 @@ contract ServiceRegistrySolana {
 
     /// @dev Activates the service.
     /// @param serviceId Correspondent service Id.
-    function activateRegistration(uint32 serviceId, address pda) external
+    function activateRegistration(uint32 serviceId) external
     {
         Service storage service = services[serviceId];
 
@@ -614,7 +613,7 @@ contract ServiceRegistrySolana {
         // Return registration deposit back to the service owner
         uint64 refund = service.securityDeposit;
         // Send the refund to the service owner account
-        SystemInstruction.transfer_pda(pdaEscrow, serviceOwner, refund, bumpBytes);
+        SystemInstruction.transfer_pda(pdaEscrow, serviceOwner, refund, pdaSeed, bumpBytes);
 
         emit Refund(serviceOwner, refund);
         emit TerminateService(serviceId);
@@ -701,7 +700,7 @@ contract ServiceRegistrySolana {
             // Operator's balance is essentially zero after the refund
             mapOperatorAndServiceIdOperatorBalances[operatorServiceIdHash] = 0;
             // Send the total bond back to the operator account
-            SystemInstruction.transfer_pda(pdaEscrow, operator, refund, bumpBytes);
+            SystemInstruction.transfer_pda(pdaEscrow, operator, refund, pdaSeed, bumpBytes);
             emit Refund(operator, refund);
         }
 
@@ -709,7 +708,7 @@ contract ServiceRegistrySolana {
         uint64 slashed = mapOperatorAndServiceIdOperatorSlashes[operatorServiceIdHash];
         if (slashed > 0) {
             mapOperatorAndServiceIdOperatorSlashes[operatorServiceIdHash] = 0;
-            SystemInstruction.transfer_pda(pdaEscrow, operator, slashed, bumpBytes);
+            SystemInstruction.transfer_pda(pdaEscrow, operator, slashed, pdaSeed, bumpBytes);
             slashedFunds += slashed;
         }
 
@@ -734,7 +733,7 @@ contract ServiceRegistrySolana {
         uint64 amount = slashedFunds;
         if (slashedFunds > 0) {
             slashedFunds = 0;
-            SystemInstruction.transfer_pda(pdaEscrow, to, amount, bumpBytes);
+            SystemInstruction.transfer_pda(pdaEscrow, to, amount, pdaSeed, bumpBytes);
             emit Drain(to, amount);
         }
 
