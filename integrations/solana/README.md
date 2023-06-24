@@ -47,6 +47,9 @@ command was used: `solana-keygen grind --starts-with AU:1`. `deployer` was made 
 `deployer` needs to have a balance that is enough to deploy the program and perform following actions.
 On the devnet one can use `solana airdrop 1` - this will airdrop 1 SOL to the default keypair.
 
+The program bytecode is written into `ServiceRegistrySolana.so`, and its IDS (ABI) is in `ServiceRegistrySolana.json` file.
+Use them to connect to the program on-chain and perform necessary web3 requests.
+
 - Create a data storage account separately that points to the program Id:
 ```
 cd scripts
