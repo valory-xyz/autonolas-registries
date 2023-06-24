@@ -39,7 +39,7 @@ Also note that for the correct anchor setup, the necessary `payer.key` keypair i
 
 ## Deployment
 The program is deployed on Solana network with the following addresses:
-- devnet: [AUX6DBER9z1HyeW7g4cu6ArHRDJdSQFAvSEL7PzWBSpw](https://explorer.solana.com/address/AUX6DBER9z1HyeW7g4cu6ArHRDJdSQFAvSEL7PzWBSpw?cluster=devnet)
+- devnet: [AUX6DBER9z1HyeW7g4cu6ArHRDJdSQFAvSEL7PzWBSpw](https://solscan.io/account/AUX6DBER9z1HyeW7g4cu6ArHRDJdSQFAvSEL7PzWBSpw?cluster=devnet)
 
 ### Deployment procedure
 `deployer` and `programKey` were created using the solana keygen cli function. For example, for the program Id the following
