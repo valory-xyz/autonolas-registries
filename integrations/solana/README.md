@@ -14,20 +14,28 @@ Commitment: confirmed
 Solang version: `v0.3.0`
 
 ## Compile the code
-```
+```bash
 yarn
 npm run build
 ```
 The compiled program `.so` file and the idl `.json` file will be put in the `test` folder.
+Notes: <br>
+```bash
+If the tag @program_id is already set in product mode (program id) in the source code, then comment it out.
+Before deployment, return it back and recompile.
+contracts/ServiceRegistrySolana.sol
+//@program_id("AUbXARyxJiDhGKgNvii6YkXT92AQZxFrZvFuGTkRtisa")
+contract ServiceRegistrySolana {
+```
 
 ## Run tests
 In a separate window run a validator:
-```
+```bash
 solana-test-validator -r
 ```
 
 Setup and run tests:
-```
+```bash
 npm run setup
 npm run test
 ```
@@ -47,22 +55,22 @@ command was used: `solana-keygen grind --starts-with AU:1`. `deployer` was made 
 `deployer` needs to have a balance that is enough to deploy the program and perform following actions.
 On the devnet one can use `solana airdrop 1` - this will airdrop 1 SOL to the default keypair.
 
-The program bytecode is written into `ServiceRegistrySolana.so`, and its IDS (ABI) is in `ServiceRegistrySolana.json` file.
+The program bytecode is written into `ServiceRegistrySolana.so`, and its IDL (ABI) is in `ServiceRegistrySolana.json` file.
 Use them to connect to the program on-chain and perform necessary web3 requests.
 
 - Create a data storage account separately that points to the program Id:
-```
+```bash
 cd scripts
 node create_data_storage_account.js
 ```
 
 - Deploy solana program:
-```
+```bash
 solana program deploy --url https://api.devnet.solana.com -v --program-id AUX6DBER9z1HyeW7g4cu6ArHRDJdSQFAvSEL7PzWBSpw.json ServiceRegistrySolana.so
 ```
 
 - Initialize required program parameters:
-```
+```bash
 node initialize.js
 ```
 
