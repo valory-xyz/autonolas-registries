@@ -42,3 +42,20 @@ storageKey info: {
     ✔ Creating a 100 services. Storage usage ... (2188ms)
 
 
+
+andrey@v510:~/valory$ solana rent 50000
+Rent per byte-year: 0.00000348 SOL
+Rent per epoch: 0.000955231 SOL
+Rent-exempt minimum: 0.34889088 SOL
+
+andrey@v510:~/valory$ solana rent 10000000
+Rent per byte-year: 0.00000348 SOL
+Rent per epoch: 0.190560923 SOL
+Rent-exempt minimum: 69.60089088 SOL
+
+andrey@v510:~/valory$ solana config get
+Config File: /home/andrey/.config/solana/cli/config.yml
+RPC URL: https://api.devnet.solana.com 
+WebSocket URL: wss://api.devnet.solana.com/ (computed)
+Keypair Path: /home/andrey/.config/solana/id.json 
+Commitment: confirmed
