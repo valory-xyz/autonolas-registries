@@ -72,7 +72,8 @@ describe("ServiceRegistrySolana", function () {
         const programKey = loadKey("ServiceRegistrySolana.key");
 
         //space = 50000; // step 153
-        space = 100000; // step xxx
+        //space = 100000; // step 318
+        space = 1000000; // step
         await createAccount(provider, storage, programKey.publicKey, space);
 
         program = new anchor.Program(idl, programKey.publicKey, provider);
@@ -123,12 +124,12 @@ describe("ServiceRegistrySolana", function () {
         expect(owners.length).toEqual(multisigAccountData.n);
     });
 
-    it.only("Creating a 320 services. Storage space", async function () {
+    it.only("Creating a 3200 services. Storage space", async function () {
         // Create a service
         console.log("space:",space);
         let passed = true;
         let step = 0;
-        const maxSteps = 320;
+        const maxSteps = 3200;
         for (let i = 0; i < maxSteps; i++) {
             try {
                 await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)

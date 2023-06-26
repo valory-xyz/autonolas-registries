@@ -1,0 +1,59 @@
+npm run test-acc-full
+
+> solana-registries@0.0.1 test-acc-full
+> cd test; mocha ServiceRegistrySolanaDataFull.js; cd -
+
+(node:299416) ExperimentalWarning: Custom ESM Loaders is an experimental feature. This feature could change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:299416) ExperimentalWarning: The Node.js specifier resolution flag is experimental. It could change or be removed at any time.
+
+
+  ServiceRegistrySolana
+space: 1000000
+    1) Creating a 3200 services. Storage space
+
+
+  0 passing (8m)
+  1 failing
+
+  1) ServiceRegistrySolana
+       Creating a 3200 services. Storage space:
+     Error: Timeout of 500000ms exceeded. For async tests and hooks, ensure "done()" is called; if returning a Promise, ensure it resolves. (/home/andrey/valory/autonolas-registries/integrations/solana/test/ServiceRegistrySolanaDataFull.js)
+      at listOnTimeout (node:internal/timers:559:17)
+      at processTimers (node:internal/timers:502:7)
+
+
+
+out of memory SendTransactionError: failed to send transaction: Transaction simulation failed: Error processing Instruction 0: Computational budget exceeded
+    at Connection.sendEncodedTransaction (/home/andrey/valory/autonolas-registries/integrations/solana/node_modules/@solana/web3.js/src/connection.ts:5882:13)
+    at runMicrotasks (<anonymous>)
+    at processTicksAndRejections (node:internal/process/task_queues:96:5)
+    at async Connection.sendRawTransaction (/home/andrey/valory/autonolas-registries/integrations/solana/node_modules/@solana/web3.js/src/connection.ts:5841:20)
+    at async sendAndConfirmRawTransaction (/home/andrey/valory/autonolas-registries/integrations/solana/node_modules/@project-serum/anchor/src/provider.ts:318:21)
+    at async AnchorProvider.sendAndConfirm (/home/andrey/valory/autonolas-registries/integrations/solana/node_modules/@project-serum/anchor/src/provider.ts:149:14)
+    at async MethodsBuilder.rpc [as _rpcFn] (/home/andrey/valory/autonolas-registries/integrations/solana/node_modules/@project-serum/anchor/src/program/namespace/rpc.ts:29:16)
+    at async Context.<anonymous> (/home/andrey/valory/autonolas-registries/integrations/solana/test/ServiceRegistrySolanaDataFull.js:135:17) {
+  logs: [
+    'Program 8idAsezzejHdnnfuB5omBtArodiUeNZvShJRFYhuZSdB invoke [1]',
+    'Program data: n4SkbaZUKKruBwAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=',
+    'Program 8idAsezzejHdnnfuB5omBtArodiUeNZvShJRFYhuZSdB consumed 200000 of 200000 compute units',
+    'Program 8idAsezzejHdnnfuB5omBtArodiUeNZvShJRFYhuZSdB failed: Computational budget exceeded'
+  ],
+  programErrorStack: ProgramErrorStack {
+    stack: [
+      [PublicKey [PublicKey(8idAsezzejHdnnfuB5omBtArodiUeNZvShJRFYhuZSdB)]]
+    ]
+  }
+}
+step 2029
+passed: false
+step: 2029
+storageKey info: {
+  data: <Buffer 95 00 27 83 00 00 00 00 00 00 00 00 50 0c 00 00 7c a5 57 e7 eb 80 96 33 73 c3 87 9e ea 1a 4a a0 95 b6 bd ea 3e f3 11 64 9d 56 5f 32 00 d6 49 c2 13 08 ... 999950 more bytes>,
+  executable: false,
+  lamports: 6960890880,
+  owner: PublicKey [PublicKey(8idAsezzejHdnnfuB5omBtArodiUeNZvShJRFYhuZSdB)] {
+    _bn: <BN: 72ab84fbc146d4e6ab917e735ef18dcd00b6e46be85d78a2ddf840951ddedcb6>
+  },
+  rentEpoch: 0
+}
