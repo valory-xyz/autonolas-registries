@@ -5,6 +5,7 @@
   "scripts": {
     "clean-test": "cd test; rm *.key; tsc; ts-node setup.ts; mocha ServiceRegistrySolana.js; cd -",
     "test": "cd test; mocha ServiceRegistrySolana.js; cd -",
+    "test-devnet": "cd test; mocha ServiceRegistrySolanaDevNet.js; cd -",
     "setup": "cd test; rm *.key; tsc; ts-node setup.ts; cd -",
     "build": "solang compile contracts/ServiceRegistrySolana.sol --release -o test --target solana -v",
     "build-debug": "solang compile contracts/ServiceRegistrySolana.sol -o test --target solana -v"
