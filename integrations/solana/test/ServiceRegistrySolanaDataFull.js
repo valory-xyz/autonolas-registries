@@ -25,6 +25,7 @@ describe("ServiceRegistrySolana", function () {
     let bumpBytes;
     let operator;
     let serviceOwner;
+    let space;
 
     this.timeout(500000);
 
@@ -70,7 +71,8 @@ describe("ServiceRegistrySolana", function () {
 
         const programKey = loadKey("ServiceRegistrySolana.key");
 
-        const space = 5000;
+        //space = 50000; // step 153
+        space = 100000; // step xxx
         await createAccount(provider, storage, programKey.publicKey, space);
 
         program = new anchor.Program(idl, programKey.publicKey, provider);
@@ -121,33 +123,13 @@ describe("ServiceRegistrySolana", function () {
         expect(owners.length).toEqual(multisigAccountData.n);
     });
 
-    it("Creating a service", async function () {
+    it.only("Creating a 320 services. Storage space", async function () {
         // Create a service
-        await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
-            .accounts({ dataAccount: storage.publicKey })
-            .remainingAccounts([
-                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
-            ])
-            .signers([serviceOwner])
-            .rpc();
-
-        // Check the obtained service
-        const service = await program.methods.getService(serviceId)
-            .accounts({ dataAccount: storage.publicKey })
-            .view();
-
-        expect(service.serviceOwner).toEqual(serviceOwner.publicKey);
-        //expect(service.configHash).toEqual(configHash);
-        expect(service.threshold).toEqual(maxThreshold);
-        expect(service.agentIds).toEqual(agentIds);
-        expect(service.slots).toEqual(slots);
-        const compareBonds = service.bonds.every((value, index) => value.eq(bonds[index]));
-        expect(compareBonds).toEqual(true);
-    });
-
-    it.only("Creating a 100 services. Storage usage ...", async function () {
-        // Create a service
-        for (let step = 0; step < 100; step++) {
+        console.log("space:",space);
+        let passed = true;
+        let step = 0;
+        const maxSteps = 320;
+        for (let i = 0; i < maxSteps; i++) {
             try {
                 await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
                     .accounts({ dataAccount: storage.publicKey })
@@ -158,9 +140,15 @@ describe("ServiceRegistrySolana", function () {
                     .rpc();
             } catch (error) {
                 console.log("out of memory",error);
+                step = i;
                 console.log("step",step);
+                passed = false;
                 break;
             }
+        }
+        // passed
+        if (step == 0) {
+            step = maxSteps;
         }    
         // Check the obtained service
         const service = await program.methods.getService(serviceId)
@@ -177,7 +165,9 @@ describe("ServiceRegistrySolana", function () {
 
         const infoStorageKey = await provider.connection.getAccountInfo(storage.publicKey);
         const buff = infoStorageKey.data;
-        console.log("buff:",buff.toString('hex')); 
+        console.log("passed:",passed);
+        console.log("step:",step);
+        // console.log("buff:",buff.toString('hex')); 
         console.log("storageKey info:",infoStorageKey);
     });
     

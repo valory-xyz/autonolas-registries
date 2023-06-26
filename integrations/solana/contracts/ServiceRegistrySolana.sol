@@ -6,7 +6,7 @@ import "SystemInstruction.sol";
 ///      The architecture is optimistic, in the sense that service owners are assumed to reference existing and relevant agents.
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
-@program_id("AUbXARyxJiDhGKgNvii6YkXT92AQZxFrZvFuGTkRtisa")
+//@program_id("AUbXARyxJiDhGKgNvii6YkXT92AQZxFrZvFuGTkRtisa")
 contract ServiceRegistrySolana {
     event OwnerUpdated(address indexed owner);
     event BaseURIChanged(string baseURI);
