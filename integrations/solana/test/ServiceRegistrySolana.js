@@ -26,6 +26,8 @@ describe("ServiceRegistrySolana", function () {
     let operator;
     let serviceOwner;
 
+    let init = false;
+
     this.timeout(500000);
 
     function loadKey(filename) {
@@ -66,32 +68,33 @@ describe("ServiceRegistrySolana", function () {
 
         provider = anchor.AnchorProvider.local(endpoint);
 
-        storage = web3.Keypair.generate();
-
         const programKey = loadKey("ServiceRegistrySolana.key");
 
-        const space = 5000;
-        await createAccount(provider, storage, programKey.publicKey, space);
+        if(init == false) {
+            storage = web3.Keypair.generate();
+            const space = 500000;
+            await createAccount(provider, storage, programKey.publicKey, space);
+            init = true;
+            program = new anchor.Program(idl, programKey.publicKey, provider);
 
-        program = new anchor.Program(idl, programKey.publicKey, provider);
+            // Find a PDA account
+            const [pda, bump] = await web3.PublicKey.findProgramAddress([Buffer.from("pdaEscrow", "utf-8")], program.programId);
+            pdaEscrow = pda;
+            bumpBytes = Buffer.from(new Uint8Array([bump]));
 
-        // Find a PDA account
-        const [pda, bump] = await web3.PublicKey.findProgramAddress([Buffer.from("pdaEscrow", "utf-8")], program.programId);
-        pdaEscrow = pda;
-        bumpBytes = Buffer.from(new Uint8Array([bump]));
+            await program.methods.new(deployer.publicKey, storage.publicKey, pdaEscrow, bumpBytes, baseURI)
+                .accounts({ dataAccount: storage.publicKey })
+                .rpc();
 
-        await program.methods.new(deployer.publicKey, storage.publicKey, pdaEscrow, bumpBytes, baseURI)
-            .accounts({ dataAccount: storage.publicKey })
-            .rpc();
-
-        let tx = await provider.connection.requestAirdrop(pdaEscrow, 100 * web3.LAMPORTS_PER_SOL);
-        await provider.connection.confirmTransaction(tx, "confirmed");
-        tx = await provider.connection.requestAirdrop(deployer.publicKey, 100 * web3.LAMPORTS_PER_SOL);
-        await provider.connection.confirmTransaction(tx, "confirmed");
-        tx = await provider.connection.requestAirdrop(serviceOwner.publicKey, 100 * web3.LAMPORTS_PER_SOL);
-        await provider.connection.confirmTransaction(tx, "confirmed");
-        tx = await provider.connection.requestAirdrop(operator.publicKey, 100 * web3.LAMPORTS_PER_SOL);
-        await provider.connection.confirmTransaction(tx, "confirmed");
+            let tx = await provider.connection.requestAirdrop(pdaEscrow, 100 * web3.LAMPORTS_PER_SOL);
+            await provider.connection.confirmTransaction(tx, "confirmed");
+            tx = await provider.connection.requestAirdrop(deployer.publicKey, 100 * web3.LAMPORTS_PER_SOL);
+            await provider.connection.confirmTransaction(tx, "confirmed");
+            tx = await provider.connection.requestAirdrop(serviceOwner.publicKey, 100 * web3.LAMPORTS_PER_SOL);
+            await provider.connection.confirmTransaction(tx, "confirmed");
+            tx = await provider.connection.requestAirdrop(operator.publicKey, 100 * web3.LAMPORTS_PER_SOL);
+            await provider.connection.confirmTransaction(tx, "confirmed");
+        }
     });
 
     it("Creating a multisig", async function () {
@@ -145,7 +148,7 @@ describe("ServiceRegistrySolana", function () {
         expect(compareBonds).toEqual(true);
     });
 
-    it.only("Creating a 100 services. Storage usage ...", async function () {
+    it.skip("Creating a 100 services. Storage usage ...", async function () {
         // Create a service
         for (let step = 0; step < 100; step++) {
             try {

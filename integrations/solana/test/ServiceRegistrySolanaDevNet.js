@@ -156,7 +156,7 @@ describe("ServiceRegistrySolana", function () {
     });
 
 
-    it("Creating a service", async function () {
+    it.only("Creating a service", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storageKey })
@@ -171,6 +171,8 @@ describe("ServiceRegistrySolana", function () {
             .accounts({ dataAccount: storageKey })
             .view();
 
+        console.log(service);
+        
         expect(service.serviceOwner).toEqual(serviceOwner.publicKey);
         //expect(service.configHash).toEqual(configHash);
         expect(service.threshold).toEqual(maxThreshold);
@@ -250,7 +252,7 @@ describe("ServiceRegistrySolana", function () {
         expect(compareBonds).toEqual(true);
     });
 
-    it.only("Creating a service and activating it", async function () {
+    it("Creating a service and activating it", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storageKey })
