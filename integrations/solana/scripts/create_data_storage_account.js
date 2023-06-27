@@ -35,9 +35,9 @@ async function main() {
 
     const provider = anchor.AnchorProvider.local(endpoint);
 
-    const programKey = loadKey("AUX6DBER9z1HyeW7g4cu6ArHRDJdSQFAvSEL7PzWBSpw.json");
+    const programKey = loadKey("AUtGCjdye7nFRe7Zn3i2tU86WCpw2pxSS5gty566HWT6.json");
 
-    const space = 5000;
+    const space = 500000;
     const storage = web3.Keypair.generate();
     await createAccount(provider, storage, programKey.publicKey, space);
 

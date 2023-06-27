@@ -25,10 +25,10 @@ async function main() {
 
     const provider = anchor.AnchorProvider.local(endpoint);
 
-    const programKey = loadKey("AUX6DBER9z1HyeW7g4cu6ArHRDJdSQFAvSEL7PzWBSpw.json");
+    const programKey = loadKey("AUtGCjdye7nFRe7Zn3i2tU86WCpw2pxSS5gty566HWT6.json");
 
     // Taken from create_data_storage_account.js output
-    const storageKey = new web3.PublicKey("8Ld7XjNZvSJfCDsq3ZtmWkRZAXY1St9marxja692TR2j");
+    const storageKey = new web3.PublicKey("7uiPSypNbSLeMopSU7VSEgoKUHr7yBAWU6nPsBUEpVD");
 
     const program = new anchor.Program(idl, programKey.publicKey, provider);
 
@@ -38,7 +38,7 @@ async function main() {
     const bumpBytes = Buffer.from(new Uint8Array([bump]));
 
     console.log("pda", pda);
-    // PDA 5BY9tnfBEd4sasXkmHJ6t2L4h5mQJzp2f7hz6LL7dcqk
+    // PDA 97f9214h4vLdH9P7tmHBAcxMc8auofGqxS5cAFiMkZT3
 
     // Initialize the program
     await program.methods.new(deployer.publicKey, storageKey, pdaEscrow, bumpBytes, baseURI)
