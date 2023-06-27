@@ -285,15 +285,35 @@ describe("ServiceRegistrySolana", function () {
         let escrowBalanceBefore = await provider.connection.getBalance(pdaEscrow);
         //console.log("escrowBalanceBefore", escrowBalanceBefore);
 
-        // Activate the service registration
-        await program.methods.activateRegistration(serviceId)
+        // Check the obtained service
+        const serviceId = 2; 
+        const service2 = await program.methods.getService(serviceId)
             .accounts({ dataAccount: storage.publicKey })
-            .remainingAccounts([
-                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
-                { pubkey: pdaEscrow, isSigner: false, isWritable: true }
-            ])
-            .signers([serviceOwner])
-            .rpc();
+            .view();
+        console.log(service2.serviceOwner);
+        console.log(serviceOwner.publicKey);
+        expect(service2.serviceOwner).toEqual(serviceOwner.publicKey);
+
+
+        // Activate the service registration
+        try {
+            await program.methods.activateRegistration(serviceId)
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
+                    { pubkey: pdaEscrow, isSigner: false, isWritable: true }
+                ])
+                .signers([serviceOwner])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
+        
         console.log("OK 2 - 2");
         let escrowBalanceAfter = await provider.connection.getBalance(pdaEscrow);
         //console.log("escrowBalanceAfter", escrowBalanceAfter);
