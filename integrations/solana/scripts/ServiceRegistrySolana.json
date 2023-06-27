@@ -192,26 +192,6 @@
       "returns": "u64"
     },
     {
-      "name": "services",
-      "accounts": [
-        {
-          "name": "dataAccount",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": false
-        }
-      ],
-      "args": [
-        {
-          "name": "arg0",
-          "type": "u256"
-        }
-      ],
-      "returns": {
-        "defined": "Service"
-      }
-    },
-    {
       "name": "new",
       "docs": [
         "dev: Service registry constructor.",
