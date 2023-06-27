@@ -78,3 +78,7 @@ node initialize.js
 ```
 
 - Add funds to the pda account using the `transfer` method to finish its initialization.
+```bash
+pda=97f9214h4vLdH9P7tmHBAcxMc8auofGqxS5cAFiMkZT3
+solana transfer --from $HOME/.config/solana/id.json ${pda} 1.0 --allow-unfunded-recipient
+```

@@ -213,7 +213,7 @@ describe("ServiceRegistrySolana", function () {
         }
     });
 
-    it.only("Updating a service", async function () {
+    it("Updating a service", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storageKey })
@@ -250,7 +250,7 @@ describe("ServiceRegistrySolana", function () {
         expect(compareBonds).toEqual(true);
     });
 
-    it("Creating a service and activating it", async function () {
+    it.only("Creating a service and activating it", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storageKey })
@@ -264,14 +264,23 @@ describe("ServiceRegistrySolana", function () {
         //console.log("escrowBalanceBefore", escrowBalanceBefore);
 
         // Activate the service registration
-        await program.methods.activateRegistration(serviceId)
-            .accounts({ dataAccount: storageKey })
-            .remainingAccounts([
-                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
-                { pubkey: pdaEscrow, isSigner: false, isWritable: true }
-            ])
-            .signers([serviceOwner])
-            .rpc();
+        try {
+            await program.methods.activateRegistration(serviceId)
+                .accounts({ dataAccount: storageKey })
+                .remainingAccounts([
+                    { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true },
+                    { pubkey: pdaEscrow, isSigner: false, isWritable: true }
+                ])
+                .signers([serviceOwner])
+                .rpc();
+        } catch (error) {
+            if (error instanceof Error && "message" in error) {
+                console.error("Program Error:", error);
+                console.error("Error Message:", error.message);
+            } else {
+                console.error("Transaction Error:", error);
+            }
+        }
 
         let escrowBalanceAfter = await provider.connection.getBalance(pdaEscrow);
         //console.log("escrowBalanceAfter", escrowBalanceAfter);
@@ -312,6 +321,7 @@ describe("ServiceRegistrySolana", function () {
             ])
             .signers([serviceOwner])
             .rpc();
+    
 
         // Check the escrow balance after the activation
         let escrowBalanceAfter = await provider.connection.getBalance(pdaEscrow);
@@ -322,7 +332,6 @@ describe("ServiceRegistrySolana", function () {
 
         // Get the operator escrow balance before activation
         escrowBalanceBefore = await provider.connection.getBalance(pdaEscrow);
-        return;
 
         const agentInstance = web3.Keypair.generate();
         // Register agent instance
