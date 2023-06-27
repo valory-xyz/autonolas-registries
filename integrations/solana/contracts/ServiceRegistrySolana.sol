@@ -105,7 +105,7 @@ contract ServiceRegistrySolana {
     // Map of hash(operator address and serviceId) => agent instance bonding / escrow balance
     mapping(bytes32 => uint64) public mapOperatorAndServiceIdOperatorBalances;
     // Set of services
-    Service[type(uint32).max] public services;
+    Service[type(uint32).max] internal services;
 
     /// @dev Service registry constructor.
     /// @param _owner Contract owner.
