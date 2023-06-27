@@ -94,6 +94,23 @@ describe("ServiceRegistrySolana", function () {
             await provider.connection.confirmTransaction(tx, "confirmed");
             tx = await provider.connection.requestAirdrop(operator.publicKey, 100 * web3.LAMPORTS_PER_SOL);
             await provider.connection.confirmTransaction(tx, "confirmed");
+            console.log("program.programId",program.programId);
+            console.log("storage.publicKey", storage.publicKey);
+            console.log("serviceOwner.publicKey", serviceOwner.publicKey);
+            console.log("operator.publicKey", operator.publicKey);
+        } else {
+            let tx = await provider.connection.requestAirdrop(pdaEscrow, 100 * web3.LAMPORTS_PER_SOL);
+            await provider.connection.confirmTransaction(tx, "confirmed");
+            tx = await provider.connection.requestAirdrop(deployer.publicKey, 100 * web3.LAMPORTS_PER_SOL);
+            await provider.connection.confirmTransaction(tx, "confirmed");
+            tx = await provider.connection.requestAirdrop(serviceOwner.publicKey, 100 * web3.LAMPORTS_PER_SOL);
+            await provider.connection.confirmTransaction(tx, "confirmed");
+            tx = await provider.connection.requestAirdrop(operator.publicKey, 100 * web3.LAMPORTS_PER_SOL);
+            await provider.connection.confirmTransaction(tx, "confirmed");
+            console.log("program.programId",program.programId);
+            console.log("storage.publicKey", storage.publicKey);
+            console.log("serviceOwner.publicKey", serviceOwner.publicKey);
+            console.log("operator.publicKey", operator.publicKey);
         }
     });
 
@@ -217,7 +234,7 @@ describe("ServiceRegistrySolana", function () {
         }
     });
 
-    it("Updating a service", async function () {
+    it.only("Updating a service", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storage.publicKey })
@@ -252,9 +269,10 @@ describe("ServiceRegistrySolana", function () {
         expect(service.slots).toEqual(newSlots);
         const compareBonds = service.bonds.every((value, index) => value.eq(newBonds[index]));
         expect(compareBonds).toEqual(true);
+        console.log("OK 1");
     });
 
-    it("Creating a service and activating it", async function () {
+    it.only("Creating a service and activating it", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storage.publicKey })
@@ -263,7 +281,7 @@ describe("ServiceRegistrySolana", function () {
             ])
             .signers([serviceOwner])
             .rpc();
-
+        console.log("OK 2 - 1");
         let escrowBalanceBefore = await provider.connection.getBalance(pdaEscrow);
         //console.log("escrowBalanceBefore", escrowBalanceBefore);
 
@@ -276,7 +294,7 @@ describe("ServiceRegistrySolana", function () {
             ])
             .signers([serviceOwner])
             .rpc();
-
+        console.log("OK 2 - 2");
         let escrowBalanceAfter = await provider.connection.getBalance(pdaEscrow);
         //console.log("escrowBalanceAfter", escrowBalanceAfter);
 
@@ -288,6 +306,7 @@ describe("ServiceRegistrySolana", function () {
         expect(escrowBalanceAfter - escrowBalanceBefore).toEqual(Number(service.securityDeposit));
 
         expect(service.state).toEqual({"activeRegistration": {}});
+        console.log("OK 2");
     });
 
     it("Creating a service, activating it and registering agent instances", async function () {
