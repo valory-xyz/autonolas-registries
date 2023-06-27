@@ -79,21 +79,21 @@ describe("ServiceRegistrySolana", function () {
         const idl = JSON.parse(fs.readFileSync("ServiceRegistrySolana.json", "utf8"));
 
         // payer.key is setup during the setup
-        process.env["ANCHOR_WALLET"] = "payer.key";
+        process.env["ANCHOR_WALLET"] = "deE9943tv6GqmWRmMgf1Nqt384UpzX4FrMvKrt34mmt.json";
 
         provider = anchor.AnchorProvider.local(endpoint);
 
-        storageKey = new web3.PublicKey("8Ld7XjNZvSJfCDsq3ZtmWkRZAXY1St9marxja692TR2j");
+        storageKey = new web3.PublicKey("7uiPSypNbSLeMopSU7VSEgoKUHr7yBAWU6nPsBUEpVD");
 
         //const programKey = loadKey("ServiceRegistrySolana.key");
         // defined publicKey (program id)
-        programKey = new web3.PublicKey("AUX6DBER9z1HyeW7g4cu6ArHRDJdSQFAvSEL7PzWBSpw");
+        programKey = loadKey("AUtGCjdye7nFRe7Zn3i2tU86WCpw2pxSS5gty566HWT6.json");
         
         //const space = 5000;
         //await createAccount(provider, storage, programKey.publicKey, space);
 
         //program = new anchor.Program(idl, programKey.publicKey, provider);
-        program = new anchor.Program(idl, programKey, provider);
+        program = new anchor.Program(idl, programKey.publicKey, provider);
 
         // Find a PDA account
         const [pda, bump] = await web3.PublicKey.findProgramAddress([Buffer.from("pdaEscrow", "utf-8")], program.programId);
@@ -101,7 +101,7 @@ describe("ServiceRegistrySolana", function () {
         bumpBytes = Buffer.from(new Uint8Array([bump]));
 
         console.log("pda findProgramAddress()",pdaEscrow);
-        console.log("pda init script: 5BY9tnfBEd4sasXkmHJ6t2L4h5mQJzp2f7hz6LL7dcqk");
+        console.log("pda init script: 97f9214h4vLdH9P7tmHBAcxMc8auofGqxS5cAFiMkZT3");
         // AUbXARyxJiDhGKgNvii6YkXT92AQZxFrZvFuGTkRtisa
         console.log("program.programId",program.programId);
         // GqL1nG7Aj6FdiUWnkdCsK7pEeyE5nm3T2aaMkGTNvMWn
@@ -156,7 +156,7 @@ describe("ServiceRegistrySolana", function () {
     });
 
 
-    it.only("Creating a service", async function () {
+    it("Creating a service", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storageKey })
@@ -213,7 +213,7 @@ describe("ServiceRegistrySolana", function () {
         }
     });
 
-    it("Updating a service", async function () {
+    it.only("Updating a service", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storageKey })
