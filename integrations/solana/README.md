@@ -24,7 +24,7 @@ Notes: <br>
 If the tag @program_id is already set in product mode (program id) in the source code, then comment it out.
 Before deployment, return it back and recompile.
 contracts/ServiceRegistrySolana.sol
-//@program_id("AUbXARyxJiDhGKgNvii6YkXT92AQZxFrZvFuGTkRtisa")
+//@program_id("AUqjSeMFhp15BvKUHsg8SRrpNZ3goKc6Zoo1mbzkjt1g")
 contract ServiceRegistrySolana {
 ```
 
@@ -47,8 +47,8 @@ Also note that for the correct anchor setup, the necessary `payer.key` keypair i
 
 ## Deployment
 The program is deployed on Solana network with the following addresses:
-- devnet: [AUtGCjdye7nFRe7Zn3i2tU86WCpw2pxSS5gty566HWT6](https://solscan.io/account/AUtGCjdye7nFRe7Zn3i2tU86WCpw2pxSS5gty566HWT6?cluster=devnet)
-- devnet storage account:[7uiPSypNbSLeMopSU7VSEgoKUHr7yBAWU6nPsBUEpVD](https://solscan.io/account/7uiPSypNbSLeMopSU7VSEgoKUHr7yBAWU6nPsBUEpVD?cluster=devnet)
+- devnet: [AUqjSeMFhp15BvKUHsg8SRrpNZ3goKc6Zoo1mbzkjt1g](https://solscan.io/account/AUqjSeMFhp15BvKUHsg8SRrpNZ3goKc6Zoo1mbzkjt1g?cluster=devnet)
+- devnet storage account:[3LyuRvraqhk8iidkbknMWqz7AB4QBVCgRDY12zvrHadY](https://solscan.io/account/3LyuRvraqhk8iidkbknMWqz7AB4QBVCgRDY12zvrHadY?cluster=devnet)
 
 ### Deployment procedure
 `deployer` and `programKey` were created using the solana keygen cli function. For example, for the program Id the following
@@ -69,7 +69,7 @@ node create_data_storage_account.js
 ```bash
 cwd=$(pwd)
 solana config set --keypair $cwd/deE9943tv6GqmWRmMgf1Nqt384UpzX4FrMvKrt34mmt.json
-solana program deploy --url https://api.devnet.solana.com -v --program-id AUtGCjdye7nFRe7Zn3i2tU86WCpw2pxSS5gty566HWT6.json ServiceRegistrySolana.so
+solana program deploy --url https://api.devnet.solana.com -v --program-id AUqjSeMFhp15BvKUHsg8SRrpNZ3goKc6Zoo1mbzkjt1g.json ServiceRegistrySolana.so
 ```
 
 - Initialize required program parameters:

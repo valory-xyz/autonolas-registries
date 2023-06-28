@@ -35,7 +35,7 @@ async function main() {
 
     const provider = anchor.AnchorProvider.local(endpoint);
 
-    const programKey = loadKey("AUtGCjdye7nFRe7Zn3i2tU86WCpw2pxSS5gty566HWT6.json");
+    const programKey = loadKey("AUqjSeMFhp15BvKUHsg8SRrpNZ3goKc6Zoo1mbzkjt1g.json");
 
     const space = 500000;
     const storage = web3.Keypair.generate();

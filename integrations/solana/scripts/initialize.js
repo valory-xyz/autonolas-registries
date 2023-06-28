@@ -25,10 +25,10 @@ async function main() {
 
     const provider = anchor.AnchorProvider.local(endpoint);
 
-    const programKey = loadKey("AUtGCjdye7nFRe7Zn3i2tU86WCpw2pxSS5gty566HWT6.json");
+    const programKey = loadKey("AUqjSeMFhp15BvKUHsg8SRrpNZ3goKc6Zoo1mbzkjt1g.json");
 
     // Taken from create_data_storage_account.js output
-    const storageKey = new web3.PublicKey("7uiPSypNbSLeMopSU7VSEgoKUHr7yBAWU6nPsBUEpVD");
+    const storageKey = new web3.PublicKey("3LyuRvraqhk8iidkbknMWqz7AB4QBVCgRDY12zvrHadY");
 
     const program = new anchor.Program(idl, programKey.publicKey, provider);
 
@@ -36,9 +36,6 @@ async function main() {
     const [pda, bump] = await web3.PublicKey.findProgramAddress([Buffer.from("pdaEscrow", "utf-8")], program.programId);
     const pdaEscrow = pda;
     const bumpBytes = Buffer.from(new Uint8Array([bump]));
-
-    console.log("pda", pda);
-    // PDA 97f9214h4vLdH9P7tmHBAcxMc8auofGqxS5cAFiMkZT3
 
     // Initialize the program
     await program.methods.new(deployer.publicKey, storageKey, pdaEscrow, bumpBytes, baseURI)
@@ -60,6 +57,7 @@ async function main() {
         .accounts({ dataAccount: storageKey })
         .view();
     console.log("pdaEscrow", pdaOut);
+    // pdaEscrow 7pyvHnpY6ZqEPXfqRx6aBbPqpmDTgXuhqpdfosDERECB
 
     const baseURIOut = await program.methods.baseUri()
         .accounts({ dataAccount: storageKey })
