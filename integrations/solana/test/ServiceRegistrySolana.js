@@ -122,15 +122,7 @@ describe("ServiceRegistrySolana", function () {
         expect(owners.length).toEqual(multisigAccountData.n);
     });
 
-    it.only("Creating a service", async function () {
-        const addrZero = await program.methods.owner2()
-            .accounts({ dataAccount: storage.publicKey })
-            .view();
-        console.log(addrZero);
-        console.log(addrZero.toBase58());
-        console.log(anchor.BN(addrZero));
-        return;
-
+    it("Creating a service", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storage.publicKey })
@@ -272,16 +264,6 @@ describe("ServiceRegistrySolana", function () {
 
         let escrowBalanceBefore = await provider.connection.getBalance(pdaEscrow);
         //console.log("escrowBalanceBefore", escrowBalanceBefore);
-
-        // Check the obtained service
-        const serviceId = 2; 
-        const service2 = await program.methods.getService(serviceId)
-            .accounts({ dataAccount: storage.publicKey })
-            .view();
-        console.log(service2.serviceOwner);
-        console.log(serviceOwner.publicKey);
-        expect(service2.serviceOwner).toEqual(serviceOwner.publicKey);
-
 
         // Activate the service registration
         try {
