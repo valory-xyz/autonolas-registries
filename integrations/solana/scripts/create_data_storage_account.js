@@ -44,9 +44,10 @@ async function main() {
     const programKey = loadKey(parsedData.program + ".json");
 
     // Check if the storage account already exists, and create it if it does not
+    let storage;
     if (parsedData.storage === undefined) {
         const space = 500000;
-        const storage = web3.Keypair.generate();
+        storage = web3.Keypair.generate();
         // Create a storage account
         await createAccount(provider, storage, programKey.publicKey, space);
     }

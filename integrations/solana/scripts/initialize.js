@@ -19,17 +19,10 @@ async function main() {
     const baseURI = parsedData.baseURI;
 
     // Get the deployer wallet
-    let deployerPath;
-    if (parsedData.ledger) {
-        deployerPath = "usb://ledger?key=0";
-    } else {
-        deployerPath = parsedData.wallet + ".json";
-    }
-    deployer = loadKey(deployerPath);
-    console.log("EOA is:", deployer.publicKey.toBase58());
+    deployer = loadKey(parsedData.wallet + ".json");
 
     // This keypair corresponds to the deployer one
-    process.env["ANCHOR_WALLET"] = deployerPath;
+    process.env["ANCHOR_WALLET"] = parsedData.wallet + ".json";
 
     // Get the solana endpoint
     const endpoint = parsedData.endpoint;
@@ -52,13 +45,8 @@ async function main() {
     const pdaEscrow = pda;
     const bumpBytes = Buffer.from(new Uint8Array([bump]));
 
-    // Get the storage publicKey
-    let storageOut = await program.methods.programStorage()
-        .accounts({ dataAccount: storageKey })
-        .view();
-
-    // Initialize the program if it was not yet initialized
-    if (storageOut.toBase58() === "11111111111111111111111111111111") {
+    // Initialize the program if it was not yet initialized (no record in the globals file)
+    if (parsedData.pda === undefined) {
         await program.methods.new(deployer.publicKey, storageKey, pdaEscrow, bumpBytes, baseURI)
             .accounts({ dataAccount: storageKey })
             .rpc();
@@ -74,7 +62,7 @@ async function main() {
         .view();
     console.log("deployer:", ownerOut.toBase58());
 
-    storageOut = await program.methods.programStorage()
+    const storageOut = await program.methods.programStorage()
         .accounts({ dataAccount: storageKey })
         .view();
     console.log("storage:", storageOut.toBase58());
