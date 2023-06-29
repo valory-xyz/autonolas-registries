@@ -19,21 +19,22 @@ async function main() {
     const baseURI = parsedData.baseURI;
 
     // Get the deployer wallet
-    let deployer;
+    let deployerPath;
     if (parsedData.ledger) {
-        deployer = "usb://ledger?key=0";
+        deployerPath = "usb://ledger?key=0";
     } else {
-        deployer = loadKey(parsedData.wallet + ".json");
+        deployerPath = parsedData.wallet + ".json";
     }
+    deployer = loadKey(deployerPath);
     console.log("EOA is:", deployer.publicKey.toBase58());
+
+    // This keypair corresponds to the deployer one
+    process.env["ANCHOR_WALLET"] = deployerPath;
 
     // Get the solana endpoint
     const endpoint = parsedData.endpoint;
 
     const idl = JSON.parse(fs.readFileSync("ServiceRegistrySolana.json", "utf8"));
-
-    // This keypair corresponds to the deployer one
-    process.env["ANCHOR_WALLET"] = parsedData.wallet + ".json";
 
     const provider = anchor.AnchorProvider.local(endpoint);
 
