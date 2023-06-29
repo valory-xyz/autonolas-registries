@@ -12,25 +12,33 @@ function loadKey(filename) {
 }
 
 async function main() {
-    const baseURI = "https://gateway.autonolas.tech/ipfs/";
+    const globalsFile = "globals.json";
+    const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
+    const parsedData = JSON.parse(dataFromJSON);
 
-    // Allocate accounts
-    const deployer = loadKey("deE9943tv6GqmWRmMgf1Nqt384UpzX4FrMvKrt34mmt.json");
+    // Get the base URI
+    const baseURI = parsedData.baseURI;
 
-    const endpoint = "https://api.devnet.solana.com";
+    // Get the deployer wallet
+    const deployer = loadKey(parsedData.wallet + ".json");
+
+    // Get the solana endpoint
+    const endpoint = parsedData.endpoint;
 
     const idl = JSON.parse(fs.readFileSync("ServiceRegistrySolana.json", "utf8"));
 
-    // payer.key is setup during the setup
-    process.env["ANCHOR_WALLET"] = "deE9943tv6GqmWRmMgf1Nqt384UpzX4FrMvKrt34mmt.json";
+    // This keypair corresponds to the deployer one
+    process.env["ANCHOR_WALLET"] = parsedData.wallet + ".json";
 
     const provider = anchor.AnchorProvider.local(endpoint);
 
-    const programKey = loadKey("AUqjSeMFhp15BvKUHsg8SRrpNZ3goKc6Zoo1mbzkjt1g.json");
+    // Get the program Id key
+    const programKey = loadKey(parsedData.program + ".json");
 
     // Taken from create_data_storage_account.js output
-    const storageKey = new web3.PublicKey("3LyuRvraqhk8iidkbknMWqz7AB4QBVCgRDY12zvrHadY");
+    const storageKey = new web3.PublicKey(parsedData.storage);
 
+    // Get the program instance
     const program = new anchor.Program(idl, programKey.publicKey, provider);
 
     // Create a service
@@ -63,7 +71,7 @@ async function main() {
              89,  54,  38, 196, 150, 102, 160, 134, 139
         ]));
 
-    const pdaEscrow = new web3.PublicKey("7pyvHnpY6ZqEPXfqRx6aBbPqpmDTgXuhqpdfosDERECB");
+    const pdaEscrow = new web3.PublicKey(parsedData.pda);
 
     // Create a service
     await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
@@ -79,6 +87,7 @@ async function main() {
         .accounts({ dataAccount: storageKey })
         .view();
     expect(service.state).toEqual({"preRegistration": {}});
+    return;
 
     // Activate the service registration
     await program.methods.activateRegistration(serviceId)

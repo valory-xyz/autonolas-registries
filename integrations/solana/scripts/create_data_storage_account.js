@@ -28,20 +28,33 @@ async function createAccount(provider, account, programId, space) {
 }
 
 async function main() {
-    const endpoint = "https://api.devnet.solana.com";
+    const globalsFile = "globals.json";
+    const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
+    const parsedData = JSON.parse(dataFromJSON);
+
+    // Get the solana endpoint
+    const endpoint = parsedData.endpoint;
 
     // This keypair corresponds to the deployer one
-    process.env["ANCHOR_WALLET"] = "deE9943tv6GqmWRmMgf1Nqt384UpzX4FrMvKrt34mmt.json";
+    process.env["ANCHOR_WALLET"] = parsedData.wallet + ".json";
 
     const provider = anchor.AnchorProvider.local(endpoint);
 
-    const programKey = loadKey("AUqjSeMFhp15BvKUHsg8SRrpNZ3goKc6Zoo1mbzkjt1g.json");
+    // Get the program Id key
+    const programKey = loadKey(parsedData.program + ".json");
 
-    const space = 500000;
-    const storage = web3.Keypair.generate();
-    await createAccount(provider, storage, programKey.publicKey, space);
+    // Check if the storage account already exists, and create it if it does not
+    if (parsedData.storage === undefined) {
+        const space = 500000;
+        const storage = web3.Keypair.generate();
+        // Create a storage account
+        await createAccount(provider, storage, programKey.publicKey, space);
+    }
 
-    console.log("Storage publicKey", storage.publicKey);
+    // Write the storage account data
+    parsedData.storage = storage.publicKey.toBase58();
+    fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
+    console.log("Storage publicKey:", parsedData.storage);
 }
 
 main()

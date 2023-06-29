@@ -101,7 +101,7 @@ contract ServiceRegistrySolana {
     uint64 public slashedFunds;
 
     // Map of agent instance address => operator address that supplied the instance
-    mapping (address => address) public mapAgentInstanceOperators;
+    mapping(address => address) public mapAgentInstanceOperators;
     // Map of hash(operator address and serviceId) => agent instance bonding / escrow balance
     mapping(bytes32 => uint64) public mapOperatorAndServiceIdOperatorBalances;
     // Set of services
@@ -162,6 +162,10 @@ contract ServiceRegistrySolana {
         address serviceOwner = services[serviceId].serviceOwner;
         requireSigner(serviceOwner);
 
+        // Check for the zero new owner address
+        if (newServiceOwner == address(0)) {
+            revert("ZeroAddress");
+        }
         services[serviceId].serviceOwner = newServiceOwner;
 
     }

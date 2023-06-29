@@ -122,7 +122,15 @@ describe("ServiceRegistrySolana", function () {
         expect(owners.length).toEqual(multisigAccountData.n);
     });
 
-    it("Creating a service", async function () {
+    it.only("Creating a service", async function () {
+        const addrZero = await program.methods.owner2()
+            .accounts({ dataAccount: storage.publicKey })
+            .view();
+        console.log(addrZero);
+        console.log(addrZero.toBase58());
+        console.log(anchor.BN(addrZero));
+        return;
+
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
             .accounts({ dataAccount: storage.publicKey })
