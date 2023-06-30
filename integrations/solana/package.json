@@ -1,0 +1,35 @@
+{
+  "name": "solana-registries",
+  "version": "0.0.1",
+  "description": "Solana Integration of Autonolas registries L2",
+  "scripts": {
+    "clean-test": "cd test; rm *.key; tsc; ts-node setup.ts; mocha ServiceRegistrySolana.js; cd -",
+    "test": "cd test; mocha ServiceRegistrySolana.js; cd -",
+    "test-devnet": "cd test; mocha ServiceRegistrySolanaDevNet.js; cd -",
+    "test-acc-full": "cd test; mocha ServiceRegistrySolanaDataFull.js; cd -",
+    "setup": "cd test; rm *.key; tsc; ts-node setup.ts; cd -",
+    "build": "solang compile contracts/ServiceRegistrySolana.sol --release -o test --target solana -v",
+    "build-debug": "solang compile contracts/ServiceRegistrySolana.sol -o test --target solana -v"
+  },
+  "author": "Aleksandr Kuperman <aleksandr.kuperman@valory.xyz>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/mocha": "^9.1.0",
+    "@types/node": "^14.14.10",
+    "@types/text-encoding-utf-8": "^1.0.2",
+    "expect": "^26.6.2",
+    "mocha": "^9.1.0",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.1.2"
+  },
+  "dependencies": {
+    "@project-serum/anchor": "^0.26",
+    "@solana/spl-token": "^0.3.8",
+    "@solana/web3.js": "^1.68",
+    "ethers": "^5.2.0",
+    "fast-sha256": "^1.3.0",
+    "tweetnacl": "^1.0.3",
+    "web3-eth-abi": "^1.3.0",
+    "web3-utils": "^1.3.0"
+  }
+}

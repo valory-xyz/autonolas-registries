@@ -1,0 +1,1249 @@
+{
+  "version": "0.3.0",
+  "name": "ServiceRegistrySolana",
+  "docs": [
+    "title: Service Registry Solana - Smart contract for registering services on the Solana chain.",
+    "dev: Underlying canonical agents and components are not checked for their validity since they are set up on the L1 mainnet.\nThe architecture is optimistic, in the sense that service owners are assumed to reference existing and relevant agents.",
+    "author: Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz> Andrey Lebedev - <andrey.lebedev@valory.xyz>"
+  ],
+  "instructions": [
+    {
+      "name": "CID_PREFIX",
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [],
+      "returns": "string"
+    },
+    {
+      "name": "SOLANA_RENT_LAMPORTS",
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [],
+      "returns": "u64"
+    },
+    {
+      "name": "VERSION",
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [],
+      "returns": "string"
+    },
+    {
+      "name": "pdaSeed",
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [],
+      "returns": "bytes"
+    },
+    {
+      "name": "owner",
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [],
+      "returns": "publicKey"
+    },
+    {
+      "name": "programStorage",
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [],
+      "returns": "publicKey"
+    },
+    {
+      "name": "pdaEscrow",
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [],
+      "returns": "publicKey"
+    },
+    {
+      "name": "bumpBytes",
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [],
+      "returns": "bytes"
+    },
+    {
+      "name": "baseURI",
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [],
+      "returns": "string"
+    },
+    {
+      "name": "totalSupply",
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [],
+      "returns": "u32"
+    },
+    {
+      "name": "slashedFunds",
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [],
+      "returns": "u64"
+    },
+    {
+      "name": "mapAgentInstanceOperators",
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "arg0",
+          "type": "publicKey"
+        }
+      ],
+      "returns": "publicKey"
+    },
+    {
+      "name": "mapOperatorAndServiceIdOperatorBalances",
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "arg0",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ],
+      "returns": "u64"
+    },
+    {
+      "name": "new",
+      "docs": [
+        "dev: Service registry constructor.",
+        "param: Contract owner.",
+        "param: Program storage address.",
+        "param: PDA escrow.",
+        "param: PDA bump bytes.",
+        "param: Agent registry token base URI."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "owner",
+          "type": "publicKey"
+        },
+        {
+          "name": "programstorage",
+          "type": "publicKey"
+        },
+        {
+          "name": "pdaescrow",
+          "type": "publicKey"
+        },
+        {
+          "name": "bumpbytes",
+          "type": "bytes"
+        },
+        {
+          "name": "baseuri",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "changeOwner",
+      "docs": [
+        "dev: Changes the owner address.",
+        "param: Address of a new owner."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "newowner",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "transfer",
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "serviceid",
+          "type": "u32"
+        },
+        {
+          "name": "newserviceowner",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "create",
+      "docs": [
+        "dev: Creates a new service.",
+        "notice: If agentIds are not sorted in ascending order then the function that executes initial checks gets reverted.",
+        "param: Individual that creates and controls a service.",
+        "param: IPFS hash pointing to the config metadata.",
+        "param: Canonical agent Ids in a sorted ascending order.",
+        "param: Set of agent instances number for each agent Id.",
+        "param: Corresponding set of required bonds to register an agent instance in the service.",
+        "param: Signers threshold for a multisig composed by agent instances."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "serviceowner",
+          "type": "publicKey"
+        },
+        {
+          "name": "confighash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "agentids",
+          "type": {
+            "vec": "u32"
+          }
+        },
+        {
+          "name": "slots",
+          "type": {
+            "vec": "u32"
+          }
+        },
+        {
+          "name": "bonds",
+          "type": {
+            "vec": "u64"
+          }
+        },
+        {
+          "name": "threshold",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "update",
+      "docs": [
+        "dev: Updates a service in a CRUD way.",
+        "param: IPFS hash pointing to the config metadata.",
+        "param: Canonical agent Ids in a sorted ascending order.",
+        "notice: If agentIds are not sorted in ascending order then the function that executes initial checks gets reverted.",
+        "param: Set of agent instances number for each agent Id.",
+        "param: Corresponding set of required bonds to register an agent instance in the service.",
+        "param: Signers threshold for a multisig composed by agent instances.",
+        "param: Service Id to be updated."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "confighash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "agentids",
+          "type": {
+            "vec": "u32"
+          }
+        },
+        {
+          "name": "slots",
+          "type": {
+            "vec": "u32"
+          }
+        },
+        {
+          "name": "bonds",
+          "type": {
+            "vec": "u64"
+          }
+        },
+        {
+          "name": "threshold",
+          "type": "u32"
+        },
+        {
+          "name": "serviceid",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "activateRegistration",
+      "docs": [
+        "dev: Activates the service.",
+        "param: Correspondent service Id."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "serviceid",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "registerAgents",
+      "docs": [
+        "dev: Registers agent instances.",
+        "param: Service Id to register agent instances for.",
+        "param: Agent instance addresses.",
+        "param: Canonical Ids of the agent correspondent to the agent instance."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "serviceid",
+          "type": "u32"
+        },
+        {
+          "name": "agentinstances",
+          "type": {
+            "vec": "publicKey"
+          }
+        },
+        {
+          "name": "agentids",
+          "type": {
+            "vec": "u32"
+          }
+        }
+      ]
+    },
+    {
+      "name": "deploy",
+      "docs": [
+        "dev: Creates multisig instance controlled by the set of service agent instances and deploys the service.",
+        "param: Correspondent service Id.",
+        "param: Address of the initialized and created multisig."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "serviceid",
+          "type": "u32"
+        },
+        {
+          "name": "multisig",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "slash",
+      "docs": [
+        "dev: Slashes a specified agent instance.",
+        "param: Agent instances to slash.",
+        "param: Correspondent amounts to slash.",
+        "param: Service Id."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "agentinstances",
+          "type": {
+            "vec": "publicKey"
+          }
+        },
+        {
+          "name": "amounts",
+          "type": {
+            "vec": "u64"
+          }
+        },
+        {
+          "name": "serviceid",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "terminate",
+      "docs": [
+        "dev: Terminates the service.",
+        "param: Service Id to be updated."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "serviceid",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "unbond",
+      "docs": [
+        "dev: Unbonds agent instances of the operator from the service.",
+        "param: Service Id."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "serviceid",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "drain",
+      "docs": [
+        "dev: Drains slashed funds.",
+        "param: Address to send funds to."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "to",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "getService",
+      "docs": [
+        "dev: Gets the service instance.",
+        "param: Service Id.",
+        "return: service Corresponding Service struct."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "serviceid",
+          "type": "u32"
+        }
+      ],
+      "returns": {
+        "defined": "Service"
+      }
+    },
+    {
+      "name": "getAgentParams",
+      "docs": [
+        "dev: Gets service agent parameters: number of agent instances (slots) and a bond amount.",
+        "param: Service Id.",
+        "return: Number of canonical agent Ids in the service.",
+        "return: Set of agent instances number for each agent Id.",
+        "return: Corresponding set of required bonds to register an agent instance in the service."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "serviceid",
+          "type": "u32"
+        }
+      ],
+      "returns": {
+        "defined": "getAgentParams_returns"
+      }
+    },
+    {
+      "name": "getInstancesForAgentId",
+      "docs": [
+        "dev: Gets the set of all agent instances for a given canonical agent Id in the service.",
+        "param: Service Id.",
+        "param: Canonical agent Id.",
+        "return: Number of agent instances.",
+        "return: Set of agent instances for a specified canonical agent Id."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "serviceid",
+          "type": "u32"
+        },
+        {
+          "name": "agentid",
+          "type": "u32"
+        }
+      ],
+      "returns": {
+        "defined": "getInstancesForAgentId_returns"
+      }
+    },
+    {
+      "name": "getAgentInstances",
+      "docs": [
+        "dev: Gets service agent instances.",
+        "param: ServiceId.",
+        "return: Number of agent instances.",
+        "return: Set of bonded agent instances."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "serviceid",
+          "type": "u32"
+        }
+      ],
+      "returns": {
+        "defined": "getAgentInstances_returns"
+      }
+    },
+    {
+      "name": "getOperatorBalance",
+      "docs": [
+        "dev: Gets the operator's balance in a specific service.",
+        "param: Operator address.",
+        "param: Service Id.",
+        "return: balance The balance of the operator."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "operator",
+          "type": "publicKey"
+        },
+        {
+          "name": "serviceid",
+          "type": "u32"
+        }
+      ],
+      "returns": "u64"
+    },
+    {
+      "name": "ownerOf",
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "serviceid",
+          "type": "u32"
+        }
+      ],
+      "returns": "publicKey"
+    },
+    {
+      "name": "exists",
+      "docs": [
+        "dev: Checks for the service existence.",
+        "notice: Service counter starts from 1.",
+        "param: Service Id.",
+        "return: true if the service exists, false otherwise."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "serviceid",
+          "type": "u32"
+        }
+      ],
+      "returns": "bool"
+    },
+    {
+      "name": "setBaseURI",
+      "docs": [
+        "dev: Sets service base URI.",
+        "param: Base URI string."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "buri",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "tokenByIndex",
+      "docs": [
+        "dev: Gets the valid service Id from the provided index.",
+        "notice: Service counter starts from 1.",
+        "param: Service counter.",
+        "return: serviceId Service Id."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "id",
+          "type": "u32"
+        }
+      ],
+      "returns": "u32"
+    },
+    {
+      "name": "tokenURI",
+      "docs": [
+        "dev: Returns service token URI.",
+        "notice: Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.",
+        "param: Service Id.",
+        "return: Service token URI string."
+      ],
+      "accounts": [
+        {
+          "name": "dataAccount",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": false
+        }
+      ],
+      "args": [
+        {
+          "name": "serviceid",
+          "type": "u32"
+        }
+      ],
+      "returns": "string"
+    }
+  ],
+  "types": [
+    {
+      "name": "ServiceState",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "NonExistent"
+          },
+          {
+            "name": "PreRegistration"
+          },
+          {
+            "name": "ActiveRegistration"
+          },
+          {
+            "name": "FinishedRegistration"
+          },
+          {
+            "name": "Deployed"
+          },
+          {
+            "name": "TerminatedBonded"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Service",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "serviceOwner",
+            "type": "publicKey"
+          },
+          {
+            "name": "securityDeposit",
+            "type": "u64"
+          },
+          {
+            "name": "multisig",
+            "type": "publicKey"
+          },
+          {
+            "name": "configHash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "threshold",
+            "type": "u32"
+          },
+          {
+            "name": "maxNumAgentInstances",
+            "type": "u32"
+          },
+          {
+            "name": "numAgentInstances",
+            "type": "u32"
+          },
+          {
+            "name": "state",
+            "type": {
+              "defined": "ServiceState"
+            }
+          },
+          {
+            "name": "agentIds",
+            "type": {
+              "vec": "u32"
+            }
+          },
+          {
+            "name": "slots",
+            "type": {
+              "vec": "u32"
+            }
+          },
+          {
+            "name": "bonds",
+            "type": {
+              "vec": "u64"
+            }
+          },
+          {
+            "name": "operators",
+            "type": {
+              "vec": "publicKey"
+            }
+          },
+          {
+            "name": "agentInstances",
+            "type": {
+              "vec": "publicKey"
+            }
+          },
+          {
+            "name": "agentIdForAgentInstances",
+            "type": {
+              "vec": "u32"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "getAgentParams_returns",
+      "docs": [
+        "Data structure to hold the multiple returns of function getAgentParams"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "numAgentIds",
+            "type": "u32"
+          },
+          {
+            "name": "slots",
+            "type": {
+              "vec": "u32"
+            }
+          },
+          {
+            "name": "bonds",
+            "type": {
+              "vec": "u64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "getInstancesForAgentId_returns",
+      "docs": [
+        "Data structure to hold the multiple returns of function getInstancesForAgentId"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "numAgentInstances",
+            "type": "u32"
+          },
+          {
+            "name": "agentInstances",
+            "type": {
+              "vec": "publicKey"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "getAgentInstances_returns",
+      "docs": [
+        "Data structure to hold the multiple returns of function getAgentInstances"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "numAgentInstances",
+            "type": "u32"
+          },
+          {
+            "name": "agentInstances",
+            "type": {
+              "vec": "publicKey"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "OwnerUpdated",
+      "fields": [
+        {
+          "name": "owner",
+          "type": "publicKey",
+          "index": true
+        }
+      ]
+    },
+    {
+      "name": "CreateService",
+      "fields": [
+        {
+          "name": "serviceId",
+          "type": "u32",
+          "index": true
+        },
+        {
+          "name": "configHash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          },
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "UpdateService",
+      "fields": [
+        {
+          "name": "serviceId",
+          "type": "u32",
+          "index": true
+        },
+        {
+          "name": "configHash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          },
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "ActivateRegistration",
+      "fields": [
+        {
+          "name": "serviceId",
+          "type": "u32",
+          "index": true
+        }
+      ]
+    },
+    {
+      "name": "RegisterInstance",
+      "fields": [
+        {
+          "name": "operator",
+          "type": "publicKey",
+          "index": true
+        },
+        {
+          "name": "serviceId",
+          "type": "u32",
+          "index": true
+        },
+        {
+          "name": "agentInstance",
+          "type": "publicKey",
+          "index": true
+        },
+        {
+          "name": "agentId",
+          "type": "u32",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "Deposit",
+      "fields": [
+        {
+          "name": "sender",
+          "type": "publicKey",
+          "index": true
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "DeployService",
+      "fields": [
+        {
+          "name": "serviceId",
+          "type": "u32",
+          "index": true
+        },
+        {
+          "name": "multisig",
+          "type": "publicKey",
+          "index": true
+        }
+      ]
+    },
+    {
+      "name": "OperatorSlashed",
+      "fields": [
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "operator",
+          "type": "publicKey",
+          "index": true
+        },
+        {
+          "name": "serviceId",
+          "type": "u32",
+          "index": true
+        }
+      ]
+    },
+    {
+      "name": "Refund",
+      "fields": [
+        {
+          "name": "receiver",
+          "type": "publicKey",
+          "index": true
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "TerminateService",
+      "fields": [
+        {
+          "name": "serviceId",
+          "type": "u32",
+          "index": true
+        }
+      ]
+    },
+    {
+      "name": "OperatorUnbond",
+      "fields": [
+        {
+          "name": "operator",
+          "type": "publicKey",
+          "index": true
+        },
+        {
+          "name": "serviceId",
+          "type": "u32",
+          "index": true
+        }
+      ]
+    },
+    {
+      "name": "Drain",
+      "fields": [
+        {
+          "name": "drainer",
+          "type": "publicKey",
+          "index": true
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "BaseURIChanged",
+      "fields": [
+        {
+          "name": "baseURI",
+          "type": "string",
+          "index": false
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "address": "AU428Z7KbjRMjhmqWmQwUta2AvydbpfEZNBh8dStHTDi"
+  }
+}
