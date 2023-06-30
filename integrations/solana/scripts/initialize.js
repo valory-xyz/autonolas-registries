@@ -71,15 +71,13 @@ async function main() {
         .accounts({ dataAccount: storageKey })
         .view();
     console.log("pdaEscrow:", pdaOut.toBase58());
-    // pdaEscrow 7pyvHnpY6ZqEPXfqRx6aBbPqpmDTgXuhqpdfosDERECB
 
     const baseURIOut = await program.methods.baseUri()
         .accounts({ dataAccount: storageKey })
         .view();
     console.log("baseURI:", baseURIOut);
 
-    //let tx = await provider.connection.requestAirdrop(pdaEscrow, 100 * web3.LAMPORTS_PER_SOL);
-    //await provider.connection.confirmTransaction(tx, "confirmed");
+    // Transfer 0.1 SOL to the pda account to activate it and supply its 2 year rent
 }
 
 main()
