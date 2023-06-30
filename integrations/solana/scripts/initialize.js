@@ -32,13 +32,13 @@ async function main() {
     const provider = anchor.AnchorProvider.local(endpoint);
 
     // Get the program Id key
-    const programKey = loadKey(parsedData.program + ".json");
+    const programKey = new web3.PublicKey(parsedData.program);
 
     // Taken from create_data_storage_account.js output
     const storageKey = new web3.PublicKey(parsedData.storage);
 
     // Get the program instance
-    const program = new anchor.Program(idl, programKey.publicKey, provider);
+    const program = new anchor.Program(idl, programKey, provider);
 
     // Find a PDA account
     const [pda, bump] = await web3.PublicKey.findProgramAddress([Buffer.from("pdaEscrow", "utf-8")], program.programId);
