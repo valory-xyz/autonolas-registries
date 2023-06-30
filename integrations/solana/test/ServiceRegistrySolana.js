@@ -252,7 +252,7 @@ describe("ServiceRegistrySolana", function () {
         expect(compareBonds).toEqual(true);
     });
 
-    it.only("Changing ownership of the program", async function () {
+    it("Changing ownership of the program", async function () {
         // Trying to change the owner not by the owner
         try {
             await program.methods.changeOwner(serviceOwner.publicKey)
