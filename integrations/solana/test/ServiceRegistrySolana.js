@@ -252,6 +252,59 @@ describe("ServiceRegistrySolana", function () {
         expect(compareBonds).toEqual(true);
     });
 
+    it.only("Changing ownership of the program", async function () {
+        // Trying to change the owner not by the owner
+        try {
+            await program.methods.changeOwner(serviceOwner.publicKey)
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
+                ])
+                .signers([serviceOwner])
+                .rpc();
+        } catch (error) {}
+
+        // Change the owner to the serviceOwner
+        await program.methods.changeOwner(serviceOwner.publicKey)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: deployer.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([deployer])
+            .rpc();
+
+        // Check the updated program owner
+        let owner = await program.methods.owner()
+            .accounts({ dataAccount: storage.publicKey })
+            .view();
+        expect(owner).toEqual(serviceOwner.publicKey);
+
+        // Trying to change the owner back but not by the owner
+        try {
+            await program.methods.changeOwner(deployer.publicKey)
+                .accounts({ dataAccount: storage.publicKey })
+                .remainingAccounts([
+                    { pubkey: deployer.publicKey, isSigner: true, isWritable: true }
+                ])
+                .signers([deployer])
+                .rpc();
+        } catch (error) {}
+
+        // Change the owner back to the deployer
+        await program.methods.changeOwner(deployer.publicKey)
+            .accounts({ dataAccount: storage.publicKey })
+            .remainingAccounts([
+                { pubkey: serviceOwner.publicKey, isSigner: true, isWritable: true }
+            ])
+            .signers([serviceOwner])
+            .rpc();
+
+        owner = await program.methods.owner()
+            .accounts({ dataAccount: storage.publicKey })
+            .view();
+        expect(owner).toEqual(deployer.publicKey);
+    });
+
     it("Creating a service and activating it", async function () {
         // Create a service
         await program.methods.create(serviceOwner.publicKey, configHash, agentIds, slots, bonds, maxThreshold)
