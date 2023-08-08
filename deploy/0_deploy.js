@@ -110,21 +110,16 @@ module.exports = async () => {
     await serviceRegistryL2.deployed();
 
     // Deploying service registry and service registry token utility along with the service manager token contracts
-    const ServiceRegistryForToken = await ethers.getContractFactory("ServiceRegistry");
-    const serviceRegistryForToken = await ServiceRegistryForToken.deploy("Service Registry", "AUTONOLAS-SERVICE-V1",
-        "https://gateway.autonolas.tech/ipfs/", agentRegistry.address);
-    await serviceRegistryForToken.deployed();
-
     const ServiceRegistryTokenUtility = await ethers.getContractFactory("ServiceRegistryTokenUtility");
-    const serviceRegistryTokenUtility = await ServiceRegistryTokenUtility.deploy(serviceRegistryForToken.address);
+    const serviceRegistryTokenUtility = await ServiceRegistryTokenUtility.deploy(serviceRegistry.address);
     await serviceRegistryTokenUtility.deployed();
 
     const OperatorWhitelist = await ethers.getContractFactory("OperatorWhitelist");
-    const operatorWhitelist = await OperatorWhitelist.deploy(serviceRegistryForToken.address);
+    const operatorWhitelist = await OperatorWhitelist.deploy(serviceRegistry.address);
     await operatorWhitelist.deployed();
 
     const ServiceManagerToken = await ethers.getContractFactory("ServiceManagerToken");
-    const serviceManagerToken = await ServiceManagerToken.deploy(serviceRegistryForToken.address,
+    const serviceManagerToken = await ServiceManagerToken.deploy(serviceRegistry.address,
         serviceRegistryTokenUtility.address, operatorWhitelist.address);
     await serviceManagerToken.deployed();
 
@@ -137,11 +132,10 @@ module.exports = async () => {
     console.log("AgentRegistry deployed to:", agentRegistry.address);
     console.log("RegistriesManager deployed to:", registriesManager.address);
     console.log("ServiceRegistry deployed to:", serviceRegistry.address);
-    console.log("ServiceManager deployed to:", serviceManager.address);
-    console.log("ServiceRegistryL2 deployed to:", serviceRegistryL2.address);
-    console.log("ServiceRegistryForToken deployed to:", serviceRegistryForToken.address);
     console.log("ServiceRegistryTokenUtility deployed to:", serviceRegistryTokenUtility.address);
     console.log("ServiceManagerToken deployed to:", serviceManagerToken.address);
+    console.log("ServiceRegistryL2 deployed to:", serviceRegistryL2.address);
+    console.log("ServiceManager deployed to:", serviceManager.address);
     console.log("OperatorWhitelist deployed to:", operatorWhitelist.address);
     console.log("ERC20Token deployed to:", token.address);
     console.log("Gnosis Safe master copy deployed to:", gnosisSafe.address);
@@ -155,8 +149,6 @@ module.exports = async () => {
     await serviceRegistry.changeMultisigPermission(gnosisSafeSameAddressMultisig.address, true);
     await serviceRegistryL2.changeMultisigPermission(gnosisSafeMultisig.address, true);
     await serviceRegistryL2.changeMultisigPermission(gnosisSafeSameAddressMultisig.address, true);
-    await serviceRegistryForToken.changeMultisigPermission(gnosisSafeMultisig.address, true);
-    await serviceRegistryForToken.changeMultisigPermission(gnosisSafeSameAddressMultisig.address, true);
 
     // Also whitelist multisigs for all the other networks
     // ETH Goerli
@@ -294,14 +286,12 @@ module.exports = async () => {
     await componentRegistry.changeManager(registriesManager.address);
     await agentRegistry.changeManager(registriesManager.address);
     console.log("RegistriesManager is now a manager of ComponentRegistry and AgentRegistry contracts");
-    await serviceRegistry.changeManager(serviceManager.address);
-    console.log("ServiceManager is now a manager of ServiceRegistry contract");
-    await serviceRegistryL2.changeManager(serviceManager.address);
-    console.log("ServiceManager is now a manager of ServiceRegistryL2 contract");
-    await serviceRegistryForToken.changeManager(serviceManagerToken.address);
-    console.log("ServiceManagerToken is now a manager of ServiceRegistryForToken contract");
+    await serviceRegistry.changeManager(serviceManagerToken.address);
+    console.log("ServiceManagerToken is now a manager of ServiceRegistry contract");
     await serviceRegistryTokenUtility.changeManager(serviceManagerToken.address);
     console.log("ServiceManagerToken is now a manager of ServiceRegistryTokenUtility contract");
+    await serviceRegistryL2.changeManager(serviceManager.address);
+    console.log("ServiceManager is now a manager of ServiceRegistryL2 contract");
 
     // Writing the JSON with the initial deployment data
     let initDeployJSON = {
@@ -311,7 +301,6 @@ module.exports = async () => {
         "serviceRegistry": serviceRegistry.address,
         "serviceManager": serviceManager.address,
         "serviceRegistryL2": serviceRegistryL2.address,
-        "serviceRegistryForToken": serviceRegistryForToken.address,
         "serviceRegistryTokenUtility": serviceRegistryTokenUtility.address,
         "serviceManagerToken": serviceManagerToken.address,
         "operatorWhitelist": operatorWhitelist.address,
