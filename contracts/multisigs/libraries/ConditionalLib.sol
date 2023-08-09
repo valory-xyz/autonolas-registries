@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-only
-pragma solidity ^0.8.21;
-
-import {SelfAuthorized} from "@gnosis.pm/safe-contracts/contracts/common/SelfAuthorized.sol";
+pragma solidity ^0.8.19;
 
 // Conditional Tokens interface
 interface IConditionalTokens {
@@ -11,10 +9,8 @@ interface IConditionalTokens {
         bytes32 conditionId,
         uint256[] calldata partition,
         uint256 amount
-    ) external;
-}
+    ) external returns (uint256);
 
-interface IERC1155 {
     /// @notice Get the balance of multiple account/token pairs
     /// @param _owners The addresses of the token holders
     /// @param _ids    ID of the tokens
@@ -25,10 +21,14 @@ interface IERC1155 {
 /// @dev Zero value when it has to be different from zero.
 error ZeroValue();
 
+/// @dev Call has failed.
+/// @param retData Returned data.
+error CallFailed(bytes retData);
+
 /// @title ConditionalLib - Allows to get the required amount and call the mergePositions function.
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
-contract ConditionalLib is SelfAuthorized {
+contract ConditionalLib {
     /// @dev Calculate balances amount and call the mergePositions function.
     /// @param collateralToken Collateral token.
     /// @param owners The addresses of the token holders.
@@ -42,9 +42,9 @@ contract ConditionalLib is SelfAuthorized {
         bytes32 parentCollectionId,
         bytes32 conditionId,
         uint256[] calldata partition
-    ) external authorized {
+    ) external {
         // Get the balances
-        uint256[] memory balances = IERC1155(collateralToken).balanceOfBatch(owners, ids);
+        uint256[] memory balances = IConditionalTokens(conditionalTokens).balanceOfBatch(owners, ids);
 
         // Get the accumulated amount based on balances
         uint256 amount;
@@ -57,8 +57,16 @@ contract ConditionalLib is SelfAuthorized {
             revert ZeroValue();
         }
 
-        // Call the mergePositions from the Conditional Tokens contract
-        IConditionalTokens(conditionalTokens).mergePositions(collateralToken, parentCollectionId, conditionId,
-            partition, amount);
+        // Form a call data for the mergePositions from the Conditional Tokens contract
+        bytes memory data = abi.encodeWithSignature("mergePositions(address,bytes32,bytes32,uint256[],uint256)",
+            collateralToken, parentCollectionId, conditionId, partition, amount);
+
+        // Call the Conditional Tokens contract
+        (bool success, bytes memory retData) = conditionalTokens.call(data);
+
+        /// Check for the successful call
+        if (!success) {
+            revert CallFailed(retData);
+        }
     }
 }
