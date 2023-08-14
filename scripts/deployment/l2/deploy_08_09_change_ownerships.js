@@ -14,7 +14,12 @@ async function main() {
     const gasPriceInGwei = parsedData.gasPriceInGwei;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceManagerAddress = parsedData.serviceManagerAddress;
-    const bridgeMediatorAddress = parsedData.bridgeMediatorAddress;
+
+    // NOTE: Bridge Mediator for chiado network is the one with the mock timelock to facilitate testing!
+    // NOTE: See autonolas-governance for the address match in bridges/gnosis/test/globals.json
+    // NOTE: Use the currently setup Bridge Mediator and mock Timelock contracts to set up
+    // NOTE: a corresponding testnet Bridge Mediator contract that comes from the parsedData
+    let bridgeMediatorAddress = parsedData.bridgeMediatorAddress;
     let EOA;
 
     let networkURL;
@@ -37,6 +42,8 @@ async function main() {
         networkURL = "https://rpc.gnosischain.com";
     } else if (providerName === "chiado") {
         networkURL = "https://rpc.chiadochain.net";
+        // Bridge mediator is deployed via a mock timelock on goerli in order to perform testing
+        bridgeMediatorAddress = "0x0a50009D55Ed5700ac8FF713709d5Ad5fa843896";
     } else {
         console.log("Unknown network provider", providerName);
         return;
