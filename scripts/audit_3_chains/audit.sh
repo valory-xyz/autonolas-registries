@@ -2,6 +2,7 @@
 
 if ! command -v ethereum-sources-downloader &> /dev/null
 then
+    # https://github.com/SergeKireev/ethereum-sources-downloader
     echo "ethereum-sources-downloader could not be found"
     npm i ethereum-sources-downloader
 fi
