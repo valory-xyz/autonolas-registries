@@ -46,10 +46,10 @@ async function main() {
     console.log("Proposal 1. Change drainer for polygon ServiceRegistryL2\n");
     const rawPayload = serviceRegistry.interface.encodeFunctionData("changeDrainer", [fxGovernorTunnelAddress]);
     // Pack the second part of data
-    target = serviceRegistryAddress;
-    value = 0;
+    const target = serviceRegistryAddress;
+    const value = 0;
     const payload = ethers.utils.arrayify(rawPayload);
-    data = ethers.utils.solidityPack(
+    const data = ethers.utils.solidityPack(
         ["address", "uint96", "uint32", "bytes"],
         [target, value, payload.length, payload]
     );

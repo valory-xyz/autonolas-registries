@@ -52,7 +52,7 @@ async function main() {
     const target = serviceRegistryAddress;
     const value = 0;
     const payload = ethers.utils.arrayify(rawPayload);
-    data = ethers.utils.solidityPack(
+    const data = ethers.utils.solidityPack(
         ["address", "uint96", "uint32", "bytes"],
         [target, value, payload.length, payload]
     );
