@@ -7,17 +7,7 @@ then
     npm i ethereum-sources-downloader
 fi
 
-# "serviceManagerAddress":"0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE"
-rm -rf out
-ethereum-sources-downloader polygonscan 0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE 2>&1 > /dev/null
-r=$(diff -r out/ServiceManager/contracts/ contracts/ | grep -v Only)
-if [ -z "$r" ]
-then
-      echo "OK. serviceManager (0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE) on polygon eq contracts"
-else
-      echo "serviceManager (0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE) on polygon NOT eq contracts"
-fi
-
+############################### POLYGON MAINNET ###############################
 # "serviceRegistryAddress":"0xE3607b00E75f6405248323A9417ff6b39B244b50"
 rm -rf out
 ethereum-sources-downloader polygonscan 0xE3607b00E75f6405248323A9417ff6b39B244b50 2>&1 > /dev/null
@@ -29,6 +19,19 @@ else
       echo "serviceRegistryL2 (0xE3607b00E75f6405248323A9417ff6b39B244b50) on polygon NOT eq contracts"
 fi
 
+# "serviceManagerAddress":"0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE"
+rm -rf out
+ethereum-sources-downloader polygonscan 0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE 2>&1 > /dev/null
+r=$(diff -r out/ServiceManager/contracts/ contracts/ | grep -v Only)
+if [ -z "$r" ]
+then
+      echo "OK. serviceManager (0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE) on polygon eq contracts"
+else
+      echo "serviceManager (0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE) on polygon NOT eq contracts"
+fi
+############################### /POLYGON MAINNET ###############################
+
+############################### ETHEREUM GOERLI ###############################
 #"serviceManagerTokenAddress":"0x1d333b46dB6e8FFd271b6C2D2B254868BD9A2dbd"
 rm -rf out
 ethereum-sources-downloader goerli.etherscan 0x1d333b46dB6e8FFd271b6C2D2B254868BD9A2dbd 2>&1 > /dev/null
@@ -150,5 +153,6 @@ then
 else
       echo "componentRegistry (0x7Fd1F4b764fA41d19fe3f63C85d12bf64d2bbf68) on goerli NOT eq contracts"
 fi
+############################### /ETHEREUM GOERLI ###############################
 
 rm -rf out
