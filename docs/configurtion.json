@@ -1,0 +1,39 @@
+[
+  {
+    "name": "mainnet",
+    "chainId": "1",
+    "contracts": [
+      {
+        "name": "ComponentRegistry",
+        "abi": "abis/0.8.15/ComponentRegistry.json",
+        "address": "0x15bd56669F57192a97dF41A2aa8f4403e9491776"
+      },
+      {
+        "name": "AgentRegistry",
+        "abi": "abis/0.8.15/AgentRegistry.json",
+        "address": "0x2F1f7D38e4772884b88f3eCd8B6b9faCdC319112"
+      },
+      {
+        "name": "RegistriesManager",
+        "abi": "abis/0.8.15/RegistriesManager.json",
+        "address": "0x9eC9156dEF5C613B2a7D4c46C383F9B58DfcD6fE"
+      },
+      {
+        "name": "ServiceRegistry",
+        "abi": "abis/0.8.15/ServiceRegistry.json",
+        "address": "0x2F1f7D38e4772884b88f3eCd8B6b9faCdC319112"
+      }
+    ]
+  },
+  {
+    "name": "goerli",
+    "chainId": "5",
+    "contracts": [
+      {
+        "name": "cname.sol",
+        "abi": "file.json",
+        "address": "0x"
+      }
+    ]
+  }
+]
