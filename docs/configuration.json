@@ -107,7 +107,7 @@
     "contracts": [
       {
         "name": "ServiceRegistryL2",
-        "abi": "abis/0.8.19/ServiceRegistry.json",
+        "abi": "abis/0.8.19/ServiceRegistryL2.json",
         "address": "0xE3607b00E75f6405248323A9417ff6b39B244b50"
       },
       {
@@ -133,7 +133,7 @@
     "contracts": [
       {
         "name": "ServiceRegistryL2",
-        "abi": "abis/0.8.19/ServiceRegistry.json",
+        "abi": "abis/0.8.19/ServiceRegistryL2.json",
         "address": "0xf805DfF246CC208CD2F08ffaD242b7C32bc93623"
       },
       {
@@ -159,7 +159,7 @@
     "contracts": [
       {
         "name": "ServiceRegistryL2",
-        "abi": "abis/0.8.19/ServiceRegistry.json",
+        "abi": "abis/0.8.19/ServiceRegistryL2.json",
         "address": "0x9338b5153AE39BB89f50468E608eD9d764B755fD"
       },
       {
@@ -185,7 +185,7 @@
     "contracts": [
       {
         "name": "ServiceRegistryL2",
-        "abi": "abis/0.8.19/ServiceRegistry.json",
+        "abi": "abis/0.8.19/ServiceRegistryL2.json",
         "address": "0x31D3202d8744B16A120117A053459DDFAE93c855"
       },
       {
