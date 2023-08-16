@@ -21,7 +21,12 @@
       {
         "name": "ServiceRegistry",
         "abi": "abis/0.8.15/ServiceRegistry.json",
-        "address": "0x2F1f7D38e4772884b88f3eCd8B6b9faCdC319112"
+        "address": "0x48b6af7B12C71f09e2fC8aF4855De4Ff54e775cA"
+      },
+      {
+        "name": "ServiceManagerToken",
+        "abi": "abis/0.8.19/ServiceManagerToken.json",
+        "address": "0x2EA682121f815FBcF86EA3F3CaFdd5d67F2dB143"
       }
     ]
   },
