@@ -20,13 +20,48 @@ function customExpect(arg1, arg2, log) {
     }
 }
 
+// Custom expect for contain clause that is wrapped into try / catch block
+function customExpectContain(arg1, arg2, log) {
+    try {
+        expect(arg1).contain(arg2);
+    } catch (error) {
+        console.log(log);
+        if (error.status) {
+            console.error(error.status);
+            console.log("\n");
+        } else {
+            console.error(error);
+            console.log("\n");
+        }
+    }
+}
+
+async function checkBytecode(provider, configContracts, contractName, log) {
+    // Get the contract number from the set of configuration contracts
+    for (let i = 0; i < configContracts.length; i++) {
+        if (configContracts[i]["name"] === contractName) {
+            // Get the contract instance
+            const contractFromJSON = fs.readFileSync(configContracts[i]["artifact"], "utf8");
+            const parsedFile = JSON.parse(contractFromJSON);
+            const bytecode = parsedFile["deployedBytecode"];
+            const onChainCreationCode = await provider.getCode(configContracts[i]["address"]);
+
+            // Compare last fifth part of deployed bytecode bytes
+            // We cannot compare the full one since the repo deployed bytecode does not contain immutable variable info
+            const slicePart = -bytecode.length / 5;
+            customExpectContain(onChainCreationCode, bytecode.slice(slicePart), log + ", failed bytecode comparison")
+            return;
+        }
+    }
+}
+
 // Find the contract name from the configuration data
 async function findContractInstance(provider, configContracts, contractName) {
     // Get the contract number from the set of configuration contracts
     for (let i = 0; i < configContracts.length; i++) {
         if (configContracts[i]["name"] === contractName) {
             // Get the contract instance
-            const contractFromJSON = fs.readFileSync(configContracts[i]["abi"], "utf8");
+            const contractFromJSON = fs.readFileSync(configContracts[i]["artifact"], "utf8");
             const parsedFile = JSON.parse(contractFromJSON);
             const abi = parsedFile["abi"];
             const contractInstance = new ethers.Contract(configContracts[i]["address"], abi, provider);
@@ -53,6 +88,10 @@ async function checkOwner(chainId, contract, globalsInstance, log) {
 // Check component registry: chain Id, provider, parsed globals, configuration contracts, contract name
 // Component Registry resides on L1 only
 async function checkComponentRegistry(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    // Get the contract instance
     const componentRegistry = await findContractInstance(provider, configContracts, contractName);
 
     // Check version
@@ -74,6 +113,10 @@ async function checkComponentRegistry(chainId, provider, globalsInstance, config
 // Check agent registry: chain Id, provider, parsed globals, configuration contracts, contract name
 // Agent Registry resides on L1 only
 async function checkAgentRegistry(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    // Get the contract instance
     const agentRegistry = await findContractInstance(provider, configContracts, contractName);
 
     // Check version
@@ -98,6 +141,10 @@ async function checkAgentRegistry(chainId, provider, globalsInstance, configCont
 
 // Check service registry: chain Id, provider, parsed globals, configuration contracts, contract name
 async function checkServiceRegistry(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    // Get the contract instance
     const serviceRegistry = await findContractInstance(provider, configContracts, contractName);
 
     // Check version
@@ -148,6 +195,10 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
 
 // Check service manager: chain Id, provider, parsed globals, configuration contracts, contract name
 async function checkServiceManager(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    // Get the contract instance
     const serviceManager = await findContractInstance(provider, configContracts, contractName);
 
     // Check owner
@@ -181,6 +232,10 @@ async function checkServiceManager(chainId, provider, globalsInstance, configCon
 // Check service registry token utility: chain Id, provider, parsed globals, configuration contracts, contract name
 // At the moment the check is applicable to L1 only
 async function checkServiceRegistryTokenUtility(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    // Get the contract instance
     const serviceRegistryTokenUtility = await findContractInstance(provider, configContracts, contractName);
 
     // Check owner
@@ -202,6 +257,10 @@ async function checkServiceRegistryTokenUtility(chainId, provider, globalsInstan
 // Check operator whitelist: chain Id, provider, parsed globals, configuration contracts, contract name
 // At the moment the check is applicable to L1 only
 async function checkOperatorWhitelist(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    // Get the contract instance
     const operatorWhitelist = await findContractInstance(provider, configContracts, contractName);
 
     // Check service registry
@@ -211,6 +270,10 @@ async function checkOperatorWhitelist(chainId, provider, globalsInstance, config
 
 // Check gnosis safe implementation: chain Id, provider, parsed globals, configuration contracts, contract name
 async function checkGnosisSafeImplementation(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    // Get the contract instance
     const gnosisSafeImplementation = await findContractInstance(provider, configContracts, contractName);
 
     // Check default data length
@@ -224,6 +287,10 @@ async function checkGnosisSafeImplementation(chainId, provider, globalsInstance,
 
 // Check gnosis safe same address implementation: chain Id, provider, parsed globals, configuration contracts, contract name
 async function checkGnosisSafeSameAddressImplementation(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    // Get the contract instance
     const gnosisSafeSameAddressImplementation = await findContractInstance(provider, configContracts, contractName);
 
     // Check default data length
