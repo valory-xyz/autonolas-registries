@@ -49,7 +49,7 @@ async function checkBytecode(provider, configContracts, contractName, log) {
             // Compare last fifth part of deployed bytecode bytes
             // We cannot compare the full one since the repo deployed bytecode does not contain immutable variable info
             const slicePart = -bytecode.length / 5;
-            customExpectContain(onChainCreationCode, bytecode.slice(slicePart), log + ", failed bytecode comparison")
+            customExpectContain(onChainCreationCode, bytecode.slice(slicePart), log + ", failed bytecode comparison");
             return;
         }
     }
