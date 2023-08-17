@@ -1,0 +1,208 @@
+[
+  {
+    "name": "mainnet",
+    "chainId": "1",
+    "contracts": [
+      {
+        "name": "ComponentRegistry",
+        "artifact": "abis/0.8.15/ComponentRegistry.json",
+        "address": "0x15bd56669F57192a97dF41A2aa8f4403e9491776"
+      },
+      {
+        "name": "AgentRegistry",
+        "artifact": "abis/0.8.15/AgentRegistry.json",
+        "address": "0x2F1f7D38e4772884b88f3eCd8B6b9faCdC319112"
+      },
+      {
+        "name": "RegistriesManager",
+        "artifact": "abis/0.8.15/RegistriesManager.json",
+        "address": "0x9eC9156dEF5C613B2a7D4c46C383F9B58DfcD6fE"
+      },
+      {
+        "name": "ServiceRegistry",
+        "artifact": "abis/0.8.15/ServiceRegistry.json",
+        "address": "0x48b6af7B12C71f09e2fC8aF4855De4Ff54e775cA"
+      },
+      {
+        "name": "ServiceRegistryTokenUtility",
+        "artifact": "abis/0.8.19/ServiceRegistryTokenUtility.json",
+        "address": "0x3Fb926116D454b95c669B6Bf2E7c3bad8d19affA"
+      },
+      {
+        "name": "ServiceManagerToken",
+        "artifact": "abis/0.8.19/ServiceManagerToken.json",
+        "address": "0x2EA682121f815FBcF86EA3F3CaFdd5d67F2dB143"
+      },
+      {
+        "name": "OperatorWhitelist",
+        "artifact": "abis/0.8.19/OperatorWhitelist.json",
+        "address": "0x42042799B0DE38AdD2a70dc996f69f98E1a85260"
+      },
+      {
+        "name": "GnosisSafeMultisig",
+        "artifact": "abis/0.8.15/GnosisSafeMultisig.json",
+        "address": "0x46C0D07F55d4F9B5Eed2Fc9680B5953e5fd7b461"
+      },
+      {
+        "name": "GnosisSafeSameAddressMultisig",
+        "artifact": "abis/0.8.15/GnosisSafeSameAddressMultisig.json",
+        "address": "0x26Ea2dC7ce1b41d0AD0E0521535655d7a94b684c"
+      }
+    ]
+  },
+  {
+    "name": "goerli",
+    "chainId": "5",
+    "contracts": [
+      {
+        "name": "ComponentRegistry",
+        "artifact": "abis/0.8.15/ComponentRegistry.json",
+        "address": "0x7Fd1F4b764fA41d19fe3f63C85d12bf64d2bbf68"
+      },
+      {
+        "name": "AgentRegistry",
+        "artifact": "abis/0.8.15/AgentRegistry.json",
+        "address": "0xEB5638eefE289691EcE01943f768EDBF96258a80"
+      },
+      {
+        "name": "RegistriesManager",
+        "artifact": "abis/0.8.15/RegistriesManager.json",
+        "address": "0x10c5525F77F13b28f42c5626240c001c2D57CAd4"
+      },
+      {
+        "name": "ServiceRegistry",
+        "artifact": "abis/0.8.15/ServiceRegistry.json",
+        "address": "0x1cEe30D08943EB58EFF84DD1AB44a6ee6FEff63a"
+      },
+      {
+        "name": "ServiceRegistryTokenUtility",
+        "artifact": "abis/0.8.19/ServiceRegistryTokenUtility.json",
+        "address": "0x6d9b08701Af43D68D991c074A27E4d90Af7f2276"
+      },
+      {
+        "name": "ServiceManagerToken",
+        "artifact": "abis/0.8.19/ServiceManagerToken.json",
+        "address": "0x1d333b46dB6e8FFd271b6C2D2B254868BD9A2dbd"
+      },
+      {
+        "name": "GnosisSafeMultisig",
+        "artifact": "abis/0.8.15/GnosisSafeMultisig.json",
+        "address": "0x65dD51b02049ad1B6FF7fa9Ea3322E1D2CAb1176"
+      },
+      {
+        "name": "GnosisSafeSameAddressMultisig",
+        "artifact": "abis/0.8.15/GnosisSafeSameAddressMultisig.json",
+        "address": "0x92499E80f50f06C4078794C179986907e7822Ea1"
+      },
+      {
+        "name": "OperatorWhitelist",
+        "artifact": "abis/0.8.19/OperatorWhitelist.json",
+        "address": "0x0338893fB1A1D9Df03F72CC53D8f786487d3D03E"
+      }
+    ]
+  },
+  {
+    "name": "polygon",
+    "chainId": "137",
+    "contracts": [
+      {
+        "name": "ServiceRegistryL2",
+        "artifact": "abis/0.8.19/ServiceRegistryL2.json",
+        "address": "0xE3607b00E75f6405248323A9417ff6b39B244b50"
+      },
+      {
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.19/ServiceManager.json",
+        "address": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE"
+      },
+      {
+        "name": "GnosisSafeMultisig",
+        "artifact": "abis/0.8.19/GnosisSafeMultisig.json",
+        "address": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44"
+      },
+      {
+        "name": "GnosisSafeSameAddressMultisig",
+        "artifact": "abis/0.8.19/GnosisSafeSameAddressMultisig.json",
+        "address": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5"
+      }
+    ]
+  },
+  {
+    "name": "polygonMumbai",
+    "chainId": "80001",
+    "contracts": [
+      {
+        "name": "ServiceRegistryL2",
+        "artifact": "abis/0.8.19/ServiceRegistryL2.json",
+        "address": "0xf805DfF246CC208CD2F08ffaD242b7C32bc93623"
+      },
+      {
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.19/ServiceManager.json",
+        "address": "0x43d28764bB39936185c84906983fB57A8A905a4F"
+      },
+      {
+        "name": "GnosisSafeMultisig",
+        "artifact": "abis/0.8.19/GnosisSafeMultisig.json",
+        "address": "0x9dEc6B62c197268242A768dc3b153AE7a2701396"
+      },
+      {
+        "name": "GnosisSafeSameAddressMultisig",
+        "artifact": "abis/0.8.19/GnosisSafeSameAddressMultisig.json",
+        "address": "0xB575dd20281c63288428DD58e5f579CC7d6aae4d"
+      }
+    ]
+  },
+  {
+    "name": "gnosis",
+    "chainId": "100",
+    "contracts": [
+      {
+        "name": "ServiceRegistryL2",
+        "artifact": "abis/0.8.19/ServiceRegistryL2.json",
+        "address": "0x9338b5153AE39BB89f50468E608eD9d764B755fD"
+      },
+      {
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.19/ServiceManager.json",
+        "address": "0xE3607b00E75f6405248323A9417ff6b39B244b50"
+      },
+      {
+        "name": "GnosisSafeMultisig",
+        "artifact": "abis/0.8.19/GnosisSafeMultisig.json",
+        "address": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE"
+      },
+      {
+        "name": "GnosisSafeSameAddressMultisig",
+        "artifact": "abis/0.8.19/GnosisSafeSameAddressMultisig.json",
+        "address": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44"
+      }
+    ]
+  },
+  {
+    "name": "chiado",
+    "chainId": "10200",
+    "contracts": [
+      {
+        "name": "ServiceRegistryL2",
+        "artifact": "abis/0.8.19/ServiceRegistryL2.json",
+        "address": "0x31D3202d8744B16A120117A053459DDFAE93c855"
+      },
+      {
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.19/ServiceManager.json",
+        "address": "0x29086141ecdc310058fc23273F8ef7881d20C2f7"
+      },
+      {
+        "name": "GnosisSafeMultisig",
+        "artifact": "abis/0.8.19/GnosisSafeMultisig.json",
+        "address": "0xeB49bE5DF00F74bd240DE4535DDe6Bc89CEfb994"
+      },
+      {
+        "name": "GnosisSafeSameAddressMultisig",
+        "artifact": "abis/0.8.19/GnosisSafeSameAddressMultisig.json",
+        "address": "0x5BA58970c2Ae16Cf6218783018100aF2dCcFc915"
+      }
+    ]
+  }
+]

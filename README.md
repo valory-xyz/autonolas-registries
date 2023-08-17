@@ -156,7 +156,13 @@ The audit is provided as development matures. The latest audit report can be fou
 A list of known vulnerabilities can be found here: [Vulnerabilities list](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/Vulnerabilities_list_registries.pdf?raw=true)
 
 ## Deployed Protocol
-The list of addresses can be found [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/mainnet_addresses).
+The list of mainnet addresses for different chains and their full contract configuration can be found [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/configuration.json).
+
+In order to test the protocol setup on all the deployed chains, the audit script is implemented. Make sure to export
+required API keys for corresponding chains (see the script for more information). The audit script can be run as follows:
+```
+node scripts/audit_chains/audit_contracts_setup.js
+```
 
 ### Mainnet snapshot of registries
 In order to get the current snapshot of all the registries, the following script is provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/scripts/mainnet_snapshot.js).
