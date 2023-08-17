@@ -271,7 +271,7 @@ async function main() {
         for (let j = 0; j < contracts.length; j++) {
             console.log("Checking " + contracts[j]["name"]);
             const execSync = require("child_process").execSync;
-            execSync("scripts/audit_chains/audit_short.sh " + network + " " + contracts[j]["name"] + " " + contracts[j]["address"]);
+            execSync("scripts/audit_chains/audit_repo_contract.sh " + network + " " + contracts[j]["name"] + " " + contracts[j]["address"]);
         }
     }
     // ################################# /VERIFY CONTRACTS WITH REPO #################################
