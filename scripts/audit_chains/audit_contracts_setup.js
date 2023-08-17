@@ -49,7 +49,8 @@ async function checkBytecode(provider, configContracts, contractName, log) {
             // Compare last fifth part of deployed bytecode bytes
             // We cannot compare the full one since the repo deployed bytecode does not contain immutable variable info
             const slicePart = -bytecode.length / 5;
-            customExpectContain(onChainCreationCode, bytecode.slice(slicePart), log + ", failed bytecode comparison");
+            customExpectContain(onChainCreationCode, bytecode.slice(slicePart),
+                log + ", address: " + configContracts[i]["address"] + ", failed bytecode comparison");
             return;
         }
     }
@@ -94,6 +95,7 @@ async function checkComponentRegistry(chainId, provider, globalsInstance, config
     // Get the contract instance
     const componentRegistry = await findContractInstance(provider, configContracts, contractName);
 
+    log += ", address: " + componentRegistry.address;
     // Check version
     const version = await componentRegistry.VERSION();
     customExpect(version, "1.0.0", log + ", function: VERSION()");
@@ -119,6 +121,7 @@ async function checkAgentRegistry(chainId, provider, globalsInstance, configCont
     // Get the contract instance
     const agentRegistry = await findContractInstance(provider, configContracts, contractName);
 
+    log += ", address: " + agentRegistry.address;
     // Check version
     const version = await agentRegistry.VERSION();
     customExpect(version, "1.0.0", log + ", function: VERSION()");
@@ -147,6 +150,7 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
     // Get the contract instance
     const serviceRegistry = await findContractInstance(provider, configContracts, contractName);
 
+    log += ", address: " + serviceRegistry.address;
     // Check version
     const version = await serviceRegistry.VERSION();
     customExpect(version, "1.0.0", log + ", function: VERSION()");
@@ -204,6 +208,7 @@ async function checkServiceManager(chainId, provider, globalsInstance, configCon
     // Check owner
     checkOwner(chainId, serviceManager, globalsInstance, log);
 
+    log += ", address: " + serviceManager.address;
     // Check service registry
     const serviceRegistry = await serviceManager.serviceRegistry();
     customExpect(serviceRegistry, globalsInstance["serviceRegistryAddress"], log + ", function: serviceRegistry()");
@@ -241,6 +246,7 @@ async function checkServiceRegistryTokenUtility(chainId, provider, globalsInstan
     // Check owner
     checkOwner(chainId, serviceRegistryTokenUtility, globalsInstance, log);
 
+    log += ", address: " + serviceRegistryTokenUtility.address;
     // Check manager
     const manager = await serviceRegistryTokenUtility.manager();
     customExpect(manager, globalsInstance["serviceManagerTokenAddress"], log + ", function: manager()");
@@ -263,6 +269,7 @@ async function checkOperatorWhitelist(chainId, provider, globalsInstance, config
     // Get the contract instance
     const operatorWhitelist = await findContractInstance(provider, configContracts, contractName);
 
+    log += ", address: " + operatorWhitelist.address;
     // Check service registry
     const serviceRegistry = await operatorWhitelist.serviceRegistry();
     customExpect(serviceRegistry, globalsInstance["serviceRegistryAddress"], log + ", function: serviceRegistry()");
@@ -276,6 +283,7 @@ async function checkGnosisSafeImplementation(chainId, provider, globalsInstance,
     // Get the contract instance
     const gnosisSafeImplementation = await findContractInstance(provider, configContracts, contractName);
 
+    log += ", address: " + gnosisSafeImplementation.address;
     // Check default data length
     const defaultDataLength = Number(await gnosisSafeImplementation.DEFAULT_DATA_LENGTH());
     customExpect(defaultDataLength, 144, log + ", function: DEFAULT_DATA_LENGTH()");
@@ -293,6 +301,7 @@ async function checkGnosisSafeSameAddressImplementation(chainId, provider, globa
     // Get the contract instance
     const gnosisSafeSameAddressImplementation = await findContractInstance(provider, configContracts, contractName);
 
+    log += ", address: " + gnosisSafeSameAddressImplementation.address;
     // Check default data length
     const defaultDataLength = Number(await gnosisSafeSameAddressImplementation.DEFAULT_DATA_LENGTH());
     customExpect(defaultDataLength, 20, log + ", function: DEFAULT_DATA_LENGTH()");
@@ -378,28 +387,30 @@ async function main() {
     for (let i = 0; i < 2; i++) {
         console.log("\n######## Verifying setup on CHAIN ID", configs[i]["chainId"]);
 
-        let log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ComponentRegistry";
+        const initLog = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"];
+
+        let log = initLog + ", contract: " + "ComponentRegistry";
         await checkComponentRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ComponentRegistry", log);
 
-        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "AgentRegistry";
+        log = initLog + ", contract: " + "AgentRegistry";
         await checkAgentRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "AgentRegistry", log);
 
-        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ServiceRegistry";
+        log = initLog + ", contract: " + "ServiceRegistry";
         await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistry", log);
 
-        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ServiceManagerToken";
+        log = initLog + ", contract: " + "ServiceManagerToken";
         await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerToken", log);
 
-        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ServiceRegistryTokenUtility";
+        log = initLog + ", contract: " + "ServiceRegistryTokenUtility";
         await checkServiceRegistryTokenUtility(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryTokenUtility", log);
 
-        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "OperatorWhitelist";
+        log = initLog + ", contract: " + "OperatorWhitelist";
         await checkOperatorWhitelist(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "OperatorWhitelist", log);
 
-        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "GnosisSafeMultisig";
+        log = initLog + ", contract: " + "GnosisSafeMultisig";
         await checkGnosisSafeImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeMultisig", log);
 
-        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "GnosisSafeSameAddressMultisig";
+        log = initLog + ", contract: " + "GnosisSafeSameAddressMultisig";
         await checkGnosisSafeSameAddressImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeSameAddressMultisig", log);
     }
 
@@ -407,16 +418,18 @@ async function main() {
     for (let i = 2; i < numChains; i++) {
         console.log("\n######## Verifying setup on CHAIN ID", configs[i]["chainId"]);
 
-        let log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ServiceRegistryL2";
+        const initLog = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"];
+
+        let log = initLog + ", contract: " + "ServiceRegistryL2";
         await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryL2", log);
 
-        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ServiceManager";
+        log = initLog + ", contract: " + "ServiceManager";
         await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManager", log);
 
-        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "GnosisSafeMultisig";
+        log = initLog + ", contract: " + "GnosisSafeMultisig";
         await checkGnosisSafeImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeMultisig", log);
 
-        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "GnosisSafeSameAddressMultisig";
+        log = initLog + ", contract: " + "GnosisSafeSameAddressMultisig";
         await checkGnosisSafeSameAddressImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeSameAddressMultisig", log);
     }
 

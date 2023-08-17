@@ -12,7 +12,7 @@ fi
 
 # clean before
 rm -rf out
-ethereum-sources-downloader $1 $3 2>&1 > /dev/null
+node_modules/ethereum-sources-downloader/dist/index.js $1 $3 2>&1 > /dev/null
 # ignore only in dir
 r=$(diff -r out/$2/contracts/ contracts/ | grep -v Only)
 #clear after
