@@ -1,4 +1,4 @@
-/*global ethers*/
+/*global process*/
 
 const { ethers } = require("ethers");
 const { expect } = require("chai");
@@ -18,7 +18,7 @@ function customExpect(arg1, arg2, log) {
             console.log("\n");
         }
     }
-};
+}
 
 // Find the contract name from the configuration data
 async function findContractInstance(provider, configContracts, contractName) {
@@ -26,14 +26,14 @@ async function findContractInstance(provider, configContracts, contractName) {
     for (let i = 0; i < configContracts.length; i++) {
         if (configContracts[i]["name"] === contractName) {
             // Get the contract instance
-            contractFromJSON = fs.readFileSync(configContracts[i]["abi"], "utf8");
-            parsedFile = JSON.parse(contractFromJSON);
+            const contractFromJSON = fs.readFileSync(configContracts[i]["abi"], "utf8");
+            const parsedFile = JSON.parse(contractFromJSON);
             const abi = parsedFile["abi"];
             const contractInstance = new ethers.Contract(configContracts[i]["address"], abi, provider);
             return contractInstance;
         }
     }
-};
+}
 
 // Check the contract owner
 async function checkOwner(chainId, contract, globalsInstance, log) {
@@ -69,7 +69,7 @@ async function checkComponentRegistry(chainId, provider, globalsInstance, config
     // Check manager
     const manager = await componentRegistry.manager();
     customExpect(manager, globalsInstance["registriesManagerAddress"], log + ", function: manager()");
-};
+}
 
 // Check agent registry: chain Id, provider, parsed globals, configuration contracts, contract name
 // Agent Registry resides on L1 only
@@ -94,7 +94,7 @@ async function checkAgentRegistry(chainId, provider, globalsInstance, configCont
     // Check component registry for L1 only
     const componentRegistry = await agentRegistry.componentRegistry();
     customExpect(componentRegistry, globalsInstance["componentRegistryAddress"], log + ", function: componentRegistry()");
-};
+}
 
 // Check service registry: chain Id, provider, parsed globals, configuration contracts, contract name
 async function checkServiceRegistry(chainId, provider, globalsInstance, configContracts, contractName, log) {
@@ -144,7 +144,7 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
     customExpect(res, true, log + ", function: mapMultisigs(safeMultisig)");
     res = await serviceRegistry.mapMultisigs(globalsInstance["gnosisSafeSameAddressMultisigImplementationAddress"]);
     customExpect(res, true, log + ", function: mapMultisigs(safeSameAddressMultisig)");
-};
+}
 
 // Check service manager: chain Id, provider, parsed globals, configuration contracts, contract name
 async function checkServiceManager(chainId, provider, globalsInstance, configContracts, contractName, log) {
@@ -176,7 +176,7 @@ async function checkServiceManager(chainId, provider, globalsInstance, configCon
         const operatorWhitelist = await serviceManager.operatorWhitelist();
         customExpect(operatorWhitelist, globalsInstance["operatorWhitelistAddress"], log + ", function: operatorWhitelist()");
     }
-};
+}
 
 // Check service registry token utility: chain Id, provider, parsed globals, configuration contracts, contract name
 // At the moment the check is applicable to L1 only
@@ -197,7 +197,7 @@ async function checkServiceRegistryTokenUtility(chainId, provider, globalsInstan
     // Check service registry
     const serviceRegistry = await serviceRegistryTokenUtility.serviceRegistry();
     customExpect(serviceRegistry, globalsInstance["serviceRegistryAddress"], log + ", function: serviceRegistry()");
-};
+}
 
 // Check operator whitelist: chain Id, provider, parsed globals, configuration contracts, contract name
 // At the moment the check is applicable to L1 only
@@ -207,7 +207,7 @@ async function checkOperatorWhitelist(chainId, provider, globalsInstance, config
     // Check service registry
     const serviceRegistry = await operatorWhitelist.serviceRegistry();
     customExpect(serviceRegistry, globalsInstance["serviceRegistryAddress"], log + ", function: serviceRegistry()");
-};
+}
 
 // Check gnosis safe implementation: chain Id, provider, parsed globals, configuration contracts, contract name
 async function checkGnosisSafeImplementation(chainId, provider, globalsInstance, configContracts, contractName, log) {
@@ -220,7 +220,7 @@ async function checkGnosisSafeImplementation(chainId, provider, globalsInstance,
     // Check Gnosis Sage setup selector
     const setupSelector = await gnosisSafeImplementation.GNOSIS_SAFE_SETUP_SELECTOR();
     customExpect(setupSelector, "0xb63e800d", log + ", function: GNOSIS_SAFE_SETUP_SELECTOR()");
-};
+}
 
 // Check gnosis safe same address implementation: chain Id, provider, parsed globals, configuration contracts, contract name
 async function checkGnosisSafeSameAddressImplementation(chainId, provider, globalsInstance, configContracts, contractName, log) {
@@ -229,7 +229,7 @@ async function checkGnosisSafeSameAddressImplementation(chainId, provider, globa
     // Check default data length
     const defaultDataLength = Number(await gnosisSafeSameAddressImplementation.DEFAULT_DATA_LENGTH());
     customExpect(defaultDataLength, 20, log + ", function: DEFAULT_DATA_LENGTH()");
-};
+}
 
 async function main() {
     // Check for the API keys
@@ -252,7 +252,7 @@ async function main() {
         "goerli": "goerli.etherscan",
         "polygon": "polygonscan",
         "polygonMumbai": "testnet.polygonscan"
-    }
+    };
 
     console.log("\nVerifying deployed contracts vs the repo... If no error is output, then the contracts are correct.");
 
@@ -284,7 +284,7 @@ async function main() {
         "polygonMumbai": "scripts/deployment/l2/globals_polygon_mumbai.json",
         "gnosis": "scripts/deployment/l2/globals_gnosis_mainnet.json",
         "chiado": "scripts/deployment/l2/globals_gnosis_chiado.json"
-    }
+    };
 
     const providerLinks = {
         "mainnet": "https://eth-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MAINNET,
@@ -293,7 +293,7 @@ async function main() {
         "polygonMumbai": "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MUMBAI,
         "gnosis": "https://rpc.gnosischain.com",
         "chiado": "https://rpc.chiadochain.net"
-    }
+    };
 
     // Get all the globals processed
     const globals = new Array();
@@ -354,7 +354,7 @@ async function main() {
     }
 
     // ################################# /VERIFY CONTRACTS SETUP #################################
-};
+}
 
 main()
     .then(() => process.exit(0))
