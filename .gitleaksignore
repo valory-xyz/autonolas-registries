@@ -24,3 +24,7 @@ f0bbda32a3c2c12a69a1fcef0c360eb524b27ab9:scripts/deployment/globals_goerli.json:
 f0bbda32a3c2c12a69a1fcef0c360eb524b27ab9:scripts/deployment/globals_goerli.json:generic-api-key:1
 6c66b3475706a6fd6f5010bb146d958cf91486a4:scripts/deployment/l2/globals_polygon_mumbai.json:generic-api-key:1
 6c66b3475706a6fd6f5010bb146d958cf91486a4:scripts/deployment/l2/globals_polygon_mumbai.json:generic-api-key:1
+f0bbda32a3c2c12a69a1fcef0c360eb524b27ab9:scripts/deployment/globals_goerli.json:generic-api-key:2
+f0bbda32a3c2c12a69a1fcef0c360eb524b27ab9:scripts/deployment/globals_goerli.json:generic-api-key:2
+f0bbda32a3c2c12a69a1fcef0c360eb524b27ab9:scripts/deployment/globals_mainnet.json:generic-api-key:2
+6c66b3475706a6fd6f5010bb146d958cf91486a4:scripts/deployment/l2/globals_polygon_mumbai.json:generic-api-key:2
