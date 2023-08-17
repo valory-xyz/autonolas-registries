@@ -76,23 +76,23 @@
       },
       {
         "name": "ServiceRegistryTokenUtility",
-        "abi": "abis/0.8.19/GnosisSafeMultisig.json",
+        "abi": "abis/0.8.19/ServiceRegistryTokenUtility.json",
         "address": "0x6d9b08701Af43D68D991c074A27E4d90Af7f2276"
       },
       {
         "name": "ServiceManagerToken",
-        "abi": "abis/0.8.19/GnosisSafeMultisig.json",
+        "abi": "abis/0.8.19/ServiceManagerToken.json",
         "address": "0x1d333b46dB6e8FFd271b6C2D2B254868BD9A2dbd"
-      },
-      {
-        "name": "GnosisSafeSameAddressMultisig",
-        "abi": "abis/0.8.15/GnosisSafeSameAddressMultisig.json",
-        "address": "0x92499E80f50f06C4078794C179986907e7822Ea1"
       },
       {
         "name": "GnosisSafeMultisig",
         "abi": "abis/0.8.15/GnosisSafeMultisig.json",
         "address": "0x65dD51b02049ad1B6FF7fa9Ea3322E1D2CAb1176"
+      },
+      {
+        "name": "GnosisSafeSameAddressMultisig",
+        "abi": "abis/0.8.15/GnosisSafeSameAddressMultisig.json",
+        "address": "0x92499E80f50f06C4078794C179986907e7822Ea1"
       },
       {
         "name": "OperatorWhitelist",

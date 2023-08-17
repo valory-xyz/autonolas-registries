@@ -43,12 +43,58 @@ async function checkOwner(chainId, contract, globalsInstance, log) {
         customExpect(owner, globalsInstance["timelockAddress"], log + ", function: owner()");
     } else {
         // BridgeMediator for L2-s
-        // Note that for chiado bridgeMediatorAddress is the one with the mock Timelock, such that it is possible to
-        // test cross-chain transactions. There is also a bridgeMediatorRealTimelockAddress for references to the
-        // bridgeMediator contract with the real Timelock on goerli. This can be changed, but for now the setup is good for testing.
+        // Note that for chiado bridgeMediatorAddress is the one with the mock Timelock (bridgeMediatorMockTimelockAddress)
+        // This is done in such a way because it is easier to test cross-chain transactions, as it's not possible via tenderly.
+        // This can be changed at any time for the bridgeMediator contract with the real Timelock on goerli.
         customExpect(owner, globalsInstance["bridgeMediatorAddress"], log + ", function: owner()");
     }
 }
+
+// Check component registry: chain Id, provider, parsed globals, configuration contracts, contract name
+// Component Registry resides on L1 only
+async function checkComponentRegistry(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    const componentRegistry = await findContractInstance(provider, configContracts, contractName);
+
+    // Check version
+    const version = await componentRegistry.VERSION();
+    customExpect(version, "1.0.0", log + ", function: VERSION()");
+
+    // Check Base URI
+    const baseURI = await componentRegistry.baseURI();
+    customExpect(baseURI, "https://gateway.autonolas.tech/ipfs/", log + ", function: baseURI()");
+
+    // Check owner
+    checkOwner(chainId, componentRegistry, globalsInstance, log);
+
+    // Check manager
+    const manager = await componentRegistry.manager();
+    customExpect(manager, globalsInstance["registriesManagerAddress"], log + ", function: manager()");
+};
+
+// Check agent registry: chain Id, provider, parsed globals, configuration contracts, contract name
+// Agent Registry resides on L1 only
+async function checkAgentRegistry(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    const agentRegistry = await findContractInstance(provider, configContracts, contractName);
+
+    // Check version
+    const version = await agentRegistry.VERSION();
+    customExpect(version, "1.0.0", log + ", function: VERSION()");
+
+    // Check Base URI
+    const baseURI = await agentRegistry.baseURI();
+    customExpect(baseURI, "https://gateway.autonolas.tech/ipfs/", log + ", function: baseURI()");
+
+    // Check owner
+    checkOwner(chainId, agentRegistry, globalsInstance, log);
+
+    // Check manager
+    const manager = await agentRegistry.manager();
+    customExpect(manager, globalsInstance["registriesManagerAddress"], log + ", function: manager()");
+
+    // Check component registry for L1 only
+    const componentRegistry = await agentRegistry.componentRegistry();
+    customExpect(componentRegistry, globalsInstance["componentRegistryAddress"], log + ", function: componentRegistry()");
+};
 
 // Check service registry: chain Id, provider, parsed globals, configuration contracts, contract name
 async function checkServiceRegistry(chainId, provider, globalsInstance, configContracts, contractName, log) {
@@ -78,13 +124,12 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
     // Check drainer
     const drainer = await serviceRegistry.drainer();
     if (chainId === "1" || chainId === "5") {
-        // Timelock for L1
+        // Treasury for L1
         customExpect(drainer, globalsInstance["treasuryAddress"], log + ", function: drainer()");
     } else {
         // BridgeMediator for L2-s
-        // Note that for chiado bridgeMediatorAddress is the one with the mock Timelock, such that it is possible to
-        // test cross-chain transactions. There is also a bridgeMediatorRealTimelockAddress for references to the
-        // bridgeMediator contract with the real Timelock on goerli. This can be changed, but for now the setup is good for testing.
+        // Note that for chiado bridgeMediatorAddress is the one with the mock Timelock (bridgeMediatorMockTimelockAddress)
+        // See the detailed explanation above
         customExpect(drainer, globalsInstance["bridgeMediatorAddress"], log + ", function: drainer()");
     }
 
@@ -99,11 +144,101 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
     customExpect(res, true, log + ", function: mapMultisigs(safeMultisig)");
     res = await serviceRegistry.mapMultisigs(globalsInstance["gnosisSafeSameAddressMultisigImplementationAddress"]);
     customExpect(res, true, log + ", function: mapMultisigs(safeSameAddressMultisig)");
+};
 
-    //console.log(await serviceRegistry.name());
+// Check service manager: chain Id, provider, parsed globals, configuration contracts, contract name
+async function checkServiceManager(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    const serviceManager = await findContractInstance(provider, configContracts, contractName);
+
+    // Check owner
+    checkOwner(chainId, serviceManager, globalsInstance, log);
+
+    // Check service registry
+    const serviceRegistry = await serviceManager.serviceRegistry();
+    customExpect(serviceRegistry, globalsInstance["serviceRegistryAddress"], log + ", function: serviceRegistry()");
+
+    // Check that the manager is not paused
+    const paused = await serviceManager.paused();
+    customExpect(paused, false, log + ", function: paused()");
+
+    // Checks for L1 only
+    if (chainId === "1" || chainId === "5") {
+        // Version
+        const version = await serviceManager.version();
+        customExpect(version, "1.1.1", log + ", function: version()");
+
+        // ServiceRegistryTokenUtility
+        const serviceRegistryTokenUtility = await serviceManager.serviceRegistryTokenUtility();
+        customExpect(serviceRegistryTokenUtility, globalsInstance["serviceRegistryTokenUtilityAddress"],
+            log + ", function: serviceRegistryTokenUtility()");
+
+        // OperatorWhitelist
+        const operatorWhitelist = await serviceManager.operatorWhitelist();
+        customExpect(operatorWhitelist, globalsInstance["operatorWhitelistAddress"], log + ", function: operatorWhitelist()");
+    }
+};
+
+// Check service registry token utility: chain Id, provider, parsed globals, configuration contracts, contract name
+// At the moment the check is applicable to L1 only
+async function checkServiceRegistryTokenUtility(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    const serviceRegistryTokenUtility = await findContractInstance(provider, configContracts, contractName);
+
+    // Check owner
+    checkOwner(chainId, serviceRegistryTokenUtility, globalsInstance, log);
+
+    // Check manager
+    const manager = await serviceRegistryTokenUtility.manager();
+    customExpect(manager, globalsInstance["serviceManagerTokenAddress"], log + ", function: manager()");
+
+    // Check drainer
+    const drainer = await serviceRegistryTokenUtility.drainer();
+    customExpect(drainer, globalsInstance["treasuryAddress"], log + ", function: drainer()");
+
+    // Check service registry
+    const serviceRegistry = await serviceRegistryTokenUtility.serviceRegistry();
+    customExpect(serviceRegistry, globalsInstance["serviceRegistryAddress"], log + ", function: serviceRegistry()");
+};
+
+// Check operator whitelist: chain Id, provider, parsed globals, configuration contracts, contract name
+// At the moment the check is applicable to L1 only
+async function checkOperatorWhitelist(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    const operatorWhitelist = await findContractInstance(provider, configContracts, contractName);
+
+    // Check service registry
+    const serviceRegistry = await operatorWhitelist.serviceRegistry();
+    customExpect(serviceRegistry, globalsInstance["serviceRegistryAddress"], log + ", function: serviceRegistry()");
+};
+
+// Check gnosis safe implementation: chain Id, provider, parsed globals, configuration contracts, contract name
+async function checkGnosisSafeImplementation(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    const gnosisSafeImplementation = await findContractInstance(provider, configContracts, contractName);
+
+    // Check default data length
+    const defaultDataLength = Number(await gnosisSafeImplementation.DEFAULT_DATA_LENGTH());
+    customExpect(defaultDataLength, 144, log + ", function: DEFAULT_DATA_LENGTH()");
+
+    // Check Gnosis Sage setup selector
+    const setupSelector = await gnosisSafeImplementation.GNOSIS_SAFE_SETUP_SELECTOR();
+    customExpect(setupSelector, "0xb63e800d", log + ", function: GNOSIS_SAFE_SETUP_SELECTOR()");
+};
+
+// Check gnosis safe same address implementation: chain Id, provider, parsed globals, configuration contracts, contract name
+async function checkGnosisSafeSameAddressImplementation(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    const gnosisSafeSameAddressImplementation = await findContractInstance(provider, configContracts, contractName);
+
+    // Check default data length
+    const defaultDataLength = Number(await gnosisSafeSameAddressImplementation.DEFAULT_DATA_LENGTH());
+    customExpect(defaultDataLength, 20, log + ", function: DEFAULT_DATA_LENGTH()");
 };
 
 async function main() {
+    // Check for the API keys
+    if (!process.env.ALCHEMY_API_KEY_MAINNET || !process.env.ALCHEMY_API_KEY_GOERLI ||
+        !process.env.ALCHEMY_API_KEY_MATIC || !process.env.ALCHEMY_API_KEY_MUMBAI) {
+        console.log("Check API keys!");
+        return;
+    }
+
     // Read configuration from the JSON file
     const configFile = "docs/configuration.json";
     const dataFromJSON = fs.readFileSync(configFile, "utf8");
@@ -119,7 +254,7 @@ async function main() {
         "polygonMumbai": "testnet.polygonscan"
     }
 
-    console.log("\nVerifying the contracts... If no error is output, then the contracts are correct.");
+    console.log("\nVerifying deployed contracts vs the repo... If no error is output, then the contracts are correct.");
 
     // Traverse all chains
     for (let i = 0; i < numChains; i++) {
@@ -170,25 +305,52 @@ async function main() {
         providers.push(provider);
     }
 
-    //console.log(globals);
-    //console.log(providers);
+    console.log("\nVerifying deployed contracts setup... If no error is output, then the contracts are correct.");
 
     // L1 contracts
     for (let i = 0; i < 2; i++) {
-        let log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ServiceRegistry";
+        console.log("\n######## Verifying setup on CHAIN ID", configs[i]["chainId"]);
+
+        let log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ComponentRegistry";
+        await checkComponentRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ComponentRegistry", log);
+
+        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "AgentRegistry";
+        await checkAgentRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "AgentRegistry", log);
+
+        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ServiceRegistry";
         await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistry", log);
 
         log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ServiceManagerToken";
-        //await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerToken", log);
+        await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerToken", log);
+
+        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ServiceRegistryTokenUtility";
+        await checkServiceRegistryTokenUtility(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryTokenUtility", log);
+
+        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "OperatorWhitelist";
+        await checkOperatorWhitelist(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "OperatorWhitelist", log);
+
+        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "GnosisSafeMultisig";
+        await checkGnosisSafeImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeMultisig", log);
+
+        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "GnosisSafeSameAddressMultisig";
+        await checkGnosisSafeSameAddressImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeSameAddressMultisig", log);
     }
 
     // L2 contracts
     for (let i = 2; i < numChains; i++) {
+        console.log("\n######## Verifying setup on CHAIN ID", configs[i]["chainId"]);
+
         let log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ServiceRegistryL2";
         await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryL2", log);
 
         log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ServiceManager";
-        //await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManager", log);
+        await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManager", log);
+
+        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "GnosisSafeMultisig";
+        await checkGnosisSafeImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeMultisig", log);
+
+        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "GnosisSafeSameAddressMultisig";
+        await checkGnosisSafeSameAddressImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeSameAddressMultisig", log);
     }
 
     // ################################# /VERIFY CONTRACTS SETUP #################################
