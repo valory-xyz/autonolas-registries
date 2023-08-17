@@ -35,8 +35,23 @@ async function findContractInstance(provider, configContracts, contractName) {
     }
 };
 
-// Check service registry: network number, provider, parsed globals, configuration contracts, contract name
-async function checkServiceRegistry(i, provider, globalsInstance, configContracts, contractName, log) {
+// Check the contract owner
+async function checkOwner(chainId, contract, globalsInstance, log) {
+    const owner = await contract.owner();
+    if (chainId === "1" || chainId === "5") {
+        // Timelock for L1
+        customExpect(owner, globalsInstance["timelockAddress"], log + ", function: owner()");
+    } else {
+        // BridgeMediator for L2-s
+        // Note that for chiado bridgeMediatorAddress is the one with the mock Timelock, such that it is possible to
+        // test cross-chain transactions. There is also a bridgeMediatorRealTimelockAddress for references to the
+        // bridgeMediator contract with the real Timelock on goerli. This can be changed, but for now the setup is good for testing.
+        customExpect(owner, globalsInstance["bridgeMediatorAddress"], log + ", function: owner()");
+    }
+}
+
+// Check service registry: chain Id, provider, parsed globals, configuration contracts, contract name
+async function checkServiceRegistry(chainId, provider, globalsInstance, configContracts, contractName, log) {
     const serviceRegistry = await findContractInstance(provider, configContracts, contractName);
 
     // Check version
@@ -48,21 +63,11 @@ async function checkServiceRegistry(i, provider, globalsInstance, configContract
     customExpect(baseURI, "https://gateway.autonolas.tech/ipfs/", log + ", function: baseURI()");
 
     // Check owner
-    const owner = await serviceRegistry.owner();
-    if (contractName === "ServiceRegistry") {
-        // Timelock for L1
-        customExpect(owner, globalsInstance["timelockAddress"], log + ", function: owner()");
-    } else {
-        // BridgeMediator for L2-s
-        // Note that for chiado bridgeMediatorAddress is the one with the mock Timelock, such that it is possible to
-        // test cross-chain transactions. There is also a bridgeMediatorRealTimelockAddress for references to the
-        // bridgeMediator contract with the real Timelock on goerli. This can be changed, but for now the setup is good for testing.
-        customExpect(owner, globalsInstance["bridgeMediatorAddress"], log + ", function: owner()");
-    }
+    checkOwner(chainId, serviceRegistry, globalsInstance, log);
 
     // Check manager
     const manager = await serviceRegistry.manager();
-    if (contractName === "ServiceRegistry") {
+    if (chainId === "1" || chainId === "5") {
         // ServiceRegistryManagerToken for L1
         customExpect(manager, globalsInstance["serviceManagerTokenAddress"], log + ", function: manager()");
     } else {
@@ -72,7 +77,7 @@ async function checkServiceRegistry(i, provider, globalsInstance, configContract
 
     // Check drainer
     const drainer = await serviceRegistry.drainer();
-    if (contractName === "ServiceRegistry") {
+    if (chainId === "1" || chainId === "5") {
         // Timelock for L1
         customExpect(drainer, globalsInstance["treasuryAddress"], log + ", function: drainer()");
     } else {
@@ -84,7 +89,7 @@ async function checkServiceRegistry(i, provider, globalsInstance, configContract
     }
 
     // Check agent registry for L1 only
-    if (contractName === "ServiceRegistry") {
+    if (chainId === "1" || chainId === "5") {
         const agentRegistry = await serviceRegistry.agentRegistry();
         customExpect(agentRegistry, globalsInstance["agentRegistryAddress"], log + ", function: agentRegistry()");
     }
@@ -105,36 +110,36 @@ async function main() {
     const configs = JSON.parse(dataFromJSON);
 
     const numChains = configs.length;
-//    // ################################# VERIFY CONTRACTS WITH REPO #################################
-//    // For now gnosis chains are not supported
-//    const networks = {
-//        "mainnet": "etherscan",
-//        "goerli": "goerli.etherscan",
-//        "polygon": "polygonscan",
-//        "polygonMumbai": "testnet.polygonscan"
-//    }
-//
-//    console.log("\nVerifying the contracts... If no error is output, then the contracts are correct.");
-//
-//    // Traverse all chains
-//    for (let i = 0; i < numChains; i++) {
-//        // Skip gnosis chains
-//        if (!networks[configs[i]["name"]]) {
-//            continue;
-//        }
-//
-//        console.log("\n\nNetwork:", configs[i]["name"]);
-//        const network = networks[configs[i]["name"]];
-//        const contracts = configs[i]["contracts"];
-//
-//        // Verify contracts
-//        for (let j = 0; j < contracts.length; j++) {
-//            console.log("Checking " + contracts[j]["name"]);
-//            const execSync = require("child_process").execSync;
-//            execSync("scripts/audit_chains/audit_short.sh " + network + " " + contracts[j]["name"] + " " + contracts[j]["address"]);
-//        }
-//    }
-//    // ################################# /VERIFY CONTRACTS WITH REPO #################################
+    // ################################# VERIFY CONTRACTS WITH REPO #################################
+    // For now gnosis chains are not supported
+    const networks = {
+        "mainnet": "etherscan",
+        "goerli": "goerli.etherscan",
+        "polygon": "polygonscan",
+        "polygonMumbai": "testnet.polygonscan"
+    }
+
+    console.log("\nVerifying the contracts... If no error is output, then the contracts are correct.");
+
+    // Traverse all chains
+    for (let i = 0; i < numChains; i++) {
+        // Skip gnosis chains
+        if (!networks[configs[i]["name"]]) {
+            continue;
+        }
+
+        console.log("\n\nNetwork:", configs[i]["name"]);
+        const network = networks[configs[i]["name"]];
+        const contracts = configs[i]["contracts"];
+
+        // Verify contracts
+        for (let j = 0; j < contracts.length; j++) {
+            console.log("Checking " + contracts[j]["name"]);
+            const execSync = require("child_process").execSync;
+            execSync("scripts/audit_chains/audit_short.sh " + network + " " + contracts[j]["name"] + " " + contracts[j]["address"]);
+        }
+    }
+    // ################################# /VERIFY CONTRACTS WITH REPO #################################
 
     // ################################# VERIFY CONTRACTS SETUP #################################
     const globalNames = {
@@ -171,13 +176,19 @@ async function main() {
     // L1 contracts
     for (let i = 0; i < 2; i++) {
         let log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ServiceRegistry";
-        await checkServiceRegistry(i, providers[i], globals[i], configs[i]["contracts"], "ServiceRegistry", log);
+        await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistry", log);
+
+        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ServiceManagerToken";
+        //await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerToken", log);
     }
 
     // L2 contracts
     for (let i = 2; i < numChains; i++) {
         let log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ServiceRegistryL2";
-        await checkServiceRegistry(i, providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryL2", log);
+        await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryL2", log);
+
+        log = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"] + ", contract: " + "ServiceManager";
+        //await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManager", log);
     }
 
     // ################################# /VERIFY CONTRACTS SETUP #################################
