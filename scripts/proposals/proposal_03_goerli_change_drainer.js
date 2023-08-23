@@ -24,7 +24,7 @@ async function main() {
     const serviceRegistry = await ethers.getContractAt("ServiceRegistry", serviceRegistryAddress);
 
     // Proposal preparation
-    console.log("Proposal 3. ServiceRegistry to change drainer calling `changeDrainer(TokenomicsTwo)`");
+    console.log("Proposal 3. ServiceRegistry to change drainer calling `changeDrainer(treasuryAddress)`");
     const targets = [serviceRegistryAddress];
     const values = [0];
     const callDatas = [serviceRegistry.interface.encodeFunctionData("changeDrainer", [treasuryAddress])];
