@@ -45,7 +45,7 @@ _No bytecode changes_.
 
 ### Changed
 
-- Updated `ServiceManagerToken` contract such that operators are able to to register agent instances and unbond via signatures ([#83](https://github.com/valory-xyz/autonolas-registries/pull/83))
+- Updated `ServiceManagerToken` contract based on the `OperatorSignedHashes` one such that operators are able to register agent instances and unbond via signatures ([#83](https://github.com/valory-xyz/autonolas-registries/pull/83))
   with the subsequent internal audit ([audit3](https://github.com/valory-xyz/autonolas-registries/tree/main/audits/internal3))
 - Deployed `ServiceRegistryTokenUtility`, `ServiceManagerToken` and `OperatorWhitelist` contracts
 - Updated documentation
