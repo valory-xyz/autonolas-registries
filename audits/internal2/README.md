@@ -1,7 +1,7 @@
 # Internal audit of autonolas-registries
 The review has been performed based on the contract code in the following repository:<br>
 `https://github.com/valory-xyz/autonolas-registries` <br>
-commit: `v1.1.4.pre-internal-audit` <br> 
+commit: `v1.1.1.pre-internal-audit` <br> 
 
 ## Objectives
 The audit focused on `managing services with custom ERC20 tokens` contracts in this repo.
