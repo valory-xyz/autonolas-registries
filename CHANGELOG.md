@@ -85,7 +85,7 @@ _No bytecode changes_.
 ### Changed
 
 - Updated and deployed `GnosisSafeMultisig` contract ([#37](https://github.com/valory-xyz/autonolas-registries/pull/37))
-- Updated and deployed `GnosisSafeSameAddressMultisig` contract ([#40](https://github.com/valory-xyz/autonolas-registries/pull/40))
+- Created and deployed `GnosisSafeSameAddressMultisig` contract ([#40](https://github.com/valory-xyz/autonolas-registries/pull/40))
 - Created `ServiceRegistryL2` contract that represents the service functionalities on L2 ([#41](https://github.com/valory-xyz/autonolas-registries/pull/41))
 - Updated documentation
 - Added more tests
