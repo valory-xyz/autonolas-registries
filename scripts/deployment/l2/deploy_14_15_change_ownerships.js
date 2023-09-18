@@ -14,7 +14,7 @@ async function main() {
     const gasPriceInGwei = parsedData.gasPriceInGwei;
     const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
     const serviceManagerTokenAddress = parsedData.serviceManagerTokenAddress;
-    const bridgeMediatorAddress = parsedData.bridgeMediatorAddress;
+    let bridgeMediatorAddress = parsedData.bridgeMediatorAddress;
     let EOA;
 
     let networkURL;
@@ -37,6 +37,8 @@ async function main() {
         networkURL = "https://rpc.gnosischain.com";
     } else if (providerName === "chiado") {
         networkURL = "https://rpc.chiadochain.net";
+        // For the chiado network, the mock timelock contract is set as the owner
+        bridgeMediatorAddress = parsedData.bridgeMediatorMockTimelockAddress;
     } else {
         console.log("Unknown network provider", providerName);
         return;
