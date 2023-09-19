@@ -35,3 +35,4 @@ d818b0e6ed7f4ebd557b2502cdedea2cadeb22d5:scripts/audit_3_chains/audit.sh:generic
 d818b0e6ed7f4ebd557b2502cdedea2cadeb22d5:scripts/audit_3_chains/audit.sh:generic-api-key:85
 d818b0e6ed7f4ebd557b2502cdedea2cadeb22d5:scripts/audit_3_chains/audit.sh:generic-api-key:86
 d780294b8dccf047391a71b75dade50a6b89003b:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:1
+f7b0036b3b5d2be2b81a56d2a4f10a91653fa872:scripts/deployment/l2/bridges/gnosis/test_service_registry_token_utility_change_drainer.js:generic-api-key:44

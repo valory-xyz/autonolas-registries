@@ -253,7 +253,11 @@ async function checkServiceRegistryTokenUtility(chainId, provider, globalsInstan
 
     // Check drainer
     const drainer = await serviceRegistryTokenUtility.drainer();
-    customExpect(drainer, globalsInstance["treasuryAddress"], log + ", function: drainer()");
+    if (chainId === "1" || chainId === "5") {
+        customExpect(drainer, globalsInstance["timelockAddress"], log + ", function: drainer()");
+    } else {
+        customExpect(drainer, globalsInstance["bridgeMediatorAddress"], log + ", function: drainer()");
+    }
 
     // Check service registry
     const serviceRegistry = await serviceRegistryTokenUtility.serviceRegistry();
