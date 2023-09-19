@@ -57,8 +57,10 @@ async function main() {
         console.log("Correct wallet setup");
     }
 
-    // Mock Token contract across the bridge must change the drainer address
-    const rawPayload = serviceRegistryL2.interface.encodeFunctionData("changeDrainer", [homeMediatorAddress]);
+    // Mock Timelock contract across the bridge must change the manager address
+    const globalsFile = fs.readFileSync("globals.json", "utf8");
+    parsedFile = JSON.parse(globalsFile);
+    const rawPayload = serviceRegistryL2.interface.encodeFunctionData("changeManager", [parsedFile.serviceManagerTokenAddress]);
     // Pack the second part of data
     const target = serviceRegistryL2Address;
     const value = 0;

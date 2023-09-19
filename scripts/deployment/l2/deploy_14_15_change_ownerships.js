@@ -64,14 +64,14 @@ async function main() {
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
 
     // Transaction signing and execution
-    // 14. EOA to transfer ownership rights of ServiceRegistryTokenUtility to FxGovernorTunnel calling `changeOwner(FxGovernorTunnel)`;
+    // 14. EOA to transfer ownership rights of ServiceRegistryTokenUtility to BridgeMediator calling `changeOwner(BridgeMediator)`;
     console.log("You are signing the following transaction: ServiceRegistryTokenUtility.connect(EOA).changeOwner()");
     let result = await serviceRegistryTokenUtility.connect(EOA).changeOwner(bridgeMediatorAddress, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceRegistryTokenUtilityAddress);
     console.log("Transaction:", result.hash);
 
-    // 15. EOA to transfer ownership rights of ServiceManagerToken to FxGovernorTunnel calling `changeOwner(FxGovernorTunnel)`.
+    // 15. EOA to transfer ownership rights of ServiceManagerToken to BridgeMediator calling `changeOwner(BridgeMediator)`.
     console.log("You are signing the following transaction: serviceManagerToken.connect(EOA).changeOwner()");
     result = await serviceManagerToken.connect(EOA).changeOwner(bridgeMediatorAddress, { gasPrice });
     // Transaction details

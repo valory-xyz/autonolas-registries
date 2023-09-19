@@ -46,7 +46,7 @@ async function main() {
     const serviceRegistryABI = parsedFile["abi"];
     const serviceRegistry = new ethers.Contract(serviceRegistryAddress, serviceRegistryABI, gnosisProvider);
 
-    // Mock Token contract across the bridge must change the drainer address
+    // Timelock contract across the bridge must change the drainer address
     const rawPayload = serviceRegistry.interface.encodeFunctionData("changeDrainer", [homeMediatorAddress]);
     // Pack the second part of data
     const target = serviceRegistryAddress;

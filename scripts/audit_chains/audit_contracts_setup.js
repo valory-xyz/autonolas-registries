@@ -164,8 +164,8 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
 
     // Check manager
     const manager = await serviceRegistry.manager();
-    if (chainId === "1" || chainId === "5") {
-        // ServiceRegistryManagerToken for L1
+    if (chainId === "1" || chainId === "5" || chainId === "10200") {
+        // ServiceRegistryManagerToken for L1 and L2 that currently have the full setup
         customExpect(manager, globalsInstance["serviceManagerTokenAddress"], log + ", function: manager()");
     } else {
         // ServiceRegistryManager for L2
@@ -217,8 +217,8 @@ async function checkServiceManager(chainId, provider, globalsInstance, configCon
     const paused = await serviceManager.paused();
     customExpect(paused, false, log + ", function: paused()");
 
-    // Checks for L1 only
-    if (chainId === "1" || chainId === "5") {
+    // Checks for L1 and L2 that currently have the full setup
+    if (chainId === "1" || chainId === "5" || chainId === "10200") {
         // Version
         const version = await serviceManager.version();
         customExpect(version, "1.1.1", log + ", function: version()");
@@ -423,8 +423,20 @@ async function main() {
         let log = initLog + ", contract: " + "ServiceRegistryL2";
         await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryL2", log);
 
-        log = initLog + ", contract: " + "ServiceManager";
-        await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManager", log);
+        // Make an exception for the chiado network for now as it operates with the ServiceManagerToken
+        if (configs[i]["chainId"] === "10200") {
+            log = initLog + ", contract: " + "ServiceManagerToken";
+            await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerToken", log);
+
+            log = initLog + ", contract: " + "ServiceRegistryTokenUtility";
+            await checkServiceRegistryTokenUtility(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryTokenUtility", log);
+
+            log = initLog + ", contract: " + "OperatorWhitelist";
+            await checkOperatorWhitelist(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "OperatorWhitelist", log);
+        } else {
+            log = initLog + ", contract: " + "ServiceManager";
+            await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManager", log);
+        }
 
         log = initLog + ", contract: " + "GnosisSafeMultisig";
         await checkGnosisSafeImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeMultisig", log);

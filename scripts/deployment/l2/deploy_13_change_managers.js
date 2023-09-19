@@ -14,6 +14,7 @@ async function main() {
     const gasPriceInGwei = parsedData.gasPriceInGwei;
     const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
     const serviceManagerTokenAddress = parsedData.serviceManagerTokenAddress;
+    let bridgeMediatorAddress = parsedData.bridgeMediatorAddress;
     let EOA;
 
     let networkURL;
@@ -36,6 +37,8 @@ async function main() {
         networkURL = "https://rpc.gnosischain.com";
     } else if (providerName === "chiado") {
         networkURL = "https://rpc.chiadochain.net";
+        // For the chiado network, the mock timelock contract is set as the owner
+        bridgeMediatorAddress = parsedData.bridgeMediatorMockTimelockAddress;
     } else {
         console.log("Unknown network provider", providerName);
         return;
@@ -60,9 +63,16 @@ async function main() {
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
 
     // Transaction signing and execution
-    // 13. EOA to change the manager of ServiceRegistryTokenUtility to ServiceManagerToken calling `changeManager(ServiceManagerToken)`;
+    // 13a. EOA to change the manager of ServiceRegistryTokenUtility to ServiceManagerToken calling `changeManager(ServiceManagerToken)`;
     console.log("You are signing the following transaction: serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerTokenAddress)");
     let result = await serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerTokenAddress, { gasPrice });
+    // Transaction details
+    console.log("Contract address:", serviceRegistryTokenUtilityAddress);
+    console.log("Transaction:", result.hash);
+
+    // 13b. EOA to change the drainer of ServiceRegistryTokenUtility to BridgeMediator
+    console.log("You are signing the following transaction: serviceRegistryTokenUtility.connect(EOA).changeDrainer(bridgeMediatorAddress)");
+    result = await serviceRegistryTokenUtility.connect(EOA).changeDrainer(bridgeMediatorAddress, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceRegistryTokenUtilityAddress);
     console.log("Transaction:", result.hash);
