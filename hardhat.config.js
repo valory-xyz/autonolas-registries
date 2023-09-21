@@ -77,8 +77,8 @@ module.exports = {
                 network: "chiado",
                 chainId: 10200,
                 urls: {
-                    apiURL: "https://blockscout.com/gnosis/chiado/api",
-                    browserURL: "https://blockscout.com/gnosis/chiado",
+                    apiURL: "https://gnosis-chiado.blockscout.com/api",
+                    browserURL: "https://gnosis-chiado.blockscout.com/",
                 },
             },
             {
