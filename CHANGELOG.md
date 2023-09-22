@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+[1.1.6]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.4...v1.1.6
+[1.1.5]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.4...v1.1.5
 [1.1.4]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.1...v1.1.2
@@ -13,6 +15,25 @@ The format is based on [Common Changelog](https://common-changelog.org).
 [1.0.2]: https://github.com/valory-xyz/autonolas-registries/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/valory-xyz/autonolas-registries/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/valory-xyz/autonolas-registries/releases/tag/v1.0.0
+
+## [1.1.6] - 2023-09-22
+
+_No bytecode changes_.
+
+### Changed
+
+- Deployed `ServiceRegistryTokenUtility`, `ServiceManagerToken` and `OperatorWhitelist` contracts on gnosis ([#117](https://github.com/valory-xyz/autonolas-registries/pull/117))
+- Added the chaind audit script to check throughout all the deployed contracts and configuration on corresponding chains ([#109](https://github.com/valory-xyz/autonolas-registries/pull/109))
+- Updated documentation
+- Added tests
+
+## [1.1.5] - TBD
+
+_No bytecode changes_.
+
+### Changed
+
+- Latest external audit of registries contracts.
 
 ## [1.1.4] - 2023-08-08
 
