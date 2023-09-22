@@ -39,6 +39,7 @@ struct ServiceInfo {
 /// @title ServiceStakingBase - Base abstract smart contract for staking the service by its owner
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
+/// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 abstract contract ServiceStakingBase {
     // APY value
     uint256 public immutable apy;
@@ -55,6 +56,8 @@ abstract contract ServiceStakingBase {
     uint256 public tsLastBalance;
     // Minimum balance going below which would be considered that the balance is zero
     uint256 public minBalance;
+    // Rewards per second
+    uint256 public rewardsPerSecond;
     // Mapping of serviceId => staking service info
     mapping (uint256 => ServiceInfo) public mapServiceInfo;
     // Set of currently staking serviceIds
@@ -78,7 +81,7 @@ abstract contract ServiceStakingBase {
         if (state != 4) {
             revert();
         }
-        // Check the service token, if applicable
+        // Check the service security deposit and token, if applicable
         _checkTokenSecurityDeposit(serviceId);
 
         // Transfer the service for staking
@@ -141,27 +144,40 @@ abstract contract ServiceStakingBase {
             }
 
             // Calculate each eligible service Id reward
-            uint256 totalReward;
+            uint256 tsLast = tsLastBalance;
+            // Calculate the maximum possible reward per service during the last deposit period
+            uint256 maxRewardsPerService = (rewardsPerSecond * (block.timestamp - tsLast)) / numServices;
+            // Traverse all the eligible services and calculate their rewards
             for (uint256 i = 0; i < numServices; ++i) {
                 uint256 curServiceId = eligibleServiceIds[i];
                 ServiceInfo storage curInfo = mapServiceInfo[curServiceId];
 
-
-
                 // Calculate the reward up until now
                 // If the staking was longer than the deposited period, the service's timestamp is adjusted such that
                 // it is equal to at most the tsLastBalance of the last deposit happening during every _checkpoint() call
-                uint256 reward = (lastBalance * apy * (block.timestamp - curInfo.ts)) / (365 days * numServices * 100);
+                uint256 reward = rewardsPerSecond * (block.timestamp - curInfo.ts);
+                // Adjust the reward if it goes out of calculated max bounds
+                if (reward > maxRewardsPerService) {
+                    reward = maxRewardsPerService;
+                }
+
+                // Adjust the deposit balance
+                if (lastBalance >= reward) {
+                    lastBalance -= reward;
+                } else {
+                    // This situation must never happen
+                    // TODO: Fuzz this
+                    reward = lastBalance;
+                    lastBalance = 0;
+                }
+
                 // Add the reward
                 curInfo.reward += reward;
-                totalReward += reward;
 
                 // Adjust the starting ts for each service to a current timestamp
                 curInfo.ts = block.timestamp;
             }
 
-            // Adjust the deposit balance
-            lastBalance -= totalReward;
             balance = lastBalance;
         }
 
@@ -182,14 +198,16 @@ abstract contract ServiceStakingBase {
 
         // Send the remaining small balance along with the reward if it is below the chosen threshold
         uint256 amount = sInfo.reward;
-        uint256 curBalance = balance;
-        if (curBalance < minBalance) {
-            amount += curBalance;
+        uint256 lastBalance = balance;
+        if (lastBalance < minBalance) {
+            amount += lastBalance;
             balance = 0;
         }
 
         // Transfer accumulated rewards to the service owner
-        _withdraw(msg.sender, amount);
+        if (amount > 0) {
+            _withdraw(msg.sender, amount);
+        }
 
         // Clear all the data about the unstaked service
         // Delete the service info struct

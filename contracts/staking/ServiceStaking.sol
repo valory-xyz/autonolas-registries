@@ -13,6 +13,7 @@ error TransferFailed(address token, address from, address to, uint256 value);
 /// @title ServiceStakingToken - Smart contract for staking the service by its owner based ETH as a deposit
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
+/// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract ServiceStaking is ServiceStakingBase {
     constructor(uint256 _apy, uint256 _minSecurityDeposit, uint256 _stakingRatio, address _serviceRegistry)
       ServiceStakingBase(_apy, _minSecurityDeposit, _stakingRatio, _serviceRegistry)
@@ -40,6 +41,12 @@ contract ServiceStaking is ServiceStakingBase {
         _checkpoint(0);
 
         // Add to the overall balance
-        balance += msg.value;
+        uint256 newBalance = balance + msg.value;
+
+        // Update rewards per second
+        rewardsPerSecond = (newBalance * apy) / (100 * 365 days);
+
+        // Record the new actual balance
+        balance = newBalance;
     }
 }

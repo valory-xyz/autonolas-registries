@@ -21,6 +21,7 @@ error TransferFailed(address token, address from, address to, uint256 value);
 /// @title ServiceStakingToken - Smart contract for staking the service by its owner having an ERC20 token as a deposit
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
+/// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract ServiceStakingToken is ServiceStakingBase {
     // ServiceRegistryTokenUtility address
     address public immutable serviceRegistryTokenUtility;
@@ -151,6 +152,14 @@ contract ServiceStakingToken is ServiceStakingBase {
 
         // Add to the overall balance
         safeTransferFrom(securityToken, msg.sender, address(this), amount);
-        balance += amount;
+
+        // Add to the overall balance
+        uint256 newBalance = balance + amount;
+
+        // Update rewards per second
+        rewardsPerSecond = (newBalance * apy) / (100 * 365 days);
+
+        // Record the new actual balance
+        balance = newBalance;
     }
 }
