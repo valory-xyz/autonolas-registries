@@ -15,10 +15,19 @@ error TransferFailed(address token, address from, address to, uint256 value);
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract ServiceStaking is ServiceStakingBase {
+    /// @dev ServiceStaking constructor.
+    /// @param _apy Staking APY (in single digits).
+    /// @param _minSecurityDeposit Minimum security deposit for a service to be eligible to stake.
+    /// @param _stakingRatio Staking ratio: number of seconds per nonce (in 18 digits).
+    /// @param _serviceRegistry ServiceRegistry contract address.
     constructor(uint256 _apy, uint256 _minSecurityDeposit, uint256 _stakingRatio, address _serviceRegistry)
       ServiceStakingBase(_apy, _minSecurityDeposit, _stakingRatio, _serviceRegistry)
-    {}
+    {
+        // TODO: calculate minBalance
+    }
 
+    /// @dev Checks token security deposit.
+    /// @param serviceId Service Id.
     function _checkTokenSecurityDeposit(uint256 serviceId) internal view override {
         // Get the service security token and deposit
         (uint96 securityDeposit, , , , , , ) = IService(serviceRegistry).mapServices(serviceId);
@@ -29,6 +38,9 @@ contract ServiceStaking is ServiceStakingBase {
         }
     }
 
+    /// @dev Withdraws the reward amount to a service owner.
+    /// @param to Address to.
+    /// @param amount Amount to withdraw.
     function _withdraw(address to, uint256 amount) internal override {
         (bool result, ) = to.call{value: amount}("");
         if (!result) {
@@ -44,9 +56,12 @@ contract ServiceStaking is ServiceStakingBase {
         uint256 newBalance = balance + msg.value;
 
         // Update rewards per second
-        rewardsPerSecond = (newBalance * apy) / (100 * 365 days);
+        uint256 newRewardsPerSecond = (newBalance * apy) / (100 * 365 days);
+        rewardsPerSecond = newRewardsPerSecond;
 
         // Record the new actual balance
         balance = newBalance;
+
+        emit Deposit(msg.sender, msg.value, newBalance, newRewardsPerSecond);
     }
 }

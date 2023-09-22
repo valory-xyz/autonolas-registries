@@ -1,11 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
+// Multisig interface
 interface IMultisig {
+    /// @dev Gets the multisig nonce.
+    /// @return Multisig nonce.
     function nonce() external returns (uint256);
 }
 
+// Service Registry interface
 interface IService {
+    /// @dev Transfers the service that was previously approved to this contract address.
+    /// @param from Account address to transfer from.
+    /// @param to Account address to transfer to.
+    /// @param id Service Id.
     function transferFrom(address from, address to, uint256 id) external;
 
     /// @dev Gets the service instance from the map of services.
@@ -28,11 +36,23 @@ interface IService {
     );
 }
 
+/// @dev Provided zero value.
+error ZeroValue();
+
+/// @dev Provided zero address.
+error ZeroAddress();
+
+// Service Info struct
 struct ServiceInfo {
+    // Service multisig address
     address multisig;
+    // Service owner
     address owner;
+    // Service multisig nonce
     uint256 nonce;
+    // Staking time
     uint256 ts;
+    // Accumulated service staking reward
     uint256 reward;
 }
 
@@ -41,6 +61,12 @@ struct ServiceInfo {
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 abstract contract ServiceStakingBase {
+    event ServiceStaked(uint256 indexed serviceId, address indexed owner);
+    event Checkpoint(uint256 indexed balance);
+    event ServiceUnstaked(uint256 indexed serviceId, address indexed owner, uint256 reward);
+    event Deposit(address indexed sender, uint256 amount, uint256 newBalance, uint256 rewardsPerSecond);
+    event Withdraw(address indexed to, uint256 amount);
+
     // APY value
     uint256 public immutable apy;
     // Minimum deposit value for staking
@@ -54,7 +80,7 @@ abstract contract ServiceStakingBase {
     uint256 public balance;
     // Timestamp of the last checkpoint
     uint256 public tsLastBalance;
-    // Minimum balance going below which would be considered that the balance is zero
+    // Minimum balance going below which would be given away, such that the contract balance is set to zero
     uint256 public minBalance;
     // Rewards per second
     uint256 public rewardsPerSecond;
@@ -63,17 +89,37 @@ abstract contract ServiceStakingBase {
     // Set of currently staking serviceIds
     uint256[] public setServiceIds;
 
+    /// @dev ServiceStakingBase constructor.
+    /// @param _apy Staking APY (in single digits).
+    /// @param _minSecurityDeposit Minimum security deposit for a service to be eligible to stake.
+    /// @param _stakingRatio Staking ratio: number of seconds per nonce (in 18 digits).
+    /// @param _serviceRegistry ServiceRegistry contract address.
     constructor(uint256 _apy, uint256 _minSecurityDeposit, uint256 _stakingRatio, address _serviceRegistry) {
+        // Initial checks
+        if (_apy == 0 || _minSecurityDeposit == 0 || _stakingRatio == 0) {
+            revert ZeroValue();
+        }
+        if (_serviceRegistry == address(0)) {
+            revert ZeroAddress();
+        }
+
         apy = _apy;
         minSecurityDeposit = _minSecurityDeposit;
         stakingRatio = _stakingRatio;
         serviceRegistry = _serviceRegistry;
     }
 
+    /// @dev Checks token security deposit.
+    /// @param serviceId Service Id.
     function _checkTokenSecurityDeposit(uint256 serviceId) internal view virtual {}
 
+    /// @dev Withdraws the reward amount to a service owner.
+    /// @param to Address to.
+    /// @param amount Amount to withdraw.
     function _withdraw(address to, uint256 amount) internal virtual {}
 
+    /// @dev Stakes the service.
+    /// @param serviceId Service Id.
     function stake(uint256 serviceId) external {
         // Check the service conditions for staking
         (, address multisig, , , , , uint8 state) = IService(serviceRegistry).mapServices(serviceId);
@@ -96,10 +142,14 @@ abstract contract ServiceStakingBase {
 
         // Add the service Id to the set of staked services
         setServiceIds.push(serviceId);
+
+        emit ServiceStaked(serviceId, msg.sender);
     }
 
+    /// @dev Checkpoint to allocate rewards up until a current time.
+    /// @param serviceId Service Id that unstakes, or 0 if the function is called during the deposit of new funds.
     function _checkpoint(uint256 serviceId) internal returns (uint256 idx) {
-        // Get the
+        // Get the service Id set length
         uint256 size = setServiceIds.length;
         uint256 lastBalance = balance;
 
@@ -171,26 +221,32 @@ abstract contract ServiceStakingBase {
                     lastBalance = 0;
                 }
 
-                // Add the reward
+                // Add the calculated reward to the service info
                 curInfo.reward += reward;
 
                 // Adjust the starting ts for each service to a current timestamp
                 curInfo.ts = block.timestamp;
             }
-
+            // Update the storage balance
             balance = lastBalance;
         }
 
-        // Record the current timestamp as the one to make future staking calculations from
+        // Record the current timestamp such that next calculations start from this point of time
         tsLastBalance = block.timestamp;
+
+        emit Checkpoint(lastBalance);
     }
 
+    /// @dev Unstakes the service.
+    /// @param serviceId Service Id.
     function unstake(uint256 serviceId) external {
         ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+        // Check for the service ownership
         if (msg.sender != sInfo.owner) {
             revert();
         }
 
+        // Call the checkpoint and get the service index in the set of services
         uint256 idx = _checkpoint(serviceId);
 
         // Transfer the service back to the owner
@@ -216,5 +272,7 @@ abstract contract ServiceStakingBase {
         // Update the set of staked service Ids
         setServiceIds[idx] = setServiceIds[setServiceIds.length - 1];
         setServiceIds.pop();
+
+        emit ServiceUnstaked(serviceId, msg.sender, amount);
     }
 }

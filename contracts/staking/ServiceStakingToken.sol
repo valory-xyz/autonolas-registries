@@ -4,10 +4,19 @@ pragma solidity ^0.8.21;
 import "./ServiceStakingBase.sol";
 
 interface IToken {
-    function transferFrom(address from, address to, uint256 id) external returns (bool);
+    /// @dev Transfers the token amount that was previously approved up until the maximum allowance.
+    /// @param from Account address to transfer from.
+    /// @param to Account address to transfer to.
+    /// @param amount Amount to transfer to.
+    /// @return True if the function execution is successful.
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
 }
 
 interface IServiceTokenUtility {
+    /// @dev Gets the service security token info.
+    /// @param serviceId Service Id.
+    /// @return Token address.
+    /// @return Token security deposit.
     function mapServiceIdTokenDeposit(uint256 serviceId) external view returns (address, uint96);
 }
 
@@ -28,16 +37,29 @@ contract ServiceStakingToken is ServiceStakingBase {
     // Security token address for staking corresponding to the service deposit token
     address public immutable securityToken;
 
+    /// @dev ServiceStakingToken constructor.
+    /// @param _apy Staking APY (in single digits).
+    /// @param _minSecurityDeposit Minimum security deposit for a service to be eligible to stake.
+    /// @param _stakingRatio Staking ratio: number of seconds per nonce (in 18 digits).
+    /// @param _serviceRegistry ServiceRegistry contract address.
+    /// @param _serviceRegistryTokenUtility ServiceRegistryTokenUtility contract address.
+    /// @param _securityToken Address of a service security token.
     constructor(
         uint256 _apy,
-        uint256 _minServiceDeposit,
+        uint256 _minSecurityDeposit,
         uint256 _stakingRatio,
         address _serviceRegistry,
         address _serviceRegistryTokenUtility,
         address _securityToken
     )
-        ServiceStakingBase(_apy, _minServiceDeposit, _stakingRatio, _serviceRegistry)
+        ServiceStakingBase(_apy, _minSecurityDeposit, _stakingRatio, _serviceRegistry)
     {
+        // TODO: calculate minBalance
+        // Initial checks
+        if (_securityToken == address(0) || _serviceRegistryTokenUtility == address(0)) {
+            revert ZeroAddress();
+        }
+
         securityToken = _securityToken;
         serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
     }
@@ -126,6 +148,8 @@ contract ServiceStakingToken is ServiceStakingBase {
         }
     }
 
+    /// @dev Checks token security deposit.
+    /// @param serviceId Service Id.
     function _checkTokenSecurityDeposit(uint256 serviceId) internal view override {
         // Get the service security token and deposit
         (address token, uint96 securityDeposit) =
@@ -142,10 +166,17 @@ contract ServiceStakingToken is ServiceStakingBase {
         }
     }
 
+    /// @dev Withdraws the reward amount to a service owner.
+    /// @param to Address to.
+    /// @param amount Amount to withdraw.
     function _withdraw(address to, uint256 amount) internal override {
         safeTransfer(securityToken, to, amount);
+
+        emit Withdraw(to, amount);
     }
 
+    /// @dev Deposits funds for staking.
+    /// @param amount Token amount to deposit.
     function deposit(uint256 amount) external {
         // Distribute current staking rewards
         _checkpoint(0);
@@ -157,9 +188,12 @@ contract ServiceStakingToken is ServiceStakingBase {
         uint256 newBalance = balance + amount;
 
         // Update rewards per second
-        rewardsPerSecond = (newBalance * apy) / (100 * 365 days);
+        uint256 newRewardsPerSecond = (newBalance * apy) / (100 * 365 days);
+        rewardsPerSecond = newRewardsPerSecond;
 
         // Record the new actual balance
         balance = newBalance;
+
+        emit Deposit(msg.sender, amount, newBalance, newRewardsPerSecond);
     }
 }
