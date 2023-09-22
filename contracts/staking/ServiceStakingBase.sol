@@ -52,7 +52,7 @@ abstract contract ServiceStakingBase {
     // Token / ETH balance
     uint256 public balance;
     // Timestamp of the last checkpoint
-    uint256 public tsLastDeposit;
+    uint256 public tsLastBalance;
     // Minimum balance going below which would be considered that the balance is zero
     uint256 public minBalance;
     // Mapping of serviceId => staking service info
@@ -96,65 +96,77 @@ abstract contract ServiceStakingBase {
     }
 
     function _checkpoint(uint256 serviceId) internal returns (uint256 idx) {
+        // Get the
         uint256 size = setServiceIds.length;
-        uint256 numServices;
-        uint256[] memory eligibleServiceIds = new uint256[](size);
+        uint256 lastBalance = balance;
 
-        // Calculate each staked service reward eligibility
-        for (uint256 i = 0; i < size; ++i) {
-            // Get the current service Id
-            uint256 curServiceId = setServiceIds[i];
+        // If the balance is zero, just bump the timestamp for each of the staking service
+        if (lastBalance == 0) {
+            for (uint256 i = 0; i < size; ++i) {
+                // Set the current timestamp
+                mapServiceInfo[setServiceIds[i]].ts = block.timestamp;
+            }
+        } else {
+            uint256 numServices;
+            uint256[] memory eligibleServiceIds = new uint256[](size);
 
-            // Get the service info
-            ServiceInfo storage curInfo = mapServiceInfo[curServiceId];
+            // Calculate each staked service reward eligibility
+            for (uint256 i = 0; i < size; ++i) {
+                // Get the current service Id
+                uint256 curServiceId = setServiceIds[i];
 
-            // Calculate the staking nonce ratio
-            uint256 curNonce = IMultisig(curInfo.multisig).nonce();
-            // Calculate the nonce ratio in 1e18 value
-            uint256 ratio = ((block.timestamp - curInfo.ts) * 1e18) / (curNonce - curInfo.nonce);
+                // Get the service info
+                ServiceInfo storage curInfo = mapServiceInfo[curServiceId];
 
-            // Record the reward for the service if it has provided enough transactions
-            if (ratio >= stakingRatio) {
-                eligibleServiceIds[numServices] = curServiceId;
-                ++numServices;
-            } else {
-                // Record a current timestamp for each service
+                // Calculate the staking nonce ratio
+                uint256 curNonce = IMultisig(curInfo.multisig).nonce();
+                // Calculate the nonce ratio in 1e18 value
+                uint256 ratio = ((block.timestamp - curInfo.ts) * 1e18) / (curNonce - curInfo.nonce);
+
+                // Record the reward for the service if it has provided enough transactions
+                if (ratio >= stakingRatio) {
+                    eligibleServiceIds[numServices] = curServiceId;
+                    ++numServices;
+                } else {
+                    // Record current timestamp for each reward ineligible service
+                    curInfo.ts = block.timestamp;
+                }
+                // Record current service multisig nonce
+                curInfo.nonce = curNonce;
+
+                // Record the unstaked service Id index in the global set of staked service Ids
+                if (curServiceId == serviceId) {
+                    idx = i;
+                }
+            }
+
+            // Calculate each eligible service Id reward
+            uint256 totalReward;
+            for (uint256 i = 0; i < numServices; ++i) {
+                uint256 curServiceId = eligibleServiceIds[i];
+                ServiceInfo storage curInfo = mapServiceInfo[curServiceId];
+
+
+
+                // Calculate the reward up until now
+                // If the staking was longer than the deposited period, the service's timestamp is adjusted such that
+                // it is equal to at most the tsLastBalance of the last deposit happening during every _checkpoint() call
+                uint256 reward = (lastBalance * apy * (block.timestamp - curInfo.ts)) / (365 days * numServices * 100);
+                // Add the reward
+                curInfo.reward += reward;
+                totalReward += reward;
+
+                // Adjust the starting ts for each service to a current timestamp
                 curInfo.ts = block.timestamp;
             }
 
-            // Record the unstaked service Id index in the global set of staked service Ids
-            if (curServiceId == serviceId) {
-                idx = i;
-            }
+            // Adjust the deposit balance
+            lastBalance -= totalReward;
+            balance = lastBalance;
         }
-
-        // Calculate each eligible service Id reward
-        uint256 tsLastBalance = tsLastDeposit;
-        uint256 totalReward;
-        for (uint256 i = 0; i < numServices; ++i) {
-            uint256 curServiceId = eligibleServiceIds[i];
-            ServiceInfo storage curInfo = mapServiceInfo[curServiceId];
-
-            // If the staking was longer than the deposited period, adjust that amount
-            if (curInfo.ts < tsLastBalance) {
-                curInfo.ts = tsLastBalance;
-            }
-
-            // Calculate the reward up until now
-            uint256 reward = (balance * apy * 365 days) / ((block.timestamp - curInfo.ts) * numServices);
-            // Add the reward
-            curInfo.reward += reward;
-            totalReward += reward;
-
-            // Adjust the starting ts for each service to a current timestamp
-            curInfo.ts = block.timestamp;
-        }
-
-        // Adjust the deposit balance
-        balance -= totalReward;
 
         // Record the current timestamp as the one to make future staking calculations from
-        tsLastDeposit = block.timestamp;
+        tsLastBalance = block.timestamp;
     }
 
     function unstake(uint256 serviceId) external {
