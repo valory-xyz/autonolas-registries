@@ -30,8 +30,8 @@ async function main() {
         }
         networkURL = "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MUMBAI;
     } else if (providerName === "gnosis") {
-        if (!process.env.GNOSIS_CHAIN_API_KEY) {
-            console.log("set GNOSIS_CHAIN_API_KEY env variable");
+        if (!process.env.GNOSISSCAN_API_KEY) {
+            console.log("set GNOSISSCAN_API_KEY env variable");
             return;
         }
         networkURL = "https://rpc.gnosischain.com";

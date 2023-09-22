@@ -47,7 +47,7 @@ async function main() {
     const serviceRegistry = new ethers.Contract(serviceRegistryAddress, serviceRegistryABI, gnosisProvider);
 
     // Timelock contract across the bridge must change the manager address
-    const rawPayload = serviceRegistry.interface.encodeFunctionData("changeManager", [parsedFile.serviceManagerTokenAddress]);
+    const rawPayload = serviceRegistry.interface.encodeFunctionData("changeManager", [parsedData.serviceManagerTokenAddress]);
     // Pack the second part of data
     const target = serviceRegistryAddress;
     const value = 0;
