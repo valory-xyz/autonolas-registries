@@ -50,4 +50,10 @@ interface IServiceTokenUtility {
     /// @param serviceId Service Id.
     /// @return True if the service Id is token secured.
     function isTokenSecuredService(uint256 serviceId) external view returns (bool);
+
+    /// @dev Gets the service security token info.
+    /// @param serviceId Service Id.
+    /// @return Token address.
+    /// @return Token security deposit.
+    function mapServiceIdTokenDeposit(uint256 serviceId) external view returns (address, uint96);
 }

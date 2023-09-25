@@ -1,16 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import "./ServiceStakingBase.sol";
+import {ServiceStakingBase} from "./ServiceStakingBase.sol";
+import "../interfaces/IService.sol";
 
-/// @dev Failure of a transfer.
-/// @param token Address of a token.
-/// @param from Address `from`.
-/// @param to Address `to`.
-/// @param value Value.
-error TransferFailed(address token, address from, address to, uint256 value);
-
-/// @title ServiceStakingToken - Smart contract for staking the service by its owner based ETH as a deposit
+/// @title ServiceStakingToken - Smart contract for staking a service by its owner when the service has an ETH as the deposit
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
@@ -42,6 +36,10 @@ contract ServiceStaking is ServiceStakingBase {
     /// @param to Address to.
     /// @param amount Amount to withdraw.
     function _withdraw(address to, uint256 amount) internal override {
+        // Update the contract balance
+        balance -= amount;
+
+        // Transfer the amount
         (bool result, ) = to.call{value: amount}("");
         if (!result) {
             revert TransferFailed(address(0), address(this), to, amount);
@@ -52,16 +50,18 @@ contract ServiceStaking is ServiceStakingBase {
         // Distribute current staking rewards
         _checkpoint(0);
 
-        // Add to the overall balance
+        // Add to the contract and available rewards balances
         uint256 newBalance = balance + msg.value;
+        uint256 newAvailableRewards = availableRewards + msg.value;
 
         // Update rewards per second
-        uint256 newRewardsPerSecond = (newBalance * apy) / (100 * 365 days);
+        uint256 newRewardsPerSecond = (newAvailableRewards * apy) / (100 * 365 days);
         rewardsPerSecond = newRewardsPerSecond;
 
-        // Record the new actual balance
+        // Record the new actual balance and available rewards
         balance = newBalance;
+        availableRewards = newAvailableRewards;
 
-        emit Deposit(msg.sender, msg.value, newBalance, newRewardsPerSecond);
+        emit Deposit(msg.sender, msg.value, newBalance, newAvailableRewards, newRewardsPerSecond);
     }
 }

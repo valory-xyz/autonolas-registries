@@ -1,46 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-// Multisig interface
-interface IMultisig {
-    /// @dev Gets the multisig nonce.
-    /// @return Multisig nonce.
-    function nonce() external returns (uint256);
-}
-
-// Service Registry interface
-interface IService {
-    /// @dev Transfers the service that was previously approved to this contract address.
-    /// @param from Account address to transfer from.
-    /// @param to Account address to transfer to.
-    /// @param id Service Id.
-    function transferFrom(address from, address to, uint256 id) external;
-
-    /// @dev Gets the service instance from the map of services.
-    /// @param serviceId Service Id.
-    /// @return securityDeposit Registration activation deposit.
-    /// @return multisig Service multisig address.
-    /// @return configHash IPFS hashes pointing to the config metadata.
-    /// @return threshold Agent instance signers threshold.
-    /// @return maxNumAgentInstances Total number of agent instances.
-    /// @return numAgentInstances Actual number of agent instances.
-    /// @return state Service state.
-    function mapServices(uint256 serviceId) external view returns (
-        uint96 securityDeposit,
-        address multisig,
-        bytes32 configHash,
-        uint32 threshold,
-        uint32 maxNumAgentInstances,
-        uint32 numAgentInstances,
-        uint8 state
-    );
-}
-
-/// @dev Provided zero value.
-error ZeroValue();
-
-/// @dev Provided zero address.
-error ZeroAddress();
+import "../interfaces/IErrorsRegistries.sol";
+import "../interfaces/IMultisig.sol";
+import "../interfaces/IService.sol";
 
 // Service Info struct
 struct ServiceInfo {
@@ -50,21 +13,22 @@ struct ServiceInfo {
     address owner;
     // Service multisig nonce
     uint256 nonce;
-    // Staking time
-    uint256 ts;
+    // Staking start time
+    uint256 tsStart;
     // Accumulated service staking reward
     uint256 reward;
 }
 
-/// @title ServiceStakingBase - Base abstract smart contract for staking the service by its owner
+/// @title ServiceStakingBase - Base abstract smart contract for staking a service by its owner
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-abstract contract ServiceStakingBase {
+abstract contract ServiceStakingBase is IErrorsRegistries {
     event ServiceStaked(uint256 indexed serviceId, address indexed owner);
     event Checkpoint(uint256 indexed balance);
     event ServiceUnstaked(uint256 indexed serviceId, address indexed owner, uint256 reward);
-    event Deposit(address indexed sender, uint256 amount, uint256 newBalance, uint256 rewardsPerSecond);
+    event Deposit(address indexed sender, uint256 amount, uint256 newBalance, uint256 newAvailableRewards,
+        uint256 rewardsPerSecond);
     event Withdraw(address indexed to, uint256 amount);
 
     // APY value
@@ -78,8 +42,10 @@ abstract contract ServiceStakingBase {
 
     // Token / ETH balance
     uint256 public balance;
+    // Token / ETH available rewards
+    uint256 public availableRewards;
     // Timestamp of the last checkpoint
-    uint256 public tsLastBalance;
+    uint256 public tsCheckpoint;
     // Minimum balance going below which would be given away, such that the contract balance is set to zero
     uint256 public minBalance;
     // Rewards per second
@@ -125,7 +91,7 @@ abstract contract ServiceStakingBase {
         (, address multisig, , , , , uint8 state) = IService(serviceRegistry).mapServices(serviceId);
         // The service must be deployed
         if (state != 4) {
-            revert();
+            revert WrongServiceState(state, serviceId);
         }
         // Check the service security deposit and token, if applicable
         _checkTokenSecurityDeposit(serviceId);
@@ -138,7 +104,7 @@ abstract contract ServiceStakingBase {
         sInfo.multisig = multisig;
         sInfo.owner = msg.sender;
         sInfo.nonce = IMultisig(multisig).nonce();
-        sInfo.ts = block.timestamp;
+        sInfo.tsStart = block.timestamp;
 
         // Add the service Id to the set of staked services
         setServiceIds.push(serviceId);
@@ -151,15 +117,12 @@ abstract contract ServiceStakingBase {
     function _checkpoint(uint256 serviceId) internal returns (uint256 idx) {
         // Get the service Id set length
         uint256 size = setServiceIds.length;
-        uint256 lastBalance = balance;
+        uint256 lastAvailableRewards = availableRewards;
+        uint256 tsCheckpointLast = tsCheckpoint;
 
-        // If the balance is zero, just bump the timestamp for each of the staking service
-        if (lastBalance == 0) {
-            for (uint256 i = 0; i < size; ++i) {
-                // Set the current timestamp
-                mapServiceInfo[setServiceIds[i]].ts = block.timestamp;
-            }
-        } else {
+        // If available rewards are not zero, proceed with staking calculation
+        // Otherwise, just bump the timestamp of last checkpoint
+        if (lastAvailableRewards > 0) {
             uint256 numServices;
             uint256[] memory eligibleServiceIds = new uint256[](size);
 
@@ -173,17 +136,21 @@ abstract contract ServiceStakingBase {
 
                 // Calculate the staking nonce ratio
                 uint256 curNonce = IMultisig(curInfo.multisig).nonce();
+                // Get the last service checkpoint: staking start time or the global checkpoint timestamp
+                uint256 serviceCheckpoint = tsCheckpointLast;
+                // Adjust the service checkpoint time if the service was staking less than the current staking period
+                if (curInfo.tsStart > tsCheckpointLast) {
+                    serviceCheckpoint = curInfo.tsStart;
+                }
                 // Calculate the nonce ratio in 1e18 value
-                uint256 ratio = ((block.timestamp - curInfo.ts) * 1e18) / (curNonce - curInfo.nonce);
+                uint256 ratio = ((block.timestamp - serviceCheckpoint) * 1e18) / (curNonce - curInfo.nonce);
 
                 // Record the reward for the service if it has provided enough transactions
                 if (ratio >= stakingRatio) {
                     eligibleServiceIds[numServices] = curServiceId;
                     ++numServices;
-                } else {
-                    // Record current timestamp for each reward ineligible service
-                    curInfo.ts = block.timestamp;
                 }
+                
                 // Record current service multisig nonce
                 curInfo.nonce = curNonce;
 
@@ -193,48 +160,51 @@ abstract contract ServiceStakingBase {
                 }
             }
 
-            // Calculate each eligible service Id reward
-            uint256 tsLast = tsLastBalance;
+            // Process each eligible service Id reward
             // Calculate the maximum possible reward per service during the last deposit period
-            uint256 maxRewardsPerService = (rewardsPerSecond * (block.timestamp - tsLast)) / numServices;
+            uint256 maxRewardsPerService = (rewardsPerSecond * (block.timestamp - tsCheckpointLast)) / numServices;
             // Traverse all the eligible services and calculate their rewards
             for (uint256 i = 0; i < numServices; ++i) {
                 uint256 curServiceId = eligibleServiceIds[i];
                 ServiceInfo storage curInfo = mapServiceInfo[curServiceId];
 
                 // Calculate the reward up until now
+                // Get the last service checkpoint: staking start time or the global checkpoint timestamp
+                uint256 serviceCheckpoint = tsCheckpointLast;
+                // Adjust the service checkpoint time if the service was staking less than the current staking period
+                if (curInfo.tsStart > tsCheckpointLast) {
+                    serviceCheckpoint = curInfo.tsStart;
+                }
+
                 // If the staking was longer than the deposited period, the service's timestamp is adjusted such that
-                // it is equal to at most the tsLastBalance of the last deposit happening during every _checkpoint() call
-                uint256 reward = rewardsPerSecond * (block.timestamp - curInfo.ts);
+                // it is equal to at most the tsCheckpoint of the last deposit happening during every _checkpoint() call
+                uint256 reward = rewardsPerSecond * (block.timestamp - serviceCheckpoint);
                 // Adjust the reward if it goes out of calculated max bounds
                 if (reward > maxRewardsPerService) {
                     reward = maxRewardsPerService;
                 }
 
-                // Adjust the deposit balance
-                if (lastBalance >= reward) {
-                    lastBalance -= reward;
+                // Adjust the available rewards value
+                if (lastAvailableRewards >= reward) {
+                    lastAvailableRewards -= reward;
                 } else {
                     // This situation must never happen
                     // TODO: Fuzz this
-                    reward = lastBalance;
-                    lastBalance = 0;
+                    reward = lastAvailableRewards;
+                    lastAvailableRewards = 0;
                 }
 
                 // Add the calculated reward to the service info
                 curInfo.reward += reward;
-
-                // Adjust the starting ts for each service to a current timestamp
-                curInfo.ts = block.timestamp;
             }
-            // Update the storage balance
-            balance = lastBalance;
+            // Update the storage value of available rewards
+            availableRewards = lastAvailableRewards;
         }
 
         // Record the current timestamp such that next calculations start from this point of time
-        tsLastBalance = block.timestamp;
+        tsCheckpoint = block.timestamp;
 
-        emit Checkpoint(lastBalance);
+        emit Checkpoint(lastAvailableRewards);
     }
 
     /// @dev Unstakes the service.
@@ -243,7 +213,7 @@ abstract contract ServiceStakingBase {
         ServiceInfo storage sInfo = mapServiceInfo[serviceId];
         // Check for the service ownership
         if (msg.sender != sInfo.owner) {
-            revert();
+            revert OwnerOnly(msg.sender, sInfo.owner);
         }
 
         // Call the checkpoint and get the service index in the set of services
@@ -254,15 +224,15 @@ abstract contract ServiceStakingBase {
 
         // Send the remaining small balance along with the reward if it is below the chosen threshold
         uint256 amount = sInfo.reward;
-        uint256 lastBalance = balance;
-        if (lastBalance < minBalance) {
-            amount += lastBalance;
-            balance = 0;
+        uint256 lastAvailableRewards = availableRewards;
+        if (lastAvailableRewards < minBalance) {
+            amount += lastAvailableRewards;
+            availableRewards = 0;
         }
 
-        // Transfer accumulated rewards to the service owner
+        // Transfer accumulated rewards to the service multisig
         if (amount > 0) {
-            _withdraw(msg.sender, amount);
+            _withdraw(sInfo.multisig, amount);
         }
 
         // Clear all the data about the unstaked service

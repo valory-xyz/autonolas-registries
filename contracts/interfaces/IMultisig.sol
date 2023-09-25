@@ -13,4 +13,8 @@ interface IMultisig {
         uint256 threshold,
         bytes memory data
     ) external returns (address multisig);
+
+    /// @dev Gets the multisig nonce.
+    /// @return Multisig nonce.
+    function nonce() external returns (uint256);
 }
