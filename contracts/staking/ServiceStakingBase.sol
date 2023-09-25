@@ -34,7 +34,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
     // APY value
     uint256 public immutable apy;
     // Minimum deposit value for staking
-    uint256 public immutable minSecurityDeposit;
+    uint256 public immutable minStakingDeposit;
     // Staking ratio in the format of 1e18
     uint256 public immutable stakingRatio;
     // ServiceRegistry contract address
@@ -57,12 +57,12 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
 
     /// @dev ServiceStakingBase constructor.
     /// @param _apy Staking APY (in single digits).
-    /// @param _minSecurityDeposit Minimum security deposit for a service to be eligible to stake.
+    /// @param _minStakingDeposit Minimum security deposit for a service to be eligible to stake.
     /// @param _stakingRatio Staking ratio: number of seconds per nonce (in 18 digits).
     /// @param _serviceRegistry ServiceRegistry contract address.
-    constructor(uint256 _apy, uint256 _minSecurityDeposit, uint256 _stakingRatio, address _serviceRegistry) {
+    constructor(uint256 _apy, uint256 _minStakingDeposit, uint256 _stakingRatio, address _serviceRegistry) {
         // Initial checks
-        if (_apy == 0 || _minSecurityDeposit == 0 || _stakingRatio == 0) {
+        if (_apy == 0 || _minStakingDeposit == 0 || _stakingRatio == 0) {
             revert ZeroValue();
         }
         if (_serviceRegistry == address(0)) {
@@ -70,7 +70,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         }
 
         apy = _apy;
-        minSecurityDeposit = _minSecurityDeposit;
+        minStakingDeposit = _minStakingDeposit;
         stakingRatio = _stakingRatio;
         serviceRegistry = _serviceRegistry;
     }

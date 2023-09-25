@@ -18,20 +18,20 @@ contract ServiceStakingToken is ServiceStakingBase {
 
     /// @dev ServiceStakingToken constructor.
     /// @param _apy Staking APY (in single digits).
-    /// @param _minSecurityDeposit Minimum security deposit for a service to be eligible to stake.
+    /// @param _minStakingDeposit Minimum security deposit for a service to be eligible to stake.
     /// @param _stakingRatio Staking ratio: number of seconds per nonce (in 18 digits).
     /// @param _serviceRegistry ServiceRegistry contract address.
     /// @param _serviceRegistryTokenUtility ServiceRegistryTokenUtility contract address.
     /// @param _stakingToken Address of a service security token.
     constructor(
         uint256 _apy,
-        uint256 _minSecurityDeposit,
+        uint256 _minStakingDeposit,
         uint256 _stakingRatio,
         address _serviceRegistry,
         address _serviceRegistryTokenUtility,
         address _stakingToken
     )
-        ServiceStakingBase(_apy, _minSecurityDeposit, _stakingRatio, _serviceRegistry)
+        ServiceStakingBase(_apy, _minStakingDeposit, _stakingRatio, _serviceRegistry)
     {
         // TODO: calculate minBalance
         // Initial checks
@@ -47,7 +47,7 @@ contract ServiceStakingToken is ServiceStakingBase {
     /// @param serviceId Service Id.
     function _checkTokenSecurityDeposit(uint256 serviceId) internal view override {
         // Get the service security token and deposit
-        (address token, uint96 securityDeposit) =
+        (address token, uint96 stakingDeposit) =
             IServiceTokenUtility(serviceRegistryTokenUtility).mapServiceIdTokenDeposit(serviceId);
 
         // The security token must match the contract token
@@ -56,7 +56,7 @@ contract ServiceStakingToken is ServiceStakingBase {
         }
 
         // The security deposit must be greater or equal to the minimum defined one
-        if (securityDeposit < minSecurityDeposit) {
+        if (stakingDeposit < minStakingDeposit) {
             revert();
         }
     }

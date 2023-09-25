@@ -11,11 +11,11 @@ import "../interfaces/IService.sol";
 contract ServiceStaking is ServiceStakingBase {
     /// @dev ServiceStaking constructor.
     /// @param _apy Staking APY (in single digits).
-    /// @param _minSecurityDeposit Minimum security deposit for a service to be eligible to stake.
+    /// @param _minStakingDeposit Minimum security deposit for a service to be eligible to stake.
     /// @param _stakingRatio Staking ratio: number of seconds per nonce (in 18 digits).
     /// @param _serviceRegistry ServiceRegistry contract address.
-    constructor(uint256 _apy, uint256 _minSecurityDeposit, uint256 _stakingRatio, address _serviceRegistry)
-      ServiceStakingBase(_apy, _minSecurityDeposit, _stakingRatio, _serviceRegistry)
+    constructor(uint256 _apy, uint256 _minStakingDeposit, uint256 _stakingRatio, address _serviceRegistry)
+      ServiceStakingBase(_apy, _minStakingDeposit, _stakingRatio, _serviceRegistry)
     {
         // TODO: calculate minBalance
     }
@@ -24,10 +24,10 @@ contract ServiceStaking is ServiceStakingBase {
     /// @param serviceId Service Id.
     function _checkTokenSecurityDeposit(uint256 serviceId) internal view override {
         // Get the service security token and deposit
-        (uint96 securityDeposit, , , , , , ) = IService(serviceRegistry).mapServices(serviceId);
+        (uint96 stakingDeposit, , , , , , ) = IService(serviceRegistry).mapServices(serviceId);
         
         // The security deposit must be greater or equal to the minimum defined one
-        if (securityDeposit < minSecurityDeposit) {
+        if (stakingDeposit < minStakingDeposit) {
             revert();
         }
     }
