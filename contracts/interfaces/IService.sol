@@ -2,7 +2,7 @@
 pragma solidity ^0.8.15;
 
 /// @dev Required interface for the service manipulation.
-interface IService {
+interface IService{
     struct AgentParams {
         // Number of agent instances
         uint32 slots;
@@ -87,29 +87,4 @@ interface IService {
     /// @return success True, if function executed successfully.
     /// @return refund The amount of refund returned to the operator.
     function unbond(address operator, uint256 serviceId) external returns (bool success, uint256 refund);
-
-    /// @dev Transfers the service that was previously approved to this contract address.
-    /// @param from Account address to transfer from.
-    /// @param to Account address to transfer to.
-    /// @param id Service Id.
-    function transferFrom(address from, address to, uint256 id) external;
-
-    /// @dev Gets the service instance from the map of services.
-    /// @param serviceId Service Id.
-    /// @return securityDeposit Registration activation deposit.
-    /// @return multisig Service multisig address.
-    /// @return configHash IPFS hashes pointing to the config metadata.
-    /// @return threshold Agent instance signers threshold.
-    /// @return maxNumAgentInstances Total number of agent instances.
-    /// @return numAgentInstances Actual number of agent instances.
-    /// @return state Service state.
-    function mapServices(uint256 serviceId) external view returns (
-        uint96 securityDeposit,
-        address multisig,
-        bytes32 configHash,
-        uint32 threshold,
-        uint32 maxNumAgentInstances,
-        uint32 numAgentInstances,
-        uint8 state
-    );
 }

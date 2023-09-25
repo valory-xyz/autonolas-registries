@@ -4,13 +4,39 @@ pragma solidity ^0.8.21;
 import {ServiceStakingBase} from "./ServiceStakingBase.sol";
 import {SafeTransferLib} from "../utils/SafeTransferLib.sol";
 import "../interfaces/IToken.sol";
-import "../interfaces/IServiceTokenUtility.sol";
+
+// Service Registry Token Utility interface
+interface IServiceTokenUtility {
+    /// @dev Gets the service security token info.
+    /// @param serviceId Service Id.
+    /// @return Token address.
+    /// @return Token security deposit.
+    function mapServiceIdTokenDeposit(uint256 serviceId) external view returns (address, uint96);
+}
+
+/// @dev The token does not have enough decimals.
+/// @param token Token address.
+/// @param decimals Number of decimals.
+error NotEnoughTokenDecimals(address token, uint8 decimals);
+
+/// @dev The staking token is wrong.
+/// @param expected Expected staking token.
+/// @param provided Provided staking token.
+error WrongStakingToken(address expected, address provided);
+
+/// @dev Received lower value than the expected one.
+/// @param provided Provided value is lower.
+/// @param expected Expected value.
+error LowerThan(uint256 provided, uint256 expected);
 
 /// @title ServiceStakingToken - Smart contract for staking a service by its owner when the service has an ERC20 token as the deposit
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract ServiceStakingToken is ServiceStakingBase {
+    // Minimum number of token decimals
+    uint8 public constant MIN_DECIMALS = 4;
+
     // ServiceRegistryTokenUtility address
     address public immutable serviceRegistryTokenUtility;
     // Security token address for staking corresponding to the service deposit token
@@ -18,11 +44,11 @@ contract ServiceStakingToken is ServiceStakingBase {
 
     /// @dev ServiceStakingToken constructor.
     /// @param _apy Staking APY (in single digits).
-    /// @param _minStakingDeposit Minimum security deposit for a service to be eligible to stake.
+    /// @param _minStakingDeposit Minimum staking deposit for a service to be eligible to stake.
     /// @param _stakingRatio Staking ratio: number of seconds per nonce (in 18 digits).
     /// @param _serviceRegistry ServiceRegistry contract address.
     /// @param _serviceRegistryTokenUtility ServiceRegistryTokenUtility contract address.
-    /// @param _stakingToken Address of a service security token.
+    /// @param _stakingToken Address of a service staking token.
     constructor(
         uint256 _apy,
         uint256 _minStakingDeposit,
@@ -33,7 +59,6 @@ contract ServiceStakingToken is ServiceStakingBase {
     )
         ServiceStakingBase(_apy, _minStakingDeposit, _stakingRatio, _serviceRegistry)
     {
-        // TODO: calculate minBalance
         // Initial checks
         if (_stakingToken == address(0) || _serviceRegistryTokenUtility == address(0)) {
             revert ZeroAddress();
@@ -41,23 +66,31 @@ contract ServiceStakingToken is ServiceStakingBase {
 
         stakingToken = _stakingToken;
         serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
+
+        // Calculate minBalance based on decimals
+        uint8 decimals = IToken(_stakingToken).decimals();
+        if (decimals < MIN_DECIMALS) {
+            revert NotEnoughTokenDecimals(_stakingToken, decimals);
+        } else {
+            minBalance = 10 ** (decimals - MIN_DECIMALS);
+        }
     }
 
-    /// @dev Checks token security deposit.
+    /// @dev Checks token staking deposit.
     /// @param serviceId Service Id.
-    function _checkTokenSecurityDeposit(uint256 serviceId) internal view override {
-        // Get the service security token and deposit
+    function _checkTokenStakingDeposit(uint256 serviceId, uint256) internal view override {
+        // Get the service staking token and deposit
         (address token, uint96 stakingDeposit) =
             IServiceTokenUtility(serviceRegistryTokenUtility).mapServiceIdTokenDeposit(serviceId);
 
-        // The security token must match the contract token
+        // The staking token must match the contract token
         if (stakingToken != token) {
-            revert();
+            revert WrongStakingToken(stakingToken, token);
         }
 
-        // The security deposit must be greater or equal to the minimum defined one
+        // The staking deposit must be greater or equal to the minimum defined one
         if (stakingDeposit < minStakingDeposit) {
-            revert();
+            revert LowerThan(stakingDeposit, minStakingDeposit);
         }
     }
 

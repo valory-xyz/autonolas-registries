@@ -2,7 +2,6 @@
 pragma solidity ^0.8.21;
 
 import {ServiceStakingBase} from "./ServiceStakingBase.sol";
-import "../interfaces/IService.sol";
 
 /// @title ServiceStakingToken - Smart contract for staking a service by its owner when the service has an ETH as the deposit
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -11,25 +10,13 @@ import "../interfaces/IService.sol";
 contract ServiceStaking is ServiceStakingBase {
     /// @dev ServiceStaking constructor.
     /// @param _apy Staking APY (in single digits).
-    /// @param _minStakingDeposit Minimum security deposit for a service to be eligible to stake.
+    /// @param _minStakingDeposit Minimum staking deposit for a service to be eligible to stake.
     /// @param _stakingRatio Staking ratio: number of seconds per nonce (in 18 digits).
     /// @param _serviceRegistry ServiceRegistry contract address.
     constructor(uint256 _apy, uint256 _minStakingDeposit, uint256 _stakingRatio, address _serviceRegistry)
       ServiceStakingBase(_apy, _minStakingDeposit, _stakingRatio, _serviceRegistry)
     {
-        // TODO: calculate minBalance
-    }
-
-    /// @dev Checks token security deposit.
-    /// @param serviceId Service Id.
-    function _checkTokenSecurityDeposit(uint256 serviceId) internal view override {
-        // Get the service security token and deposit
-        (uint96 stakingDeposit, , , , , , ) = IService(serviceRegistry).mapServices(serviceId);
-        
-        // The security deposit must be greater or equal to the minimum defined one
-        if (stakingDeposit < minStakingDeposit) {
-            revert();
-        }
+        minBalance = 1e14;
     }
 
     /// @dev Withdraws the reward amount to a service owner.

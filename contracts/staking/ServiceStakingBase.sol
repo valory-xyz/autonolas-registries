@@ -2,8 +2,46 @@
 pragma solidity ^0.8.21;
 
 import "../interfaces/IErrorsRegistries.sol";
-import "../interfaces/IMultisig.sol";
-import "../interfaces/IService.sol";
+
+// Multisig interface
+interface IMultisig {
+    /// @dev Gets the multisig nonce.
+    /// @return Multisig nonce.
+    function nonce() external returns (uint256);
+}
+
+// Service Registry interface
+interface IService {
+    /// @dev Transfers the service that was previously approved to this contract address.
+    /// @param from Account address to transfer from.
+    /// @param to Account address to transfer to.
+    /// @param id Service Id.
+    function transferFrom(address from, address to, uint256 id) external;
+
+    /// @dev Gets the service instance from the map of services.
+    /// @param serviceId Service Id.
+    /// @return securityDeposit Registration activation deposit.
+    /// @return multisig Service multisig address.
+    /// @return configHash IPFS hashes pointing to the config metadata.
+    /// @return threshold Agent instance signers threshold.
+    /// @return maxNumAgentInstances Total number of agent instances.
+    /// @return numAgentInstances Actual number of agent instances.
+    /// @return state Service state.
+    function mapServices(uint256 serviceId) external view returns (
+        uint96 securityDeposit,
+        address multisig,
+        bytes32 configHash,
+        uint32 threshold,
+        uint32 maxNumAgentInstances,
+        uint32 numAgentInstances,
+        uint8 state
+    );
+}
+
+/// @dev Received lower value than the expected one.
+/// @param provided Provided value is lower.
+/// @param expected Expected value.
+error LowerThan(uint256 provided, uint256 expected);
 
 // Service Info struct
 struct ServiceInfo {
@@ -46,7 +84,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
     uint256 public availableRewards;
     // Timestamp of the last checkpoint
     uint256 public tsCheckpoint;
-    // Minimum balance going below which would be given away, such that the contract balance is set to zero
+    // Minimum token / ETH balance, will be sent along with unstaked reward when going below that balance value
     uint256 public minBalance;
     // Rewards per second
     uint256 public rewardsPerSecond;
@@ -57,7 +95,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
 
     /// @dev ServiceStakingBase constructor.
     /// @param _apy Staking APY (in single digits).
-    /// @param _minStakingDeposit Minimum security deposit for a service to be eligible to stake.
+    /// @param _minStakingDeposit Minimum staking deposit for a service to be eligible to stake.
     /// @param _stakingRatio Staking ratio: number of seconds per nonce (in 18 digits).
     /// @param _serviceRegistry ServiceRegistry contract address.
     constructor(uint256 _apy, uint256 _minStakingDeposit, uint256 _stakingRatio, address _serviceRegistry) {
@@ -75,9 +113,14 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         serviceRegistry = _serviceRegistry;
     }
 
-    /// @dev Checks token security deposit.
-    /// @param serviceId Service Id.
-    function _checkTokenSecurityDeposit(uint256 serviceId) internal view virtual {}
+    /// @dev Checks token / ETH staking deposit.
+    /// @param stakingDeposit Staking deposit.
+    function _checkTokenStakingDeposit(uint256, uint256 stakingDeposit) internal view virtual {
+        // The staking deposit derived from a security deposit value must be greater or equal to the minimum defined one
+        if (stakingDeposit < minStakingDeposit) {
+            revert LowerThan(stakingDeposit, minStakingDeposit);
+        }
+    }
 
     /// @dev Withdraws the reward amount to a service owner.
     /// @param to Address to.
@@ -88,13 +131,13 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
     /// @param serviceId Service Id.
     function stake(uint256 serviceId) external {
         // Check the service conditions for staking
-        (, address multisig, , , , , uint8 state) = IService(serviceRegistry).mapServices(serviceId);
+        (uint96 stakingDeposit, address multisig, , , , , uint8 state) = IService(serviceRegistry).mapServices(serviceId);
         // The service must be deployed
         if (state != 4) {
             revert WrongServiceState(state, serviceId);
         }
-        // Check the service security deposit and token, if applicable
-        _checkTokenSecurityDeposit(serviceId);
+        // Check service staking deposit and token, if applicable
+        _checkTokenStakingDeposit(serviceId, stakingDeposit);
 
         // Transfer the service for staking
         IService(serviceRegistry).transferFrom(msg.sender, address(this), serviceId);
@@ -205,6 +248,11 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         tsCheckpoint = block.timestamp;
 
         emit Checkpoint(lastAvailableRewards);
+    }
+
+    /// @dev Public checkpoint function to allocate rewards up until a current time.
+    function checkpoint() external {
+        _checkpoint(0);
     }
 
     /// @dev Unstakes the service.

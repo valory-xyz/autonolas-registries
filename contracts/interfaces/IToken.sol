@@ -41,4 +41,8 @@ interface IToken {
     /// @param amount Amount to transfer to.
     /// @return True if the function execution is successful.
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
+
+    /// @dev Gets the number of token decimals.
+    /// @return Number of token decimals.
+    function decimals() external view returns (uint8);
 }
