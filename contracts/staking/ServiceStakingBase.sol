@@ -279,11 +279,10 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
             availableRewards = lastAvailableRewards;
         }
 
-        // Updated current service nonces and get service Ids
+        // Updated current service nonces
         for (uint256 i = 0; i < serviceIds.length; ++i) {
             // Get the current service Id
             uint256 curServiceId = serviceIds[i];
-            allServiceIds[i] = serviceIds[i];
             mapServiceInfo[curServiceId].nonce = serviceNonces[i];
         }
 
