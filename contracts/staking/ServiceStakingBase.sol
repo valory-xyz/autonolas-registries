@@ -234,8 +234,8 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
     }
 
     /// @dev Checkpoint to allocate rewards up until a current time.
-    /// @return allServiceIds All staking service Ids.
-    function checkpoint() public returns (uint256[] memory allServiceIds) {
+    /// @return All staking service Ids.
+    function checkpoint() public returns (uint256[] memory) {
         // Calculate staking rewards
         (uint256 lastAvailableRewards, uint256 numServices, uint256 totalRewards,
             uint256[] memory eligibleServiceIds, uint256[] memory eligibleServiceRewards,
@@ -291,6 +291,8 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         tsCheckpoint = block.timestamp;
 
         emit Checkpoint(lastAvailableRewards, numServices);
+
+        return serviceIds;
     }
 
     /// @dev Unstakes the service.
