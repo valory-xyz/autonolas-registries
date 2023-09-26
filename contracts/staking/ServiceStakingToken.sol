@@ -109,9 +109,6 @@ contract ServiceStakingToken is ServiceStakingBase {
     /// @dev Deposits funds for staking.
     /// @param amount Token amount to deposit.
     function deposit(uint256 amount) external {
-        // Distribute current staking rewards
-        _checkpoint(0);
-
         // Add to the overall balance
         SafeTransferLib.safeTransferFrom(stakingToken, msg.sender, address(this), amount);
 
@@ -119,14 +116,10 @@ contract ServiceStakingToken is ServiceStakingBase {
         uint256 newBalance = balance + amount;
         uint256 newAvailableRewards = availableRewards + amount;
 
-        // Update rewards per second
-        uint256 newRewardsPerSecond = (newAvailableRewards * apy) / (100 * 365 days);
-        rewardsPerSecond = newRewardsPerSecond;
-
         // Record the new actual balance and available rewards
         balance = newBalance;
         availableRewards = newAvailableRewards;
 
-        emit Deposit(msg.sender, amount, newBalance, newAvailableRewards, newRewardsPerSecond);
+        emit Deposit(msg.sender, amount, newBalance, newAvailableRewards);
     }
 }

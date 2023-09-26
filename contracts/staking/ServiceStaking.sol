@@ -34,21 +34,14 @@ contract ServiceStaking is ServiceStakingBase {
     }
 
     receive() external payable {
-        // Distribute current staking rewards
-        _checkpoint(0);
-
         // Add to the contract and available rewards balances
         uint256 newBalance = balance + msg.value;
         uint256 newAvailableRewards = availableRewards + msg.value;
-
-        // Update rewards per second
-        uint256 newRewardsPerSecond = (newAvailableRewards * apy) / (100 * 365 days);
-        rewardsPerSecond = newRewardsPerSecond;
 
         // Record the new actual balance and available rewards
         balance = newBalance;
         availableRewards = newAvailableRewards;
 
-        emit Deposit(msg.sender, msg.value, newBalance, newAvailableRewards, newRewardsPerSecond);
+        emit Deposit(msg.sender, msg.value, newBalance, newAvailableRewards);
     }
 }

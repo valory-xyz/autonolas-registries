@@ -63,18 +63,17 @@ struct ServiceInfo {
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 abstract contract ServiceStakingBase is IErrorsRegistries {
     event ServiceStaked(uint256 indexed serviceId, address indexed owner);
-    event Checkpoint(uint256 indexed balance);
+    event Checkpoint(uint256 indexed balance, uint256 numServices);
     event ServiceUnstaked(uint256 indexed serviceId, address indexed owner, uint256 reward);
-    event Deposit(address indexed sender, uint256 amount, uint256 newBalance, uint256 newAvailableRewards,
-        uint256 rewardsPerSecond);
+    event Deposit(address indexed sender, uint256 amount, uint256 newBalance, uint256 newAvailableRewards);
     event Withdraw(address indexed to, uint256 amount);
 
-    // APY value
-    uint256 public immutable apy;
+    // Rewards per second
+    uint256 public immutable rewardsPerSecond;
     // Minimum deposit value for staking
     uint256 public immutable minStakingDeposit;
-    // Staking ratio in the format of 1e18
-    uint256 public immutable stakingRatio;
+    // Liveness ratio in the format of 1e18
+    uint256 public immutable livenessRatio;
     // ServiceRegistry contract address
     address public immutable serviceRegistry;
 
@@ -86,30 +85,28 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
     uint256 public tsCheckpoint;
     // Minimum token / ETH balance, will be sent along with unstaked reward when going below that balance value
     uint256 public minBalance;
-    // Rewards per second
-    uint256 public rewardsPerSecond;
     // Mapping of serviceId => staking service info
     mapping (uint256 => ServiceInfo) public mapServiceInfo;
     // Set of currently staking serviceIds
     uint256[] public setServiceIds;
 
     /// @dev ServiceStakingBase constructor.
-    /// @param _apy Staking APY (in single digits).
+    /// @param _rewardsPerSecond Staking rewards per second (in single digits).
     /// @param _minStakingDeposit Minimum staking deposit for a service to be eligible to stake.
-    /// @param _stakingRatio Staking ratio: number of seconds per nonce (in 18 digits).
+    /// @param _livenessRatio Staking ratio: number of seconds per nonce (in 18 digits).
     /// @param _serviceRegistry ServiceRegistry contract address.
-    constructor(uint256 _apy, uint256 _minStakingDeposit, uint256 _stakingRatio, address _serviceRegistry) {
+    constructor(uint256 _rewardsPerSecond, uint256 _minStakingDeposit, uint256 _livenessRatio, address _serviceRegistry) {
         // Initial checks
-        if (_apy == 0 || _minStakingDeposit == 0 || _stakingRatio == 0) {
+        if (_rewardsPerSecond == 0 || _minStakingDeposit == 0 || _livenessRatio == 0) {
             revert ZeroValue();
         }
         if (_serviceRegistry == address(0)) {
             revert ZeroAddress();
         }
 
-        apy = _apy;
+        rewardsPerSecond = _rewardsPerSecond;
         minStakingDeposit = _minStakingDeposit;
-        stakingRatio = _stakingRatio;
+        livenessRatio = _livenessRatio;
         serviceRegistry = _serviceRegistry;
     }
 
@@ -163,19 +160,25 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         uint256 lastAvailableRewards = availableRewards;
         uint256 tsCheckpointLast = tsCheckpoint;
 
+        // Number of services eligible for the reward during the current checkpoint
+        uint256 numServices;
+
         // If available rewards are not zero, proceed with staking calculation
         // Otherwise, just bump the timestamp of last checkpoint
-        if (lastAvailableRewards > 0) {
-            uint256 numServices;
+        if (serviceId > 0 && lastAvailableRewards > 0) {
             uint256[] memory eligibleServiceIds = new uint256[](size);
+            uint256[] memory eligibleServiceRewards = new uint256[](size);
+            uint256[] memory serviceIds = new uint256[](size);
+            uint256[] memory serviceNonces = new uint256[](size);
+            uint256 totalRewards;
 
             // Calculate each staked service reward eligibility
             for (uint256 i = 0; i < size; ++i) {
                 // Get the current service Id
-                uint256 curServiceId = setServiceIds[i];
+                serviceIds[i] = setServiceIds[i];
 
                 // Get the service info
-                ServiceInfo storage curInfo = mapServiceInfo[curServiceId];
+                ServiceInfo storage curInfo = mapServiceInfo[serviceIds[i]];
 
                 // Calculate the staking nonce ratio
                 uint256 curNonce = IMultisig(curInfo.multisig).nonce();
@@ -185,69 +188,69 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
                 if (curInfo.tsStart > tsCheckpointLast) {
                     serviceCheckpoint = curInfo.tsStart;
                 }
-                // Calculate the nonce ratio in 1e18 value
-                uint256 ratio = ((block.timestamp - serviceCheckpoint) * 1e18) / (curNonce - curInfo.nonce);
+                // Calculate the liveness ratio in 1e18 value
+                uint256 ratio;
+                // If the checkpoint was called in the exactly same block, the ratio is zero
+                if (block.timestamp > tsCheckpointLast) {
+                    ratio = ((curNonce - curInfo.nonce) * 1e18) / (block.timestamp - serviceCheckpoint);
+                }
 
                 // Record the reward for the service if it has provided enough transactions
-                if (ratio >= stakingRatio) {
-                    eligibleServiceIds[numServices] = curServiceId;
+                if (ratio >= livenessRatio) {
+                    // Calculate the reward up until now and record its value for the corresponding service
+                    uint256 reward = rewardsPerSecond * (block.timestamp - serviceCheckpoint);
+                    totalRewards += reward;
+                    eligibleServiceRewards[numServices] = reward;
+                    eligibleServiceIds[numServices] = serviceIds[i];
                     ++numServices;
                 }
-                
+
                 // Record current service multisig nonce
-                curInfo.nonce = curNonce;
+                serviceNonces[i] = curNonce;
 
                 // Record the unstaked service Id index in the global set of staked service Ids
-                if (curServiceId == serviceId) {
+                if (serviceIds[i] == serviceId) {
                     idx = i;
                 }
             }
 
-            // Process each eligible service Id reward
-            // Calculate the maximum possible reward per service during the last deposit period
-            uint256 maxRewardsPerService = (rewardsPerSecond * (block.timestamp - tsCheckpointLast)) / numServices;
-            // Traverse all the eligible services and calculate their rewards
-            for (uint256 i = 0; i < numServices; ++i) {
-                uint256 curServiceId = eligibleServiceIds[i];
-                ServiceInfo storage curInfo = mapServiceInfo[curServiceId];
-
-                // Calculate the reward up until now
-                // Get the last service checkpoint: staking start time or the global checkpoint timestamp
-                uint256 serviceCheckpoint = tsCheckpointLast;
-                // Adjust the service checkpoint time if the service was staking less than the current staking period
-                if (curInfo.tsStart > tsCheckpointLast) {
-                    serviceCheckpoint = curInfo.tsStart;
+            // If total allocated rewards are not enough, adjust the reward value
+            if (totalRewards > lastAvailableRewards) {
+                // Traverse all the eligible services and adjust their rewards proportional to leftovers
+                for (uint256 i = 0; i < numServices; ++i) {
+                    uint256 curServiceId = eligibleServiceIds[i];
+                    mapServiceInfo[curServiceId].reward +=
+                        (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards;
                 }
 
-                // If the staking was longer than the deposited period, the service's timestamp is adjusted such that
-                // it is equal to at most the tsCheckpoint of the last deposit happening during every _checkpoint() call
-                uint256 reward = rewardsPerSecond * (block.timestamp - serviceCheckpoint);
-                // Adjust the reward if it goes out of calculated max bounds
-                if (reward > maxRewardsPerService) {
-                    reward = maxRewardsPerService;
+                // Set available rewards to zero
+                lastAvailableRewards = 0;
+            } else {
+                // Traverse all the eligible services and add to their rewards
+                for (uint256 i = 0; i < numServices; ++i) {
+                    uint256 curServiceId = eligibleServiceIds[i];
+                    mapServiceInfo[curServiceId].reward += eligibleServiceRewards[i];
                 }
 
-                // Adjust the available rewards value
-                if (lastAvailableRewards >= reward) {
-                    lastAvailableRewards -= reward;
-                } else {
-                    // This situation must never happen
-                    // TODO: Fuzz this
-                    reward = lastAvailableRewards;
-                    lastAvailableRewards = 0;
-                }
-
-                // Add the calculated reward to the service info
-                curInfo.reward += reward;
+                // Adjust available rewards
+                lastAvailableRewards -= totalRewards;
             }
+
             // Update the storage value of available rewards
             availableRewards = lastAvailableRewards;
+
+            // Updated current service nonces
+            for (uint256 i = 0; i < size; ++i) {
+                // Get the current service Id
+                uint256 curServiceId = serviceIds[i];
+                mapServiceInfo[curServiceId].nonce = serviceNonces[i];
+            }
         }
 
         // Record the current timestamp such that next calculations start from this point of time
         tsCheckpoint = block.timestamp;
 
-        emit Checkpoint(lastAvailableRewards);
+        emit Checkpoint(lastAvailableRewards, numServices);
     }
 
     /// @dev Public checkpoint function to allocate rewards up until a current time.
