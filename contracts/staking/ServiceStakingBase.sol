@@ -7,7 +7,7 @@ import "../interfaces/IErrorsRegistries.sol";
 interface IMultisig {
     /// @dev Gets the multisig nonce.
     /// @return Multisig nonce.
-    function nonce() external returns (uint256);
+    function nonce() external view returns (uint256);
 }
 
 // Service Registry interface
@@ -42,6 +42,10 @@ interface IService {
 /// @param provided Provided value is lower.
 /// @param expected Expected value.
 error LowerThan(uint256 provided, uint256 expected);
+
+/// @dev Service is not staked.
+/// @param serviceId Service Id.
+error ServiceNotStaked(uint256 serviceId);
 
 // Service Info struct
 struct ServiceInfo {
@@ -152,36 +156,56 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         emit ServiceStaked(serviceId, msg.sender);
     }
 
-    /// @dev Checkpoint to allocate rewards up until a current time.
-    /// @param serviceId Service Id that unstakes, or 0 if the function is called during the deposit of new funds.
-    function _checkpoint(uint256 serviceId) internal returns (uint256 idx) {
-        // Get the service Id set length
-        uint256 size = setServiceIds.length;
-        uint256 lastAvailableRewards = availableRewards;
+    /// @dev Calculates staking rewards for all services at current timestamp.
+    /// @param lastAvailableRewards Available amount of rewards.
+    /// @param numServices Number of services eligible for the reward that passed the liveness check.
+    /// @param totalRewards Total calculated rewards.
+    /// @param eligibleServiceIds Service Ids eligible for rewards.
+    /// @param eligibleServiceRewards Corresponding rewards for eligible service Ids.
+    /// @param serviceIds All the staking service Ids.
+    /// @param serviceNonces Current service nonces.
+    function _calculateStakingRewards() internal view returns (
+        uint256 lastAvailableRewards,
+        uint256 numServices,
+        uint256 totalRewards,
+        uint256[] memory eligibleServiceIds,
+        uint256[] memory eligibleServiceRewards,
+        uint256[] memory serviceIds,
+        uint256[] memory serviceNonces
+    )
+    {
+        // Get available rewards and last checkpoint timestamp
+        lastAvailableRewards = availableRewards;
         uint256 tsCheckpointLast = tsCheckpoint;
 
-        // Number of services eligible for the reward during the current checkpoint
-        uint256 numServices;
+        // Get the service Ids set length
+        uint256 size = setServiceIds.length;
+        serviceIds = new uint256[](size);
+        serviceNonces = new uint256[](size);
+
+        // Record service Ids and nonces
+        for (uint256 i = 0; i < size; ++i) {
+            // Get current service Id
+            serviceIds[i] = setServiceIds[i];
+
+            // Get current service multisig nonce
+            address multisig = mapServiceInfo[serviceIds[i]].multisig;
+            serviceNonces[i] = IMultisig(multisig).nonce();
+        }
 
         // If available rewards are not zero, proceed with staking calculation
-        // Otherwise, just bump the timestamp of last checkpoint
-        if (serviceId > 0 && lastAvailableRewards > 0) {
-            uint256[] memory eligibleServiceIds = new uint256[](size);
-            uint256[] memory eligibleServiceRewards = new uint256[](size);
-            uint256[] memory serviceIds = new uint256[](size);
-            uint256[] memory serviceNonces = new uint256[](size);
-            uint256 totalRewards;
+        if (lastAvailableRewards > 0) {
+            // Get necessary arrays
+            eligibleServiceIds = new uint256[](size);
+            eligibleServiceRewards = new uint256[](size);
 
             // Calculate each staked service reward eligibility
             for (uint256 i = 0; i < size; ++i) {
-                // Get the current service Id
-                serviceIds[i] = setServiceIds[i];
-
                 // Get the service info
-                ServiceInfo storage curInfo = mapServiceInfo[serviceIds[i]];
+                uint256 curServiceId = serviceIds[i];
+                ServiceInfo storage curInfo = mapServiceInfo[curServiceId];
 
                 // Calculate the staking nonce ratio
-                uint256 curNonce = IMultisig(curInfo.multisig).nonce();
                 // Get the last service checkpoint: staking start time or the global checkpoint timestamp
                 uint256 serviceCheckpoint = tsCheckpointLast;
                 // Adjust the service checkpoint time if the service was staking less than the current staking period
@@ -192,7 +216,8 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
                 uint256 ratio;
                 // If the checkpoint was called in the exactly same block, the ratio is zero
                 if (block.timestamp > tsCheckpointLast) {
-                    ratio = ((curNonce - curInfo.nonce) * 1e18) / (block.timestamp - serviceCheckpoint);
+                    uint256 nonce = serviceNonces[i];
+                    ratio = ((nonce - curInfo.nonce) * 1e18) / (block.timestamp - serviceCheckpoint);
                 }
 
                 // Record the reward for the service if it has provided enough transactions
@@ -201,19 +226,24 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
                     uint256 reward = rewardsPerSecond * (block.timestamp - serviceCheckpoint);
                     totalRewards += reward;
                     eligibleServiceRewards[numServices] = reward;
-                    eligibleServiceIds[numServices] = serviceIds[i];
+                    eligibleServiceIds[numServices] = curServiceId;
                     ++numServices;
                 }
-
-                // Record current service multisig nonce
-                serviceNonces[i] = curNonce;
-
-                // Record the unstaked service Id index in the global set of staked service Ids
-                if (serviceIds[i] == serviceId) {
-                    idx = i;
-                }
             }
+        }
+    }
 
+    /// @dev Checkpoint to allocate rewards up until a current time.
+    /// @param serviceId Service Id that is being unstaked, or 0 if the checkpoint is called by itself.
+    /// @return idx Index of a service Id in a global set of service Ids.
+    function _checkpoint(uint256 serviceId) internal returns (uint256 idx) {
+        // Calculate staking rewards
+        (uint256 lastAvailableRewards, uint256 numServices, uint256 totalRewards,
+            uint256[] memory eligibleServiceIds, uint256[] memory eligibleServiceRewards,
+            uint256[] memory serviceIds, uint256[] memory serviceNonces) = _calculateStakingRewards();
+
+        // If available rewards are not zero, proceed with staking calculation
+        if (lastAvailableRewards > 0) {
             // If total allocated rewards are not enough, adjust the reward value
             if (totalRewards > lastAvailableRewards) {
                 // Traverse all the eligible services and adjust their rewards proportional to leftovers
@@ -248,12 +278,17 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
 
             // Update the storage value of available rewards
             availableRewards = lastAvailableRewards;
+        }
 
-            // Updated current service nonces
-            for (uint256 i = 0; i < size; ++i) {
-                // Get the current service Id
-                uint256 curServiceId = serviceIds[i];
-                mapServiceInfo[curServiceId].nonce = serviceNonces[i];
+        // Updated current service nonces and get the index of the unstaked service Id
+        for (uint256 i = 0; i < serviceIds.length; ++i) {
+            // Get the current service Id
+            uint256 curServiceId = serviceIds[i];
+            mapServiceInfo[curServiceId].nonce = serviceNonces[i];
+
+            // If applicable, record the unstaked service Id index
+            if (curServiceId == serviceId) {
+                idx = i;
             }
         }
 
@@ -278,6 +313,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         }
 
         // Call the checkpoint and get the service index in the set of services
+        // The index must always exist as the service is currently staked, otherwise it has no record in the map
         uint256 idx = _checkpoint(serviceId);
 
         // Transfer the service back to the owner
@@ -305,5 +341,41 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         setServiceIds.pop();
 
         emit ServiceUnstaked(serviceId, msg.sender, amount);
+    }
+
+    /// @dev Calculates service staking reward at current timestamp.
+    /// @param serviceId Service Id.
+    /// @return reward Service reward.
+    function calculateServiceStakingReward(uint256 serviceId) external view returns (uint256 reward) {
+        ServiceInfo memory sInfo = mapServiceInfo[serviceId];
+
+        // Check if the service is staked
+        if (sInfo.tsStart == 0) {
+            revert ServiceNotStaked(serviceId);
+        }
+
+        // Calculate overall staking rewards
+        (uint256 lastAvailableRewards, , uint256 totalRewards, , uint256[] memory eligibleServiceRewards,
+            uint256[] memory serviceIds, ) = _calculateStakingRewards();
+
+
+        // If available rewards are not zero, proceed with staking calculation
+        if (lastAvailableRewards > 0) {
+            // Get the service index
+            uint256 idx;
+            for (uint256 i = 0; i < serviceIds.length; ++i) {
+                if (serviceIds[i] == serviceId) {
+                    idx = i;
+                    break;
+                }
+            }
+
+            // If total allocated rewards are not enough, adjust the reward value
+            if (totalRewards > lastAvailableRewards) {
+                reward = sInfo.reward + (eligibleServiceRewards[idx] * lastAvailableRewards) / totalRewards;
+            } else {
+                reward = sInfo.reward + eligibleServiceRewards[idx];
+            }
+        }
     }
 }
