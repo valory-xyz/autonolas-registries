@@ -67,9 +67,9 @@ struct ServiceInfo {
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 abstract contract ServiceStakingBase is IErrorsRegistries {
     event ServiceStaked(uint256 indexed serviceId, address indexed owner);
-    event Checkpoint(uint256 indexed balance, uint256 numServices);
-    event ServiceUnstaked(uint256 indexed serviceId, address indexed owner, uint256 reward);
-    event Deposit(address indexed sender, uint256 amount, uint256 newBalance, uint256 newAvailableRewards);
+    event Checkpoint(uint256 availableRewards, uint256 numServices);
+    event ServiceUnstaked(uint256 indexed serviceId, address indexed owner, uint256 reward, uint256 tsStart);
+    event Deposit(address indexed sender, uint256 amount, uint256 balance, uint256 availableRewards);
     event Withdraw(address indexed to, uint256 amount);
 
     // Rewards per second
@@ -215,7 +215,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
                 // Calculate the liveness ratio in 1e18 value
                 uint256 ratio;
                 // If the checkpoint was called in the exactly same block, the ratio is zero
-                if (block.timestamp > tsCheckpointLast) {
+                if (block.timestamp > serviceCheckpoint) {
                     uint256 nonce = serviceNonces[i];
                     ratio = ((nonce - curInfo.nonce) * 1e18) / (block.timestamp - serviceCheckpoint);
                 }
@@ -234,9 +234,8 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
     }
 
     /// @dev Checkpoint to allocate rewards up until a current time.
-    /// @param serviceId Service Id that is being unstaked, or 0 if the checkpoint is called by itself.
-    /// @return idx Index of a service Id in a global set of service Ids.
-    function _checkpoint(uint256 serviceId) internal returns (uint256 idx) {
+    /// @return allServiceIds All staking service Ids.
+    function checkpoint() public returns (uint256[] memory allServiceIds) {
         // Calculate staking rewards
         (uint256 lastAvailableRewards, uint256 numServices, uint256 totalRewards,
             uint256[] memory eligibleServiceIds, uint256[] memory eligibleServiceRewards,
@@ -280,27 +279,18 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
             availableRewards = lastAvailableRewards;
         }
 
-        // Updated current service nonces and get the index of the unstaked service Id
+        // Updated current service nonces and get service Ids
         for (uint256 i = 0; i < serviceIds.length; ++i) {
             // Get the current service Id
             uint256 curServiceId = serviceIds[i];
+            allServiceIds[i] = serviceIds[i];
             mapServiceInfo[curServiceId].nonce = serviceNonces[i];
-
-            // If applicable, record the unstaked service Id index
-            if (curServiceId == serviceId) {
-                idx = i;
-            }
         }
 
         // Record the current timestamp such that next calculations start from this point of time
         tsCheckpoint = block.timestamp;
 
         emit Checkpoint(lastAvailableRewards, numServices);
-    }
-
-    /// @dev Public checkpoint function to allocate rewards up until a current time.
-    function checkpoint() external {
-        _checkpoint(0);
     }
 
     /// @dev Unstakes the service.
@@ -312,9 +302,17 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
             revert OwnerOnly(msg.sender, sInfo.owner);
         }
 
-        // Call the checkpoint and get the service index in the set of services
+        // Call the checkpoint
+        uint256[] memory serviceIds = checkpoint();
+
+        // Get the service index in the set of services
         // The index must always exist as the service is currently staked, otherwise it has no record in the map
-        uint256 idx = _checkpoint(serviceId);
+        uint256 idx;
+        for (; idx < serviceIds.length; ++idx) {
+            if (serviceIds[idx] == serviceId) {
+                break;
+            }
+        }
 
         // Transfer the service back to the owner
         IService(serviceRegistry).transferFrom(address(this), msg.sender, serviceId);
@@ -332,6 +330,9 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
             _withdraw(sInfo.multisig, amount);
         }
 
+        // Record staking start time
+        uint256 tsStart = sInfo.tsStart;
+
         // Clear all the data about the unstaked service
         // Delete the service info struct
         delete mapServiceInfo[serviceId];
@@ -340,7 +341,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         setServiceIds[idx] = setServiceIds[setServiceIds.length - 1];
         setServiceIds.pop();
 
-        emit ServiceUnstaked(serviceId, msg.sender, amount);
+        emit ServiceUnstaked(serviceId, msg.sender, amount, tsStart);
     }
 
     /// @dev Calculates service staking reward at current timestamp.
