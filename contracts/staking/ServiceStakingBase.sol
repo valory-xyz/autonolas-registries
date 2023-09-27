@@ -235,7 +235,10 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
 
     /// @dev Checkpoint to allocate rewards up until a current time.
     /// @return All staking service Ids.
-    function checkpoint() public returns (uint256[] memory) {
+    /// @return Number of staking eligible services.
+    /// @return Eligible service Ids.
+    /// @return Eligible service rewards.
+    function checkpoint() public returns (uint256[] memory, uint256, uint256[] memory, uint256[] memory) {
         // Calculate staking rewards
         (uint256 lastAvailableRewards, uint256 numServices, uint256 totalRewards,
             uint256[] memory eligibleServiceIds, uint256[] memory eligibleServiceRewards,
@@ -291,7 +294,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
 
         emit Checkpoint(lastAvailableRewards, numServices);
 
-        return serviceIds;
+        return (serviceIds, numServices, eligibleServiceIds, eligibleServiceRewards);
     }
 
     /// @dev Unstakes the service.
@@ -304,7 +307,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         }
 
         // Call the checkpoint
-        uint256[] memory serviceIds = checkpoint();
+        (uint256[] memory serviceIds, , , ) = checkpoint();
 
         // Get the service index in the set of services
         // The index must always exist as the service is currently staked, otherwise it has no record in the map
