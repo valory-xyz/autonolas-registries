@@ -18,7 +18,7 @@ interface IService {
     /// @param id Service Id.
     function transferFrom(address from, address to, uint256 id) external;
 
-    /// @dev Gets the service instance from the map of services.
+    /// @dev Gets service parameters from the map of services.
     /// @param serviceId Service Id.
     /// @return securityDeposit Registration activation deposit.
     /// @return multisig Service multisig address.
@@ -123,6 +123,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
             revert ZeroAddress();
         }
 
+        maxNumServices = _maxNumServices;
         rewardsPerSecond = _rewardsPerSecond;
         minStakingDeposit = _minStakingDeposit;
         livenessRatio = _livenessRatio;
