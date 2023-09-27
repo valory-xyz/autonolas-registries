@@ -9,15 +9,20 @@ import {ServiceStakingBase} from "./ServiceStakingBase.sol";
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract ServiceStaking is ServiceStakingBase {
     /// @dev ServiceStaking constructor.
-    /// @param _apy Staking APY (in single digits).
+    /// @param _maxNumServices Maximum number of staking services.
+    /// @param _rewardsPerSecond Staking rewards per second (in single digits).
     /// @param _minStakingDeposit Minimum staking deposit for a service to be eligible to stake.
-    /// @param _stakingRatio Staking ratio: number of seconds per nonce (in 18 digits).
+    /// @param _livenessRatio Liveness ratio: number of nonces per second (in 18 digits).
     /// @param _serviceRegistry ServiceRegistry contract address.
-    constructor(uint256 _apy, uint256 _minStakingDeposit, uint256 _stakingRatio, address _serviceRegistry)
-      ServiceStakingBase(_apy, _minStakingDeposit, _stakingRatio, _serviceRegistry)
-    {
-        minBalance = 1e14;
-    }
+    constructor(
+        uint256 _maxNumServices,
+        uint256 _rewardsPerSecond,
+        uint256 _minStakingDeposit,
+        uint256 _livenessRatio,
+        address _serviceRegistry
+    )
+      ServiceStakingBase(_maxNumServices, _rewardsPerSecond, _minStakingDeposit, _livenessRatio, _serviceRegistry)
+    {}
 
     /// @dev Withdraws the reward amount to a service owner.
     /// @param to Address to.

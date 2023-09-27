@@ -38,6 +38,13 @@ interface IService {
     );
 }
 
+/// @dev No rewards are available in the contract.
+error NoRewardsAvailable();
+
+/// @dev Maximum number of staking services is reached.
+/// @param maxNumServices Maximum number of staking services.
+error MaxNumServicesReached(uint256 maxNumServices);
+
 /// @dev Received lower value than the expected one.
 /// @param provided Provided value is lower.
 /// @param expected Expected value.
@@ -66,15 +73,18 @@ struct ServiceInfo {
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 abstract contract ServiceStakingBase is IErrorsRegistries {
-    event ServiceStaked(uint256 indexed serviceId, address indexed owner);
+    event ServiceStaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256 nonce);
     event Checkpoint(uint256 availableRewards, uint256 numServices);
-    event ServiceUnstaked(uint256 indexed serviceId, address indexed owner, uint256 reward, uint256 tsStart);
+    event ServiceUnstaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256 nonce,
+        uint256 reward, uint256 tsStart);
     event Deposit(address indexed sender, uint256 amount, uint256 balance, uint256 availableRewards);
     event Withdraw(address indexed to, uint256 amount);
 
+    // Maximum number of staking services
+    uint256 public immutable maxNumServices;
     // Rewards per second
     uint256 public immutable rewardsPerSecond;
-    // Minimum deposit value for staking
+    // Minimum service staking deposit value required for staking
     uint256 public immutable minStakingDeposit;
     // Liveness ratio in the format of 1e18
     uint256 public immutable livenessRatio;
@@ -87,21 +97,26 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
     uint256 public availableRewards;
     // Timestamp of the last checkpoint
     uint256 public tsCheckpoint;
-    // Minimum token / ETH balance, will be sent along with unstaked reward when going below that balance value
-    uint256 public minBalance;
     // Mapping of serviceId => staking service info
     mapping (uint256 => ServiceInfo) public mapServiceInfo;
     // Set of currently staking serviceIds
     uint256[] public setServiceIds;
 
     /// @dev ServiceStakingBase constructor.
+    /// @param _maxNumServices Maximum number of staking services.
     /// @param _rewardsPerSecond Staking rewards per second (in single digits).
     /// @param _minStakingDeposit Minimum staking deposit for a service to be eligible to stake.
-    /// @param _livenessRatio Staking ratio: number of seconds per nonce (in 18 digits).
+    /// @param _livenessRatio Liveness ratio: number of nonces per second (in 18 digits).
     /// @param _serviceRegistry ServiceRegistry contract address.
-    constructor(uint256 _rewardsPerSecond, uint256 _minStakingDeposit, uint256 _livenessRatio, address _serviceRegistry) {
+    constructor(
+        uint256 _maxNumServices,
+        uint256 _rewardsPerSecond,
+        uint256 _minStakingDeposit,
+        uint256 _livenessRatio,
+        address _serviceRegistry)
+    {
         // Initial checks
-        if (_rewardsPerSecond == 0 || _minStakingDeposit == 0 || _livenessRatio == 0) {
+        if (_maxNumServices == 0 || _rewardsPerSecond == 0 || _minStakingDeposit == 0 || _livenessRatio == 0) {
             revert ZeroValue();
         }
         if (_serviceRegistry == address(0)) {
@@ -131,6 +146,17 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
     /// @dev Stakes the service.
     /// @param serviceId Service Id.
     function stake(uint256 serviceId) external {
+        // Check if there available rewards
+        if (availableRewards == 0) {
+            revert NoRewardsAvailable();
+        }
+
+        // Check for the maximum number of staking services
+        uint256 numStakingServices = setServiceIds.length;
+        if (numStakingServices == maxNumServices) {
+            revert MaxNumServicesReached(maxNumServices);
+        }
+
         // Check the service conditions for staking
         (uint96 stakingDeposit, address multisig, , , , , uint8 state) = IService(serviceRegistry).mapServices(serviceId);
         // The service must be deployed
@@ -147,13 +173,14 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         ServiceInfo storage sInfo = mapServiceInfo[serviceId];
         sInfo.multisig = multisig;
         sInfo.owner = msg.sender;
-        sInfo.nonce = IMultisig(multisig).nonce();
+        uint256 nonce = IMultisig(multisig).nonce();
+        sInfo.nonce = nonce;
         sInfo.tsStart = block.timestamp;
 
         // Add the service Id to the set of staked services
         setServiceIds.push(serviceId);
 
-        emit ServiceStaked(serviceId, msg.sender);
+        emit ServiceStaked(serviceId, msg.sender, multisig, nonce);
     }
 
     /// @dev Calculates staking rewards for all services at current timestamp.
@@ -205,7 +232,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
                 uint256 curServiceId = serviceIds[i];
                 ServiceInfo storage curInfo = mapServiceInfo[curServiceId];
 
-                // Calculate the staking nonce ratio
+                // Calculate the liveness nonce ratio
                 // Get the last service checkpoint: staking start time or the global checkpoint timestamp
                 uint256 serviceCheckpoint = tsCheckpointLast;
                 // Adjust the service checkpoint time if the service was staking less than the current staking period
@@ -300,7 +327,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
     /// @dev Unstakes the service.
     /// @param serviceId Service Id.
     function unstake(uint256 serviceId) external {
-        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+        ServiceInfo memory sInfo = mapServiceInfo[serviceId];
         // Check for the service ownership
         if (msg.sender != sInfo.owner) {
             revert OwnerOnly(msg.sender, sInfo.owner);
@@ -321,21 +348,10 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         // Transfer the service back to the owner
         IService(serviceRegistry).transferFrom(address(this), msg.sender, serviceId);
 
-        // Send the remaining small balance along with the reward if it is below the chosen threshold
-        uint256 amount = sInfo.reward;
-        uint256 lastAvailableRewards = availableRewards;
-        if (lastAvailableRewards < minBalance) {
-            amount += lastAvailableRewards;
-            availableRewards = 0;
-        }
-
         // Transfer accumulated rewards to the service multisig
-        if (amount > 0) {
-            _withdraw(sInfo.multisig, amount);
+        if (sInfo.reward > 0) {
+            _withdraw(sInfo.multisig, sInfo.reward);
         }
-
-        // Record staking start time
-        uint256 tsStart = sInfo.tsStart;
 
         // Clear all the data about the unstaked service
         // Delete the service info struct
@@ -345,7 +361,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         setServiceIds[idx] = setServiceIds[setServiceIds.length - 1];
         setServiceIds.pop();
 
-        emit ServiceUnstaked(serviceId, msg.sender, amount, tsStart);
+        emit ServiceUnstaked(serviceId, msg.sender, sInfo.multisig, sInfo.nonce, sInfo.reward, sInfo.tsStart);
     }
 
     /// @dev Calculates service staking reward at current timestamp.

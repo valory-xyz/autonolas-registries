@@ -34,30 +34,29 @@ error LowerThan(uint256 provided, uint256 expected);
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract ServiceStakingToken is ServiceStakingBase {
-    // Minimum number of token decimals
-    uint8 public constant MIN_DECIMALS = 4;
-
     // ServiceRegistryTokenUtility address
     address public immutable serviceRegistryTokenUtility;
     // Security token address for staking corresponding to the service deposit token
     address public immutable stakingToken;
 
     /// @dev ServiceStakingToken constructor.
-    /// @param _apy Staking APY (in single digits).
+    /// @param _maxNumServices Maximum number of staking services.
+    /// @param _rewardsPerSecond Staking rewards per second (in single digits).
     /// @param _minStakingDeposit Minimum staking deposit for a service to be eligible to stake.
-    /// @param _stakingRatio Staking ratio: number of seconds per nonce (in 18 digits).
+    /// @param _livenessRatio Liveness ratio: number of nonces per second (in 18 digits).
     /// @param _serviceRegistry ServiceRegistry contract address.
     /// @param _serviceRegistryTokenUtility ServiceRegistryTokenUtility contract address.
     /// @param _stakingToken Address of a service staking token.
     constructor(
-        uint256 _apy,
+        uint256 _maxNumServices,
+        uint256 _rewardsPerSecond,
         uint256 _minStakingDeposit,
-        uint256 _stakingRatio,
+        uint256 _livenessRatio,
         address _serviceRegistry,
         address _serviceRegistryTokenUtility,
         address _stakingToken
     )
-        ServiceStakingBase(_apy, _minStakingDeposit, _stakingRatio, _serviceRegistry)
+        ServiceStakingBase(_maxNumServices, _rewardsPerSecond, _minStakingDeposit, _livenessRatio, _serviceRegistry)
     {
         // Initial checks
         if (_stakingToken == address(0) || _serviceRegistryTokenUtility == address(0)) {
@@ -66,14 +65,6 @@ contract ServiceStakingToken is ServiceStakingBase {
 
         stakingToken = _stakingToken;
         serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
-
-        // Calculate minBalance based on decimals
-        uint8 decimals = IToken(_stakingToken).decimals();
-        if (decimals < MIN_DECIMALS) {
-            revert NotEnoughTokenDecimals(_stakingToken, decimals);
-        } else {
-            minBalance = 10 ** (decimals - MIN_DECIMALS);
-        }
     }
 
     /// @dev Checks token staking deposit.
