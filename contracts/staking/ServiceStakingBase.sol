@@ -349,7 +349,9 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
     /// @param serviceId Service Id.
     /// @return reward Service reward.
     function calculateServiceStakingReward(uint256 serviceId) external view returns (uint256 reward) {
+        // Get current service reward
         ServiceInfo memory sInfo = mapServiceInfo[serviceId];
+        reward = sInfo.reward;
 
         // Check if the service is staked
         if (sInfo.tsStart == 0) {
@@ -357,26 +359,22 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         }
 
         // Calculate overall staking rewards
-        (uint256 lastAvailableRewards, , uint256 totalRewards, , uint256[] memory eligibleServiceRewards,
-            uint256[] memory serviceIds, ) = _calculateStakingRewards();
-
+        (uint256 lastAvailableRewards, , uint256 totalRewards, uint256[] memory eligibleServiceIds,
+            uint256[] memory eligibleServiceRewards, , ) = _calculateStakingRewards();
 
         // If available rewards are not zero, proceed with staking calculation
         if (lastAvailableRewards > 0) {
-            // Get the service index
-            uint256 idx;
-            for (uint256 i = 0; i < serviceIds.length; ++i) {
-                if (serviceIds[i] == serviceId) {
-                    idx = i;
+            // Get the service index in the eligible service set and calculate its latest reward
+            for (uint256 i = 0; i < eligibleServiceIds.length; ++i) {
+                if (eligibleServiceIds[i] == serviceId) {
+                    // If total allocated rewards are not enough, adjust the reward value
+                    if (totalRewards > lastAvailableRewards) {
+                        reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards;
+                    } else {
+                        reward += eligibleServiceRewards[i];
+                    }
                     break;
                 }
-            }
-
-            // If total allocated rewards are not enough, adjust the reward value
-            if (totalRewards > lastAvailableRewards) {
-                reward = sInfo.reward + (eligibleServiceRewards[idx] * lastAvailableRewards) / totalRewards;
-            } else {
-                reward = sInfo.reward + eligibleServiceRewards[idx];
             }
         }
     }
