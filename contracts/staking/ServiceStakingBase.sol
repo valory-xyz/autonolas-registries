@@ -277,20 +277,20 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
             // If total allocated rewards are not enough, adjust the reward value
             if (totalRewards > lastAvailableRewards) {
                 // Traverse all the eligible services and adjust their rewards proportional to leftovers
-                totalRewards = 0;
+                uint256 updatedTotalRewards = 0;
                 for (uint256 i = 0; i < numServices; ++i) {
                     // Calculate the updated reward
                     uint256 updatedReward = (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards;
                     // Add to the total updated reward
-                    totalRewards += updatedReward;
+                    updatedTotalRewards += updatedReward;
                     // Add reward to the service overall reward
                     uint256 curServiceId = eligibleServiceIds[i];
                     mapServiceInfo[curServiceId].reward += updatedReward;
                 }
 
                 // If the reward adjustment happened to have small leftovers, add it to the last traversed service
-                if (lastAvailableRewards > totalRewards) {
-                    mapServiceInfo[numServices - 1].reward += lastAvailableRewards - totalRewards;
+                if (lastAvailableRewards > updatedTotalRewards) {
+                    mapServiceInfo[numServices - 1].reward += lastAvailableRewards - updatedTotalRewards;
                 }
                 // Set available rewards to zero
                 lastAvailableRewards = 0;
@@ -303,6 +303,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
                 }
 
                 // Adjust available rewards
+                // TODO: Fuzz this such that totalRewards is never bigger than lastAvailableRewards
                 lastAvailableRewards -= totalRewards;
             }
 

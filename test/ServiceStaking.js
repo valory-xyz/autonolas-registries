@@ -13,6 +13,7 @@ describe("ServiceStaking", function () {
     let gnosisSafe;
     let gnosisSafeProxyFactory;
     let gnosisSafeMultisig;
+    let multiSend;
     let serviceStaking;
     let serviceStakingToken;
     let reentrancyAttacker;
@@ -25,13 +26,11 @@ describe("ServiceStaking", function () {
     const minStakingDeposit = 10;
     const livenessRatio = "1" + "0".repeat(17); // 0.1 transaction per second (TPS)
     const AddressZero = ethers.constants.AddressZero;
-    const uint256MaxValue = ethers.constants.MaxUint256;
     const defaultHash = "0x" + "5".repeat(64);
     const regDeposit = 1000;
     const regBond = 1000;
     const serviceId = 1;
     const agentIds = [1];
-    const bonds = [regBond];
     const agentParams = [[1, regBond]];
     const threshold = 1;
     const initSupply = "5" + "0".repeat(26);
@@ -74,6 +73,10 @@ describe("ServiceStaking", function () {
         const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
         gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
         await gnosisSafeMultisig.deployed();
+
+        const MultiSend = await ethers.getContractFactory("MultiSendCallOnly");
+        multiSend = await MultiSend.deploy();
+        await multiSend.deployed();
 
         const ServiceStaking = await ethers.getContractFactory("ServiceStaking");
         serviceStaking = await ServiceStaking.deploy(maxNumServices, rewardsPerSecond, minStakingDeposit,
@@ -352,9 +355,9 @@ describe("ServiceStaking", function () {
             expect(reward).to.equal(0);
 
             // Unstake the service
-            const balanceBefore = await token.balanceOf(multisig.address);
+            const balanceBefore = await ethers.provider.getBalance(multisig.address);
             await serviceStaking.unstake(serviceId);
-            const balanceAfter = await token.balanceOf(multisig.address);
+            const balanceAfter = await ethers.provider.getBalance(multisig.address);
 
             // The multisig balance before and after unstake must be the same (zero reward)
             expect(balanceBefore).to.equal(balanceAfter);
@@ -381,9 +384,18 @@ describe("ServiceStaking", function () {
             const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
 
             // Make transactions by the service multisig
-            const nonce = await multisig.nonce();
-            const txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
-            const signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+            let nonce = await multisig.nonce();
+            let txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+            let signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Call the checkpoint at this time
+            await serviceStaking.checkpoint();
+
+            // Execute one more multisig tx
+            nonce = await multisig.nonce();
+            txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+            signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
             await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
 
             // Calculate service staking reward that must be greater than zero
@@ -391,12 +403,173 @@ describe("ServiceStaking", function () {
             expect(reward).to.greaterThan(0);
 
             // Unstake the service
-            const balanceBefore = ethers.BigNumber.from(await token.balanceOf(multisig.address));
+            const balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
             await serviceStaking.unstake(serviceId);
+            const balanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+
+            // The balance before and after the unstake call must be different
+            expect(balanceAfter).to.gt(balanceBefore);
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+
+        it("Stake and unstake with the service activity with a custom ERC20 token", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Approve ServiceRegistryTokenUtility
+            await token.approve(serviceRegistryTokenUtility.address, initSupply);
+            await token.connect(operator).approve(serviceRegistryTokenUtility.address, initSupply);
+            // Approve and deposit token to the staking contract
+            await token.approve(serviceStakingToken.address, initSupply);
+            await serviceStakingToken.deposit(ethers.utils.parseEther("1"));
+
+            // Create a service with the token2 (service Id == 3)
+            const sId = 3;
+            await serviceRegistry.create(deployer.address, defaultHash, agentIds, [[1, 1]], threshold);
+            await serviceRegistryTokenUtility.createWithToken(sId, token.address, agentIds, [regBond]);
+            // Activate registration
+            await serviceRegistry.activateRegistration(deployer.address, sId, {value: 1});
+            await serviceRegistryTokenUtility.activateRegistrationTokenDeposit(sId);
+            // Register agents
+            await serviceRegistry.registerAgents(operator.address, sId, [agentInstances[2].address], agentIds, {value: 1});
+            await serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, sId, agentIds);
+            // Deploy the service
+            await serviceRegistry.deploy(deployer.address, sId, gnosisSafeMultisig.address, payload);
+
+
+            // Approve services
+            await serviceRegistry.approve(serviceStakingToken.address, sId);
+
+            // Stake the first service
+            await serviceStakingToken.stake(sId);
+
+            // Get the service multisig contract
+            const service = await serviceRegistry.getService(sId);
+            const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+            // Make transactions by the service multisig
+            let nonce = await multisig.nonce();
+            let txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+            let signMessageData = await safeContracts.safeSignMessage(agentInstances[2], multisig, txHashData, 0);
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Call the checkpoint at this time
+            await serviceStakingToken.checkpoint();
+
+            // Execute one more multisig tx
+            nonce = await multisig.nonce();
+            txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+            signMessageData = await safeContracts.safeSignMessage(agentInstances[2], multisig, txHashData, 0);
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Calculate service staking reward that must be greater than zero
+            const reward = await serviceStakingToken.calculateServiceStakingReward(sId);
+            expect(reward).to.greaterThan(0);
+
+            // Unstake the service
+            const balanceBefore = ethers.BigNumber.from(await token.balanceOf(multisig.address));
+            await serviceStakingToken.unstake(sId);
             const balanceAfter = ethers.BigNumber.from(await token.balanceOf(multisig.address));
 
             // The balance before and after the unstake call must be different
             expect(balanceAfter.gt(balanceBefore));
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+
+        it("Stake and checkpoint in the same timestamp twice", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Approve services
+            await serviceRegistry.approve(serviceStaking.address, serviceId);
+
+            // Stake the first service
+            await serviceStaking.stake(serviceId);
+
+            // Get the service multisig contract
+            const service = await serviceRegistry.getService(serviceId);
+            const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+            // Construct the payload for the multisig
+            let callData = [];
+            let txs = [];
+            const nonce = await multisig.nonce();
+            // Add two addresses, and bump the threshold
+            for (let i = 0; i < 2; i++) {
+                callData[i] = serviceStaking.interface.encodeFunctionData("checkpoint", []);
+                txs[i] = safeContracts.buildSafeTransaction({to: serviceStaking.address, data: callData[i], nonce: 0});
+            }
+
+            // Build and execute a multisend transaction to be executed by the service multisig (via its agent isntance)
+            const safeTx = safeContracts.buildMultiSendSafeTx(multiSend, txs, nonce);
+            await safeContracts.executeTxWithSigners(multisig, safeTx, [agentInstances[0]]);
+
+            // Calculate service staking reward that must be greater than zero (calculated only in the first checkpoint)
+            const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            expect(reward).to.greaterThan(0);
+
+            // Unstake the service
+            const balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+            await serviceStaking.unstake(serviceId);
+            const balanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+
+            // The balance before and after the unstake call must be different
+            expect(balanceAfter).to.gt(balanceBefore);
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+
+        it("Stake and unstake to drain the full balance", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: rewardsPerSecond});
+
+            // Approve services
+            await serviceRegistry.approve(serviceStaking.address, serviceId);
+
+            // Stake the first service
+            await serviceStaking.stake(serviceId);
+
+            // Get the service multisig contract
+            const service = await serviceRegistry.getService(serviceId);
+            const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+            // Make transactions by the service multisig
+            let nonce = await multisig.nonce();
+            let txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+            let signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Call the checkpoint at this time
+            await serviceStaking.checkpoint();
+
+            // Execute one more multisig tx
+            nonce = await multisig.nonce();
+            txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+            signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Calculate service staking reward that must be greater than zero
+            const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            expect(reward).to.greaterThan(0);
+
+            // Unstake the service
+            const balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+            await serviceStaking.unstake(serviceId);
+            const balanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+
+            // The balance before and after the unstake call must be different
+            expect(balanceAfter).to.gt(balanceBefore);
 
             // Restore a previous state of blockchain
             snapshot.restore();

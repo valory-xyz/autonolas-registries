@@ -29,6 +29,7 @@ contract ServiceStaking is ServiceStakingBase {
     /// @param amount Amount to withdraw.
     function _withdraw(address to, uint256 amount) internal override {
         // Update the contract balance
+        // TODO: Fuzz this such that the amount is never bigger than the balance
         balance -= amount;
 
         // Transfer the amount
