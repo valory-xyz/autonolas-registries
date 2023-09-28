@@ -1,6 +1,8 @@
 /*global describe, context, beforeEach, it*/
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const helpers = require("@nomicfoundation/hardhat-network-helpers");
+const safeContracts = require("@gnosis.pm/safe-contracts");
 
 describe("ServiceStaking", function () {
     let componentRegistry;
@@ -17,10 +19,11 @@ describe("ServiceStaking", function () {
     let signers;
     let deployer;
     let operator;
+    let agentInstances;
     const maxNumServices = 10;
-    const rewardsPerSecond = 10;
+    const rewardsPerSecond = "1" + "0".repeat(15);
     const minStakingDeposit = 10;
-    const livenessRatio = "1" + "0".repeat(18);
+    const livenessRatio = "1" + "0".repeat(17); // 0.1 transaction per second (TPS)
     const AddressZero = ethers.constants.AddressZero;
     const uint256MaxValue = ethers.constants.MaxUint256;
     const defaultHash = "0x" + "5".repeat(64);
@@ -108,8 +111,9 @@ describe("ServiceStaking", function () {
         await serviceRegistry.activateRegistration(deployer.address, serviceId + 1, {value: regDeposit});
 
         // Register agent instances
-        await serviceRegistry.registerAgents(operator.address, serviceId, [signers[2].address], agentIds, {value: regBond});
-        await serviceRegistry.registerAgents(operator.address, serviceId + 1, [signers[3].address], agentIds, {value: regBond});
+        agentInstances = [signers[2], signers[3], signers[4]];
+        await serviceRegistry.registerAgents(operator.address, serviceId, [agentInstances[0].address], agentIds, {value: regBond});
+        await serviceRegistry.registerAgents(operator.address, serviceId + 1, [agentInstances[1].address], agentIds, {value: regBond});
 
         // Whitelist gnosis multisig implementation
         await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
@@ -194,7 +198,7 @@ describe("ServiceStaking", function () {
             // Create a new service (serviceId == 3), activate, register agents and deploy
             await serviceRegistry.create(deployer.address, defaultHash, agentIds, [[1, securityDeposit]], threshold);
             await serviceRegistry.activateRegistration(deployer.address, serviceId + 2, {value: securityDeposit});
-            await serviceRegistry.registerAgents(operator.address, serviceId + 2, [signers[4].address], agentIds, {value: securityDeposit});
+            await serviceRegistry.registerAgents(operator.address, serviceId + 2, [agentInstances[2].address], agentIds, {value: securityDeposit});
             await serviceRegistry.deploy(deployer.address, serviceId + 2, gnosisSafeMultisig.address, payload);
 
             // Approve services
@@ -228,7 +232,7 @@ describe("ServiceStaking", function () {
             await serviceRegistry.activateRegistration(deployer.address, sId, {value: 1});
             await serviceRegistryTokenUtility.activateRegistrationTokenDeposit(sId);
             // Register agents
-            await serviceRegistry.registerAgents(operator.address, sId, [signers[4].address], agentIds, {value: 1});
+            await serviceRegistry.registerAgents(operator.address, sId, [agentInstances[2].address], agentIds, {value: 1});
             await serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, sId, agentIds);
             // Deploy the service
             await serviceRegistry.deploy(deployer.address, sId, gnosisSafeMultisig.address, payload);
@@ -259,7 +263,7 @@ describe("ServiceStaking", function () {
             await serviceRegistry.activateRegistration(deployer.address, sId, {value: 1});
             await serviceRegistryTokenUtility.activateRegistrationTokenDeposit(sId);
             // Register agents
-            await serviceRegistry.registerAgents(operator.address, sId, [signers[4].address], agentIds, {value: 1});
+            await serviceRegistry.registerAgents(operator.address, sId, [agentInstances[2].address], agentIds, {value: 1});
             await serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, sId, agentIds);
             // Deploy the service
             await serviceRegistry.deploy(deployer.address, sId, gnosisSafeMultisig.address, payload);
@@ -272,7 +276,7 @@ describe("ServiceStaking", function () {
             ).to.be.revertedWithCustomError(serviceStakingToken, "LowerThan");
         });
 
-        it("Stake a service at ServiceStaking", async function () {
+        it("Stake a service at ServiceStaking and try to unstake not by the service owner", async function () {
             // Deposit to the contract
             await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
 
@@ -281,6 +285,11 @@ describe("ServiceStaking", function () {
 
             // Stake the first service
             await serviceStaking.stake(serviceId);
+
+            // Try to unstake not by the owner
+            await expect(
+                serviceStaking.connect(operator).unstake(serviceId)
+            ).to.be.revertedWithCustomError(serviceStaking, "OwnerOnly");
         });
 
         it("Stake a service at ServiceStakingToken", async function () {
@@ -299,7 +308,7 @@ describe("ServiceStaking", function () {
             await serviceRegistry.activateRegistration(deployer.address, sId, {value: 1});
             await serviceRegistryTokenUtility.activateRegistrationTokenDeposit(sId);
             // Register agents
-            await serviceRegistry.registerAgents(operator.address, sId, [signers[4].address], agentIds, {value: 1});
+            await serviceRegistry.registerAgents(operator.address, sId, [agentInstances[2].address], agentIds, {value: 1});
             await serviceRegistryTokenUtility.registerAgentsTokenDeposit(operator.address, sId, agentIds);
             // Deploy the service
             await serviceRegistry.deploy(deployer.address, sId, gnosisSafeMultisig.address, payload);
@@ -309,10 +318,88 @@ describe("ServiceStaking", function () {
 
             await serviceStakingToken.stake(sId);
         });
+
+        it("Should fail when calculating staking rewards for the not staked service", async function () {
+            await expect(
+                serviceStaking.calculateServiceStakingReward(serviceId)
+            ).to.be.revertedWithCustomError(serviceStaking, "ServiceNotStaked");
+        });
     });
 
     context("Staking and unstaking", function () {
-        it("", async function () {
+        it("Stake and unstake without any service activity", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Approve services
+            await serviceRegistry.approve(serviceStaking.address, serviceId);
+
+            // Stake the first service
+            await serviceStaking.stake(serviceId);
+
+            // Get the service multisig contract
+            const service = await serviceRegistry.getService(serviceId);
+            const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+            // Increase the time while the service does not reach the required amount of transactions per second (TPS)
+            await helpers.time.increase(1000);
+
+            // Calculate service staking reward that must be zero
+            const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            expect(reward).to.equal(0);
+
+            // Unstake the service
+            const balanceBefore = await token.balanceOf(multisig.address);
+            await serviceStaking.unstake(serviceId);
+            const balanceAfter = await token.balanceOf(multisig.address);
+
+            // The multisig balance before and after unstake must be the same (zero reward)
+            expect(balanceBefore).to.equal(balanceAfter);
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+
+        it("Stake and unstake with the service activity", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Approve services
+            await serviceRegistry.approve(serviceStaking.address, serviceId);
+
+            // Stake the first service
+            await serviceStaking.stake(serviceId);
+
+            // Get the service multisig contract
+            const service = await serviceRegistry.getService(serviceId);
+            const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+            // Make transactions by the service multisig
+            const nonce = await multisig.nonce();
+            const txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+            const signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Calculate service staking reward that must be greater than zero
+            const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            expect(reward).to.greaterThan(0);
+
+            // Unstake the service
+            const balanceBefore = ethers.BigNumber.from(await token.balanceOf(multisig.address));
+            await serviceStaking.unstake(serviceId);
+            const balanceAfter = ethers.BigNumber.from(await token.balanceOf(multisig.address));
+
+            // The balance before and after the unstake call must be different
+            expect(balanceAfter.gt(balanceBefore));
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
         });
     });
 });
