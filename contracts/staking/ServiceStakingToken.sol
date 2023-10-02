@@ -40,23 +40,17 @@ contract ServiceStakingToken is ServiceStakingBase {
     address public immutable stakingToken;
 
     /// @dev ServiceStakingToken constructor.
-    /// @param _maxNumServices Maximum number of staking services.
-    /// @param _rewardsPerSecond Staking rewards per second (in single digits).
-    /// @param _minStakingDeposit Minimum staking deposit for a service to be eligible to stake.
-    /// @param _livenessRatio Liveness ratio: number of nonces per second (in 18 digits).
+    /// @param _stakingParams Service staking parameters.
     /// @param _serviceRegistry ServiceRegistry contract address.
     /// @param _serviceRegistryTokenUtility ServiceRegistryTokenUtility contract address.
     /// @param _stakingToken Address of a service staking token.
     constructor(
-        uint256 _maxNumServices,
-        uint256 _rewardsPerSecond,
-        uint256 _minStakingDeposit,
-        uint256 _livenessRatio,
+        StakingParams memory _stakingParams,
         address _serviceRegistry,
         address _serviceRegistryTokenUtility,
         address _stakingToken
     )
-        ServiceStakingBase(_maxNumServices, _rewardsPerSecond, _minStakingDeposit, _livenessRatio, _serviceRegistry)
+        ServiceStakingBase(_stakingParams, _serviceRegistry)
     {
         // Initial checks
         if (_stakingToken == address(0) || _serviceRegistryTokenUtility == address(0)) {
