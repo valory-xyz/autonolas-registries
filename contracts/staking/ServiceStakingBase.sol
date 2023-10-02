@@ -127,7 +127,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
     // Minimum service staking deposit value required for staking
     uint256 public immutable minStakingDeposit;
     // Liveness period
-    uint256 public immutable livenessPeriod = 1 days;
+    uint256 public immutable livenessPeriod;
     // Liveness ratio in the format of 1e18
     uint256 public immutable livenessRatio;
     // Optional service multisig threshold requirement
@@ -158,7 +158,8 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
     constructor(StakingParams memory _stakingParams, address _serviceRegistry) {
         // Initial checks
         if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
-            _stakingParams.minStakingDeposit == 0 || _stakingParams.livenessRatio == 0) {
+            _stakingParams.minStakingDeposit == 0 || _stakingParams.livenessPeriod == 0 ||
+            _stakingParams.livenessRatio == 0) {
             revert ZeroValue();
         }
         if (_serviceRegistry == address(0)) {
@@ -169,6 +170,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         maxNumServices = _stakingParams.maxNumServices;
         rewardsPerSecond = _stakingParams.rewardsPerSecond;
         minStakingDeposit = _stakingParams.minStakingDeposit;
+        livenessPeriod = _stakingParams.livenessPeriod;
         livenessRatio = _stakingParams.livenessRatio;
         serviceRegistry = _serviceRegistry;
 
