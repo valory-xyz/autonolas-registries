@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 const helpers = require("@nomicfoundation/hardhat-network-helpers");
 const safeContracts = require("@gnosis.pm/safe-contracts");
 
-describe.only("ServiceStakingNativeToken", function () {
+describe("ServiceStakingNativeToken", function () {
     let componentRegistry;
     let agentRegistry;
     let serviceRegistry;
@@ -43,7 +43,7 @@ describe.only("ServiceStakingNativeToken", function () {
         threshold: 0,
         numAgentInstances: 0,
         configHash: bytes32Zero
-    }
+    };
 
     beforeEach(async function () {
         signers = await ethers.getSigners();
@@ -149,7 +149,7 @@ describe.only("ServiceStakingNativeToken", function () {
                 threshold: 0,
                 numAgentInstances: 0,
                 configHash: bytes32Zero
-            }
+            };
 
             // Service Staking Native Token
             await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
@@ -181,7 +181,7 @@ describe.only("ServiceStakingNativeToken", function () {
                 threshold: 0,
                 numAgentInstances: 0,
                 configHash: bytes32Zero
-            }
+            };
 
             await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
 
