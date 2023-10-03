@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
+import {ERC721TokenReceiver} from "../../lib/solmate/src/tokens/ERC721.sol";
 import "../interfaces/IErrorsRegistries.sol";
 
 // Multisig interface
@@ -21,7 +22,7 @@ interface IService {
     /// @param from Account address to transfer from.
     /// @param to Account address to transfer to.
     /// @param id Service Id.
-    function transferFrom(address from, address to, uint256 id) external;
+    function safeTransferFrom(address from, address to, uint256 id) external;
 
     /// @dev Gets service parameters from the map of services.
     /// @param serviceId Service Id.
@@ -89,7 +90,7 @@ struct ServiceInfo {
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-abstract contract ServiceStakingBase is IErrorsRegistries {
+abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     struct StakingParams {
         // Maximum number of staking services
         uint256 maxNumServices;
@@ -209,7 +210,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
     /// @dev Withdraws the reward amount to a service owner.
     /// @param to Address to.
     /// @param amount Amount to withdraw.
-    function _withdraw(address to, uint256 amount) internal virtual {}
+    function _withdraw(address to, uint256 amount) internal virtual;
 
     /// @dev Stakes the service.
     /// @param serviceId Service Id.
@@ -266,9 +267,9 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         _checkTokenStakingDeposit(serviceId, stakingDeposit);
 
         // Transfer the service for staking
-        IService(serviceRegistry).transferFrom(msg.sender, address(this), serviceId);
+        IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
 
-        // ServiceInfo struct will be an empty one since otherwise the transferFrom above would fail
+        // ServiceInfo struct will be an empty one since otherwise the safeTransferFrom above would fail
         ServiceInfo storage sInfo = mapServiceInfo[serviceId];
         sInfo.multisig = multisig;
         sInfo.owner = msg.sender;
@@ -334,24 +335,25 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
                     // Calculate the liveness nonce ratio
                     // Get the last service checkpoint: staking start time or the global checkpoint timestamp
                     uint256 serviceCheckpoint = tsCheckpointLast;
-                    uint256 tsStart = curInfo.tsStart;
+                    uint256 ts = curInfo.tsStart;
                     // Adjust the service checkpoint time if the service was staking less than the current staking period
-                    if (tsStart > serviceCheckpoint) {
-                        serviceCheckpoint = tsStart;
+                    if (ts > serviceCheckpoint) {
+                        serviceCheckpoint = ts;
                     }
 
                     // Calculate the liveness ratio in 1e18 value
                     // This subtraction is always positive or zero, as the last checkpoint can be at most block.timestamp
-                    uint256 ratio = block.timestamp - serviceCheckpoint;
+                    ts = block.timestamp - serviceCheckpoint;
+                    uint256 ratio;
                     // If the checkpoint was called in the exact same block, the ratio is zero
-                    if (ratio > 0) {
-                        ratio = ((serviceNonces[i] - curInfo.nonce) * 1e18) / ratio;
+                    if (ts > 0) {
+                        ratio = ((serviceNonces[i] - curInfo.nonce) * 1e18) / ts;
                     }
 
                     // Record the reward for the service if it has provided enough transactions
                     if (ratio >= livenessRatio) {
                         // Calculate the reward up until now and record its value for the corresponding service
-                        uint256 reward = rewardsPerSecond * (block.timestamp - serviceCheckpoint);
+                        uint256 reward = rewardsPerSecond * ts;
                         totalRewards += reward;
                         eligibleServiceRewards[numServices] = reward;
                         eligibleServiceIds[numServices] = serviceIds[i];
@@ -472,7 +474,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         }
 
         // Transfer the service back to the owner
-        IService(serviceRegistry).transferFrom(address(this), msg.sender, serviceId);
+        IService(serviceRegistry).safeTransferFrom(address(this), msg.sender, serviceId);
 
         // Transfer accumulated rewards to the service multisig
         if (sInfo.reward > 0) {

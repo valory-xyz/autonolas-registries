@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 const helpers = require("@nomicfoundation/hardhat-network-helpers");
 const safeContracts = require("@gnosis.pm/safe-contracts");
 
-describe.only("ServiceStakingNativeToken", function () {
+describe("ServiceStakingNativeToken", function () {
     let componentRegistry;
     let agentRegistry;
     let serviceRegistry;
@@ -16,7 +16,7 @@ describe.only("ServiceStakingNativeToken", function () {
     let multiSend;
     let serviceStaking;
     let serviceStakingToken;
-    let reentrancyAttacker;
+    let attacker;
     let signers;
     let deployer;
     let operator;
@@ -96,9 +96,9 @@ describe.only("ServiceStakingNativeToken", function () {
             serviceRegistryTokenUtility.address, token.address);
         await serviceStakingToken.deployed();
 
-        const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyTokenAttacker");
-        reentrancyAttacker = await ReentrancyAttacker.deploy(serviceRegistryTokenUtility.address);
-        await reentrancyAttacker.deployed();
+        const Attacker = await ethers.getContractFactory("ReentrancyStakingAttacker");
+        attacker = await Attacker.deploy(serviceStaking.address, serviceRegistry.address);
+        await attacker.deployed();
 
         // Set the deployer to be the unit manager by default
         await componentRegistry.changeManager(deployer.address);
@@ -862,6 +862,119 @@ describe.only("ServiceStakingNativeToken", function () {
                     expect(reward).to.equal(0);
                 }
             }
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+
+        it("Stake and unstake with the service activity", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Approve services
+            await serviceRegistry.approve(serviceStaking.address, serviceId);
+
+            // Stake the first service
+            await serviceStaking.stake(serviceId);
+
+            // Take the staking timestamp
+            let block = await ethers.provider.getBlock("latest");
+            const tsStart = block.timestamp;
+
+            // Get the service multisig contract
+            const service = await serviceRegistry.getService(serviceId);
+            const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+            // Make transactions by the service multisig
+            let nonce = await multisig.nonce();
+            let txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+            let signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
+            // Call the checkpoint at this time
+            await serviceStaking.checkpoint();
+
+            // Execute one more multisig tx
+            nonce = await multisig.nonce();
+            txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+            signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
+            block = await ethers.provider.getBlock("latest");
+            const tsEnd = block.timestamp;
+
+            // Get the expected reward
+            const tsDiff = tsEnd - tsStart;
+            const expectedReward = serviceParams.rewardsPerSecond * tsDiff;
+
+            // Nonce is just 1 as there was 1 transaction
+            const ratio = (10**18 * 1.0) / tsDiff;
+            expect(ratio).to.greaterThan(Number(serviceParams.livenessRatio));
+
+            // Calculate service staking reward that must match the calculated reward
+            const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            expect(Number(reward)).to.equal(expectedReward);
+
+            // Unstake the service
+            const balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+            await serviceStaking.unstake(serviceId);
+            const balanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+
+            // The balance before and after the unstake call must be different
+            expect(balanceAfter).to.gt(balanceBefore);
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+    });
+
+    context("Reentrancy and failures", function () {
+        it("Stake and checkpoint in the same tx", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Get the service multisig contract
+            const service = await serviceRegistry.getService(serviceId);
+            const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+            // Transfer the service to the attacker (note we need to use the transfer not to get another reentrancy call)
+            await serviceRegistry.transferFrom(deployer.address, attacker.address, serviceId);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
+            // Stake and checkpoint
+            await attacker.stakeAndCheckpoint(serviceId);
+
+            // Make sure the service have not earned any rewards
+            const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            expect(reward).to.equal(0);
+
+            // Try to unstake the service with the re-entrancy will fail
+            await expect(
+                attacker.unstake(serviceId)
+            ).to.be.reverted;
+
+            // Unsetting the attack will allow to unstake the service
+            await attacker.setAttack(false);
+            const balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+            await attacker.unstake(serviceId);
+            const balanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+
+            // Check that the service got no reward
+            expect(balanceAfter).to.equal(balanceBefore);
 
             // Restore a previous state of blockchain
             snapshot.restore();
