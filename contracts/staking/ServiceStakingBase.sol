@@ -101,12 +101,12 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         uint256 livenessPeriod;
         // Liveness ratio in the format of 1e18
         uint256 livenessRatio;
+        // Number of agent instances in the service
+        uint256 numAgentInstances;
         // Optional agent Ids requirement
         uint256[] agentIds;
         // Optional service multisig threshold requirement
         uint256 threshold;
-        // Optional service number of agent instances requirement
-        uint256 numAgentInstances;
         // Optional service configuration hash requirement
         bytes32 configHash;
     }
@@ -130,10 +130,10 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
     uint256 public immutable livenessPeriod;
     // Liveness ratio in the format of 1e18
     uint256 public immutable livenessRatio;
+    // Number of agent instances in the service
+    uint256 public immutable numAgentInstances;
     // Optional service multisig threshold requirement
     uint256 public immutable threshold;
-    // Optional service number of agent instances requirement
-    uint256 public immutable numAgentInstances;
     // Optional service configuration hash requirement
     bytes32 public immutable configHash;
     // ServiceRegistry contract address
@@ -159,7 +159,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         // Initial checks
         if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
             _stakingParams.minStakingDeposit == 0 || _stakingParams.livenessPeriod == 0 ||
-            _stakingParams.livenessRatio == 0) {
+            _stakingParams.livenessRatio == 0 || _stakingParams.numAgentInstances == 0) {
             revert ZeroValue();
         }
         if (_serviceRegistry == address(0)) {
@@ -172,18 +172,24 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         minStakingDeposit = _stakingParams.minStakingDeposit;
         livenessPeriod = _stakingParams.livenessPeriod;
         livenessRatio = _stakingParams.livenessRatio;
+        numAgentInstances = _stakingParams.numAgentInstances;
         serviceRegistry = _serviceRegistry;
 
         // Assign optional parameters
         threshold = _stakingParams.threshold;
-        numAgentInstances = _stakingParams.numAgentInstances;
         configHash = _stakingParams.configHash;
 
         // Assign agent Ids, if applicable
         uint256 size = _stakingParams.agentIds.length;
+        uint256 agentId;
         if (size > 0) {
             for (uint256 i = 0; i < size; ++i) {
-                agentIds.push(_stakingParams.agentIds[i]);
+                // Agent Ids must be unique and in ascending order
+                if (_stakingParams.agentIds[i] <= agentId) {
+                    revert WrongAgentId(_stakingParams.agentIds[i]);
+                }
+                agentId = _stakingParams.agentIds[i];
+                agentIds.push(agentId);
             }
         }
 
@@ -220,20 +226,25 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
         }
 
         // Check the service conditions for staking
-        (uint96 stakingDeposit, address multisig, bytes32 hash, uint256 minNumAgents, , uint256 numInstances, uint8 state) =
+        (uint96 stakingDeposit, address multisig, bytes32 hash, uint256 agentThreshold, uint256 maxNumInstances, , uint8 state) =
             IService(serviceRegistry).mapServices(serviceId);
+
+        // Check the number of agent instances
+        if (numAgentInstances != maxNumInstances) {
+            revert WrongServiceConfiguration(serviceId);
+        }
 
         // Check the configuration hash, if applicable
         if (configHash != bytes32(0) && configHash != hash) {
             revert WrongServiceConfiguration(serviceId);
         }
         // Check the threshold, if applicable
-        if (threshold > 0 && threshold != minNumAgents) {
+        if (threshold > 0 && threshold != agentThreshold) {
             revert WrongServiceConfiguration(serviceId);
         }
-        // Check the number of agent instances, if applicable
-        if (numAgentInstances > 0 && numAgentInstances != numInstances) {
-            revert WrongServiceConfiguration(serviceId);
+        // The service must be deployed
+        if (state != 4) {
+            revert WrongServiceState(state, serviceId);
         }
         // Check the agent Ids requirement, if applicable
         uint256 size = agentIds.length;
@@ -246,14 +257,11 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
             }
             for (uint256 i = 0; i < numAgents; ++i) {
                 if (agentIds[i] != agents[i]) {
-                    revert WrongServiceConfiguration(serviceId);
+                    revert WrongAgentId(agentIds[i]);
                 }
             }
         }
-        // The service must be deployed
-        if (state != 4) {
-            revert WrongServiceState(state, serviceId);
-        }
+
         // Check service staking deposit and token, if applicable
         _checkTokenStakingDeposit(serviceId, stakingDeposit);
 
@@ -281,6 +289,7 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
     /// @param eligibleServiceIds Service Ids eligible for rewards.
     /// @param eligibleServiceRewards Corresponding rewards for eligible service Ids.
     /// @param serviceIds All the staking service Ids.
+    /// @param serviceNonces Current service nonces.
     function _calculateStakingRewards() internal view returns (
         uint256 lastAvailableRewards,
         uint256 numServices,
@@ -330,11 +339,13 @@ abstract contract ServiceStakingBase is IErrorsRegistries {
                     if (tsStart > serviceCheckpoint) {
                         serviceCheckpoint = tsStart;
                     }
+
                     // Calculate the liveness ratio in 1e18 value
-                    uint256 ratio;
-                    // If the checkpoint was called in the exactly same block, the ratio is zero
-                    if (block.timestamp > serviceCheckpoint) {
-                        ratio = ((serviceNonces[i] - curInfo.nonce) * 1e18) / (block.timestamp - serviceCheckpoint);
+                    // This subtraction is always positive or zero, as the last checkpoint can be at most block.timestamp
+                    uint256 ratio = block.timestamp - serviceCheckpoint;
+                    // If the checkpoint was called in the exact same block, the ratio is zero
+                    if (ratio > 0) {
+                        ratio = ((serviceNonces[i] - curInfo.nonce) * 1e18) / ratio;
                     }
 
                     // Record the reward for the service if it has provided enough transactions
