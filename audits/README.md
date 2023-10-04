@@ -10,7 +10,7 @@ contracts is located in this folder: [internal audit 2](https://github.com/valor
 An internal audit with a focus on one-shot upgrade and operating services with signatures
 contracts is located in this folder: [internal audit 3](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal3).
 
-An internal audit with a focus on "staking"
+An internal audit with a focus on Service Staking
 contracts is located in this folder: [internal audit 4](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal4).
 
 ### External audit
