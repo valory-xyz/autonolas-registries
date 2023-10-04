@@ -1,0 +1,244 @@
+'solc --version' running
+'solc ./ServiceStakingNativeToken-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
+'solc --version' running
+'solc ./ServiceStakingToken-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
+'solc --version' running
+'solc ./ServiceStakingBase-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
+INFO:Printers:
+######################
+####### ERC721 #######
+######################
+
+## Constructor Call Sequence
+	- ERC721
+
+## Constructor Definitions
+
+### ERC721
+
+     constructor(string memory _name, string memory _symbol) {
+        name = _name;
+        symbol = _symbol;
+    }
+
+#########################################
+####### ServiceStakingNativeToken #######
+#########################################
+
+## Constructor Call Sequence
+	- ServiceStakingBase
+	- ServiceStakingNativeToken
+
+## Constructor Definitions
+
+### ServiceStakingBase
+
+     constructor(StakingParams memory _stakingParams, address _serviceRegistry) {
+        // Initial checks
+        if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
+            _stakingParams.minStakingDeposit == 0 || _stakingParams.livenessPeriod == 0 ||
+            _stakingParams.livenessRatio == 0 || _stakingParams.numAgentInstances == 0) {
+            revert ZeroValue();
+        }
+        if (_serviceRegistry == address(0)) {
+            revert ZeroAddress();
+        }
+
+        // Assign all the required parameters
+        maxNumServices = _stakingParams.maxNumServices;
+        rewardsPerSecond = _stakingParams.rewardsPerSecond;
+        minStakingDeposit = _stakingParams.minStakingDeposit;
+        livenessPeriod = _stakingParams.livenessPeriod;
+        livenessRatio = _stakingParams.livenessRatio;
+        numAgentInstances = _stakingParams.numAgentInstances;
+        serviceRegistry = _serviceRegistry;
+
+        // Assign optional parameters
+        threshold = _stakingParams.threshold;
+        configHash = _stakingParams.configHash;
+
+        // Assign agent Ids, if applicable
+        uint256 size = _stakingParams.agentIds.length;
+        uint256 agentId;
+        if (size > 0) {
+            for (uint256 i = 0; i < size; ++i) {
+                // Agent Ids must be unique and in ascending order
+                if (_stakingParams.agentIds[i] <= agentId) {
+                    revert WrongAgentId(_stakingParams.agentIds[i]);
+                }
+                agentId = _stakingParams.agentIds[i];
+                agentIds.push(agentId);
+            }
+        }
+
+        // Set the checkpoint timestamp to be the deployment one
+        tsCheckpoint = block.timestamp;
+    }
+
+### ServiceStakingNativeToken
+
+     constructor(StakingParams memory _stakingParams, address _serviceRegistry)
+        ServiceStakingBase(_stakingParams, _serviceRegistry)
+    {}
+
+INFO:Printers:
+######################
+####### ERC721 #######
+######################
+
+## Constructor Call Sequence
+	- ERC721
+
+## Constructor Definitions
+
+### ERC721
+
+     constructor(string memory _name, string memory _symbol) {
+        name = _name;
+        symbol = _symbol;
+    }
+
+###################################
+####### ServiceStakingToken #######
+###################################
+
+## Constructor Call Sequence
+	- ServiceStakingBase
+	- ServiceStakingToken
+
+## Constructor Definitions
+
+### ServiceStakingBase
+
+     constructor(StakingParams memory _stakingParams, address _serviceRegistry) {
+        // Initial checks
+        if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
+            _stakingParams.minStakingDeposit == 0 || _stakingParams.livenessPeriod == 0 ||
+            _stakingParams.livenessRatio == 0 || _stakingParams.numAgentInstances == 0) {
+            revert ZeroValue();
+        }
+        if (_serviceRegistry == address(0)) {
+            revert ZeroAddress();
+        }
+
+        // Assign all the required parameters
+        maxNumServices = _stakingParams.maxNumServices;
+        rewardsPerSecond = _stakingParams.rewardsPerSecond;
+        minStakingDeposit = _stakingParams.minStakingDeposit;
+        livenessPeriod = _stakingParams.livenessPeriod;
+        livenessRatio = _stakingParams.livenessRatio;
+        numAgentInstances = _stakingParams.numAgentInstances;
+        serviceRegistry = _serviceRegistry;
+
+        // Assign optional parameters
+        threshold = _stakingParams.threshold;
+        configHash = _stakingParams.configHash;
+
+        // Assign agent Ids, if applicable
+        uint256 size = _stakingParams.agentIds.length;
+        uint256 agentId;
+        if (size > 0) {
+            for (uint256 i = 0; i < size; ++i) {
+                // Agent Ids must be unique and in ascending order
+                if (_stakingParams.agentIds[i] <= agentId) {
+                    revert WrongAgentId(_stakingParams.agentIds[i]);
+                }
+                agentId = _stakingParams.agentIds[i];
+                agentIds.push(agentId);
+            }
+        }
+
+        // Set the checkpoint timestamp to be the deployment one
+        tsCheckpoint = block.timestamp;
+    }
+
+### ServiceStakingToken
+
+     constructor(
+        StakingParams memory _stakingParams,
+        address _serviceRegistry,
+        address _serviceRegistryTokenUtility,
+        address _stakingToken
+    )
+        ServiceStakingBase(_stakingParams, _serviceRegistry)
+    {
+        // Initial checks
+        if (_stakingToken == address(0) || _serviceRegistryTokenUtility == address(0)) {
+            revert ZeroAddress();
+        }
+
+        stakingToken = _stakingToken;
+        serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
+    }
+
+INFO:Printers:
+######################
+####### ERC721 #######
+######################
+
+## Constructor Call Sequence
+	- ERC721
+
+## Constructor Definitions
+
+### ERC721
+
+     constructor(string memory _name, string memory _symbol) {
+        name = _name;
+        symbol = _symbol;
+    }
+
+##################################
+####### ServiceStakingBase #######
+##################################
+
+## Constructor Call Sequence
+	- ServiceStakingBase
+
+## Constructor Definitions
+
+### ServiceStakingBase
+
+     constructor(StakingParams memory _stakingParams, address _serviceRegistry) {
+        // Initial checks
+        if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
+            _stakingParams.minStakingDeposit == 0 || _stakingParams.livenessPeriod == 0 ||
+            _stakingParams.livenessRatio == 0 || _stakingParams.numAgentInstances == 0) {
+            revert ZeroValue();
+        }
+        if (_serviceRegistry == address(0)) {
+            revert ZeroAddress();
+        }
+
+        // Assign all the required parameters
+        maxNumServices = _stakingParams.maxNumServices;
+        rewardsPerSecond = _stakingParams.rewardsPerSecond;
+        minStakingDeposit = _stakingParams.minStakingDeposit;
+        livenessPeriod = _stakingParams.livenessPeriod;
+        livenessRatio = _stakingParams.livenessRatio;
+        numAgentInstances = _stakingParams.numAgentInstances;
+        serviceRegistry = _serviceRegistry;
+
+        // Assign optional parameters
+        threshold = _stakingParams.threshold;
+        configHash = _stakingParams.configHash;
+
+        // Assign agent Ids, if applicable
+        uint256 size = _stakingParams.agentIds.length;
+        uint256 agentId;
+        if (size > 0) {
+            for (uint256 i = 0; i < size; ++i) {
+                // Agent Ids must be unique and in ascending order
+                if (_stakingParams.agentIds[i] <= agentId) {
+                    revert WrongAgentId(_stakingParams.agentIds[i]);
+                }
+                agentId = _stakingParams.agentIds[i];
+                agentIds.push(agentId);
+            }
+        }
+
+        // Set the checkpoint timestamp to be the deployment one
+        tsCheckpoint = block.timestamp;
+    }
+
+INFO:Slither:. analyzed (23 contracts)

@@ -1,0 +1,136 @@
+'solc --version' running
+'solc ./ServiceStakingNativeToken-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
+'solc --version' running
+'solc ./ServiceStakingToken-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
+'solc --version' running
+'solc ./ServiceStakingBase-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
+INFO:Printers:Inheritance
+Child_Contract -> Immediate_Base_Contracts [Not_Immediate_Base_Contracts]
++ IErrorsRegistries
+
++ ERC721
+
++ ERC721TokenReceiver
+
++ IMultisig
+
++ IService
+
++ ServiceStakingBase
+ -> ERC721TokenReceiver, IErrorsRegistries
+
++ ServiceStakingNativeToken
+ -> ServiceStakingBase
+, [IErrorsRegistries, ERC721TokenReceiver]
+
+
+Base_Contract -> Immediate_Child_Contracts
+ [Not_Immediate_Child_Contracts]
+
++ IErrorsRegistries
+ -> ServiceStakingBase
+, [ServiceStakingNativeToken]
+
++ ERC721
+
++ ERC721TokenReceiver
+ -> ServiceStakingBase
+, [ServiceStakingNativeToken]
+
++ IMultisig
+
++ IService
+
++ ServiceStakingBase
+ -> ServiceStakingNativeToken
+
++ ServiceStakingNativeToken
+
+INFO:Printers:Inheritance
+Child_Contract -> Immediate_Base_Contracts [Not_Immediate_Base_Contracts]
++ IErrorsRegistries
+
++ ERC721
+
++ ERC721TokenReceiver
+
++ IMultisig
+
++ IService
+
++ ServiceStakingBase
+ -> ERC721TokenReceiver, IErrorsRegistries
+
++ IToken
+
++ SafeTransferLib
+
++ IServiceTokenUtility
+
++ ServiceStakingToken
+ -> ServiceStakingBase
+, [IErrorsRegistries, ERC721TokenReceiver]
+
+
+Base_Contract -> Immediate_Child_Contracts
+ [Not_Immediate_Child_Contracts]
+
++ IErrorsRegistries
+ -> ServiceStakingBase
+, [ServiceStakingToken]
+
++ ERC721
+
++ ERC721TokenReceiver
+ -> ServiceStakingBase
+, [ServiceStakingToken]
+
++ IMultisig
+
++ IService
+
++ ServiceStakingBase
+ -> ServiceStakingToken
+
++ IToken
+
++ SafeTransferLib
+
++ IServiceTokenUtility
+
++ ServiceStakingToken
+
+INFO:Printers:Inheritance
+Child_Contract -> Immediate_Base_Contracts [Not_Immediate_Base_Contracts]
++ IErrorsRegistries
+
++ ERC721
+
++ ERC721TokenReceiver
+
++ IMultisig
+
++ IService
+
++ ServiceStakingBase
+ -> ERC721TokenReceiver, IErrorsRegistries
+
+
+Base_Contract -> Immediate_Child_Contracts
+ [Not_Immediate_Child_Contracts]
+
++ IErrorsRegistries
+ -> ServiceStakingBase
+
++ ERC721
+
++ ERC721TokenReceiver
+ -> ServiceStakingBase
+
++ IMultisig
+
++ IService
+
++ ServiceStakingBase
+
+INFO:Slither:. analyzed (23 contracts)
