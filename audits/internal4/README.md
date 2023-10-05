@@ -46,6 +46,14 @@ via custom stakingToken
 ```
 [x] fixed
 
+Pointer bug (thanks Aleksandr Kuperman) <br>
+```
+ServiceInfo memory sInfo = mapServiceInfo[serviceId];
+(uint256[] memory serviceIds, , , , , ) = checkpoint(); // mapServiceInfo[curServiceId].reward += updatedReward;
+sInfo.reward;
+Incorrect state when updating in checkpoint()
+```
+
 Low problem: <br>
 ```solidity
 function checkpoint() public returns ()
@@ -114,7 +122,8 @@ If you wish, you can fight, for example, using this method
 hash(multisig.code) vs well-know hash
 ```
 Is it possible to replace the multisig with some kind of fake one without losing the opportunity to receive rewards? <br>
-[x] fixed
+Notes: re-checking logic in contracts\multisigs\GnosisSafeSameAddressMultisig.sol (!) and update logic if necessary.
+[x] fixed, but the GnosisSafeSameAddressMultisig contract needs to be addressed as well at some point
 
 2. "Normal" multisig. Open question
 ```
