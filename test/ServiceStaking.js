@@ -13,6 +13,7 @@ describe("ServiceStakingNativeToken", function () {
     let gnosisSafe;
     let gnosisSafeProxyFactory;
     let gnosisSafeMultisig;
+    let gnosisSafeSameAddressMultisig;
     let multiSend;
     let serviceStaking;
     let serviceStakingToken;
@@ -83,6 +84,10 @@ describe("ServiceStakingNativeToken", function () {
         gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
         await gnosisSafeMultisig.deployed();
 
+        const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
+        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
+        await gnosisSafeSameAddressMultisig.deployed();
+
         const MultiSend = await ethers.getContractFactory("MultiSendCallOnly");
         multiSend = await MultiSend.deploy();
         await multiSend.deployed();
@@ -127,8 +132,9 @@ describe("ServiceStakingNativeToken", function () {
         await serviceRegistry.registerAgents(operator.address, serviceId, [agentInstances[0].address], agentIds, {value: regBond});
         await serviceRegistry.registerAgents(operator.address, serviceId + 1, [agentInstances[1].address], agentIds, {value: regBond});
 
-        // Whitelist gnosis multisig implementation
+        // Whitelist gnosis multisig implementations
         await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+        await serviceRegistry.changeMultisigPermission(gnosisSafeSameAddressMultisig.address, true);
 
         // Deploy services
         await serviceRegistry.deploy(deployer.address, serviceId, gnosisSafeMultisig.address, payload);
@@ -975,6 +981,50 @@ describe("ServiceStakingNativeToken", function () {
 
             // Check that the service got no reward
             expect(balanceAfter).to.equal(balanceBefore);
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+
+        it.only("Failure to receive funds by the multisig", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Redeploy the service with the attacker being the multisig
+            await serviceRegistry.terminate(deployer.address, serviceId);
+            await serviceRegistry.unbond(operator.address, serviceId);
+
+            await attacker.setOwner(agentInstances[0].address);
+            await serviceRegistry.activateRegistration(deployer.address, serviceId, {value: regDeposit});
+            await serviceRegistry.registerAgents(operator.address, serviceId, [agentInstances[0].address], agentIds, {value: regBond});
+
+            // Prepare the payload to redeploy with the attacker address
+            const data = ethers.utils.solidityPack(["address"], [attacker.address]);
+            await serviceRegistry.deploy(deployer.address, serviceId, gnosisSafeSameAddressMultisig.address, data);
+
+            // Approve service
+            await serviceRegistry.approve(serviceStaking.address, serviceId);
+
+            // Stake the service
+            await serviceStaking.stake(serviceId);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
+            // Increase the nonce
+            await attacker.inceraseNonce();
+
+            // Make sure the service have not earned any rewards
+            const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            expect(reward).to.greaterThan(0);
+
+            // Try to unstake the service with the re-entrancy will fail
+            await expect(
+                serviceStaking.unstake(serviceId)
+            ).to.be.revertedWithCustomError(serviceStaking, "TransferFailed");
 
             // Restore a previous state of blockchain
             snapshot.restore();

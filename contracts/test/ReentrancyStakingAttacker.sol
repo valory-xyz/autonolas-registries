@@ -44,6 +44,10 @@ contract ReentrancyStakingAttacker is ERC721TokenReceiver {
     address public immutable serviceRegistry;
     // Attack argument
     bool public attack = true;
+    // Nonce
+    uint256 internal _nonce;
+    // Owners
+    address[] public owners;
 
     constructor(address _serviceStaking, address _serviceRegistry) {
         serviceStaking = _serviceStaking;
@@ -57,6 +61,14 @@ contract ReentrancyStakingAttacker is ERC721TokenReceiver {
 
     function setAttack(bool status) external {
         attack = status;
+    }
+
+    function setOwner(address owner) external {
+        owners.push(owner);
+    }
+
+    function inceraseNonce() external {
+        _nonce += 1000;
     }
 
     /// @dev Malicious contract function call during the service token return.
@@ -77,5 +89,23 @@ contract ReentrancyStakingAttacker is ERC721TokenReceiver {
         IServiceRegistry(serviceRegistry).approve(serviceStaking, serviceId);
         IServiceStaking(serviceStaking).stake(serviceId);
         IServiceStaking(serviceStaking).checkpoint();
+    }
+
+    /// @dev Gets set of owners.
+    /// @return owners Set of Safe owners.
+    function getOwners() external view returns (address[] memory) {
+        return owners;
+    }
+
+    /// @dev Gets threshold.
+    /// @return Threshold
+    function getThreshold() external view returns (uint256) {
+        return owners.length;
+    }
+
+    /// @dev Gets the multisig nonce.
+    /// @return Multisig nonce.
+    function nonce() external view returns (uint256) {
+        return _nonce;
     }
 }

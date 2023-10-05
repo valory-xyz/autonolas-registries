@@ -455,7 +455,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     /// @dev Unstakes the service.
     /// @param serviceId Service Id.
     function unstake(uint256 serviceId) external {
-        ServiceInfo memory sInfo = mapServiceInfo[serviceId];
+        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
         // Check for the service ownership
         if (msg.sender != sInfo.owner) {
             revert OwnerOnly(msg.sender, sInfo.owner);
