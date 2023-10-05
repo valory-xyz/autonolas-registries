@@ -18,6 +18,15 @@ interface IService {
         Agent
     }
 
+    enum ServiceState {
+        NonExistent,
+        PreRegistration,
+        ActiveRegistration,
+        FinishedRegistration,
+        Deployed,
+        TerminatedBonded
+    }
+
     /// @dev Transfers the service that was previously approved to this contract address.
     /// @param from Account address to transfer from.
     /// @param to Account address to transfer to.
@@ -152,11 +161,14 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     mapping (uint256 => ServiceInfo) public mapServiceInfo;
     // Set of currently staking serviceIds
     uint256[] public setServiceIds;
+    // Map of approved multisig proxy hashes
+    mapping(bytes32 => bool) mapMultisigHashes;
 
     /// @dev ServiceStakingBase constructor.
     /// @param _stakingParams Service staking parameters.
     /// @param _serviceRegistry ServiceRegistry contract address.
-    constructor(StakingParams memory _stakingParams, address _serviceRegistry) {
+    /// @param _multisigProxyAddresses Multisig proxy addresses.
+    constructor(StakingParams memory _stakingParams, address _serviceRegistry, address[] memory _multisigProxyAddresses) {
         // Initial checks
         if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
             _stakingParams.minStakingDeposit == 0 || _stakingParams.livenessPeriod == 0 ||
@@ -181,17 +193,32 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         configHash = _stakingParams.configHash;
 
         // Assign agent Ids, if applicable
-        uint256 size = _stakingParams.agentIds.length;
         uint256 agentId;
-        if (size > 0) {
-            for (uint256 i = 0; i < size; ++i) {
-                // Agent Ids must be unique and in ascending order
-                if (_stakingParams.agentIds[i] <= agentId) {
-                    revert WrongAgentId(_stakingParams.agentIds[i]);
-                }
-                agentId = _stakingParams.agentIds[i];
-                agentIds.push(agentId);
+        for (uint256 i = 0; i < _stakingParams.agentIds.length; ++i) {
+            // Agent Ids must be unique and in ascending order
+            if (_stakingParams.agentIds[i] <= agentId) {
+                revert WrongAgentId(_stakingParams.agentIds[i]);
             }
+            agentId = _stakingParams.agentIds[i];
+            agentIds.push(agentId);
+        }
+
+        // There must be at least one multisig proxy address
+        uint256 size = _multisigProxyAddresses.length;
+        if (size == 0) {
+            revert ZeroValue();
+        }
+        // Hash the bytecode of provided multisig proxies
+        for (uint256 i = 0; i < size; ++i) {
+            address proxy = _multisigProxyAddresses[i];
+            // Check for the zero address
+            if (proxy == address(0)) {
+                revert ZeroAddress();
+            }
+
+            // Hash the proxy bytecode
+            bytes32 proxyHash = keccak256(proxy.code);
+            mapMultisigHashes[proxyHash] = true;
         }
 
         // Set the checkpoint timestamp to be the deployment one
@@ -244,9 +271,16 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             revert WrongServiceConfiguration(serviceId);
         }
         // The service must be deployed
-        if (state != 4) {
+        if (IService.ServiceState(state) != IService.ServiceState.Deployed) {
             revert WrongServiceState(state, serviceId);
         }
+
+        // Check that the multisig address corresponds to the authorized multisig proxy
+        bytes32 proxyHash = keccak256(multisig.code);
+        if (!mapMultisigHashes[proxyHash]) {
+            revert UnauthorizedMultisig(multisig);
+        }
+
         // Check the agent Ids requirement, if applicable
         uint256 size = agentIds.length;
         if (size > 0) {
@@ -387,12 +421,12 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
         // If there are eligible services, proceed with staking calculation and update rewards
         if (numServices > 0) {
+            uint256 curServiceId;
             // If total allocated rewards are not enough, adjust the reward value
             if (totalRewards > lastAvailableRewards) {
                 // Traverse all the eligible services and adjust their rewards proportional to leftovers
                 uint256 updatedReward;
                 uint256 updatedTotalRewards;
-                uint256 curServiceId;
                 for (uint256 i = 1; i < numServices; ++i) {
                     // Calculate the updated reward
                     updatedReward = (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards;
@@ -419,7 +453,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 // Traverse all the eligible services and add to their rewards
                 for (uint256 i = 0; i < numServices; ++i) {
                     // Add reward to the service overall reward
-                    uint256 curServiceId = eligibleServiceIds[i];
+                    curServiceId = eligibleServiceIds[i];
                     mapServiceInfo[curServiceId].reward += eligibleServiceRewards[i];
                 }
 
@@ -473,13 +507,11 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             }
         }
 
-        // Transfer the service back to the owner
-        IService(serviceRegistry).safeTransferFrom(address(this), msg.sender, serviceId);
-
-        // Transfer accumulated rewards to the service multisig
-        if (sInfo.reward > 0) {
-            _withdraw(sInfo.multisig, sInfo.reward);
-        }
+        // Get the unstaked service data
+        uint256 reward = sInfo.reward;
+        uint256 nonce = sInfo.nonce;
+        uint256 tsStart = sInfo.tsStart;
+        address multisig = sInfo.multisig;
 
         // Clear all the data about the unstaked service
         // Delete the service info struct
@@ -489,7 +521,15 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         setServiceIds[idx] = setServiceIds[setServiceIds.length - 1];
         setServiceIds.pop();
 
-        emit ServiceUnstaked(serviceId, msg.sender, sInfo.multisig, sInfo.nonce, sInfo.reward, sInfo.tsStart);
+        // Transfer the service back to the owner
+        IService(serviceRegistry).safeTransferFrom(address(this), msg.sender, serviceId);
+
+        // Transfer accumulated rewards to the service multisig
+        if (reward > 0) {
+            _withdraw(multisig, reward);
+        }
+
+        emit ServiceUnstaked(serviceId, msg.sender, multisig, nonce, reward, tsStart);
     }
 
     /// @dev Calculates service staking reward at current timestamp.

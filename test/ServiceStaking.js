@@ -12,6 +12,7 @@ describe("ServiceStakingNativeToken", function () {
     let token;
     let gnosisSafe;
     let gnosisSafeProxyFactory;
+    let gnosisSafeProxy;
     let gnosisSafeMultisig;
     let gnosisSafeSameAddressMultisig;
     let multiSend;
@@ -80,6 +81,10 @@ describe("ServiceStakingNativeToken", function () {
         gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deploy();
         await gnosisSafeProxyFactory.deployed();
 
+        const GnosisSafeProxy = await ethers.getContractFactory("GnosisSafeProxy");
+        gnosisSafeProxy = await GnosisSafeProxy.deploy(gnosisSafe.address);
+        await gnosisSafeProxy.deployed();
+
         const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
         gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
         await gnosisSafeMultisig.deployed();
@@ -93,12 +98,12 @@ describe("ServiceStakingNativeToken", function () {
         await multiSend.deployed();
 
         const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
-        serviceStaking = await ServiceStakingNativeToken.deploy(serviceParams, serviceRegistry.address);
+        serviceStaking = await ServiceStakingNativeToken.deploy(serviceParams, serviceRegistry.address, [gnosisSafeProxy.address]);
         await serviceStaking.deployed();
 
         const ServiceStakingToken = await ethers.getContractFactory("ServiceStakingToken");
         serviceStakingToken = await ServiceStakingToken.deploy(serviceParams, serviceRegistry.address,
-            serviceRegistryTokenUtility.address, token.address);
+            serviceRegistryTokenUtility.address, token.address, [gnosisSafeProxy.address]);
         await serviceStakingToken.deployed();
 
         const Attacker = await ethers.getContractFactory("ReentrancyStakingAttacker");
@@ -160,60 +165,66 @@ describe("ServiceStakingNativeToken", function () {
 
             // Service Staking Native Token
             let testServiceParams = JSON.parse(JSON.stringify(defaultTestServiceParams));
-            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
 
             testServiceParams.maxNumServices = 1;
-            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
 
             testServiceParams.rewardsPerSecond = 1;
-            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
 
             testServiceParams.minStakingDeposit = 1;
-            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
 
             testServiceParams.livenessPeriod = 1;
-            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
 
             testServiceParams.livenessRatio = 1;
-            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
 
             testServiceParams.numAgentInstances = 1;
-            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroAddress");
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroAddress");
 
             testServiceParams.agentIds = [0];
-            await expect(ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "WrongAgentId");
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "WrongAgentId");
 
             testServiceParams.agentIds = [1, 1];
-            await expect(ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "WrongAgentId");
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "WrongAgentId");
 
             testServiceParams.agentIds = [2, 1];
-            await expect(ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "WrongAgentId");
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "WrongAgentId");
+
+            testServiceParams.agentIds = [];
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
+
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [AddressZero])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroAddress");
 
 
             // Service Staking Token
             testServiceParams = JSON.parse(JSON.stringify(defaultTestServiceParams));
-            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
 
             testServiceParams.maxNumServices = 1;
-            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
 
             testServiceParams.rewardsPerSecond = 1;
-            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
 
             testServiceParams.minStakingDeposit = 1;
-            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
 
             testServiceParams.livenessPeriod = 1;
-            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
 
             testServiceParams.livenessRatio = 1;
-            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
 
             testServiceParams.numAgentInstances = 1;
-            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
 
-            await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
-            await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, serviceRegistryTokenUtility.address, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
+            await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+            await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, AddressZero, AddressZero, [AddressZero])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
+            await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, serviceRegistryTokenUtility.address, AddressZero, [gnosisSafeProxy.address])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
         });
     });
 
@@ -229,7 +240,7 @@ describe("ServiceStakingNativeToken", function () {
             const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
             const testServiceParams = JSON.parse(JSON.stringify(serviceParams));
             testServiceParams.maxNumServices = 1;
-            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address);
+            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [gnosisSafeProxy.address]);
             await sStaking.deployed();
 
             // Deposit to the contract
@@ -283,7 +294,7 @@ describe("ServiceStakingNativeToken", function () {
             const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
             const testServiceParams = JSON.parse(JSON.stringify(serviceParams));
             testServiceParams.configHash = "0x" + "1".repeat(64);
-            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address);
+            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [gnosisSafeProxy.address]);
             await sStaking.deployed();
 
             // Deposit to the contract
@@ -302,7 +313,7 @@ describe("ServiceStakingNativeToken", function () {
             const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
             const testServiceParams = JSON.parse(JSON.stringify(serviceParams));
             testServiceParams.threshold = 2;
-            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address);
+            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [gnosisSafeProxy.address]);
             await sStaking.deployed();
 
             // Deposit to the contract
@@ -321,7 +332,7 @@ describe("ServiceStakingNativeToken", function () {
             const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
             let testServiceParams = JSON.parse(JSON.stringify(serviceParams));
             testServiceParams.agentIds = [1];
-            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address);
+            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [gnosisSafeProxy.address]);
             await sStaking.deployed();
 
             // Deposit to the contract
@@ -359,7 +370,7 @@ describe("ServiceStakingNativeToken", function () {
             let testServiceParams = JSON.parse(JSON.stringify(serviceParams));
             testServiceParams.agentIds = [1];
             testServiceParams.numAgentInstances = 2;
-            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address);
+            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [gnosisSafeProxy.address]);
             await sStaking.deployed();
 
             // Deposit to the contract
@@ -986,7 +997,7 @@ describe("ServiceStakingNativeToken", function () {
             snapshot.restore();
         });
 
-        it.only("Failure to receive funds by the multisig", async function () {
+        it("Failure to stake a service with an unauthorized multisig proxy", async function () {
             // Take a snapshot of the current state of the blockchain
             const snapshot = await helpers.takeSnapshot();
 
@@ -1008,23 +1019,25 @@ describe("ServiceStakingNativeToken", function () {
             // Approve service
             await serviceRegistry.approve(serviceStaking.address, serviceId);
 
-            // Stake the service
-            await serviceStaking.stake(serviceId);
-
-            // Increase the time for the liveness period
-            await helpers.time.increase(livenessPeriod);
-
-            // Increase the nonce
-            await attacker.inceraseNonce();
-
-            // Make sure the service have not earned any rewards
-            const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
-            expect(reward).to.greaterThan(0);
-
-            // Try to unstake the service with the re-entrancy will fail
+            // Try to stake the service
             await expect(
-                serviceStaking.unstake(serviceId)
-            ).to.be.revertedWithCustomError(serviceStaking, "TransferFailed");
+                serviceStaking.stake(serviceId)
+            ).to.be.revertedWithCustomError(serviceStaking, "UnauthorizedMultisig");
+
+            //            // Increase the time for the liveness period
+            //            await helpers.time.increase(livenessPeriod);
+            //
+            //            // Increase the nonce
+            //            await attacker.inceraseNonce();
+            //
+            //            // Make sure the service have not earned any rewards
+            //            const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            //            expect(reward).to.greaterThan(0);
+            //
+            //            // Try to unstake the service with the re-entrancy will fail
+            //            await expect(
+            //                serviceStaking.unstake(serviceId)
+            //            ).to.be.revertedWithCustomError(serviceStaking, "TransferFailed");
 
             // Restore a previous state of blockchain
             snapshot.restore();

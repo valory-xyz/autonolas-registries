@@ -24,23 +24,27 @@ unstake:
 Doesn't match the pattern Checks, Effects, and Interactions (CEI):
 _withdraw(sInfo.multisig, sInfo.reward); in middle
 ```
+[x] fixed
 
 Reentrancy critical issue: <br>
 ```solidity
 ServiceStaking.unstake -> _withdraw -> to.call{value: amount}("") -> ServiceStaking.unstake (sInfo.reward > 0 ??) -> _withdraw -> to.call{value: amount}("")
 ```
+[x] fixed, protected by the unstake() function as the service data will be deleted
 
 Reentrancy medium issue: <br>
 ```solidity
 ServiceStakingToken.unstake -> _withdraw -> SafeTransferLib.safeTransfer(stakingToken, to, amount); -> ServiceStaking.unstake
 via custom stakingToken
 ```
+[x] fixed, protected by the unstake() function as the service data will be deleted
 
 Reentrancy low issue: <br>
 ```solidity
 ServiceStakingToken.deposit -> SafeTransferLib.safeTransfer(stakingToken, to, amount); -> ServiceStaking.deposit
 via custom stakingToken
 ```
+[x] fixed
 
 Low problem: <br>
 ```solidity
@@ -52,7 +56,7 @@ uint256 curServiceId = serviceIds[i];
 Details: https://github.com/crytic/slither/wiki/Detector-Documentation#variable-names-too-similar
 Reusing a same variable name in different scopes.
 ```
-
+[x] fixed
 
 ```solidity
     if (state != 4) {
@@ -61,6 +65,7 @@ Reusing a same variable name in different scopes.
 It's better to use the original type enum.
 Details: https://github.com/pessimistic-io/slitherin/blob/master/docs/magic_number.md
 ```
+[x] fixed
 
 # Low optimization
 ```
@@ -76,11 +81,14 @@ if (size > 0) {
         }
 if size == 0 then for(i = 0; i < 0; i++) -> no loop
 ```
+[x] fixed
 ```
         // Transfer the service for staking
         IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
         Last operation?
 ```
+[x] verified, this reentrancy cannot take place as the ERC721 implementation calls ERC721TokenReceiver(to), where to is
+a staking contract
 
 ### General considerations
 Measuring the number of live transactions through a smart contract has fundamental limitations: <br>
@@ -106,6 +114,7 @@ If you wish, you can fight, for example, using this method
 hash(multisig.code) vs well-know hash
 ```
 Is it possible to replace the multisig with some kind of fake one without losing the opportunity to receive rewards? <br>
+[x] fixed
 
 2. "Normal" multisig. Open question
 ```
