@@ -69,7 +69,7 @@ struct AgentParams {
 }
 
 contract ReentrancyAttacker is ERC721TokenReceiver {
-    // Service Registry
+    // Component Registry
     address public immutable componentRegistry;
     // Service Registry
     address public immutable serviceRegistry;

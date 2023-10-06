@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 const helpers = require("@nomicfoundation/hardhat-network-helpers");
 const safeContracts = require("@gnosis.pm/safe-contracts");
 
-describe("ServiceStaking", function () {
+describe("ServiceStakingNativeToken", function () {
     let componentRegistry;
     let agentRegistry;
     let serviceRegistry;
@@ -13,28 +13,38 @@ describe("ServiceStaking", function () {
     let gnosisSafe;
     let gnosisSafeProxyFactory;
     let gnosisSafeMultisig;
+    let gnosisSafeSameAddressMultisig;
     let multiSend;
     let serviceStaking;
     let serviceStakingToken;
-    let reentrancyAttacker;
+    let attacker;
     let signers;
     let deployer;
     let operator;
     let agentInstances;
-    const maxNumServices = 10;
-    const rewardsPerSecond = "1" + "0".repeat(15);
-    const minStakingDeposit = 10;
-    const livenessRatio = "1" + "0".repeat(17); // 0.1 transaction per second (TPS)
     const AddressZero = ethers.constants.AddressZero;
     const defaultHash = "0x" + "5".repeat(64);
+    const bytes32Zero = "0x" + "0".repeat(64);
     const regDeposit = 1000;
     const regBond = 1000;
     const serviceId = 1;
     const agentIds = [1];
     const agentParams = [[1, regBond]];
     const threshold = 1;
+    const livenessPeriod = 10; // Ten seconds
     const initSupply = "5" + "0".repeat(26);
     const payload = "0x";
+    const serviceParams = {
+        maxNumServices: 10,
+        rewardsPerSecond: "1" + "0".repeat(15),
+        minStakingDeposit: 10,
+        livenessPeriod: livenessPeriod, // Ten seconds
+        livenessRatio: "1" + "0".repeat(16), // 0.01 transaction per second (TPS)
+        numAgentInstances: 1,
+        agentIds: [],
+        threshold: 0,
+        configHash: bytes32Zero
+    };
 
     beforeEach(async function () {
         signers = await ethers.getSigners();
@@ -74,23 +84,26 @@ describe("ServiceStaking", function () {
         gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
         await gnosisSafeMultisig.deployed();
 
+        const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
+        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
+        await gnosisSafeSameAddressMultisig.deployed();
+
         const MultiSend = await ethers.getContractFactory("MultiSendCallOnly");
         multiSend = await MultiSend.deploy();
         await multiSend.deployed();
 
-        const ServiceStaking = await ethers.getContractFactory("ServiceStaking");
-        serviceStaking = await ServiceStaking.deploy(maxNumServices, rewardsPerSecond, minStakingDeposit,
-            livenessRatio, serviceRegistry.address);
+        const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
+        serviceStaking = await ServiceStakingNativeToken.deploy(serviceParams, serviceRegistry.address);
         await serviceStaking.deployed();
 
         const ServiceStakingToken = await ethers.getContractFactory("ServiceStakingToken");
-        serviceStakingToken = await ServiceStakingToken.deploy(maxNumServices, rewardsPerSecond, minStakingDeposit,
-            livenessRatio, serviceRegistry.address, serviceRegistryTokenUtility.address, token.address);
-        await serviceStaking.deployed();
+        serviceStakingToken = await ServiceStakingToken.deploy(serviceParams, serviceRegistry.address,
+            serviceRegistryTokenUtility.address, token.address);
+        await serviceStakingToken.deployed();
 
-        const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyTokenAttacker");
-        reentrancyAttacker = await ReentrancyAttacker.deploy(serviceRegistryTokenUtility.address);
-        await reentrancyAttacker.deployed();
+        const Attacker = await ethers.getContractFactory("ReentrancyStakingAttacker");
+        attacker = await Attacker.deploy(serviceStaking.address, serviceRegistry.address);
+        await attacker.deployed();
 
         // Set the deployer to be the unit manager by default
         await componentRegistry.changeManager(deployer.address);
@@ -103,8 +116,9 @@ describe("ServiceStaking", function () {
         await token.mint(deployer.address, initSupply);
         await token.mint(operator.address, initSupply);
 
-        // Create two services
+        // Create component, two agents and two services
         await componentRegistry.create(deployer.address, defaultHash, []);
+        await agentRegistry.create(deployer.address, defaultHash, [1]);
         await agentRegistry.create(deployer.address, defaultHash, [1]);
         await serviceRegistry.create(deployer.address, defaultHash, agentIds, agentParams, threshold);
         await serviceRegistry.create(deployer.address, defaultHash, agentIds, agentParams, threshold);
@@ -114,12 +128,13 @@ describe("ServiceStaking", function () {
         await serviceRegistry.activateRegistration(deployer.address, serviceId + 1, {value: regDeposit});
 
         // Register agent instances
-        agentInstances = [signers[2], signers[3], signers[4]];
+        agentInstances = [signers[2], signers[3], signers[4], signers[5], signers[6], signers[7]];
         await serviceRegistry.registerAgents(operator.address, serviceId, [agentInstances[0].address], agentIds, {value: regBond});
         await serviceRegistry.registerAgents(operator.address, serviceId + 1, [agentInstances[1].address], agentIds, {value: regBond});
 
-        // Whitelist gnosis multisig implementation
+        // Whitelist gnosis multisig implementations
         await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+        await serviceRegistry.changeMultisigPermission(gnosisSafeSameAddressMultisig.address, true);
 
         // Deploy services
         await serviceRegistry.deploy(deployer.address, serviceId, gnosisSafeMultisig.address, payload);
@@ -128,26 +143,81 @@ describe("ServiceStaking", function () {
 
     context("Initialization", function () {
         it("Should not allow the zero values and addresses when deploying contracts", async function () {
-            const ServiceStaking = await ethers.getContractFactory("ServiceStaking");
+            const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
             const ServiceStakingToken = await ethers.getContractFactory("ServiceStakingToken");
 
-            await expect(ServiceStaking.deploy(0, 0, 0, 0, AddressZero)).to.be.revertedWithCustomError(ServiceStaking, "ZeroValue");
-            await expect(ServiceStaking.deploy(maxNumServices, 0, 0, 0, AddressZero)).to.be.revertedWithCustomError(ServiceStaking, "ZeroValue");
-            await expect(ServiceStaking.deploy(maxNumServices, rewardsPerSecond, 0, 0, AddressZero)).to.be.revertedWithCustomError(ServiceStaking, "ZeroValue");
-            await expect(ServiceStaking.deploy(maxNumServices, rewardsPerSecond, minStakingDeposit, 0, AddressZero)).to.be.revertedWithCustomError(ServiceStaking, "ZeroValue");
-            await expect(ServiceStaking.deploy(maxNumServices, rewardsPerSecond, minStakingDeposit, livenessRatio, AddressZero)).to.be.revertedWithCustomError(ServiceStaking, "ZeroAddress");
+            const defaultTestServiceParams = {
+                maxNumServices: 0,
+                rewardsPerSecond: 0,
+                minStakingDeposit: 0,
+                livenessPeriod: 0,
+                livenessRatio: 0,
+                numAgentInstances: 0,
+                agentIds: [],
+                threshold: 0,
+                configHash: bytes32Zero
+            };
 
-            await expect(ServiceStakingToken.deploy(0, 0, 0, 0, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
-            await expect(ServiceStakingToken.deploy(maxNumServices, 0, 0, 0, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
-            await expect(ServiceStakingToken.deploy(maxNumServices, rewardsPerSecond, 0, 0, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
-            await expect(ServiceStakingToken.deploy(maxNumServices, rewardsPerSecond, minStakingDeposit, 0, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
-            await expect(ServiceStakingToken.deploy(maxNumServices, rewardsPerSecond, minStakingDeposit, livenessRatio, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
-            await expect(ServiceStakingToken.deploy(maxNumServices, rewardsPerSecond, minStakingDeposit, livenessRatio, serviceRegistry.address, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
-            await expect(ServiceStakingToken.deploy(maxNumServices, rewardsPerSecond, minStakingDeposit, livenessRatio, serviceRegistry.address, serviceRegistryTokenUtility.address, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
+            // Service Staking Native Token
+            let testServiceParams = JSON.parse(JSON.stringify(defaultTestServiceParams));
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
+
+            testServiceParams.maxNumServices = 1;
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
+
+            testServiceParams.rewardsPerSecond = 1;
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
+
+            testServiceParams.minStakingDeposit = 1;
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
+
+            testServiceParams.livenessPeriod = 1;
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
+
+            testServiceParams.livenessRatio = 1;
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
+
+            testServiceParams.numAgentInstances = 1;
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroAddress");
+
+            testServiceParams.agentIds = [0];
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "WrongAgentId");
+
+            testServiceParams.agentIds = [1, 1];
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "WrongAgentId");
+
+            testServiceParams.agentIds = [2, 1];
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "WrongAgentId");
+
+
+            // Service Staking Token
+            testServiceParams = JSON.parse(JSON.stringify(defaultTestServiceParams));
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+
+            testServiceParams.maxNumServices = 1;
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+
+            testServiceParams.rewardsPerSecond = 1;
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+
+            testServiceParams.minStakingDeposit = 1;
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+
+            testServiceParams.livenessPeriod = 1;
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+
+            testServiceParams.livenessRatio = 1;
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+
+            testServiceParams.numAgentInstances = 1;
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
+
+            await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, AddressZero, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
+            await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, serviceRegistryTokenUtility.address, AddressZero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
         });
     });
 
-    context("Staking to ServiceStaking and ServiceStakingToken", function () {
+    context("Staking to ServiceStakingNativeToken and ServiceStakingToken", function () {
         it("Should fail if there are no available rewards", async function () {
             await expect(
                 serviceStaking.stake(serviceId)
@@ -156,9 +226,10 @@ describe("ServiceStaking", function () {
 
         it("Should fail if the maximum number of staking services is reached", async function () {
             // Deploy a contract with max number of services equal to one
-            const ServiceStaking = await ethers.getContractFactory("ServiceStaking");
-            const sStaking = await ServiceStaking.deploy(1, rewardsPerSecond, minStakingDeposit, livenessRatio,
-                serviceRegistry.address);
+            const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
+            const testServiceParams = JSON.parse(JSON.stringify(serviceParams));
+            testServiceParams.maxNumServices = 1;
+            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address);
             await sStaking.deployed();
 
             // Deposit to the contract
@@ -190,6 +261,122 @@ describe("ServiceStaking", function () {
             await expect(
                 serviceStaking.stake(serviceId + 2)
             ).to.be.revertedWithCustomError(serviceStaking, "WrongServiceState");
+        });
+
+        it("Should fail when the maximum number of instances is incorrect", async function () {
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Create a new service (serviceId == 3)
+            await serviceRegistry.create(deployer.address, defaultHash, [1, 2], [agentParams[0], agentParams[0]], 2);
+
+            // Approve services
+            await serviceRegistry.approve(serviceStaking.address, serviceId + 2);
+
+            await expect(
+                serviceStaking.stake(serviceId + 2)
+            ).to.be.revertedWithCustomError(serviceStaking, "WrongServiceConfiguration");
+        });
+
+        it("Should fail when the specified config of the service does not match", async function () {
+            // Deploy a contract with a different service config specification
+            const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
+            const testServiceParams = JSON.parse(JSON.stringify(serviceParams));
+            testServiceParams.configHash = "0x" + "1".repeat(64);
+            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address);
+            await sStaking.deployed();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: sStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Approve services
+            await serviceRegistry.approve(sStaking.address, serviceId);
+
+            await expect(
+                sStaking.stake(serviceId)
+            ).to.be.revertedWithCustomError(sStaking, "WrongServiceConfiguration");
+        });
+
+        it("Should fail when the specified threshold of the service does not match", async function () {
+            // Deploy a contract with a different service config specification
+            const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
+            const testServiceParams = JSON.parse(JSON.stringify(serviceParams));
+            testServiceParams.threshold = 2;
+            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address);
+            await sStaking.deployed();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: sStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Approve services
+            await serviceRegistry.approve(sStaking.address, serviceId);
+
+            await expect(
+                sStaking.stake(serviceId)
+            ).to.be.revertedWithCustomError(serviceStaking, "WrongServiceConfiguration");
+        });
+
+        it("Should fail when the optional agent Ids do not match in the service", async function () {
+            // Deploy a service staking contract with specific agent Ids
+            const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
+            let testServiceParams = JSON.parse(JSON.stringify(serviceParams));
+            testServiceParams.agentIds = [1];
+            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address);
+            await sStaking.deployed();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: sStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Create a new service (serviceId == 3)
+            await serviceRegistry.create(deployer.address, defaultHash, [2], agentParams, threshold);
+            await serviceRegistry.activateRegistration(deployer.address, serviceId + 2, {value: regDeposit});
+            await serviceRegistry.registerAgents(operator.address, serviceId + 2, [agentInstances[2].address], [2], {value: regBond});
+            await serviceRegistry.deploy(deployer.address, serviceId + 2, gnosisSafeMultisig.address, payload);
+
+            // Approve services
+            await serviceRegistry.approve(sStaking.address, serviceId + 2);
+
+            await expect(
+                sStaking.stake(serviceId + 2)
+            ).to.be.revertedWithCustomError(sStaking, "WrongAgentId");
+
+            // Create a new service (serviceId == 4)
+            await serviceRegistry.create(deployer.address, defaultHash, [1], agentParams, threshold);
+            await serviceRegistry.activateRegistration(deployer.address, serviceId + 3, {value: regDeposit});
+            await serviceRegistry.registerAgents(operator.address, serviceId + 3, [agentInstances[3].address], agentIds, {value: regBond});
+            await serviceRegistry.deploy(deployer.address, serviceId + 3, gnosisSafeMultisig.address, payload);
+
+            // Approve services
+            await serviceRegistry.approve(sStaking.address, serviceId + 3);
+
+            // Stake the service
+            await sStaking.stake(serviceId + 3);
+        });
+
+        it("Should fail when the numer of agent instances matching the wrong agent Ids size", async function () {
+            // Deploy a service staking contract with a numer of agent instances matching the wrong agent Ids size
+            const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
+            let testServiceParams = JSON.parse(JSON.stringify(serviceParams));
+            testServiceParams.agentIds = [1];
+            testServiceParams.numAgentInstances = 2;
+            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address);
+            await sStaking.deployed();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: sStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Create a new service (serviceId == 3)
+            await serviceRegistry.create(deployer.address, defaultHash, [1, 2], [agentParams[0], agentParams[0]], 2);
+            await serviceRegistry.activateRegistration(deployer.address, serviceId + 2, {value: regDeposit});
+            await serviceRegistry.registerAgents(operator.address, serviceId + 2, [agentInstances[4].address, agentInstances[5].address], [1, 2], {value: 2 * regBond});
+            await serviceRegistry.deploy(deployer.address, serviceId + 2, gnosisSafeMultisig.address, payload);
+
+            // Approve services
+            await serviceRegistry.approve(sStaking.address, serviceId + 2);
+
+            await expect(
+                sStaking.stake(serviceId + 2)
+            ).to.be.revertedWithCustomError(sStaking, "WrongServiceConfiguration");
         });
 
         it("Should fail when the service has insufficient security deposit", async function () {
@@ -279,7 +466,7 @@ describe("ServiceStaking", function () {
             ).to.be.revertedWithCustomError(serviceStakingToken, "LowerThan");
         });
 
-        it("Stake a service at ServiceStaking and try to unstake not by the service owner", async function () {
+        it("Stake a service at ServiceStakingNativeToken and try to unstake not by the service owner", async function () {
             // Deposit to the contract
             await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
 
@@ -348,7 +535,7 @@ describe("ServiceStaking", function () {
             const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
 
             // Increase the time while the service does not reach the required amount of transactions per second (TPS)
-            await helpers.time.increase(1000);
+            await helpers.time.increase(livenessPeriod);
 
             // Calculate service staking reward that must be zero
             const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
@@ -389,6 +576,9 @@ describe("ServiceStaking", function () {
             let signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
             await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
 
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
             // Call the checkpoint at this time
             await serviceStaking.checkpoint();
 
@@ -397,6 +587,9 @@ describe("ServiceStaking", function () {
             txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
             signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
             await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
 
             // Calculate service staking reward that must be greater than zero
             const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
@@ -438,7 +631,6 @@ describe("ServiceStaking", function () {
             // Deploy the service
             await serviceRegistry.deploy(deployer.address, sId, gnosisSafeMultisig.address, payload);
 
-
             // Approve services
             await serviceRegistry.approve(serviceStakingToken.address, sId);
 
@@ -455,6 +647,9 @@ describe("ServiceStaking", function () {
             let signMessageData = await safeContracts.safeSignMessage(agentInstances[2], multisig, txHashData, 0);
             await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
 
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
             // Call the checkpoint at this time
             await serviceStakingToken.checkpoint();
 
@@ -463,6 +658,9 @@ describe("ServiceStaking", function () {
             txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
             signMessageData = await safeContracts.safeSignMessage(agentInstances[2], multisig, txHashData, 0);
             await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
 
             // Calculate service staking reward that must be greater than zero
             const reward = await serviceStakingToken.calculateServiceStakingReward(sId);
@@ -496,6 +694,9 @@ describe("ServiceStaking", function () {
             // Get the service multisig contract
             const service = await serviceRegistry.getService(serviceId);
             const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
 
             // Construct the payload for the multisig
             let callData = [];
@@ -532,7 +733,7 @@ describe("ServiceStaking", function () {
             const snapshot = await helpers.takeSnapshot();
 
             // Deposit to the contract
-            await deployer.sendTransaction({to: serviceStaking.address, value: rewardsPerSecond});
+            await deployer.sendTransaction({to: serviceStaking.address, value: serviceParams.rewardsPerSecond});
 
             // Approve services
             await serviceRegistry.approve(serviceStaking.address, serviceId);
@@ -550,6 +751,9 @@ describe("ServiceStaking", function () {
             let signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
             await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
 
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
             // Call the checkpoint at this time
             await serviceStaking.checkpoint();
 
@@ -558,6 +762,9 @@ describe("ServiceStaking", function () {
             txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
             signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
             await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
 
             // Calculate service staking reward that must be greater than zero
             const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
@@ -570,6 +777,254 @@ describe("ServiceStaking", function () {
 
             // The balance before and after the unstake call must be different
             expect(balanceAfter).to.gt(balanceBefore);
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+
+        it("Stake and unstake to drain the full balance by several services", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: serviceParams.rewardsPerSecond});
+
+            // Create and deploy one more service (serviceId == 3)
+            await serviceRegistry.create(deployer.address, defaultHash, agentIds, agentParams, threshold);
+            await serviceRegistry.activateRegistration(deployer.address, serviceId + 2, {value: regDeposit});
+            await serviceRegistry.registerAgents(operator.address, serviceId + 2, [agentInstances[2].address], agentIds, {value: regBond});
+            await serviceRegistry.deploy(deployer.address, serviceId + 2, gnosisSafeMultisig.address, payload);
+
+            for (let i = 0; i < 3; i++) {
+                // Approve services
+                await serviceRegistry.approve(serviceStaking.address, serviceId + i);
+
+                // Stake the first service
+                await serviceStaking.stake(serviceId + i);
+
+                // Get the service multisig contract
+                const service = await serviceRegistry.getService(serviceId + i);
+                const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+                // Make transactions by the service multisig, except for the service Id == 3
+                if (i < 2) {
+                    const nonce = await multisig.nonce();
+                    const txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+                    const signMessageData = await safeContracts.safeSignMessage(agentInstances[i], multisig, txHashData, 0);
+                    await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+                }
+            }
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
+            // Calculate service staking reward that must be greater than zero except for the serviceId == 3
+            for (let i = 0; i < 2; i++) {
+                const reward = await serviceStaking.calculateServiceStakingReward(serviceId + i);
+                expect(reward).to.greaterThan(0);
+            }
+
+            // Call the checkpoint at this time
+            await serviceStaking.checkpoint();
+
+            // Execute one more multisig tx for services except for the service Id == 3
+            for (let i = 0; i < 2; i++) {
+                // Get the service multisig contract
+                const service = await serviceRegistry.getService(serviceId + i);
+                const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+                const nonce = await multisig.nonce();
+                const txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+                const signMessageData = await safeContracts.safeSignMessage(agentInstances[i], multisig, txHashData, 0);
+                await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+            }
+
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
+            for (let i = 0; i < 3; i++) {
+                // Calculate service staking reward that must be greater than zero except for the serviceId == 3
+                const reward = await serviceStaking.calculateServiceStakingReward(serviceId + i);
+                if (i < 2) {
+                    expect(reward).to.greaterThan(0);
+                } else {
+                    expect(reward).to.equal(0);
+                }
+
+                // Get the service multisig contract
+                const service = await serviceRegistry.getService(serviceId + i);
+                const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+                // Unstake services
+                const balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+                await serviceStaking.unstake(serviceId + i);
+                const balanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+
+                // The balance before and after the unstake call must be different except for the serviceId == 3
+                if (i < 2) {
+                    expect(balanceAfter).to.gt(balanceBefore);
+                } else {
+                    expect(reward).to.equal(0);
+                }
+            }
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+
+        it("Stake and unstake with the service activity", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Approve services
+            await serviceRegistry.approve(serviceStaking.address, serviceId);
+
+            // Stake the first service
+            await serviceStaking.stake(serviceId);
+
+            // Take the staking timestamp
+            let block = await ethers.provider.getBlock("latest");
+            const tsStart = block.timestamp;
+
+            // Get the service multisig contract
+            const service = await serviceRegistry.getService(serviceId);
+            const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+            // Make transactions by the service multisig
+            let nonce = await multisig.nonce();
+            let txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+            let signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
+            // Call the checkpoint at this time
+            await serviceStaking.checkpoint();
+
+            // Execute one more multisig tx
+            nonce = await multisig.nonce();
+            txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+            signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
+            block = await ethers.provider.getBlock("latest");
+            const tsEnd = block.timestamp;
+
+            // Get the expected reward
+            const tsDiff = tsEnd - tsStart;
+            const expectedReward = serviceParams.rewardsPerSecond * tsDiff;
+
+            // Nonce is just 1 as there was 1 transaction
+            const ratio = (10**18 * 1.0) / tsDiff;
+            expect(ratio).to.greaterThan(Number(serviceParams.livenessRatio));
+
+            // Calculate service staking reward that must match the calculated reward
+            const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            expect(Number(reward)).to.equal(expectedReward);
+
+            // Unstake the service
+            const balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+            await serviceStaking.unstake(serviceId);
+            const balanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+
+            // The balance before and after the unstake call must be different
+            expect(balanceAfter).to.gt(balanceBefore);
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+    });
+
+    context("Reentrancy and failures", function () {
+        it("Stake and checkpoint in the same tx", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Get the service multisig contract
+            const service = await serviceRegistry.getService(serviceId);
+            const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+            // Transfer the service to the attacker (note we need to use the transfer not to get another reentrancy call)
+            await serviceRegistry.transferFrom(deployer.address, attacker.address, serviceId);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
+            // Stake and checkpoint
+            await attacker.stakeAndCheckpoint(serviceId);
+
+            // Make sure the service have not earned any rewards
+            const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            expect(reward).to.equal(0);
+
+            // Try to unstake the service with the re-entrancy will fail
+            await expect(
+                attacker.unstake(serviceId)
+            ).to.be.reverted;
+
+            // Unsetting the attack will allow to unstake the service
+            await attacker.setAttack(false);
+            const balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+            await attacker.unstake(serviceId);
+            const balanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+
+            // Check that the service got no reward
+            expect(balanceAfter).to.equal(balanceBefore);
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+
+        it.only("Failure to receive funds by the multisig", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Redeploy the service with the attacker being the multisig
+            await serviceRegistry.terminate(deployer.address, serviceId);
+            await serviceRegistry.unbond(operator.address, serviceId);
+
+            await attacker.setOwner(agentInstances[0].address);
+            await serviceRegistry.activateRegistration(deployer.address, serviceId, {value: regDeposit});
+            await serviceRegistry.registerAgents(operator.address, serviceId, [agentInstances[0].address], agentIds, {value: regBond});
+
+            // Prepare the payload to redeploy with the attacker address
+            const data = ethers.utils.solidityPack(["address"], [attacker.address]);
+            await serviceRegistry.deploy(deployer.address, serviceId, gnosisSafeSameAddressMultisig.address, data);
+
+            // Approve service
+            await serviceRegistry.approve(serviceStaking.address, serviceId);
+
+            // Stake the service
+            await serviceStaking.stake(serviceId);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
+            // Increase the nonce
+            await attacker.inceraseNonce();
+
+            // Make sure the service have not earned any rewards
+            const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            expect(reward).to.greaterThan(0);
+
+            // Try to unstake the service with the re-entrancy will fail
+            await expect(
+                serviceStaking.unstake(serviceId)
+            ).to.be.revertedWithCustomError(serviceStaking, "TransferFailed");
 
             // Restore a previous state of blockchain
             snapshot.restore();
