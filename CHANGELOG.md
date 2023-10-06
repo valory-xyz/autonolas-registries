@@ -27,7 +27,7 @@ _No bytecode changes_.
 - Updated documentation
 - Added tests
 
-## [1.1.5] - TBD
+## [1.1.5] - 2023-10-04
 
 _No bytecode changes_.
 

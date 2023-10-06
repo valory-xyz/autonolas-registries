@@ -1024,21 +1024,6 @@ describe("ServiceStakingNativeToken", function () {
                 serviceStaking.stake(serviceId)
             ).to.be.revertedWithCustomError(serviceStaking, "UnauthorizedMultisig");
 
-            //            // Increase the time for the liveness period
-            //            await helpers.time.increase(livenessPeriod);
-            //
-            //            // Increase the nonce
-            //            await attacker.inceraseNonce();
-            //
-            //            // Make sure the service have not earned any rewards
-            //            const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
-            //            expect(reward).to.greaterThan(0);
-            //
-            //            // Try to unstake the service with the re-entrancy will fail
-            //            await expect(
-            //                serviceStaking.unstake(serviceId)
-            //            ).to.be.revertedWithCustomError(serviceStaking, "TransferFailed");
-
             // Restore a previous state of blockchain
             snapshot.restore();
         });
