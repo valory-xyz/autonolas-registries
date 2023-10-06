@@ -44,13 +44,15 @@ contract ServiceStakingToken is ServiceStakingBase {
     /// @param _serviceRegistry ServiceRegistry contract address.
     /// @param _serviceRegistryTokenUtility ServiceRegistryTokenUtility contract address.
     /// @param _stakingToken Address of a service staking token.
+    /// @param _multisigProxyAddresses Multisig proxy addresses.
     constructor(
         StakingParams memory _stakingParams,
         address _serviceRegistry,
         address _serviceRegistryTokenUtility,
-        address _stakingToken
+        address _stakingToken,
+        address[] memory _multisigProxyAddresses
     )
-        ServiceStakingBase(_stakingParams, _serviceRegistry)
+        ServiceStakingBase(_stakingParams, _serviceRegistry, _multisigProxyAddresses)
     {
         // Initial checks
         if (_stakingToken == address(0) || _serviceRegistryTokenUtility == address(0)) {
@@ -94,9 +96,6 @@ contract ServiceStakingToken is ServiceStakingBase {
     /// @dev Deposits funds for staking.
     /// @param amount Token amount to deposit.
     function deposit(uint256 amount) external {
-        // Add to the overall balance
-        SafeTransferLib.safeTransferFrom(stakingToken, msg.sender, address(this), amount);
-
         // Add to the contract and available rewards balances
         uint256 newBalance = balance + amount;
         uint256 newAvailableRewards = availableRewards + amount;
@@ -104,6 +103,9 @@ contract ServiceStakingToken is ServiceStakingBase {
         // Record the new actual balance and available rewards
         balance = newBalance;
         availableRewards = newAvailableRewards;
+
+        // Add to the overall balance
+        SafeTransferLib.safeTransferFrom(stakingToken, msg.sender, address(this), amount);
 
         emit Deposit(msg.sender, amount, newBalance, newAvailableRewards);
     }
