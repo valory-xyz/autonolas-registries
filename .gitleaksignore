@@ -41,3 +41,4 @@ d780294b8dccf047391a71b75dade50a6b89003b:scripts/deployment/l2/globals_gnosis_ch
 7d2fbdb1556dc3ed289edf7e116b378b6f6a9d83:scripts/deployment/l2/bridges/gnosis/test_service_registry_token_utility_change_drainer.js:generic-api-key:44
 7bb76e80382eff3c538af340289ed8241f4e4551:scripts/deployment/l2/globals_gnosis_mainnet.json:generic-api-key:1
 7bb76e80382eff3c538af340289ed8241f4e4551:scripts/deployment/l2/globals_gnosis_mainnet.json:generic-api-key:2
+233a57ccda8d5d84a86133422daa99807801d9fc:scripts/deployment/l2/globals_gnosis_mainnet.json:generic-api-key:2
