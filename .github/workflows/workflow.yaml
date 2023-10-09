@@ -24,6 +24,11 @@ jobs:
       - name: Install modules
         run: yarn install
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
       # Run linters
       - name: Run ESLint
         run: ./node_modules/.bin/eslint . --ext .js,.jsx,.ts,.tsx
@@ -36,6 +41,10 @@ jobs:
         run: ./node_modules/.bin/hardhat compile
       - name: Run tests
         run: ./node_modules/.bin/hardhat test
+
+      # Compile the code and run foundry tests
+      - name: Run foundry tests
+        run: forge test --hh -vvv
 
       # Run hardhat coverage and upload codecov report
       - name: Solidity coverage summary

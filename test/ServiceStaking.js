@@ -541,6 +541,10 @@ describe("ServiceStakingNativeToken", function () {
             // Stake the first service
             await serviceStaking.stake(serviceId);
 
+            // Check that the service is staked
+            const isStaked = await serviceStaking.isServiceStaked(serviceId);
+            expect(isStaked).to.equal(true);
+
             // Get the service multisig contract
             const service = await serviceRegistry.getService(serviceId);
             const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);

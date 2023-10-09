@@ -13,11 +13,6 @@ interface IMultisig {
 
 // Service Registry interface
 interface IService {
-    enum UnitType {
-        Component,
-        Agent
-    }
-
     enum ServiceState {
         NonExistent,
         PreRegistration,
@@ -27,38 +22,36 @@ interface IService {
         TerminatedBonded
     }
 
+    // Service parameters
+    struct Service {
+        // Registration activation deposit
+        uint96 securityDeposit;
+        // Multisig address for agent instances
+        address multisig;
+        // IPFS hashes pointing to the config metadata
+        bytes32 configHash;
+        // Agent instance signers threshold
+        uint32 threshold;
+        // Total number of agent instances
+        uint32 maxNumAgentInstances;
+        // Actual number of agent instances
+        uint32 numAgentInstances;
+        // Service state
+        ServiceState state;
+        // Canonical agent Ids for the service
+        uint32[] agentIds;
+    }
+
     /// @dev Transfers the service that was previously approved to this contract address.
     /// @param from Account address to transfer from.
     /// @param to Account address to transfer to.
     /// @param id Service Id.
     function safeTransferFrom(address from, address to, uint256 id) external;
 
-    /// @dev Gets service parameters from the map of services.
+    /// @dev Gets the service instance.
     /// @param serviceId Service Id.
-    /// @return securityDeposit Registration activation deposit.
-    /// @return multisig Service multisig address.
-    /// @return configHash IPFS hashes pointing to the config metadata.
-    /// @return threshold Agent instance signers threshold.
-    /// @return maxNumAgentInstances Total number of agent instances.
-    /// @return numAgentInstances Actual number of agent instances.
-    /// @return state Service state.
-    function mapServices(uint256 serviceId) external view returns (
-        uint96 securityDeposit,
-        address multisig,
-        bytes32 configHash,
-        uint32 threshold,
-        uint32 maxNumAgentInstances,
-        uint32 numAgentInstances,
-        uint8 state
-    );
-
-    /// @dev Gets the full set of linearized components / canonical agent Ids for a specified service.
-    /// @notice The service must be / have been deployed in order to get the actual data.
-    /// @param serviceId Service Id.
-    /// @return numUnitIds Number of component / agent Ids.
-    /// @return unitIds Set of component / agent Ids.
-    function getUnitIdsOfService(UnitType unitType, uint256 serviceId) external view
-        returns (uint256 numUnitIds, uint32[] memory unitIds);
+    /// @return service Corresponding Service struct.
+    function getService(uint256 serviceId) external view returns (Service memory service);
 }
 
 /// @dev No rewards are available in the contract.
@@ -100,6 +93,7 @@ struct ServiceInfo {
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
+    // Input staking parameters
     struct StakingParams {
         // Maximum number of staking services
         uint256 maxNumServices;
@@ -254,67 +248,65 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         // Check the service conditions for staking
-        (uint96 stakingDeposit, address multisig, bytes32 hash, uint256 agentThreshold, uint256 maxNumInstances, , uint8 state) =
-            IService(serviceRegistry).mapServices(serviceId);
+        IService.Service memory service = IService(serviceRegistry).getService(serviceId);
 
         // Check the number of agent instances
-        if (numAgentInstances != maxNumInstances) {
+        if (numAgentInstances != service.maxNumAgentInstances) {
             revert WrongServiceConfiguration(serviceId);
         }
 
         // Check the configuration hash, if applicable
-        if (configHash != bytes32(0) && configHash != hash) {
+        if (configHash != bytes32(0) && configHash != service.configHash) {
             revert WrongServiceConfiguration(serviceId);
         }
         // Check the threshold, if applicable
-        if (threshold > 0 && threshold != agentThreshold) {
+        if (threshold > 0 && threshold != service.threshold) {
             revert WrongServiceConfiguration(serviceId);
         }
         // The service must be deployed
-        if (IService.ServiceState(state) != IService.ServiceState.Deployed) {
-            revert WrongServiceState(state, serviceId);
+        if (service.state != IService.ServiceState.Deployed) {
+            revert WrongServiceState(uint256(service.state), serviceId);
         }
 
         // Check that the multisig address corresponds to the authorized multisig proxy
-        bytes32 proxyHash = keccak256(multisig.code);
+        bytes32 proxyHash = keccak256(service.multisig.code);
         if (!mapMultisigHashes[proxyHash]) {
-            revert UnauthorizedMultisig(multisig);
+            revert UnauthorizedMultisig(service.multisig);
         }
 
         // Check the agent Ids requirement, if applicable
         uint256 size = agentIds.length;
         if (size > 0) {
-            (uint256 numAgents, uint32[] memory agents) =
-                IService(serviceRegistry).getUnitIdsOfService(IService.UnitType.Agent, serviceId);
+            uint256 numAgents = service.agentIds.length;
 
             if (size != numAgents) {
                 revert WrongServiceConfiguration(serviceId);
             }
             for (uint256 i = 0; i < numAgents; ++i) {
-                if (agentIds[i] != agents[i]) {
+                if (agentIds[i] != service.agentIds[i]) {
                     revert WrongAgentId(agentIds[i]);
                 }
             }
         }
 
         // Check service staking deposit and token, if applicable
-        _checkTokenStakingDeposit(serviceId, stakingDeposit);
+        _checkTokenStakingDeposit(serviceId, service.securityDeposit);
 
         // Transfer the service for staking
         IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
 
         // ServiceInfo struct will be an empty one since otherwise the safeTransferFrom above would fail
         ServiceInfo storage sInfo = mapServiceInfo[serviceId];
-        sInfo.multisig = multisig;
+        sInfo.multisig = service.multisig;
         sInfo.owner = msg.sender;
-        uint256 nonce = IMultisig(multisig).nonce();
+        uint256 nonce = IMultisig(service.multisig).nonce();
         sInfo.nonce = nonce;
         sInfo.tsStart = block.timestamp;
 
         // Add the service Id to the set of staked services
         setServiceIds.push(serviceId);
 
-        emit ServiceStaked(serviceId, msg.sender, multisig, nonce);
+        emit ServiceStaked(serviceId, msg.sender, service.multisig, nonce);
     }
 
     /// @dev Calculates staking rewards for all services at current timestamp.
@@ -458,7 +450,6 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 }
 
                 // Adjust available rewards
-                // TODO: Fuzz this such that totalRewards is never bigger than lastAvailableRewards
                 lastAvailableRewards -= totalRewards;
             }
 
@@ -564,5 +555,12 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 }
             }
         }
+    }
+
+    /// @dev Checks if the service is staked.
+    /// @param serviceId.
+    /// @return True, if the service is staked.
+    function isServiceStaked(uint256 serviceId) external view returns (bool) {
+        return mapServiceInfo[serviceId].tsStart > 0;
     }
 }
