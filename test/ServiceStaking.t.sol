@@ -12,7 +12,6 @@ import {ServiceRegistryTokenUtility} from "../contracts/ServiceRegistryTokenUtil
 import {ServiceManagerToken} from "../contracts/ServiceManagerToken.sol";
 import {OperatorWhitelist} from "../contracts/utils/OperatorWhitelist.sol";
 import {GnosisSafeMultisig} from "../contracts/multisigs/GnosisSafeMultisig.sol";
-import {GnosisSafeSameAddressMultisig} from "../contracts/multisigs/GnosisSafeSameAddressMultisig.sol";
 import "../contracts/staking/ServiceStakingNativeToken.sol";
 import {ServiceStakingToken} from "../contracts/staking/ServiceStakingToken.sol";
 import {SafeNonceLib} from "../contracts/test/SafeNonceLib.sol";
@@ -28,7 +27,6 @@ contract BaseSetup is Test {
     GnosisSafeProxy internal gnosisSafeProxy;
     GnosisSafeProxyFactory internal gnosisSafeProxyFactory;
     GnosisSafeMultisig internal gnosisSafeMultisig;
-    GnosisSafeSameAddressMultisig internal gnosisSafeSameAddressMultisig;
     ServiceStakingNativeToken internal serviceStakingNativeToken;
     ServiceStakingToken internal serviceStakingToken;
     SafeNonceLib internal safeNonceLib;
@@ -93,7 +91,6 @@ contract BaseSetup is Test {
         gnosisSafeProxy = new GnosisSafeProxy(address(gnosisSafe));
         gnosisSafeProxyFactory = new GnosisSafeProxyFactory();
         gnosisSafeMultisig = new GnosisSafeMultisig(payable(address(gnosisSafe)), address(gnosisSafeProxyFactory));
-        gnosisSafeSameAddressMultisig = new GnosisSafeSameAddressMultisig();
         safeNonceLib = new SafeNonceLib();
 
         // Deploying a token contract and minting to deployer, operator and a current contract
@@ -102,19 +99,20 @@ contract BaseSetup is Test {
         token.mint(operator, initialMint);
         token.mint(address(this), initialMint);
 
-        // Deploy service staking native token and arbitraty token
+        // Get the multisig proxy bytecode hash
+        bytes32[] memory multisigProxyHashes = new bytes32[](1);
+        multisigProxyHashes[0] = keccak256(address(gnosisSafeProxy).code);
+
+        // Deploy service staking native token and arbitrary ERC20 token
         ServiceStakingBase.StakingParams memory stakingParams = ServiceStakingBase.StakingParams(maxNumServices,
             rewardsPerSecond, minStakingDeposit, livenessPeriod, livenessRatio, numAgentInstances, emptyArray, 0, bytes32(0));
-        bytes32[] memory multisigProxyAddresses = new bytes32[](1);
-        multisigProxyAddresses[0] = keccak256(address(gnosisSafeProxy).code);
         serviceStakingNativeToken = new ServiceStakingNativeToken(stakingParams, address(serviceRegistry),
-            multisigProxyAddresses);
+            multisigProxyHashes);
         serviceStakingToken = new ServiceStakingToken(stakingParams, address(serviceRegistry), address(serviceRegistryTokenUtility),
-            address(token), multisigProxyAddresses);
+            address(token), multisigProxyHashes);
 
         // Whitelist multisig implementations
         serviceRegistry.changeMultisigPermission(address(gnosisSafeMultisig), true);
-        serviceRegistry.changeMultisigPermission(address(gnosisSafeSameAddressMultisig), true);
 
         IService.AgentParams[] memory agentParams = new IService.AgentParams[](1);
         agentParams[0].slots = 1;
