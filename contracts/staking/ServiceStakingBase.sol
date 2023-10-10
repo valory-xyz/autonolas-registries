@@ -157,7 +157,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     // Set of currently staking serviceIds
     uint256[] public setServiceIds;
     // Map of approved multisig proxy hashes
-    mapping(bytes32 => bool) mapMultisigHashes;
+    mapping(bytes32 => bool) public mapMultisigHashes;
 
     /// @dev ServiceStakingBase constructor.
     /// @param _stakingParams Service staking parameters.
