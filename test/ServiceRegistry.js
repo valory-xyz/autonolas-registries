@@ -11,6 +11,7 @@ describe("ServiceRegistry", function () {
     let serviceRegistryL2;
     let serviceRegistryAnnotated;
     let gnosisSafeMultisig;
+    let gnosisSafeProxy;
     let gnosisSafeProxyFactory;
     let defaultCallbackHandler;
     let multiSend;
@@ -56,6 +57,10 @@ describe("ServiceRegistry", function () {
         gnosisSafe = await GnosisSafe.deploy();
         await gnosisSafe.deployed();
 
+        const GnosisSafeProxy = await ethers.getContractFactory("GnosisSafeProxy");
+        gnosisSafeProxy = await GnosisSafeProxy.deploy(gnosisSafe.address);
+        await gnosisSafeProxy.deployed();
+
         const GnosisSafeProxyFactory = await ethers.getContractFactory("GnosisSafeProxyFactory");
         gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deploy();
         await gnosisSafeProxyFactory.deployed();
@@ -73,7 +78,7 @@ describe("ServiceRegistry", function () {
         await multiSend.deployed();
 
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
+        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy([gnosisSafeProxy.address]);
         await gnosisSafeSameAddressMultisig.deployed();
 
         const ServiceRegistry = await ethers.getContractFactory("ServiceRegistry");

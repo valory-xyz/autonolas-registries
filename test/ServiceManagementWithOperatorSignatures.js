@@ -11,6 +11,7 @@ describe("ServiceManagementWithOperatorSignatures", function () {
     let serviceRegistryTokenUtility;
     let serviceManager;
     let gnosisSafe;
+    let gnosisSafeProxy;
     let gnosisSafeMultisig;
     let gnosisSafeProxyFactory;
     let defaultCallbackHandler;
@@ -46,6 +47,10 @@ describe("ServiceManagementWithOperatorSignatures", function () {
         gnosisSafe = await GnosisSafe.deploy();
         await gnosisSafe.deployed();
 
+        const GnosisSafeProxy = await ethers.getContractFactory("GnosisSafeProxy");
+        gnosisSafeProxy = await GnosisSafeProxy.deploy(gnosisSafe.address);
+        await gnosisSafeProxy.deployed();
+
         const GnosisSafeProxyFactory = await ethers.getContractFactory("GnosisSafeProxyFactory");
         gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deploy();
         await gnosisSafeProxyFactory.deployed();
@@ -63,7 +68,7 @@ describe("ServiceManagementWithOperatorSignatures", function () {
         await multiSend.deployed();
 
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
+        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy([gnosisSafeProxy.address]);
         await gnosisSafeSameAddressMultisig.deployed();
 
         const ServiceRegistry = await ethers.getContractFactory("ServiceRegistry");

@@ -5,6 +5,7 @@ const { ethers } = require("hardhat");
 
 describe("GnosisSafeSameAddressMultisig", function () {
     let gnosisSafe;
+    let gnosisSafeProxy;
     let gnosisSafeProxyFactory;
     let multiSend;
     let gnosisSafeSameAddressMultisig;
@@ -21,6 +22,10 @@ describe("GnosisSafeSameAddressMultisig", function () {
         gnosisSafe = await GnosisSafe.deploy();
         await gnosisSafe.deployed();
 
+        const GnosisSafeProxy = await ethers.getContractFactory("GnosisSafeProxy");
+        gnosisSafeProxy = await GnosisSafeProxy.deploy(gnosisSafe.address);
+        await gnosisSafeProxy.deployed();
+
         const GnosisSafeProxyFactory = await ethers.getContractFactory("GnosisSafeProxyFactory");
         gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deploy();
         await gnosisSafeProxyFactory.deployed();
@@ -30,7 +35,7 @@ describe("GnosisSafeSameAddressMultisig", function () {
         await multiSend.deployed();
 
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
+        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy([gnosisSafeProxy.address]);
         await gnosisSafeSameAddressMultisig.deployed();
 
         signers = await ethers.getSigners();
@@ -39,6 +44,18 @@ describe("GnosisSafeSameAddressMultisig", function () {
     });
 
     context("Verifying multisigs", async function () {
+        it("Try to deploy a contract without specified proxies or zero addresses", async function () {
+            const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
+
+            await expect(
+                GnosisSafeSameAddressMultisig.deploy([])
+            ).to.be.revertedWithCustomError(gnosisSafeSameAddressMultisig, "ZeroValue");
+
+            await expect(
+                GnosisSafeSameAddressMultisig.deploy([AddressZero])
+            ).to.be.revertedWithCustomError(gnosisSafeSameAddressMultisig, "ZeroAddress");
+        });
+
         it("Should fail when passing the non-zero multisig data with the incorrect number of bytes", async function () {
             await expect(
                 gnosisSafeSameAddressMultisig.create(newOwnerAddresses, initialThreshold, "0x55")
