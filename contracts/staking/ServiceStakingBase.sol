@@ -162,8 +162,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     /// @dev ServiceStakingBase constructor.
     /// @param _stakingParams Service staking parameters.
     /// @param _serviceRegistry ServiceRegistry contract address.
-    /// @param _multisigProxyAddresses Multisig proxy addresses.
-    constructor(StakingParams memory _stakingParams, address _serviceRegistry, address[] memory _multisigProxyAddresses) {
+    /// @param _multisigProxyHashes Multisig proxy hashes.
+    constructor(StakingParams memory _stakingParams, address _serviceRegistry, bytes32[] memory _multisigProxyHashes) {
         // Initial checks
         if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
             _stakingParams.livenessPeriod == 0 || _stakingParams.livenessRatio == 0 ||
@@ -201,21 +201,21 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             agentIds.push(agentId);
         }
 
-        // There must be at least one multisig proxy address
-        uint256 size = _multisigProxyAddresses.length;
+        // There must be at least one multisig proxy hash
+        uint256 size = _multisigProxyHashes.length;
         if (size == 0) {
             revert ZeroValue();
         }
-        // Hash the bytecode of provided multisig proxies
+
+        // Record provided multisig proxy bytecode hashes
         for (uint256 i = 0; i < size; ++i) {
-            address proxy = _multisigProxyAddresses[i];
-            // Check for the zero address
-            if (proxy == address(0)) {
-                revert ZeroAddress();
+            bytes32 proxyHash = _multisigProxyHashes[i];
+
+            // Check for the zero value
+            if (proxyHash == bytes32(0)) {
+                revert ZeroValue();
             }
 
-            // Hash the proxy bytecode
-            bytes32 proxyHash = keccak256(proxy.code);
             mapMultisigHashes[proxyHash] = true;
         }
 

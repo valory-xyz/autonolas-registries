@@ -12,7 +12,6 @@ describe("ServiceStakingNativeToken", function () {
     let token;
     let gnosisSafe;
     let gnosisSafeProxyFactory;
-    let gnosisSafeProxy;
     let gnosisSafeMultisig;
     let gnosisSafeSameAddressMultisig;
     let multiSend;
@@ -24,6 +23,7 @@ describe("ServiceStakingNativeToken", function () {
     let deployer;
     let operator;
     let agentInstances;
+    let bytecodeHash;
     const AddressZero = ethers.constants.AddressZero;
     const defaultHash = "0x" + "5".repeat(64);
     const bytes32Zero = "0x" + "0".repeat(64);
@@ -82,13 +82,15 @@ describe("ServiceStakingNativeToken", function () {
         gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deploy();
         await gnosisSafeProxyFactory.deployed();
 
-        const GnosisSafeProxy = await ethers.getContractFactory("GnosisSafeProxy");
-        gnosisSafeProxy = await GnosisSafeProxy.deploy(gnosisSafe.address);
-        await gnosisSafeProxy.deployed();
-
         const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
         gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
         await gnosisSafeMultisig.deployed();
+
+        const GnosisSafeProxy = await ethers.getContractFactory("GnosisSafeProxy");
+        const gnosisSafeProxy = await GnosisSafeProxy.deploy(gnosisSafe.address);
+        await gnosisSafeProxy.deployed();
+        const bytecode = await ethers.provider.getCode(gnosisSafeProxy.address);
+        bytecodeHash = ethers.utils.keccak256(bytecode);
 
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
         gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
@@ -99,12 +101,12 @@ describe("ServiceStakingNativeToken", function () {
         await multiSend.deployed();
 
         const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
-        serviceStaking = await ServiceStakingNativeToken.deploy(serviceParams, serviceRegistry.address, [gnosisSafeProxy.address]);
+        serviceStaking = await ServiceStakingNativeToken.deploy(serviceParams, serviceRegistry.address, [bytecodeHash]);
         await serviceStaking.deployed();
 
         const ServiceStakingToken = await ethers.getContractFactory("ServiceStakingToken");
         serviceStakingToken = await ServiceStakingToken.deploy(serviceParams, serviceRegistry.address,
-            serviceRegistryTokenUtility.address, token.address, [gnosisSafeProxy.address]);
+            serviceRegistryTokenUtility.address, token.address, [bytecodeHash]);
         await serviceStakingToken.deployed();
 
         const SafeNonceLib = await ethers.getContractFactory("SafeNonceLib");
@@ -202,7 +204,7 @@ describe("ServiceStakingNativeToken", function () {
             testServiceParams.agentIds = [];
             await expect(ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
 
-            await expect(ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [AddressZero])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroAddress");
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [bytes32Zero])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
 
 
             // Service Staking Token
@@ -228,8 +230,8 @@ describe("ServiceStakingNativeToken", function () {
             await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
 
             await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
-            await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, AddressZero, AddressZero, [AddressZero])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
-            await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, serviceRegistryTokenUtility.address, AddressZero, [gnosisSafeProxy.address])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
+            await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, AddressZero, AddressZero, [bytes32Zero])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+            await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, serviceRegistryTokenUtility.address, AddressZero, [bytecodeHash])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
         });
     });
 
@@ -245,7 +247,7 @@ describe("ServiceStakingNativeToken", function () {
             const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
             const testServiceParams = JSON.parse(JSON.stringify(serviceParams));
             testServiceParams.maxNumServices = 1;
-            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [gnosisSafeProxy.address]);
+            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [bytecodeHash]);
             await sStaking.deployed();
 
             // Deposit to the contract
@@ -299,7 +301,7 @@ describe("ServiceStakingNativeToken", function () {
             const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
             const testServiceParams = JSON.parse(JSON.stringify(serviceParams));
             testServiceParams.configHash = "0x" + "1".repeat(64);
-            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [gnosisSafeProxy.address]);
+            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [bytecodeHash]);
             await sStaking.deployed();
 
             // Deposit to the contract
@@ -318,7 +320,7 @@ describe("ServiceStakingNativeToken", function () {
             const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
             const testServiceParams = JSON.parse(JSON.stringify(serviceParams));
             testServiceParams.threshold = 2;
-            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [gnosisSafeProxy.address]);
+            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [bytecodeHash]);
             await sStaking.deployed();
 
             // Deposit to the contract
@@ -337,7 +339,7 @@ describe("ServiceStakingNativeToken", function () {
             const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
             let testServiceParams = JSON.parse(JSON.stringify(serviceParams));
             testServiceParams.agentIds = [1];
-            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [gnosisSafeProxy.address]);
+            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [bytecodeHash]);
             await sStaking.deployed();
 
             // Deposit to the contract
@@ -375,7 +377,7 @@ describe("ServiceStakingNativeToken", function () {
             let testServiceParams = JSON.parse(JSON.stringify(serviceParams));
             testServiceParams.agentIds = [1];
             testServiceParams.numAgentInstances = 2;
-            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [gnosisSafeProxy.address]);
+            const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, [bytecodeHash]);
             await sStaking.deployed();
 
             // Deposit to the contract
