@@ -178,9 +178,6 @@ describe("ServiceStakingNativeToken", function () {
             testServiceParams.rewardsPerSecond = 1;
             await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
 
-            testServiceParams.minStakingDeposit = 1;
-            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
-
             testServiceParams.livenessPeriod = 1;
             await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
 
@@ -188,6 +185,9 @@ describe("ServiceStakingNativeToken", function () {
             await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
 
             testServiceParams.numAgentInstances = 1;
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "LowerThan");
+
+            testServiceParams.minStakingDeposit = 2;
             await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroAddress");
 
             testServiceParams.agentIds = [0];
@@ -215,9 +215,6 @@ describe("ServiceStakingNativeToken", function () {
             testServiceParams.rewardsPerSecond = 1;
             await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
 
-            testServiceParams.minStakingDeposit = 1;
-            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
-
             testServiceParams.livenessPeriod = 1;
             await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
 
@@ -225,6 +222,9 @@ describe("ServiceStakingNativeToken", function () {
             await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
 
             testServiceParams.numAgentInstances = 1;
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "LowerThan");
+
+            testServiceParams.minStakingDeposit = 2;
             await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
 
             await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, AddressZero, AddressZero, [])).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
@@ -479,7 +479,7 @@ describe("ServiceStakingNativeToken", function () {
 
             await expect(
                 serviceStakingToken.stake(sId)
-            ).to.be.revertedWithCustomError(serviceStakingToken, "LowerThan");
+            ).to.be.revertedWithCustomError(serviceStakingToken, "ValueLowerThan");
         });
 
         it("Stake a service at ServiceStakingNativeToken and try to unstake not by the service owner", async function () {

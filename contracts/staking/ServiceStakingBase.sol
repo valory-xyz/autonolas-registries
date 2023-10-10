@@ -129,6 +129,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     // Rewards per second
     uint256 public immutable rewardsPerSecond;
     // Minimum service staking deposit value required for staking
+    // The staking deposit must be always greater than 1 in order to distinguish between native and ERC20 tokens
     uint256 public immutable minStakingDeposit;
     // Liveness period
     uint256 public immutable livenessPeriod;
@@ -165,9 +166,12 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     constructor(StakingParams memory _stakingParams, address _serviceRegistry, address[] memory _multisigProxyAddresses) {
         // Initial checks
         if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
-            _stakingParams.minStakingDeposit == 0 || _stakingParams.livenessPeriod == 0 ||
-            _stakingParams.livenessRatio == 0 || _stakingParams.numAgentInstances == 0) {
+            _stakingParams.livenessPeriod == 0 || _stakingParams.livenessRatio == 0 ||
+            _stakingParams.numAgentInstances == 0) {
             revert ZeroValue();
+        }
+        if (_stakingParams.minStakingDeposit < 2) {
+            revert LowerThan(_stakingParams.minStakingDeposit, 2);
         }
         if (_serviceRegistry == address(0)) {
             revert ZeroAddress();

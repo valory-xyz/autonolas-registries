@@ -27,7 +27,7 @@ error WrongStakingToken(address expected, address provided);
 /// @dev Received lower value than the expected one.
 /// @param provided Provided value is lower.
 /// @param expected Expected value.
-error LowerThan(uint256 provided, uint256 expected);
+error ValueLowerThan(uint256 provided, uint256 expected);
 
 /// @title ServiceStakingToken - Smart contract for staking a service by its owner when the service has an ERC20 token as the deposit
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -77,7 +77,7 @@ contract ServiceStakingToken is ServiceStakingBase {
 
         // The staking deposit must be greater or equal to the minimum defined one
         if (stakingDeposit < minStakingDeposit) {
-            revert LowerThan(stakingDeposit, minStakingDeposit);
+            revert ValueLowerThan(stakingDeposit, minStakingDeposit);
         }
     }
 
