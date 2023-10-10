@@ -372,7 +372,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                     ts = block.timestamp - serviceCheckpoint;
                     uint256 ratio;
                     // If the checkpoint was called in the exact same block, the ratio is zero
-                    if (ts > 0) {
+                    if (ts > 0 && serviceNonces[i] >= curInfo.nonce) {
                         ratio = ((serviceNonces[i] - curInfo.nonce) * 1e18) / ts;
                     }
 

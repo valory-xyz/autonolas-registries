@@ -1,22 +1,27 @@
 pragma solidity =0.8.21;
 
-import {SafeStorage} from "./SafeStorage.sol";
+import {GnosisSafeStorage} from "@gnosis.pm/safe-contracts/contracts/examples/libraries/GnosisSafeStorage.sol";
 
-contract SafeNonceLib is SafeStorage {
-    event nonceUpdate(uint256 nonce);
+/// @title SafeNonceLib - Smart contract to manipulate the multisig nonce.
+contract SafeNonceLib is GnosisSafeStorage {
+    event nonceUpdated(uint256 nonce);
 
     function inceraseNonce(uint256 _nonce) external {
-        nonce += _nonce;
-        emit nonceUpdate(nonce);
+        uint256 origNonce = uint256(nonce);
+        origNonce += _nonce;
+        nonce = bytes32(origNonce);
+        emit nonceUpdated(origNonce);
     }
 
-    function decreaseNonce(uint256 _nonce) external {         
-        if(nonce >= _nonce) {
-		    nonce -= _nonce;
+    function decreaseNonce(uint256 _nonce) external {
+        uint256 origNonce = uint256(nonce);
+        if(origNonce >= _nonce) {
+            origNonce -= _nonce;
 	    } else {
-		    nonce = 0;
+            origNonce = 0;
 	    }
-        emit nonceUpdate(nonce);
+        nonce = bytes32(origNonce);
+        emit nonceUpdated(origNonce);
     }
 
 }

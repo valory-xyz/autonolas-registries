@@ -16,6 +16,7 @@ describe("ServiceStakingNativeToken", function () {
     let gnosisSafeMultisig;
     let gnosisSafeSameAddressMultisig;
     let multiSend;
+    let safeNonceLib;
     let serviceStaking;
     let serviceStakingToken;
     let attacker;
@@ -105,6 +106,10 @@ describe("ServiceStakingNativeToken", function () {
         serviceStakingToken = await ServiceStakingToken.deploy(serviceParams, serviceRegistry.address,
             serviceRegistryTokenUtility.address, token.address, [gnosisSafeProxy.address]);
         await serviceStakingToken.deployed();
+
+        const SafeNonceLib = await ethers.getContractFactory("SafeNonceLib");
+        safeNonceLib = await SafeNonceLib.deploy();
+        await safeNonceLib.deployed();
 
         const Attacker = await ethers.getContractFactory("ReentrancyStakingAttacker");
         attacker = await Attacker.deploy(serviceStaking.address, serviceRegistry.address);
@@ -1027,6 +1032,53 @@ describe("ServiceStakingNativeToken", function () {
             await expect(
                 serviceStaking.stake(serviceId)
             ).to.be.revertedWithCustomError(serviceStaking, "UnauthorizedMultisig");
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+
+        it("Decrease nonce in the multisig and try to fail the checkpoint", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Get the service multisig contract
+            const service = await serviceRegistry.getService(serviceId);
+            const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+            // Approve service for staking
+            await serviceRegistry.approve(serviceStaking.address, serviceId);
+
+            // Stake the service
+            await serviceStaking.stake(serviceId);
+
+            // Make a transaction by the service multisig
+            let nonce = await multisig.nonce();
+            let txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+            let signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
+            // Call the checkpoint at this time
+            await serviceStaking.checkpoint();
+
+            // Decrease the nonce
+            nonce = await multisig.nonce();
+            txHashData = await safeContracts.buildContractCall(safeNonceLib, "decreaseNonce", [1000], nonce, 0, 0);
+            // This must be a delegatecall
+            txHashData.operation = 1;
+            signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
+            // Call the checkpoint after the nonce has decreased
+            await serviceStaking.checkpoint();
 
             // Restore a previous state of blockchain
             snapshot.restore();
