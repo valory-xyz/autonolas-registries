@@ -105,8 +105,8 @@ contract BaseSetup is Test {
         // Deploy service staking native token and arbitraty token
         ServiceStakingBase.StakingParams memory stakingParams = ServiceStakingBase.StakingParams(maxNumServices,
             rewardsPerSecond, minStakingDeposit, livenessPeriod, livenessRatio, numAgentInstances, emptyArray, 0, bytes32(0));
-        address[] memory multisigProxyAddresses = new address[](1);
-        multisigProxyAddresses[0] = address(gnosisSafeProxy);
+        bytes32[] memory multisigProxyAddresses = new bytes32[](1);
+        multisigProxyAddresses[0] = keccak256(address(gnosisSafeProxy).code);
         serviceStakingNativeToken = new ServiceStakingNativeToken(stakingParams, address(serviceRegistry),
             multisigProxyAddresses);
         serviceStakingToken = new ServiceStakingToken(stakingParams, address(serviceRegistry), address(serviceRegistryTokenUtility),
