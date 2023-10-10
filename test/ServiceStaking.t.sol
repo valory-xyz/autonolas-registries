@@ -93,6 +93,8 @@ contract BaseSetup is Test {
         gnosisSafeMultisig = new GnosisSafeMultisig(payable(address(gnosisSafe)), address(gnosisSafeProxyFactory));
         gnosisSafeSameAddressMultisig = new GnosisSafeSameAddressMultisig();
 
+        
+
         // Deploying a token contract and minting to deployer, operator and a current contract
         token = new ERC20Token();
         token.mint(deployer, initialMint);

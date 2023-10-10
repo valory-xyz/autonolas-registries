@@ -12,7 +12,7 @@ contract SafeNonceLib is SafeStorage {
 
     function decreaseNonce(uint256 _nonce) external {         
         if(nonce >= _nonce) {
-		    nonce += _nonce;
+		    nonce -= _nonce;
 	    } else {
 		    nonce = 0;
 	    }
