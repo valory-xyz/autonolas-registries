@@ -6,7 +6,7 @@ import {GnosisSafeStorage} from "@gnosis.pm/safe-contracts/contracts/examples/li
 contract SafeNonceLib is GnosisSafeStorage {
     event nonceUpdated(uint256 nonce);
 
-    function inceraseNonce(uint256 _nonce) external {
+    function increaseNonce(uint256 _nonce) external {
         uint256 origNonce = uint256(nonce);
         origNonce += _nonce;
         nonce = bytes32(origNonce);
@@ -15,7 +15,7 @@ contract SafeNonceLib is GnosisSafeStorage {
 
     function decreaseNonce(uint256 _nonce) external {
         uint256 origNonce = uint256(nonce);
-        if(origNonce >= _nonce) {
+        if (origNonce >= _nonce) {
             origNonce -= _nonce;
 	    } else {
             origNonce = 0;
