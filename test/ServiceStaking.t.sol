@@ -73,8 +73,8 @@ contract BaseSetup is Test {
         vm.label(deployer, "Deployer");
         operator = users[1];
         // Allocate several addresses for agent instances
-        agentInstances = new address[](numServices);
-        for (uint256 i = 0; i < numServices; ++i) {
+        agentInstances = new address[](2 * numServices);
+        for (uint256 i = 0; i < 2 * numServices; ++i) {
             agentInstances[i] = users[i + 2];
         }
 
@@ -92,8 +92,6 @@ contract BaseSetup is Test {
         gnosisSafeProxyFactory = new GnosisSafeProxyFactory();
         gnosisSafeMultisig = new GnosisSafeMultisig(payable(address(gnosisSafe)), address(gnosisSafeProxyFactory));
         gnosisSafeSameAddressMultisig = new GnosisSafeSameAddressMultisig();
-
-        
 
         // Deploying a token contract and minting to deployer, operator and a current contract
         token = new ERC20Token();
@@ -140,6 +138,31 @@ contract BaseSetup is Test {
             vm.prank(deployer);
             serviceManagerToken.deploy(serviceId, address(gnosisSafeMultisig), payload);
         }
+
+        // Create services with ERC20 token, activate them, register agent instances and deploy
+        vm.prank(deployer);
+        token.approve(address(serviceRegistryTokenUtility), initialMint);
+        vm.prank(operator);
+        token.approve(address(serviceRegistryTokenUtility), initialMint);
+        for (uint256 i = 0; i < numServices; ++i) {
+            // Create a service
+            serviceManagerToken.create(deployer, address(token), unitHash, agentIds, agentParams, threshold);
+
+            uint256 serviceId = i + numServices;
+            // Activate registration
+            vm.prank(deployer);
+            serviceManagerToken.activateRegistration{value: 1}(serviceId);
+
+            // Register agent instances
+            address[] memory agentInstancesService = new address[](1);
+            agentInstancesService[0] = agentInstances[i + numServices];
+            vm.prank(operator);
+            serviceManagerToken.registerAgents{value: 1}(serviceId, agentInstancesService, agentIds);
+
+            // Deploy the service
+            vm.prank(deployer);
+            serviceManagerToken.deploy(serviceId, address(gnosisSafeMultisig), payload);
+        }
     }
 }
 
@@ -155,7 +178,7 @@ contract ServiceStaking is BaseSetup {
         address(serviceStakingNativeToken).call{value: 100 ether}("");
 
         // Stake services
-        for (uint256 i = 0; i < 3; ++i) {
+        for (uint256 i = 0; i < numServices; ++i) {
             uint256 serviceId = i + 1;
             vm.startPrank(deployer);
             serviceRegistry.approve(address(serviceStakingNativeToken), serviceId);
@@ -207,6 +230,69 @@ contract ServiceStaking is BaseSetup {
                     if (!serviceStakingNativeToken.isServiceStaked(serviceId)) {
                         vm.startPrank(deployer);
                         serviceStakingNativeToken.unstake(serviceId);
+                        vm.stopPrank();
+                    }
+                }
+            }
+        }
+    }
+
+    /// @dev Test service staking based on ERC20 token with random number of executed tx-s (nonces) per day.
+    /// @param numNonces Number of nonces per day.
+    function testNoncesToken(uint8 numNonces) external {
+        // Stake services
+        for (uint256 i = 0; i < numServices; ++i) {
+            uint256 serviceId = i + numServices + 1;
+            vm.startPrank(deployer);
+            serviceRegistry.approve(address(serviceStakingToken), serviceId);
+            serviceStakingToken.stake(serviceId);
+            vm.stopPrank();
+        }
+
+        // Get the Safe data payload
+        payload = abi.encodeWithSelector(bytes4(keccak256("getThreshold()")));
+        // Number of days
+        for (uint256 i = 0; i < numDays; ++i) {
+            // Number of services
+            for (uint256 j = 0; j < numServices; ++j) {
+                uint256 serviceId = j + numServices + 1;
+                ServiceRegistryL2.Service memory service = serviceRegistry.getService(serviceId);
+                address payable multisig = payable(service.multisig);
+
+                // Execute a specified number of nonces
+                for (uint8 n = 0; n < numNonces; ++n) {
+                    // Get the signature
+                    bytes memory signature = new bytes(65);
+                    bytes memory bAddress = abi.encode(agentInstances[j]);
+                    for (uint256 b = 0; b < 32; ++b) {
+                        signature[b] = bAddress[b];
+                    }
+                    for (uint256 b = 32; b < 64; ++b) {
+                        signature[b] = bytes1(0x00);
+                    }
+                    signature[64] = bytes1(0x01);
+                    vm.prank(agentInstances[j]);
+                    GnosisSafe(multisig).execTransaction(multisig, 0, payload, Enum.Operation.Call, 0, 0, 0, address(0),
+                        payable(address(0)), signature);
+                }
+                // Get the nonce
+                uint256 nonce = GnosisSafe(multisig).nonce();
+            }
+
+            // Move one day ahead
+            vm.warp(block.timestamp + 1 days);
+
+            // Call the checkpoint
+            serviceStakingToken.checkpoint();
+
+            // Unstake if there are no available rewards
+            if (serviceStakingToken.availableRewards() == 0) {
+                for (uint256 j = 0; j < numServices; ++j) {
+                    uint256 serviceId = j + numServices + 1;
+                    // Unstake if the service is not yet unstaked, otherwise ignore
+                    if (!serviceStakingToken.isServiceStaked(serviceId)) {
+                        vm.startPrank(deployer);
+                        serviceStakingToken.unstake(serviceId);
                         vm.stopPrank();
                     }
                 }
