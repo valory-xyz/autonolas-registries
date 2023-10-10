@@ -93,7 +93,7 @@ describe("ServiceStakingNativeToken", function () {
         bytecodeHash = ethers.utils.keccak256(bytecode);
 
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy([gnosisSafeProxy.address]);
+        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy([bytecodeHash]);
         await gnosisSafeSameAddressMultisig.deployed();
 
         const MultiSend = await ethers.getContractFactory("MultiSendCallOnly");

@@ -11,7 +11,6 @@ describe("ServiceManagementWithOperatorSignatures", function () {
     let serviceRegistryTokenUtility;
     let serviceManager;
     let gnosisSafe;
-    let gnosisSafeProxy;
     let gnosisSafeMultisig;
     let gnosisSafeProxyFactory;
     let defaultCallbackHandler;
@@ -31,6 +30,7 @@ describe("ServiceManagementWithOperatorSignatures", function () {
     const AddressZero = "0x" + "0".repeat(40);
     const ETHAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
     const payload = "0x";
+    let bytecodeHash;
 
     beforeEach(async function () {
         const ComponentRegistry = await ethers.getContractFactory("ComponentRegistry");
@@ -46,10 +46,6 @@ describe("ServiceManagementWithOperatorSignatures", function () {
         const GnosisSafe = await ethers.getContractFactory("GnosisSafe");
         gnosisSafe = await GnosisSafe.deploy();
         await gnosisSafe.deployed();
-
-        const GnosisSafeProxy = await ethers.getContractFactory("GnosisSafeProxy");
-        gnosisSafeProxy = await GnosisSafeProxy.deploy(gnosisSafe.address);
-        await gnosisSafeProxy.deployed();
 
         const GnosisSafeProxyFactory = await ethers.getContractFactory("GnosisSafeProxyFactory");
         gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deploy();
@@ -67,8 +63,14 @@ describe("ServiceManagementWithOperatorSignatures", function () {
         multiSend = await MultiSend.deploy();
         await multiSend.deployed();
 
+        const GnosisSafeProxy = await ethers.getContractFactory("GnosisSafeProxy");
+        const gnosisSafeProxy = await GnosisSafeProxy.deploy(gnosisSafe.address);
+        await gnosisSafeProxy.deployed();
+        const bytecode = await ethers.provider.getCode(gnosisSafeProxy.address);
+        bytecodeHash = ethers.utils.keccak256(bytecode);
+
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy([gnosisSafeProxy.address]);
+        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy([bytecodeHash]);
         await gnosisSafeSameAddressMultisig.deployed();
 
         const ServiceRegistry = await ethers.getContractFactory("ServiceRegistry");
