@@ -75,7 +75,7 @@ Details: https://github.com/pessimistic-io/slitherin/blob/master/docs/magic_numb
 ```
 [x] fixed
 
-# Low optimization
+### Low optimization
 ```
 if (size > 0) {
             for (uint256 i = 0; i < size; ++i) {
@@ -138,7 +138,24 @@ We can call execTransaction from another contract as owner in loop.
 I don't see a way to deal with this. Moreover, it is practically indistinguishable from normal use.
 Estimating gas consumption will not give us anything either. Only by off-chain measurement can we understand what is happening.
 ```
-Suggestion: Do nothing. <br>
+Suggestion: Do nothing. <br> 
+Updated (10.10.2023): add custom blacklist <br>
+
+### Found during fuzzing. Updated 10-10-23
+#### Library that changes the value of nonce for legitimate multisig
+It turned out that if you know the architecture of Saf1 1.3.x it is not difficult to write a library for changing nonce. <br>
+Two conclusions follow from this: <br>
+1. The initial assumption that `nonce` can only increase is wrong. So, serviceNonces[i] - curInfo.nonce must be checked by > 0. <br>
+Else without it: ratio = ((serviceNonces[i] - curInfo.nonce) * 1e18) / ts; => DOS (revert) in _calculateStakingRewards() with any serviceNonces[i] - curInfo.nonce < 0 <br>
+2. ref: General considerations #2. We cannot guarantee the absence of manipulation nonce through any checks within the contract. <br>
+A reasonable proposal in this case is to provide the opportunity to add a blacklist of services when deploying a staking contract. <br>
+This will make it possible to blacklist services with a bad reputation (which is not part of the protocol, but determined by the community). <br>
+
+#### Simple function needed `isServiceStaked`
+
+#### _stakingParams.minStakingDeposit
+minStakingDeposit must be greater than 1 otherwise it causes confusion with the predefined value of 1.
+
 
 
 

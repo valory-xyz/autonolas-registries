@@ -27,7 +27,7 @@ error WrongStakingToken(address expected, address provided);
 /// @dev Received lower value than the expected one.
 /// @param provided Provided value is lower.
 /// @param expected Expected value.
-error LowerThan(uint256 provided, uint256 expected);
+error ValueLowerThan(uint256 provided, uint256 expected);
 
 /// @title ServiceStakingToken - Smart contract for staking a service by its owner when the service has an ERC20 token as the deposit
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -44,15 +44,15 @@ contract ServiceStakingToken is ServiceStakingBase {
     /// @param _serviceRegistry ServiceRegistry contract address.
     /// @param _serviceRegistryTokenUtility ServiceRegistryTokenUtility contract address.
     /// @param _stakingToken Address of a service staking token.
-    /// @param _multisigProxyAddresses Multisig proxy addresses.
+    /// @param _multisigProxyHashes Multisig proxy hashes.
     constructor(
         StakingParams memory _stakingParams,
         address _serviceRegistry,
         address _serviceRegistryTokenUtility,
         address _stakingToken,
-        address[] memory _multisigProxyAddresses
+        bytes32[] memory _multisigProxyHashes
     )
-        ServiceStakingBase(_stakingParams, _serviceRegistry, _multisigProxyAddresses)
+        ServiceStakingBase(_stakingParams, _serviceRegistry, _multisigProxyHashes)
     {
         // Initial checks
         if (_stakingToken == address(0) || _serviceRegistryTokenUtility == address(0)) {
@@ -77,7 +77,7 @@ contract ServiceStakingToken is ServiceStakingBase {
 
         // The staking deposit must be greater or equal to the minimum defined one
         if (stakingDeposit < minStakingDeposit) {
-            revert LowerThan(stakingDeposit, minStakingDeposit);
+            revert ValueLowerThan(stakingDeposit, minStakingDeposit);
         }
     }
 
