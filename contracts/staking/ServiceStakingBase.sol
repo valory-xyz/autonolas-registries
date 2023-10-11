@@ -143,6 +143,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     bytes32 public immutable configHash;
     // ServiceRegistry contract address
     address public immutable serviceRegistry;
+    // Approved multisig proxy hash
+    bytes32 public immutable proxyHash;
 
     // Token / ETH balance
     uint256 public balance;
@@ -156,14 +158,12 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     mapping (uint256 => ServiceInfo) public mapServiceInfo;
     // Set of currently staking serviceIds
     uint256[] public setServiceIds;
-    // Map of approved multisig proxy hashes
-    mapping(bytes32 => bool) public mapMultisigHashes;
 
     /// @dev ServiceStakingBase constructor.
     /// @param _stakingParams Service staking parameters.
     /// @param _serviceRegistry ServiceRegistry contract address.
-    /// @param _multisigProxyHashes Multisig proxy hashes.
-    constructor(StakingParams memory _stakingParams, address _serviceRegistry, bytes32[] memory _multisigProxyHashes) {
+    /// @param _proxyHash Approved multisig proxy hash.
+    constructor(StakingParams memory _stakingParams, address _serviceRegistry, bytes32 _proxyHash) {
         // Initial checks
         if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
             _stakingParams.livenessPeriod == 0 || _stakingParams.livenessRatio == 0 ||
@@ -201,23 +201,13 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             agentIds.push(agentId);
         }
 
-        // There must be at least one multisig proxy hash
-        uint256 size = _multisigProxyHashes.length;
-        if (size == 0) {
+        // Check for the multisig proxy bytecode hash value
+        if (_proxyHash == bytes32(0)) {
             revert ZeroValue();
         }
 
-        // Record provided multisig proxy bytecode hashes
-        for (uint256 i = 0; i < size; ++i) {
-            bytes32 proxyHash = _multisigProxyHashes[i];
-
-            // Check for the zero value
-            if (proxyHash == bytes32(0)) {
-                revert ZeroValue();
-            }
-
-            mapMultisigHashes[proxyHash] = true;
-        }
+        // Record provided multisig proxy bytecode hash
+        proxyHash = _proxyHash;
 
         // Set the checkpoint timestamp to be the deployment one
         tsCheckpoint = block.timestamp;
@@ -272,9 +262,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             revert WrongServiceState(uint256(service.state), serviceId);
         }
 
-        // Check that the multisig address corresponds to the authorized multisig proxy
-        bytes32 proxyHash = keccak256(service.multisig.code);
-        if (!mapMultisigHashes[proxyHash]) {
+        // Check that the multisig address corresponds to the authorized multisig proxy bytecode hash
+        bytes32 multisigProxyHash = keccak256(service.multisig.code);
+        if (proxyHash != multisigProxyHash) {
             revert UnauthorizedMultisig(service.multisig);
         }
 

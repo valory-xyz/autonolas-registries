@@ -44,15 +44,15 @@ contract ServiceStakingToken is ServiceStakingBase {
     /// @param _serviceRegistry ServiceRegistry contract address.
     /// @param _serviceRegistryTokenUtility ServiceRegistryTokenUtility contract address.
     /// @param _stakingToken Address of a service staking token.
-    /// @param _multisigProxyHashes Multisig proxy hashes.
+    /// @param _proxyHash Approved multisig proxy hash.
     constructor(
         StakingParams memory _stakingParams,
         address _serviceRegistry,
         address _serviceRegistryTokenUtility,
         address _stakingToken,
-        bytes32[] memory _multisigProxyHashes
+        bytes32 _proxyHash
     )
-        ServiceStakingBase(_stakingParams, _serviceRegistry, _multisigProxyHashes)
+        ServiceStakingBase(_stakingParams, _serviceRegistry, _proxyHash)
     {
         // Initial checks
         if (_stakingToken == address(0) || _serviceRegistryTokenUtility == address(0)) {

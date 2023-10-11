@@ -11,9 +11,9 @@ contract ServiceStakingNativeToken is ServiceStakingBase {
     /// @dev ServiceStakingNativeToken constructor.
     /// @param _stakingParams Service staking parameters.
     /// @param _serviceRegistry ServiceRegistry contract address.
-    /// @param _multisigProxyHashes Multisig proxy hashes.
-    constructor(StakingParams memory _stakingParams, address _serviceRegistry, bytes32[] memory _multisigProxyHashes)
-        ServiceStakingBase(_stakingParams, _serviceRegistry, _multisigProxyHashes)
+    /// @param _proxyHash Approved multisig proxy hash.
+    constructor(StakingParams memory _stakingParams, address _serviceRegistry, bytes32 _proxyHash)
+        ServiceStakingBase(_stakingParams, _serviceRegistry, _proxyHash)
     {}
 
     /// @dev Withdraws the reward amount to a service owner.
