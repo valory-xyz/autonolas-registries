@@ -100,16 +100,15 @@ contract BaseSetup is Test {
         token.mint(address(this), initialMint);
 
         // Get the multisig proxy bytecode hash
-        bytes32[] memory multisigProxyHashes = new bytes32[](1);
-        multisigProxyHashes[0] = keccak256(address(gnosisSafeProxy).code);
+        bytes32 multisigProxyHash = keccak256(address(gnosisSafeProxy).code);
 
         // Deploy service staking native token and arbitrary ERC20 token
         ServiceStakingBase.StakingParams memory stakingParams = ServiceStakingBase.StakingParams(maxNumServices,
             rewardsPerSecond, minStakingDeposit, livenessPeriod, livenessRatio, numAgentInstances, emptyArray, 0, bytes32(0));
         serviceStakingNativeToken = new ServiceStakingNativeToken(stakingParams, address(serviceRegistry),
-            multisigProxyHashes);
+            multisigProxyHash);
         serviceStakingToken = new ServiceStakingToken(stakingParams, address(serviceRegistry), address(serviceRegistryTokenUtility),
-            address(token), multisigProxyHashes);
+            address(token), multisigProxyHash);
 
         // Whitelist multisig implementations
         serviceRegistry.changeMultisigPermission(address(gnosisSafeMultisig), true);

@@ -11,7 +11,7 @@ The steps of deploying the contracts in this repository are as follows:
 3. EOA to deploy RegistriesManager pointed to ComponentRegistry and AgentRegistry;
 4. EOA to deploy ServiceRegistry;
 5. EOA to deploy ServiceManager pointed to ServiceRegistry;
-6. EOA to deploy GnosisSafeMultisigs;
+6. EOA to deploy GnosisSafeMultisig and GnosisSafeSameAddresssMultisig;
 7. EOA to change the manager of ServiceRegistry to ServiceManager calling `changeManager(ServiceManager)`;
 8. EOA to change the manager of ComponentRegistry and AgentRegistry to RegistriesManager via `changeManager(RegistriesManager)`;
 9. EOA to whitelist GnosisSafeMultisigs in ServiceRegistry via `changeMultisigPermission(GnosisSafeMultisig)`;

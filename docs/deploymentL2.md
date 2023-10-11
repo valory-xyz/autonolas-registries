@@ -3,7 +3,7 @@
 1. EOA to deploy ServiceRegistry;
 2. EOA to deploy ServiceManager pointed to ServiceRegistry;
 3. EOA to deploy GnosisSafeMultisig;
-4. EOA to deploy GnosisSafeMultisigSameAddress;
+4. EOA to deploy GnosisSafeSameAddressMultisig;
 5. EOA to change the manager of ServiceRegistry to ServiceManager calling `changeManager(ServiceManager)`;
 6. EOA to whitelist GnosisSafeMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeMultisig)`;
 7. EOA to whitelist GnosisSafeSameAddressMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeSameAddressMultisig)`;

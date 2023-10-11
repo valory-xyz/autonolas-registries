@@ -42,3 +42,8 @@ d780294b8dccf047391a71b75dade50a6b89003b:scripts/deployment/l2/globals_gnosis_ch
 7bb76e80382eff3c538af340289ed8241f4e4551:scripts/deployment/l2/globals_gnosis_mainnet.json:generic-api-key:1
 7bb76e80382eff3c538af340289ed8241f4e4551:scripts/deployment/l2/globals_gnosis_mainnet.json:generic-api-key:2
 233a57ccda8d5d84a86133422daa99807801d9fc:scripts/deployment/l2/globals_gnosis_mainnet.json:generic-api-key:2
+1b4ec3abe37c5a421a210e8a05a5b958bcc7cfb0:scripts/deployment/globals_goerli.json:generic-api-key:1
+1b4ec3abe37c5a421a210e8a05a5b958bcc7cfb0:scripts/deployment/globals_mainnet.json:generic-api-key:1
+1b4ec3abe37c5a421a210e8a05a5b958bcc7cfb0:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:1
+1b4ec3abe37c5a421a210e8a05a5b958bcc7cfb0:scripts/deployment/l2/globals_polygon_mumbai.json:generic-api-key:1
+1b4ec3abe37c5a421a210e8a05a5b958bcc7cfb0:scripts/deployment/l2/globals_gnosis_mainnet.json:generic-api-key:1
