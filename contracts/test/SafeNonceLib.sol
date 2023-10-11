@@ -1,4 +1,4 @@
-pragma solidity =0.8.21;
+pragma solidity ^0.8.21;
 
 import {GnosisSafeStorage} from "@gnosis.pm/safe-contracts/contracts/examples/libraries/GnosisSafeStorage.sol";
 

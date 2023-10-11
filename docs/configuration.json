@@ -91,8 +91,8 @@
       },
       {
         "name": "GnosisSafeSameAddressMultisig",
-        "artifact": "abis/0.8.15/GnosisSafeSameAddressMultisig.json",
-        "address": "0x92499E80f50f06C4078794C179986907e7822Ea1"
+        "artifact": "abis/0.8.21/GnosisSafeSameAddressMultisig.json",
+        "address": "0x06467Cb835da623384a22aa902647784C1c9f5Ae"
       },
       {
         "name": "OperatorWhitelist",
@@ -148,7 +148,7 @@
       },
       {
         "name": "GnosisSafeSameAddressMultisig",
-        "artifact": "abis/0.8.19/GnosisSafeSameAddressMultisig.json",
+        "artifact": "abis/0.8.21/GnosisSafeSameAddressMultisig.json",
         "address": "0xB575dd20281c63288428DD58e5f579CC7d6aae4d"
       }
     ]
@@ -220,8 +220,8 @@
       },
       {
         "name": "GnosisSafeSameAddressMultisig",
-        "artifact": "abis/0.8.19/GnosisSafeSameAddressMultisig.json",
-        "address": "0x5BA58970c2Ae16Cf6218783018100aF2dCcFc915"
+        "artifact": "abis/0.8.21/GnosisSafeSameAddressMultisig.json",
+        "address": "0xE16adc7777B7C2a0d35033bd3504C028AB28EE8b"
       }
     ]
   }
