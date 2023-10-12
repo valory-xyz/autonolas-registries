@@ -72,7 +72,7 @@ async function main() {
     const targets = [fxRootAddress];
     const values = [0];
     const callDatas = [timelockPayload];
-    const description = "Change Drainer in ServiceRegistryL2 on polygon";
+    const description = "Change GnosisSafeSameAddressMultisig implementation addresses in ServiceRegistryL2 on polygon";
 
     // Proposal details
     console.log("targets:", targets);

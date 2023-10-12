@@ -78,7 +78,7 @@ async function main() {
     const targets = [AMBProxyAddress];
     const values = [0];
     const callDatas = [timelockPayload];
-    const description = "Change Manager in ServiceRegistryL2 on gnosis";
+    const description = "Change GnosisSafeSameAddressMultisig implementation addresses in ServiceRegistryL2 on gnosis";
 
     // Proposal details
     console.log("targets:", targets);
