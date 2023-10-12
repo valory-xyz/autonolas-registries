@@ -45,10 +45,10 @@ async function main() {
     // Proposal preparation
     console.log("Proposal 6. Change GnosisSafeSameAddressMultisig implementation addresses in ServiceRegistryL2 on polygon\n");
     // De-whitelist old multisig implementation and whitelist the new one
-    const rawPayloads = [serviceRegistryL2.interface.encodeFunctionData("changeMultisigPermission", ["0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5", false]),
-        serviceRegistryL2.interface.encodeFunctionData("changeMultisigPermission", [parsedData.gnosisSafeSameAddressMultisigImplementationAddress, true])];
+    const rawPayloads = [serviceRegistry.interface.encodeFunctionData("changeMultisigPermission", ["0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5", false]),
+        serviceRegistry.interface.encodeFunctionData("changeMultisigPermission", [parsedData.gnosisSafeSameAddressMultisigImplementationAddress, true])];
     // Pack the second part of data
-    const localTargets = [serviceRegistryL2Address, serviceRegistryL2Address];
+    const localTargets = [serviceRegistryAddress, serviceRegistryAddress];
     const localValues = [0, 0];
     // Pack the data into one contiguous buffer (to be consumed by Timelock along with a batch of unpacked L1 transactions)
     let data = "0x";

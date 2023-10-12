@@ -47,10 +47,10 @@ async function main() {
     const serviceRegistry = new ethers.Contract(serviceRegistryAddress, serviceRegistryABI, gnosisProvider);
 
     // De-whitelist old multisig implementation and whitelist the new one
-    const rawPayloads = [serviceRegistryL2.interface.encodeFunctionData("changeMultisigPermission", ["0x3d77596beb0f130a4415df3D2D8232B3d3D31e44", false]),
-        serviceRegistryL2.interface.encodeFunctionData("changeMultisigPermission", [parsedData.gnosisSafeSameAddressMultisigImplementationAddress, true])];
+    const rawPayloads = [serviceRegistry.interface.encodeFunctionData("changeMultisigPermission", ["0x3d77596beb0f130a4415df3D2D8232B3d3D31e44", false]),
+        serviceRegistry.interface.encodeFunctionData("changeMultisigPermission", [parsedData.gnosisSafeSameAddressMultisigImplementationAddress, true])];
     // Pack the second part of data
-    const localTargets = [serviceRegistryL2Address, serviceRegistryL2Address];
+    const localTargets = [serviceRegistryAddress, serviceRegistryAddress];
     const localValues = [0, 0];
     // Pack the data into one contiguous buffer (to be consumed by Timelock along with a batch of unpacked L1 transactions)
     let data = "0x";
