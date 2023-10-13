@@ -42,25 +42,4 @@ contract ServiceStakingNativeToken is ServiceStakingBase {
 
         emit Deposit(msg.sender, msg.value, newBalance, newAvailableRewards);
     }
-
-    /// @dev Gets service multisig nonces.
-    /// @param multisig Service multisig address.
-    /// @return nonces Set of one or more service multisig nonces depending on implementation.
-    function _getMultisigNonces(address multisig) internal view virtual override returns (uint256[] memory nonces) {
-        nonces = super._getMultisigNonces(multisig);
-    }
-
-    /// @dev Checks if the service multisig liveness ratio passes the defined liveness threshold.
-    /// @param curNonces Current service multisig nonces.
-    /// @param lastNonces Last service multisig nonces.
-    /// @param ts Time difference between current and last timestamps.
-    /// @return ratioPass True, if the liveness ratio passes the check.
-    function _isRatioPass(
-        uint256[] memory curNonces,
-        uint256[] memory lastNonces,
-        uint256 ts
-    ) internal view virtual override returns (bool ratioPass)
-    {
-        ratioPass = super._isRatioPass(curNonces, lastNonces, ts);
-    }
 }
