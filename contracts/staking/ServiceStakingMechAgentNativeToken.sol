@@ -33,7 +33,7 @@ contract ServiceStakingMechAgentNativeToken is ServiceStakingNativeToken {
     /// @param _proxyHash Approved multisig proxy hash.
     /// @param _agentMech AI agent mech contract address.
     constructor(StakingParams memory _stakingParams, address _serviceRegistry, bytes32 _proxyHash, address _agentMech)
-        ServiceStakingNativeToken(_stakingParams, 2, _serviceRegistry, _proxyHash)
+        ServiceStakingNativeToken(_stakingParams, _serviceRegistry, _proxyHash)
     {
         if (_agentMech == address(0)) {
             revert ZeroAddress();
@@ -45,7 +45,7 @@ contract ServiceStakingMechAgentNativeToken is ServiceStakingNativeToken {
     /// @param multisig Service multisig address.
     /// @return nonces Set of one or more service multisig nonces depending on implementation.
     function _getMultisigNonces(address multisig) internal view override returns (uint256[] memory nonces) {
-        nonces = new uint256[](numNonces);
+        nonces = new uint256[](2);
         nonces[0] = IMultisig(multisig).nonce();
         nonces[1] = IAgentMech(agentMech).getRequestsCount(multisig);
     }

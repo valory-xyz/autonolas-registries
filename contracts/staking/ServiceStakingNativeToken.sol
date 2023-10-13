@@ -10,11 +10,10 @@ import {ServiceStakingBase} from "./ServiceStakingBase.sol";
 contract ServiceStakingNativeToken is ServiceStakingBase {
     /// @dev ServiceStakingNativeToken constructor.
     /// @param _stakingParams Service staking parameters.
-    /// @param _numNonces Number of service multisig nonces depending on implementation.
     /// @param _serviceRegistry ServiceRegistry contract address.
     /// @param _proxyHash Approved multisig proxy hash.
-    constructor(StakingParams memory _stakingParams, uint256 _numNonces, address _serviceRegistry, bytes32 _proxyHash)
-        ServiceStakingBase(_stakingParams, numNonces, _serviceRegistry, _proxyHash)
+    constructor(StakingParams memory _stakingParams, address _serviceRegistry, bytes32 _proxyHash)
+        ServiceStakingBase(_stakingParams, _serviceRegistry, _proxyHash)
     {}
 
     /// @dev Withdraws the reward amount to a service owner.

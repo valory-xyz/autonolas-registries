@@ -137,8 +137,6 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     uint256 public immutable livenessRatio;
     // Number of agent instances in the service
     uint256 public immutable numAgentInstances;
-    // Number of service multisig nonces depending on implementation
-    uint256 public immutable numNonces;
     // Optional service multisig threshold requirement
     uint256 public immutable threshold;
     // Optional service configuration hash requirement
@@ -163,14 +161,13 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
     /// @dev ServiceStakingBase constructor.
     /// @param _stakingParams Service staking parameters.
-    /// @param _numNonces Number of service multisig nonces depending on implementation.
     /// @param _serviceRegistry ServiceRegistry contract address.
     /// @param _proxyHash Approved multisig proxy hash.
-    constructor(StakingParams memory _stakingParams, uint256 _numNonces, address _serviceRegistry, bytes32 _proxyHash) {
+    constructor(StakingParams memory _stakingParams, address _serviceRegistry, bytes32 _proxyHash) {
         // Initial checks
         if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
             _stakingParams.livenessPeriod == 0 || _stakingParams.livenessRatio == 0 ||
-            _stakingParams.numAgentInstances == 0 || _numNonces == 0) {
+            _stakingParams.numAgentInstances == 0) {
             revert ZeroValue();
         }
         if (_stakingParams.minStakingDeposit < 2) {
@@ -187,7 +184,6 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         livenessPeriod = _stakingParams.livenessPeriod;
         livenessRatio = _stakingParams.livenessRatio;
         numAgentInstances = _stakingParams.numAgentInstances;
-        numNonces = _numNonces;
         serviceRegistry = _serviceRegistry;
 
         // Assign optional parameters
@@ -311,7 +307,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     /// @param multisig Service multisig address.
     /// @return nonces Set of one or more service multisig nonces depending on implementation.
     function _getMultisigNonces(address multisig) internal view virtual returns (uint256[] memory nonces) {
-        nonces = new uint256[](numNonces);
+        nonces = new uint256[](1);
         nonces[0] = IMultisig(multisig).nonce();
     }
 
@@ -373,9 +369,6 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 eligibleServiceIds = new uint256[](size);
                 eligibleServiceRewards = new uint256[](size);
                 serviceNonces = new uint256[][](size);
-                for (uint256 i = 0; i < size; ++i) {
-                    serviceNonces[i] = new uint256[](numNonces);
-                }
 
                 // Calculate each staked service reward eligibility
                 for (uint256 i = 0; i < size; ++i) {
