@@ -52,29 +52,18 @@ contract GnosisSafeSameAddressMultisig {
     // This exact size suggests that all the changes to the multisig have been performed and only validation is needed
     uint256 public constant DEFAULT_DATA_LENGTH = 20;
 
-    // Map of approved multisig proxy hashes
-    mapping(bytes32 => bool) public mapMultisigHashes;
+    // Approved multisig proxy hash
+    bytes32 public immutable proxyHash;
 
     /// @dev GnosisSafeSameAddressMultisig constructor.
-    /// @param _multisigProxyHashes Multisig proxy hashes.
-    constructor(bytes32[] memory _multisigProxyHashes) {
-        // There must be at least one multisig proxy hash
-        uint256 size = _multisigProxyHashes.length;
-        if (size == 0) {
+    /// @param _proxyHash Approved multisig proxy hash.
+    constructor(bytes32 _proxyHash) {
+        if (_proxyHash == bytes32(0)) {
             revert ZeroValue();
         }
 
-        // Record provided multisig proxy bytecode hashes
-        for (uint256 i = 0; i < size; ++i) {
-            bytes32 proxyHash = _multisigProxyHashes[i];
-            // Check for the zero hash
-            if (proxyHash == bytes32(0)) {
-                revert ZeroValue();
-            }
-
-            // Hash the proxy bytecode
-            mapMultisigHashes[proxyHash] = true;
-        }
+        // Record provided multisig proxy bytecode hash
+        proxyHash = _proxyHash;
     }
 
     /// @dev Updates and/or verifies the existent gnosis safe multisig for changed owners and threshold.
@@ -110,9 +99,9 @@ contract GnosisSafeSameAddressMultisig {
             multisig := mload(add(data, DEFAULT_DATA_LENGTH))
         }
 
-        // Check that the multisig address corresponds to the authorized multisig proxy
-        bytes32 proxyHash = keccak256(multisig.code);
-        if (!mapMultisigHashes[proxyHash]) {
+        // Check that the multisig address corresponds to the authorized multisig proxy bytecode hash
+        bytes32 multisigProxyHash = keccak256(multisig.code);
+        if (proxyHash != multisigProxyHash) {
             revert UnauthorizedMultisig(multisig);
         }
 

@@ -37,7 +37,7 @@ describe("GnosisSafeSameAddressMultisig", function () {
         bytecodeHash = ethers.utils.keccak256(bytecode);
 
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy([bytecodeHash]);
+        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy(bytecodeHash);
         await gnosisSafeSameAddressMultisig.deployed();
 
         signers = await ethers.getSigners();
@@ -48,14 +48,9 @@ describe("GnosisSafeSameAddressMultisig", function () {
     context("Verifying multisigs", async function () {
         it("Try to deploy a contract without specified proxies or zero hashes", async function () {
             const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-
-            await expect(
-                GnosisSafeSameAddressMultisig.deploy([])
-            ).to.be.revertedWithCustomError(gnosisSafeSameAddressMultisig, "ZeroValue");
-
             const bytes32Zero = "0x" + "0".repeat(64);
             await expect(
-                GnosisSafeSameAddressMultisig.deploy([bytes32Zero])
+                GnosisSafeSameAddressMultisig.deploy(bytes32Zero)
             ).to.be.revertedWithCustomError(gnosisSafeSameAddressMultisig, "ZeroValue");
         });
 
