@@ -80,8 +80,8 @@ struct ServiceInfo {
     address multisig;
     // Service owner
     address owner;
-    // Service multisig nonce
-    uint256 nonce;
+    // Service multisig nonces
+    uint256[] nonces;
     // Staking start time
     uint256 tsStart;
     // Accumulated service staking reward
@@ -137,6 +137,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     uint256 public immutable livenessRatio;
     // Number of agent instances in the service
     uint256 public immutable numAgentInstances;
+    // Number of service multisig nonces depending on implementation
+    uint256 public immutable numNonces;
     // Optional service multisig threshold requirement
     uint256 public immutable threshold;
     // Optional service configuration hash requirement
@@ -161,13 +163,14 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
     /// @dev ServiceStakingBase constructor.
     /// @param _stakingParams Service staking parameters.
+    /// @param _numNonces Number of service multisig nonces depending on implementation.
     /// @param _serviceRegistry ServiceRegistry contract address.
     /// @param _proxyHash Approved multisig proxy hash.
-    constructor(StakingParams memory _stakingParams, address _serviceRegistry, bytes32 _proxyHash) {
+    constructor(StakingParams memory _stakingParams, uint256 _numNonces, address _serviceRegistry, bytes32 _proxyHash) {
         // Initial checks
         if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
             _stakingParams.livenessPeriod == 0 || _stakingParams.livenessRatio == 0 ||
-            _stakingParams.numAgentInstances == 0) {
+            _stakingParams.numAgentInstances == 0 || _numNonces == 0) {
             revert ZeroValue();
         }
         if (_stakingParams.minStakingDeposit < 2) {
@@ -184,6 +187,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         livenessPeriod = _stakingParams.livenessPeriod;
         livenessRatio = _stakingParams.livenessRatio;
         numAgentInstances = _stakingParams.numAgentInstances;
+        numNonces = _numNonces;
         serviceRegistry = _serviceRegistry;
 
         // Assign optional parameters
@@ -293,14 +297,40 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         ServiceInfo storage sInfo = mapServiceInfo[serviceId];
         sInfo.multisig = service.multisig;
         sInfo.owner = msg.sender;
-        uint256 nonce = IMultisig(service.multisig).nonce();
-        sInfo.nonce = nonce;
+        uint256[] memory nonces = _getMultisigNonces(service.multisig);
+        sInfo.nonces = nonces;
         sInfo.tsStart = block.timestamp;
 
         // Add the service Id to the set of staked services
         setServiceIds.push(serviceId);
 
-        emit ServiceStaked(serviceId, msg.sender, service.multisig, nonce);
+        emit ServiceStaked(serviceId, msg.sender, service.multisig, nonces[0]);
+    }
+
+    /// @dev Gets service multisig nonces.
+    /// @param multisig Service multisig address.
+    /// @return nonces Set of one or more service multisig nonces depending on implementation.
+    function _getMultisigNonces(address multisig) internal view virtual returns (uint256[] memory nonces) {
+        nonces = new uint256[](numNonces);
+        nonces[0] = IMultisig(multisig).nonce();
+    }
+
+    /// @dev Checks if the service multisig liveness ratio passes the defined liveness threshold.
+    /// @param curNonces Current service multisig nonces.
+    /// @param lastNonces Last service multisig nonces.
+    /// @param ts Time difference between current and last timestamps.
+    /// @return ratioPass True, if the liveness ratio passes the check.
+    function _isRatioPass(
+        uint256[] memory curNonces,
+        uint256[] memory lastNonces,
+        uint256 ts
+    ) internal view virtual returns (bool ratioPass)
+    {
+        // If the checkpoint was called in the exact same block, the ratio is zero
+        if (ts > 0 && curNonces[0] >= lastNonces[0]) {
+            uint256 ratio = ((curNonces[0] - lastNonces[0]) * 1e18) / ts;
+            ratioPass = (ratio >= livenessRatio);
+        }
     }
 
     /// @dev Calculates staking rewards for all services at current timestamp.
@@ -318,7 +348,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256[] memory eligibleServiceIds,
         uint256[] memory eligibleServiceRewards,
         uint256[] memory serviceIds,
-        uint256[] memory serviceNonces
+        uint256[][] memory serviceNonces
     )
     {
         // Get the service Ids set length
@@ -342,20 +372,23 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 // Get necessary arrays
                 eligibleServiceIds = new uint256[](size);
                 eligibleServiceRewards = new uint256[](size);
-                serviceNonces = new uint256[](size);
+                serviceNonces = new uint256[][](size);
+                for (uint256 i = 0; i < size; ++i) {
+                    serviceNonces[i] = new uint256[](numNonces);
+                }
 
                 // Calculate each staked service reward eligibility
                 for (uint256 i = 0; i < size; ++i) {
                     // Get the service info
-                    ServiceInfo storage curInfo = mapServiceInfo[serviceIds[i]];
+                    ServiceInfo storage sInfo = mapServiceInfo[serviceIds[i]];
 
                     // Get current service multisig nonce
-                    serviceNonces[i] = IMultisig(curInfo.multisig).nonce();
+                    serviceNonces[i] = _getMultisigNonces(sInfo.multisig);
 
                     // Calculate the liveness nonce ratio
                     // Get the last service checkpoint: staking start time or the global checkpoint timestamp
                     uint256 serviceCheckpoint = tsCheckpointLast;
-                    uint256 ts = curInfo.tsStart;
+                    uint256 ts = sInfo.tsStart;
                     // Adjust the service checkpoint time if the service was staking less than the current staking period
                     if (ts > serviceCheckpoint) {
                         serviceCheckpoint = ts;
@@ -364,14 +397,10 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                     // Calculate the liveness ratio in 1e18 value
                     // This subtraction is always positive or zero, as the last checkpoint can be at most block.timestamp
                     ts = block.timestamp - serviceCheckpoint;
-                    uint256 ratio;
-                    // If the checkpoint was called in the exact same block, the ratio is zero
-                    if (ts > 0 && serviceNonces[i] >= curInfo.nonce) {
-                        ratio = ((serviceNonces[i] - curInfo.nonce) * 1e18) / ts;
-                    }
+                    bool ratioPass = _isRatioPass(serviceNonces[i], sInfo.nonces, ts);
 
                     // Record the reward for the service if it has provided enough transactions
-                    if (ratio >= livenessRatio) {
+                    if (ratioPass) {
                         // Calculate the reward up until now and record its value for the corresponding service
                         uint256 reward = rewardsPerSecond * ts;
                         totalRewards += reward;
@@ -393,7 +422,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     /// @return success True, if the checkpoint was successful.
     function checkpoint() public returns (
         uint256[] memory,
-        uint256[] memory,
+        uint256[][] memory,
         uint256,
         uint256[] memory,
         uint256[] memory,
@@ -403,7 +432,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         // Calculate staking rewards
         (uint256 lastAvailableRewards, uint256 numServices, uint256 totalRewards,
             uint256[] memory eligibleServiceIds, uint256[] memory eligibleServiceRewards,
-            uint256[] memory serviceIds, uint256[] memory serviceNonces) = _calculateStakingRewards();
+            uint256[] memory serviceIds, uint256[][] memory serviceNonces) = _calculateStakingRewards();
 
         // If there are eligible services, proceed with staking calculation and update rewards
         if (numServices > 0) {
@@ -457,7 +486,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             for (uint256 i = 0; i < serviceIds.length; ++i) {
                 // Get the current service Id
                 uint256 curServiceId = serviceIds[i];
-                mapServiceInfo[curServiceId].nonce = serviceNonces[i];
+                mapServiceInfo[curServiceId].nonces = serviceNonces[i];
             }
 
             // Record the current timestamp such that next calculations start from this point of time
@@ -494,7 +523,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
         // Get the unstaked service data
         uint256 reward = sInfo.reward;
-        uint256 nonce = sInfo.nonce;
+        uint256 nonce = sInfo.nonces[0];
         uint256 tsStart = sInfo.tsStart;
         address multisig = sInfo.multisig;
 
