@@ -24,6 +24,11 @@ jobs:
       - name: Install modules
         run: yarn install
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
       # Run linters
       - name: Run ESLint
         run: ./node_modules/.bin/eslint . --ext .js,.jsx,.ts,.tsx
@@ -48,6 +53,10 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
+
+      # Compile the code and run foundry tests
+      - name: Run foundry tests
+        run: forge test --hh -vvv
 
   scan:
     name: gitleaks

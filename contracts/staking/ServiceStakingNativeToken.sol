@@ -11,9 +11,9 @@ contract ServiceStakingNativeToken is ServiceStakingBase {
     /// @dev ServiceStakingNativeToken constructor.
     /// @param _stakingParams Service staking parameters.
     /// @param _serviceRegistry ServiceRegistry contract address.
-    /// @param _multisigProxyAddresses Multisig proxy addresses.
-    constructor(StakingParams memory _stakingParams, address _serviceRegistry, address[] memory _multisigProxyAddresses)
-        ServiceStakingBase(_stakingParams, _serviceRegistry, _multisigProxyAddresses)
+    /// @param _multisigProxyHashes Multisig proxy hashes.
+    constructor(StakingParams memory _stakingParams, address _serviceRegistry, bytes32[] memory _multisigProxyHashes)
+        ServiceStakingBase(_stakingParams, _serviceRegistry, _multisigProxyHashes)
     {}
 
     /// @dev Withdraws the reward amount to a service owner.
@@ -21,7 +21,6 @@ contract ServiceStakingNativeToken is ServiceStakingBase {
     /// @param amount Amount to withdraw.
     function _withdraw(address to, uint256 amount) internal override {
         // Update the contract balance
-        // TODO: Fuzz this such that the amount is never bigger than the balance
         balance -= amount;
 
         // Transfer the amount
