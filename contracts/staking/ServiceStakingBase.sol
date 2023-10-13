@@ -323,7 +323,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     ) internal view virtual returns (bool ratioPass)
     {
         // If the checkpoint was called in the exact same block, the ratio is zero
-        if (ts > 0 && curNonces[0] >= lastNonces[0]) {
+        if (ts > 0 && curNonces[0] > lastNonces[0]) {
             uint256 ratio = ((curNonces[0] - lastNonces[0]) * 1e18) / ts;
             ratioPass = (ratio >= livenessRatio);
         }
