@@ -93,7 +93,7 @@ describe("ServiceStakingNativeToken", function () {
         bytecodeHash = ethers.utils.keccak256(bytecode);
 
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
+        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy([bytecodeHash]);
         await gnosisSafeSameAddressMultisig.deployed();
 
         const MultiSend = await ethers.getContractFactory("MultiSendCallOnly");
@@ -1025,15 +1025,9 @@ describe("ServiceStakingNativeToken", function () {
 
             // Prepare the payload to redeploy with the attacker address
             const data = ethers.utils.solidityPack(["address"], [attacker.address]);
-            await serviceRegistry.deploy(deployer.address, serviceId, gnosisSafeSameAddressMultisig.address, data);
-
-            // Approve service
-            await serviceRegistry.approve(serviceStaking.address, serviceId);
-
-            // Try to stake the service
             await expect(
-                serviceStaking.stake(serviceId)
-            ).to.be.revertedWithCustomError(serviceStaking, "UnauthorizedMultisig");
+                serviceRegistry.deploy(deployer.address, serviceId, gnosisSafeSameAddressMultisig.address, data)
+            ).to.be.revertedWithCustomError(gnosisSafeSameAddressMultisig, "UnauthorizedMultisig");
 
             // Restore a previous state of blockchain
             snapshot.restore();

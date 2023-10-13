@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.21;
 
 // Gnosis Safe Master Copy interface extracted from the mainnet: https://etherscan.io/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552#code#F6#L126
 interface IGnosisSafe {
@@ -11,6 +11,16 @@ interface IGnosisSafe {
     /// @return Threshold
     function getThreshold() external view returns (uint256);
 }
+
+/// @dev Zero value when it has to be different from zero.
+error ZeroValue();
+
+/// @dev Provided zero address.
+error ZeroAddress();
+
+/// @dev Multisig proxy bytecode is not whitelisted.
+/// @param multisig Address of a multisig proxy.
+error UnauthorizedMultisig(address multisig);
 
 /// @dev Provided incorrect data length.
 /// @param expected Expected minimum data length.
@@ -41,6 +51,31 @@ contract GnosisSafeSameAddressMultisig {
     // Default data size to be parsed as an address of a Gnosis Safe multisig proxy address
     // This exact size suggests that all the changes to the multisig have been performed and only validation is needed
     uint256 public constant DEFAULT_DATA_LENGTH = 20;
+
+    // Map of approved multisig proxy hashes
+    mapping(bytes32 => bool) public mapMultisigHashes;
+
+    /// @dev GnosisSafeSameAddressMultisig constructor.
+    /// @param _multisigProxyHashes Multisig proxy hashes.
+    constructor(bytes32[] memory _multisigProxyHashes) {
+        // There must be at least one multisig proxy hash
+        uint256 size = _multisigProxyHashes.length;
+        if (size == 0) {
+            revert ZeroValue();
+        }
+
+        // Record provided multisig proxy bytecode hashes
+        for (uint256 i = 0; i < size; ++i) {
+            bytes32 proxyHash = _multisigProxyHashes[i];
+            // Check for the zero hash
+            if (proxyHash == bytes32(0)) {
+                revert ZeroValue();
+            }
+
+            // Hash the proxy bytecode
+            mapMultisigHashes[proxyHash] = true;
+        }
+    }
 
     /// @dev Updates and/or verifies the existent gnosis safe multisig for changed owners and threshold.
     /// @notice This function operates with existent multisig proxy that is requested to be updated in terms of
@@ -73,6 +108,12 @@ contract GnosisSafeSameAddressMultisig {
         // Read the proxy multisig address (20 bytes) and the multisig-related data
         assembly {
             multisig := mload(add(data, DEFAULT_DATA_LENGTH))
+        }
+
+        // Check that the multisig address corresponds to the authorized multisig proxy
+        bytes32 proxyHash = keccak256(multisig.code);
+        if (!mapMultisigHashes[proxyHash]) {
+            revert UnauthorizedMultisig(multisig);
         }
 
         // If provided, read the payload that is going to change the multisig ownership and threshold

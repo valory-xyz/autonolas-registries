@@ -40,6 +40,7 @@ describe("ServiceRegistry", function () {
     const AddressZero = "0x" + "0".repeat(40);
     const payload = "0x";
     const serviceRegistryImplementations = ["l1", "l2", "l1an"];
+    let bytecodeHash;
 
     beforeEach(async function () {
         const ComponentRegistry = await ethers.getContractFactory("ComponentRegistry");
@@ -72,8 +73,14 @@ describe("ServiceRegistry", function () {
         multiSend = await MultiSend.deploy();
         await multiSend.deployed();
 
+        const GnosisSafeProxy = await ethers.getContractFactory("GnosisSafeProxy");
+        const gnosisSafeProxy = await GnosisSafeProxy.deploy(gnosisSafe.address);
+        await gnosisSafeProxy.deployed();
+        const bytecode = await ethers.provider.getCode(gnosisSafeProxy.address);
+        bytecodeHash = ethers.utils.keccak256(bytecode);
+
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
+        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy([bytecodeHash]);
         await gnosisSafeSameAddressMultisig.deployed();
 
         const ServiceRegistry = await ethers.getContractFactory("ServiceRegistry");
