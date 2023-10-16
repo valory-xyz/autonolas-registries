@@ -44,7 +44,7 @@ jobs:
 
       # Run hardhat coverage and upload codecov report
       - name: Solidity coverage summary
-        run: ./node_modules/.bin/hardhat coverage
+        run: export NODE_OPTIONS="--max-old-space-size=8192" && ./node_modules/.bin/hardhat coverage
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
