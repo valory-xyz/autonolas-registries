@@ -312,6 +312,10 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     }
 
     /// @dev Checks if the service multisig liveness ratio passes the defined liveness threshold.
+    /// @notice The formula for calculating the ratio is the following:
+    ///         currentNonce - service multisig nonce at time now (block.timestamp);
+    ///         lastNonce - service multisig nonce at the previous checkpoint or staking time (tsStart);
+    ///         ratio = (currentNonce - lastNonce) / (block.timestamp - tsStart).
     /// @param curNonces Current service multisig nonces.
     /// @param lastNonces Last service multisig nonces.
     /// @param ts Time difference between current and last timestamps.
