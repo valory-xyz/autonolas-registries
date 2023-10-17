@@ -2,8 +2,6 @@
 pragma solidity ^0.8.21;
 
 import {ServiceStakingBase} from "./ServiceStakingBase.sol";
-import "hardhat/console.sol";
-
 
 /// @title ServiceStakingNativeToken - Smart contract for staking a service with the service having a native network token as the deposit
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -66,7 +64,6 @@ contract ServiceStakingNativeToken is ServiceStakingBase {
         uint256 ts
     ) internal view virtual override returns (bool ratioPass)
     {
-        console.log("ServiceStakingNativeToken._isRatioPass");
         ratioPass = super._isRatioPass(curNonces, lastNonces, ts);
     }
 }

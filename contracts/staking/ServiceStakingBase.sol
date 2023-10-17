@@ -3,8 +3,6 @@ pragma solidity ^0.8.21;
 
 import {ERC721TokenReceiver} from "../../lib/solmate/src/tokens/ERC721.sol";
 import "../interfaces/IErrorsRegistries.sol";
-import "hardhat/console.sol";
-
 
 // Multisig interface
 interface IMultisig {
@@ -117,9 +115,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         bytes32 configHash;
     }
 
-    event ServiceStaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256 nonce);
+    event ServiceStaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256[] nonces);
     event Checkpoint(uint256 availableRewards, uint256 numServices);
-    event ServiceUnstaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256 nonce,
+    event ServiceUnstaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256[] nonces,
         uint256 reward, uint256 tsStart);
     event Deposit(address indexed sender, uint256 amount, uint256 balance, uint256 availableRewards);
     event Withdraw(address indexed to, uint256 amount);
@@ -288,9 +286,6 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         // Check service staking deposit and token, if applicable
         _checkTokenStakingDeposit(serviceId, service.securityDeposit);
 
-        // Transfer the service for staking
-        IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
-
         // ServiceInfo struct will be an empty one since otherwise the safeTransferFrom above would fail
         ServiceInfo storage sInfo = mapServiceInfo[serviceId];
         sInfo.multisig = service.multisig;
@@ -302,7 +297,10 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         // Add the service Id to the set of staked services
         setServiceIds.push(serviceId);
 
-        emit ServiceStaked(serviceId, msg.sender, service.multisig, nonces[0]);
+        // Transfer the service for staking
+        IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
+
+        emit ServiceStaked(serviceId, msg.sender, service.multisig, nonces);
     }
 
     /// @dev Gets service multisig nonces.
@@ -328,8 +326,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256 ts
     ) internal view virtual returns (bool ratioPass)
     {
-        console.log("ServiceStakingBase._isRatioPass");
         // If the checkpoint was called in the exact same block, the ratio is zero
+        // If the current nonce is not greater than the last nonce, the ratio is zero
         if (ts > 0 && curNonces[0] > lastNonces[0]) {
             uint256 ratio = ((curNonces[0] - lastNonces[0]) * 1e18) / ts;
             ratioPass = (ratio >= livenessRatio);
@@ -523,7 +521,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
         // Get the unstaked service data
         uint256 reward = sInfo.reward;
-        uint256 nonce = sInfo.nonces[0];
+        uint256[] memory nonces = sInfo.nonces;
         uint256 tsStart = sInfo.tsStart;
         address multisig = sInfo.multisig;
 
@@ -543,7 +541,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             _withdraw(multisig, reward);
         }
 
-        emit ServiceUnstaked(serviceId, msg.sender, multisig, nonce, reward, tsStart);
+        emit ServiceUnstaked(serviceId, msg.sender, multisig, nonces, reward, tsStart);
     }
 
     /// @dev Calculates service staking reward at current timestamp.

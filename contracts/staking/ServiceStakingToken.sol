@@ -4,8 +4,6 @@ pragma solidity ^0.8.21;
 import {ServiceStakingBase} from "./ServiceStakingBase.sol";
 import {SafeTransferLib} from "../utils/SafeTransferLib.sol";
 import "../interfaces/IToken.sol";
-import "hardhat/console.sol";
-
 
 // Service Registry Token Utility interface
 interface IServiceTokenUtility {
@@ -134,7 +132,6 @@ contract ServiceStakingToken is ServiceStakingBase {
         uint256 ts
     ) internal view virtual override returns (bool ratioPass)
     {
-        console.log("ServiceStakingToken._isRatioPass");
         ratioPass = super._isRatioPass(curNonces, lastNonces, ts);
     }
 }
