@@ -3,6 +3,8 @@ pragma solidity ^0.8.21;
 
 import {ServiceStakingNativeToken} from "./ServiceStakingNativeToken.sol";
 import {MechAgentMod} from "./MechAgentMod.sol";
+import "hardhat/console.sol";
+
 
 /// @title ServiceStakingMechUsage - Smart contract for staking a service with the service interacting with
 ///            AI agent mech and having a native network token as the deposit
@@ -53,6 +55,7 @@ contract ServiceStakingMechUsage is ServiceStakingNativeToken, MechAgentMod {
         uint256 ts
     ) internal view override(ServiceStakingNativeToken, MechAgentMod) returns (bool ratioPass)
     {
+        console.log("ServiceStakingMechUsage._isRatioPass");
         ratioPass = super._isRatioPass(curNonces, lastNonces, ts);
     }
 }

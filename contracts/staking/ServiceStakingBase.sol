@@ -3,6 +3,8 @@ pragma solidity ^0.8.21;
 
 import {ERC721TokenReceiver} from "../../lib/solmate/src/tokens/ERC721.sol";
 import "../interfaces/IErrorsRegistries.sol";
+import "hardhat/console.sol";
+
 
 // Multisig interface
 interface IMultisig {
@@ -326,6 +328,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256 ts
     ) internal view virtual returns (bool ratioPass)
     {
+        console.log("ServiceStakingBase._isRatioPass");
         // If the checkpoint was called in the exact same block, the ratio is zero
         if (ts > 0 && curNonces[0] > lastNonces[0]) {
             uint256 ratio = ((curNonces[0] - lastNonces[0]) * 1e18) / ts;
