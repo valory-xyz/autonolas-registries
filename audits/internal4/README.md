@@ -16,7 +16,7 @@ N/A
 #### Problems found instrumentally
 Several checks are obtained automatically. They are commented. Some issues found need to be fixed. <br>
 All automatic warnings are listed in the following file, concerns of which we address in more detail below: <br>
-[slither-full](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal4/analysis/slither_full.txt)
+[slither-full-old](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal4/analysis/slither_full_old.txt)
 
 Bad pattern (ref: reentrancy): <br>
 ```solidity
@@ -150,12 +150,56 @@ Else without it: ratio = ((serviceNonces[i] - curInfo.nonce) * 1e18) / ts; => DO
 2. ref: General considerations #2. We cannot guarantee the absence of manipulation nonce through any checks within the contract. <br>
 A reasonable proposal in this case is to provide the opportunity to add a blacklist of services when deploying a staking contract. <br>
 This will make it possible to blacklist services with a bad reputation (which is not part of the protocol, but determined by the community). <br>
+[x] discussed
 
 #### Simple function needed `isServiceStaked`
+[x] fixed
 
 #### _stakingParams.minStakingDeposit
 minStakingDeposit must be greater than 1 otherwise it causes confusion with the predefined value of 1.
 
+[x] fixed
 
+### Security issues. Updated 17-10-23
+#### Latest CEI fix
+```solidity
+latest CEI fixup:
+IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
+to
+ // Add the service Id to the set of staked services
+        setServiceIds.push(serviceId);
+--->
+        emit ServiceStaked(serviceId, msg.sender, service.multisig, nonces[0]);
+This is not a real problem, but will avoid discussions with external auditors.
+```
+
+##### Nonces should now be an array, including events.
+```solidity
+uint256[] memory nonces = _getMultisigNonces(service.multisig);
+icorrect for ServiceStaking*MechUsage
+emit ServiceStaked(serviceId, msg.sender, service.multisig, nonces[0]);
+->
+event ServiceStaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256[] nonce);
+emit ServiceStaked(serviceId, msg.sender, service.multisig, nonces);
+```
+
+##### Missing checks on MechAgentMod
+```solidity
+        // If the checkpoint was called in the exact same block, the ratio is zero
+        if (ts > 0 && curNonces[0] > lastNonces[0]) {
+            uint256 ratio = ((curNonces[0] - lastNonces[0]) * 1e18) / ts;
+            ratioPass = (ratio >= livenessRatio);
+        }
+
+        vs
+        
+        uint256 diffNonces = curNonces[0] - lastNonces[0];
+        uint256 diffRequestsCounts = curNonces[1] - lastNonces[1];
+        // Sanity checks for requests counts difference to be at least half of the nonces difference
+        if (diffRequestsCounts <= diffNonces / 2) {
+            uint256 ratio = (diffRequestsCounts * 1e18) / ts;
+            ratioPass = (ratio >= _getLivenessRatio() / 2);
+        }
+```
 
 
