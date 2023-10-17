@@ -346,13 +346,12 @@ contract ServiceStaking is BaseSetup {
 
         // Number of days
         for (uint256 i = 0; i < numDays; ++i) {
-            // Even days - increase the nonce
-            // Odd days - decrease the nonce
-
             // Get the Safe data payload
-            if (numDays % 2 == 0) {
+            if (numDays & uint256(1) == 0) {
+                // Even days - increase the nonce
                 payload = abi.encodeWithSelector(bytes4(keccak256("increaseNonce(uint256)")), numNonces);
             } else {
+                // Odd days - decrease the nonce
                 payload = abi.encodeWithSelector(bytes4(keccak256("decreaseNonce(uint256)")), numNonces);
             }
 
