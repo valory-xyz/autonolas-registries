@@ -31,7 +31,7 @@ contract ServiceStakingTokenMechUsage is ServiceStakingToken, MechAgentMod {
 
     /// @dev Gets service multisig nonces.
     /// @param multisig Service multisig address.
-    /// @return nonces Set of one or more service multisig nonces depending on implementation.
+    /// @return nonces Set of a nonce and a requests count for the multisig.
     function _getMultisigNonces(address multisig) internal view override(ServiceStakingToken, MechAgentMod) returns (uint256[] memory nonces) {
         nonces = super._getMultisigNonces(multisig);
     }
@@ -52,8 +52,8 @@ contract ServiceStakingTokenMechUsage is ServiceStakingToken, MechAgentMod {
     ///         Liveness ratio for mech requests count:
     ///             ratio >= counterRequestsRatio, where counterRequestsRatio = livenessRatio / 2,
     ///         since there is at least one tx for sending a request to AgentMech, and another tx for its subsequent execution.
-    /// @param curNonces Current service multisig nonces.
-    /// @param lastNonces Last service multisig nonces.
+    /// @param curNonces Current service multisig set of nonce and requests count.
+    /// @param lastNonces Last service multisig set of nonce and requests count.
     /// @param ts Time difference between current and last timestamps.
     /// @return ratioPass True, if the liveness ratio passes the check.
     function _isRatioPass(

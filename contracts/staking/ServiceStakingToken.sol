@@ -112,7 +112,7 @@ contract ServiceStakingToken is ServiceStakingBase {
 
     /// @dev Gets service multisig nonces.
     /// @param multisig Service multisig address.
-    /// @return nonces Set of one or more service multisig nonces depending on implementation.
+    /// @return nonces Set of a single service multisig nonce.
     function _getMultisigNonces(address multisig) internal view virtual override returns (uint256[] memory nonces) {
         nonces = super._getMultisigNonces(multisig);
     }
@@ -122,8 +122,8 @@ contract ServiceStakingToken is ServiceStakingBase {
     ///         currentNonce - service multisig nonce at time now (block.timestamp);
     ///         lastNonce - service multisig nonce at the previous checkpoint or staking time (tsStart);
     ///         ratio = (currentNonce - lastNonce) / (block.timestamp - tsStart).
-    /// @param curNonces Current service multisig nonces.
-    /// @param lastNonces Last service multisig nonces.
+    /// @param curNonces Current service multisig set of a single nonce.
+    /// @param lastNonces Last service multisig set of a single nonce.
     /// @param ts Time difference between current and last timestamps.
     /// @return ratioPass True, if the liveness ratio passes the check.
     function _isRatioPass(
