@@ -109,4 +109,29 @@ contract ServiceStakingToken is ServiceStakingBase {
 
         emit Deposit(msg.sender, amount, newBalance, newAvailableRewards);
     }
+
+    /// @dev Gets service multisig nonces.
+    /// @param multisig Service multisig address.
+    /// @return nonces Set of a single service multisig nonce.
+    function _getMultisigNonces(address multisig) internal view virtual override returns (uint256[] memory nonces) {
+        nonces = super._getMultisigNonces(multisig);
+    }
+
+    /// @dev Checks if the service multisig liveness ratio passes the defined liveness threshold.
+    /// @notice The formula for calculating the ratio is the following:
+    ///         currentNonce - service multisig nonce at time now (block.timestamp);
+    ///         lastNonce - service multisig nonce at the previous checkpoint or staking time (tsStart);
+    ///         ratio = (currentNonce - lastNonce) / (block.timestamp - tsStart).
+    /// @param curNonces Current service multisig set of a single nonce.
+    /// @param lastNonces Last service multisig set of a single nonce.
+    /// @param ts Time difference between current and last timestamps.
+    /// @return ratioPass True, if the liveness ratio passes the check.
+    function _isRatioPass(
+        uint256[] memory curNonces,
+        uint256[] memory lastNonces,
+        uint256 ts
+    ) internal view virtual override returns (bool ratioPass)
+    {
+        ratioPass = super._isRatioPass(curNonces, lastNonces, ts);
+    }
 }
