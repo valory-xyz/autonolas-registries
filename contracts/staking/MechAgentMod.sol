@@ -53,12 +53,10 @@ abstract contract MechAgentMod {
     /// @notice The formula for calculating the ratio is the following:
     ///         currentNonces - [service multisig nonce at time now (block.timestamp), requests count at time now];
     ///         lastNonces - [service multisig nonce at the previous checkpoint or staking time (tsStart), requests count at time tsStart];
-    ///         Requests count difference must be at least two times smaller than the nonce difference:
-    ///         (currentNonces[1] - lastNonces[1]) <= (currentNonces[0] - lastNonces[0]) / 2;
-    ///         ratio = (currentNonces[1] - lastNonce[1]) / (block.timestamp - tsStart).
-    ///         Liveness ratio for mech requests count:
-    ///             ratio >= counterRequestsRatio, where counterRequestsRatio = livenessRatio / 2,
-    ///         since there is at least one tx for sending a request to AgentMech, and another tx for its subsequent execution.
+    ///         Requests count difference must be smaller or equal to the nonce difference:
+    ///         (currentNonces[1] - lastNonces[1]) <= (currentNonces[0] - lastNonces[0]);
+    ///         ratio = (currentNonces[1] - lastNonce[1]) / (block.timestamp - tsStart),
+    ///         where ratio >= livenessRatio.
     /// @param curNonces Current service multisig set of nonce and requests count.
     /// @param lastNonces Last service multisig set of nonce and requests count.
     /// @param ts Time difference between current and last timestamps.
@@ -75,10 +73,10 @@ abstract contract MechAgentMod {
         if (ts > 0 && curNonces[0] > lastNonces[0] && curNonces[1] > lastNonces[1]) {
             uint256 diffNonces = curNonces[0] - lastNonces[0];
             uint256 diffRequestsCounts = curNonces[1] - lastNonces[1];
-            // Sanity checks for requests counts difference to be at least half of the nonces difference
-            if (diffRequestsCounts <= diffNonces / 2) {
+            // Requests counts difference must be less or equal to the nonce difference
+            if (diffRequestsCounts <= diffNonces) {
                 uint256 ratio = (diffRequestsCounts * 1e18) / ts;
-                ratioPass = (ratio >= _getLivenessRatio() / 2);
+                ratioPass = (ratio >= _getLivenessRatio());
             }
         }
     }

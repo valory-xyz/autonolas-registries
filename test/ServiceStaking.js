@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 const helpers = require("@nomicfoundation/hardhat-network-helpers");
 const safeContracts = require("@gnosis.pm/safe-contracts");
 
-describe.only("ServiceStakingNativeToken", function () {
+describe("ServiceStakingNativeToken", function () {
     let componentRegistry;
     let agentRegistry;
     let serviceRegistry;
