@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
-import "hardhat/console.sol";
-
-
 
 // Multisig interface
 interface IMultisig {
@@ -72,13 +69,17 @@ abstract contract MechAgentMod {
         uint256 ts
     ) internal view virtual returns (bool ratioPass)
     {
-        console.log("MechAgentMod._isRatioPass");
-        uint256 diffNonces = curNonces[0] - lastNonces[0];
-        uint256 diffRequestsCounts = curNonces[1] - lastNonces[1];
-        // Sanity checks for requests counts difference to be at least half of the nonces difference
-        if (diffRequestsCounts <= diffNonces / 2) {
-            uint256 ratio = (diffRequestsCounts * 1e18) / ts;
-            ratioPass = (ratio >= _getLivenessRatio() / 2);
+        // If the checkpoint was called in the exact same block, the ratio is zero
+        // If the current nonce is not greater than the last nonce, the ratio is zero
+        // If the current requests count is not greater than the last requests count, the ratio is zero
+        if (ts > 0 && curNonces[0] > lastNonces[0] && curNonces[1] > lastNonces[1]) {
+            uint256 diffNonces = curNonces[0] - lastNonces[0];
+            uint256 diffRequestsCounts = curNonces[1] - lastNonces[1];
+            // Sanity checks for requests counts difference to be at least half of the nonces difference
+            if (diffRequestsCounts <= diffNonces / 2) {
+                uint256 ratio = (diffRequestsCounts * 1e18) / ts;
+                ratioPass = (ratio >= _getLivenessRatio() / 2);
+            }
         }
     }
 }

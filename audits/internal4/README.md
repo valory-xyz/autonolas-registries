@@ -172,6 +172,7 @@ to
         emit ServiceStaked(serviceId, msg.sender, service.multisig, nonces[0]);
 This is not a real problem, but will avoid discussions with external auditors.
 ```
+[x] fixed
 
 ##### Nonces should now be an array, including events.
 ```solidity
@@ -182,6 +183,7 @@ emit ServiceStaked(serviceId, msg.sender, service.multisig, nonces[0]);
 event ServiceStaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256[] nonce);
 emit ServiceStaked(serviceId, msg.sender, service.multisig, nonces);
 ```
+[x] fixed
 
 ##### Missing checks on MechAgentMod
 ```solidity
@@ -201,5 +203,5 @@ emit ServiceStaked(serviceId, msg.sender, service.multisig, nonces);
             ratioPass = (ratio >= _getLivenessRatio() / 2);
         }
 ```
-
+[x] fixed
 
