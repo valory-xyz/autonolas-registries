@@ -9,7 +9,6 @@ async function main() {
     let parsedData = JSON.parse(dataFromJSON);
     const providerName = parsedData.providerName;
 
-    const provider = await ethers.providers.getDefaultProvider(providerName);
     const signers = await ethers.getSigners();
 
     // EOA address
