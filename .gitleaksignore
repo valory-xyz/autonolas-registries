@@ -65,3 +65,6 @@ b655baf97c240fe09ce8c33cb311cb8cc90d181d:scripts/deployment/l2/globals_polygon_m
 1b4ec3abe37c5a421a210e8a05a5b958bcc7cfb0:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:2
 4bbbf2f312aea50f56a717bdca1dcba20b7c65f7:scripts/deployment/globals_goerli.json:generic-api-key:2
 4bbbf2f312aea50f56a717bdca1dcba20b7c65f7:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:2
+e60c98c6953abb0bc2da5e609e4feb0808cdfcd0:scripts/deployment/l2/globals_gnosis_mainnet.json:generic-api-key:20
+e60c98c6953abb0bc2da5e609e4feb0808cdfcd0:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:1
+e60c98c6953abb0bc2da5e609e4feb0808cdfcd0:scripts/deployment/l2/globals_gnosis_mainnet.json:generic-api-key:21
