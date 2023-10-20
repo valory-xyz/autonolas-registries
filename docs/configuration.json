@@ -46,7 +46,7 @@
       {
         "name": "GnosisSafeSameAddressMultisig",
         "artifact": "abis/0.8.15/GnosisSafeSameAddressMultisig.json",
-        "address": "0x26Ea2dC7ce1b41d0AD0E0521535655d7a94b684c"
+        "address": "0xfa517d01DaA100cB1932FA4345F68874f7E7eF46"
       }
     ]
   },
@@ -148,7 +148,7 @@
       },
       {
         "name": "GnosisSafeSameAddressMultisig",
-        "artifact": "abis/0.8.21/GnosisSafeSameAddressMultisig.json",
+        "artifact": "abis/0.8.19/GnosisSafeSameAddressMultisig.json",
         "address": "0xd6AA4Ec948d84f6Db8EEf25104CeE0Ecd280C74e"
       }
     ]
@@ -185,7 +185,7 @@
       {
         "name": "GnosisSafeSameAddressMultisig",
         "artifact": "abis/0.8.19/GnosisSafeSameAddressMultisig.json",
-        "address": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44"
+        "address": "0x6e7f594f680f7aBad18b7a63de50F0FeE47dfD06"
       }
     ]
   },
