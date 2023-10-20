@@ -9,7 +9,6 @@ async function main() {
     let parsedData = JSON.parse(dataFromJSON);
     const providerName = parsedData.providerName;
 
-    const provider = await ethers.providers.getDefaultProvider(providerName);
     const signers = await ethers.getSigners();
 
     // EOA address
@@ -30,7 +29,7 @@ async function main() {
     if (providerName === "mainnet") {
         oldMultisig = "0x26Ea2dC7ce1b41d0AD0E0521535655d7a94b684c";
     } else if (providerName === "goerli") {
-        oldMultisig = "0x06467Cb835da623384a22aa902647784C1c9f5Ae";
+        oldMultisig = "0x92499E80f50f06C4078794C179986907e7822Ea1";
     } else {
         console.log("Unknown network provider", providerName);
         return;
