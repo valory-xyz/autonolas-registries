@@ -15,13 +15,13 @@
   "serviceRegistryAddress": "0x9338b5153AE39BB89f50468E608eD9d764B755fD",
   "serviceManagerAddress": "0xE3607b00E75f6405248323A9417ff6b39B244b50",
   "gnosisSafeMultisigImplementationAddress": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE",
-  "gnosisSafeSameAddressMultisigImplementationAddress": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44",
+  "gnosisSafeSameAddressMultisigImplementationAddress": "0x6e7f594f680f7aBad18b7a63de50F0FeE47dfD06",
   "operatorWhitelistAddress": "0x526E064cB694E8f5B7DB299158e17F33055B3943",
   "serviceRegistryTokenUtilityAddress": "0xa45E64d13A30a51b91ae0eb182e88a40e9b18eD8",
   "serviceManagerTokenAddress": "0x04b0007b2aFb398015B76e5f22993a1fddF83644",
   "olasAddress": "0xcE11e14225575945b8E6Dc0D4F2dD4C570f79d9f",
   "multisigProxyHash130": "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000",
-  "serviceStakingParams":{
+  "serviceStakingParams": {
     "maxNumServices": "100",
     "rewardsPerSecond": "385802469136",
     "minStakingDeposit": "50000000000000000000",
