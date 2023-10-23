@@ -4,6 +4,8 @@ coverage
 coverage.json
 typechain
 *.DS_Store
+.idea
+leak_report
 
 # Hardhat files
 cache
