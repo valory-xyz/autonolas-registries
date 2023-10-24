@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "../../lib/solmate/src/tokens/ERC20.sol";
+import {ERC20} from "../../lib/solmate/src/tokens/ERC20.sol";
 
 /// @title ERC20Token - Smart contract for mocking the minimum OLAS token functionality
 contract ERC20Token is ERC20 {
