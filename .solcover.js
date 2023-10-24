@@ -1,5 +1,6 @@
 module.exports = {
-    skipFiles: ["test/ComponentRegistryTest.sol",
+    skipFiles: [
+        "test/ComponentRegistryTest.sol",
         "test/ERC20Token.sol",
         "test/GnosisSafeABICreator.sol",
         "test/MockAgentMech.sol",
