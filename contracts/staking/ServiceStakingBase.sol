@@ -352,16 +352,6 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256[][] memory serviceNonces
     )
     {
-        // Get the service Ids set length
-        uint256 size = setServiceIds.length;
-        serviceIds = new uint256[](size);
-
-        // Record service Ids
-        for (uint256 i = 0; i < size; ++i) {
-            // Get current service Id
-            serviceIds[i] = setServiceIds[i];
-        }
-
         // Check the last checkpoint timestamp and the liveness period
         uint256 tsCheckpointLast = tsCheckpoint;
         if (block.timestamp - tsCheckpointLast >= livenessPeriod) {
@@ -370,13 +360,20 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
             // If available rewards are not zero, proceed with staking calculation
             if (lastAvailableRewards > 0) {
+                // Get the service Ids set length
+                uint256 size = setServiceIds.length;
+
                 // Get necessary arrays
+                serviceIds = new uint256[](size);
                 eligibleServiceIds = new uint256[](size);
                 eligibleServiceRewards = new uint256[](size);
                 serviceNonces = new uint256[][](size);
 
                 // Calculate each staked service reward eligibility
                 for (uint256 i = 0; i < size; ++i) {
+                    // Get current service Id
+                    serviceIds[i] = setServiceIds[i];
+
                     // Get the service info
                     ServiceInfo storage sInfo = mapServiceInfo[serviceIds[i]];
 
@@ -508,7 +505,12 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         // Call the checkpoint
-        (uint256[] memory serviceIds, , , , , ) = checkpoint();
+        (uint256[] memory serviceIds, , , , , bool success) = checkpoint();
+
+        // If the checkpoint was not successful, the serviceIds set is not returned and needs to be allocated
+        if (!success) {
+            serviceIds = getServiceIds();
+        }
 
         // Get the service index in the set of services
         // The index must always exist as the service is currently staked, otherwise it has no record in the map
@@ -578,10 +580,30 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
     }
 
+    /// @dev Gets staked service Ids.
+    /// @return serviceIds Staked service Ids.
+    function getServiceIds() public view returns (uint256[] memory serviceIds) {
+        // Get the number of service Ids
+        uint256 size = setServiceIds.length;
+        serviceIds = new uint256[](size);
+
+        // Record service Ids
+        for (uint256 i = 0; i < size; ++i) {
+            serviceIds[i] = setServiceIds[i];
+        }
+    }
+
     /// @dev Checks if the service is staked.
     /// @param serviceId.
-    /// @return True, if the service is staked.
-    function isServiceStaked(uint256 serviceId) external view returns (bool) {
-        return mapServiceInfo[serviceId].tsStart > 0;
+    /// @return isStaked True, if the service is staked.
+    function isServiceStaked(uint256 serviceId) external view returns (bool isStaked) {
+        isStaked = (mapServiceInfo[serviceId].tsStart > 0);
+    }
+
+    /// @dev Gets the next reward checkpoint timestamp.
+    /// @return tsNext Next reward checkpoint timestamp.
+    function getNextRewardCheckpointTimestamp() external view returns (uint256 tsNext) {
+        // Last checkpoint timestamp plus the liveness period
+        tsNext = tsCheckpoint + livenessPeriod;
     }
 }
