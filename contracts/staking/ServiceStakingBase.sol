@@ -352,57 +352,52 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256[][] memory serviceNonces
     )
     {
-        // Check the last checkpoint timestamp and the liveness period
+        // Check the last checkpoint timestamp and the liveness period, also check for available rewards to be not zero
         uint256 tsCheckpointLast = tsCheckpoint;
-        if (block.timestamp - tsCheckpointLast >= livenessPeriod) {
-            // Get available rewards and last checkpoint timestamp
-            lastAvailableRewards = availableRewards;
+        lastAvailableRewards = availableRewards;
+        if (block.timestamp - tsCheckpointLast >= livenessPeriod && lastAvailableRewards > 0) {
+            // Get the service Ids set length
+            uint256 size = setServiceIds.length;
 
-            // If available rewards are not zero, proceed with staking calculation
-            if (lastAvailableRewards > 0) {
-                // Get the service Ids set length
-                uint256 size = setServiceIds.length;
+            // Get necessary arrays
+            serviceIds = new uint256[](size);
+            eligibleServiceIds = new uint256[](size);
+            eligibleServiceRewards = new uint256[](size);
+            serviceNonces = new uint256[][](size);
 
-                // Get necessary arrays
-                serviceIds = new uint256[](size);
-                eligibleServiceIds = new uint256[](size);
-                eligibleServiceRewards = new uint256[](size);
-                serviceNonces = new uint256[][](size);
+            // Calculate each staked service reward eligibility
+            for (uint256 i = 0; i < size; ++i) {
+                // Get current service Id
+                serviceIds[i] = setServiceIds[i];
 
-                // Calculate each staked service reward eligibility
-                for (uint256 i = 0; i < size; ++i) {
-                    // Get current service Id
-                    serviceIds[i] = setServiceIds[i];
+                // Get the service info
+                ServiceInfo storage sInfo = mapServiceInfo[serviceIds[i]];
 
-                    // Get the service info
-                    ServiceInfo storage sInfo = mapServiceInfo[serviceIds[i]];
+                // Get current service multisig nonce
+                serviceNonces[i] = _getMultisigNonces(sInfo.multisig);
 
-                    // Get current service multisig nonce
-                    serviceNonces[i] = _getMultisigNonces(sInfo.multisig);
+                // Calculate the liveness nonce ratio
+                // Get the last service checkpoint: staking start time or the global checkpoint timestamp
+                uint256 serviceCheckpoint = tsCheckpointLast;
+                uint256 ts = sInfo.tsStart;
+                // Adjust the service checkpoint time if the service was staking less than the current staking period
+                if (ts > serviceCheckpoint) {
+                    serviceCheckpoint = ts;
+                }
 
-                    // Calculate the liveness nonce ratio
-                    // Get the last service checkpoint: staking start time or the global checkpoint timestamp
-                    uint256 serviceCheckpoint = tsCheckpointLast;
-                    uint256 ts = sInfo.tsStart;
-                    // Adjust the service checkpoint time if the service was staking less than the current staking period
-                    if (ts > serviceCheckpoint) {
-                        serviceCheckpoint = ts;
-                    }
+                // Calculate the liveness ratio in 1e18 value
+                // This subtraction is always positive or zero, as the last checkpoint can be at most block.timestamp
+                ts = block.timestamp - serviceCheckpoint;
+                bool ratioPass = _isRatioPass(serviceNonces[i], sInfo.nonces, ts);
 
-                    // Calculate the liveness ratio in 1e18 value
-                    // This subtraction is always positive or zero, as the last checkpoint can be at most block.timestamp
-                    ts = block.timestamp - serviceCheckpoint;
-                    bool ratioPass = _isRatioPass(serviceNonces[i], sInfo.nonces, ts);
-
-                    // Record the reward for the service if it has provided enough transactions
-                    if (ratioPass) {
-                        // Calculate the reward up until now and record its value for the corresponding service
-                        uint256 reward = rewardsPerSecond * ts;
-                        totalRewards += reward;
-                        eligibleServiceRewards[numServices] = reward;
-                        eligibleServiceIds[numServices] = serviceIds[i];
-                        ++numServices;
-                    }
+                // Record the reward for the service if it has provided enough transactions
+                if (ratioPass) {
+                    // Calculate the reward up until now and record its value for the corresponding service
+                    uint256 reward = rewardsPerSecond * ts;
+                    totalRewards += reward;
+                    eligibleServiceRewards[numServices] = reward;
+                    eligibleServiceIds[numServices] = serviceIds[i];
+                    ++numServices;
                 }
             }
         }
