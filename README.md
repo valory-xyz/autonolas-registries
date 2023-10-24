@@ -18,7 +18,7 @@ In order to generalize `components` / `agents` / `services`, they are referred s
 
 A graphical overview of the whole on-chain architecture is available here:
 
-![architecture](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/On-chain_architecture_v5.png?raw=true)
+![architecture](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/On-chain_architecture_v6.png?raw=true)
 
 An overview of the design, details on how securing services with ETH or a custom ERC20 token, how service owners can opt for a set of authorized operators,
 as well as how DAOs can manage their autonomous services are provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/AgentServicesFunctionality.pdf?raw=true).
@@ -30,12 +30,11 @@ An overview of the state machine governing service management and usage is provi
 A more detailed set of registries definitions are provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/definitions.md).
 
 
-
-
 - Abstract contracts:
   - [GenericRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/GenericRegistry.sol)
   - [UnitRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/UnitRegistry.sol)
   - [GenericManager](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/GenericManager.sol)
+  - [ServiceStakingBase.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/ServiceStakingBase.sol)
 - Core contracts:
   - [AgentRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/AgentRegistry.sol)
   - [ComponentRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ComponentRegistry.sol)
@@ -49,6 +48,9 @@ A more detailed set of registries definitions are provided [here](https://github
 - Utility contracts:
   - [OperatorSignedHashes](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/utils/OperatorSignedHashes.sol)
   - [OperatorWhitelist](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/utils/OperatorWhitelist.sol)
+- Staking contracts:
+  - [ServiceStakingNativeToken.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/ServiceStakingNativeToken.sol)
+  - [ServiceStakingToken.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/ServiceStakingToken.sol)
 
 In order to deploy a service, its registered agent instances form a consensus mechanism via the means of multisigs using the generic multisig interface.
 One of the most well-known multisigs is Gnosis Safe. The Gnosis interface implementation of a generic multisig interface is provided here:
