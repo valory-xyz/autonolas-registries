@@ -587,6 +587,10 @@ describe("ServiceStakingNativeToken", function () {
             // The multisig balance before and after unstake must be the same (zero reward)
             expect(balanceBefore).to.equal(balanceAfter);
 
+            // Check the final serviceIds set to be empty
+            const serviceIds = await serviceStaking.getServiceIds();
+            expect(serviceIds.length).to.equal(0);
+
             // Restore a previous state of blockchain
             snapshot.restore();
         });
@@ -644,7 +648,7 @@ describe("ServiceStakingNativeToken", function () {
             // The multisig balance before and after unstake must be the same (zero reward)
             expect(balanceBefore).to.equal(balanceAfter);
 
-            // Check the final serviceIds
+            // Check the final serviceIds set to be empty
             const serviceIds = await serviceStaking.getServiceIds();
             expect(serviceIds.length).to.equal(0);
 
@@ -701,6 +705,10 @@ describe("ServiceStakingNativeToken", function () {
 
             // The balance before and after the unstake call must be different
             expect(balanceAfter).to.gt(balanceBefore);
+
+            // Check the final serviceIds set to be empty
+            const serviceIds = await serviceStaking.getServiceIds();
+            expect(serviceIds.length).to.equal(0);
 
             // Restore a previous state of blockchain
             snapshot.restore();
@@ -773,6 +781,10 @@ describe("ServiceStakingNativeToken", function () {
             // The balance before and after the unstake call must be different
             expect(balanceAfter.gt(balanceBefore));
 
+            // Check the final serviceIds set to be empty
+            const serviceIds = await serviceStaking.getServiceIds();
+            expect(serviceIds.length).to.equal(0);
+
             // Restore a previous state of blockchain
             snapshot.restore();
         });
@@ -822,6 +834,10 @@ describe("ServiceStakingNativeToken", function () {
 
             // The balance before and after the unstake call must be different
             expect(balanceAfter).to.gt(balanceBefore);
+
+            // Check the final serviceIds set to be empty
+            const serviceIds = await serviceStaking.getServiceIds();
+            expect(serviceIds.length).to.equal(0);
 
             // Restore a previous state of blockchain
             snapshot.restore();
@@ -876,6 +892,10 @@ describe("ServiceStakingNativeToken", function () {
 
             // The balance before and after the unstake call must be different
             expect(balanceAfter).to.gt(balanceBefore);
+
+            // Check the final serviceIds set to be empty
+            const serviceIds = await serviceStaking.getServiceIds();
+            expect(serviceIds.length).to.equal(0);
 
             // Restore a previous state of blockchain
             snapshot.restore();
@@ -968,6 +988,10 @@ describe("ServiceStakingNativeToken", function () {
                 }
             }
 
+            // Check the final serviceIds set to be empty
+            const serviceIds = await serviceStaking.getServiceIds();
+            expect(serviceIds.length).to.equal(0);
+
             // Restore a previous state of blockchain
             snapshot.restore();
         });
@@ -1037,6 +1061,10 @@ describe("ServiceStakingNativeToken", function () {
             // The balance before and after the unstake call must be different
             expect(balanceAfter).to.gt(balanceBefore);
 
+            // Check the final serviceIds set to be empty
+            const serviceIds = await serviceStaking.getServiceIds();
+            expect(serviceIds.length).to.equal(0);
+
             // Restore a previous state of blockchain
             snapshot.restore();
         });
@@ -1092,6 +1120,10 @@ describe("ServiceStakingNativeToken", function () {
             // The multisig balance before and after unstake must be the same (zero reward)
             expect(balanceBefore).to.equal(balanceAfter);
 
+            // Check the final serviceIds set to be empty
+            const serviceIds = await serviceStaking.getServiceIds();
+            expect(serviceIds.length).to.equal(0);
+
             // Restore a previous state of blockchain
             snapshot.restore();
         });
@@ -1134,6 +1166,10 @@ describe("ServiceStakingNativeToken", function () {
 
             // The multisig balance before and after unstake must be the same (zero reward)
             expect(balanceBefore).to.equal(balanceAfter);
+
+            // Check the final serviceIds set to be empty
+            const serviceIds = await serviceStaking.getServiceIds();
+            expect(serviceIds.length).to.equal(0);
 
             // Restore a previous state of blockchain
             snapshot.restore();
@@ -1194,6 +1230,10 @@ describe("ServiceStakingNativeToken", function () {
 
             // The balance before and after the unstake call must be different
             expect(balanceAfter).to.gt(balanceBefore);
+
+            // Check the final serviceIds set to be empty
+            const serviceIds = await serviceStaking.getServiceIds();
+            expect(serviceIds.length).to.equal(0);
 
             // Restore a previous state of blockchain
             snapshot.restore();
@@ -1271,6 +1311,10 @@ describe("ServiceStakingNativeToken", function () {
 
             // The balance before and after the unstake call must be different
             expect(balanceAfter.gt(balanceBefore));
+
+            // Check the final serviceIds set to be empty
+            const serviceIds = await serviceStaking.getServiceIds();
+            expect(serviceIds.length).to.equal(0);
 
             // Restore a previous state of blockchain
             snapshot.restore();
