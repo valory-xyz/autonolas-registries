@@ -123,7 +123,7 @@
       {
         "name": "GnosisSafeSameAddressMultisig",
         "artifact": "abis/0.8.19/GnosisSafeSameAddressMultisig.json",
-        "address": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5"
+        "address": "0xd8BCC126ff31d2582018715d5291A508530587b0"
       }
     ]
   },
