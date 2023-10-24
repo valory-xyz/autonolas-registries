@@ -564,18 +564,16 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             uint256[] memory eligibleServiceRewards, , ) = _calculateStakingRewards();
 
         // If there are eligible services, proceed with staking calculation and update rewards for the service Id
-        if (numServices > 0) {
+        for (uint256 i = 0; i < numServices; ++i) {
             // Get the service index in the eligible service set and calculate its latest reward
-            for (uint256 i = 0; i < eligibleServiceIds.length; ++i) {
-                if (eligibleServiceIds[i] == serviceId) {
-                    // If total allocated rewards are not enough, adjust the reward value
-                    if (totalRewards > lastAvailableRewards) {
-                        reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards;
-                    } else {
-                        reward += eligibleServiceRewards[i];
-                    }
-                    break;
+            if (eligibleServiceIds[i] == serviceId) {
+                // If total allocated rewards are not enough, adjust the reward value
+                if (totalRewards > lastAvailableRewards) {
+                    reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards;
+                } else {
+                    reward += eligibleServiceRewards[i];
                 }
+                break;
             }
         }
     }
