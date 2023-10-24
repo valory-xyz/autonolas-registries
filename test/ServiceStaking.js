@@ -1121,7 +1121,7 @@ describe("ServiceStakingNativeToken", function () {
             expect(balanceBefore).to.equal(balanceAfter);
 
             // Check the final serviceIds set to be empty
-            const serviceIds = await serviceStaking.getServiceIds();
+            const serviceIds = await serviceStakingMechUsage.getServiceIds();
             expect(serviceIds.length).to.equal(0);
 
             // Restore a previous state of blockchain
@@ -1168,7 +1168,7 @@ describe("ServiceStakingNativeToken", function () {
             expect(balanceBefore).to.equal(balanceAfter);
 
             // Check the final serviceIds set to be empty
-            const serviceIds = await serviceStaking.getServiceIds();
+            const serviceIds = await serviceStakingMechUsage.getServiceIds();
             expect(serviceIds.length).to.equal(0);
 
             // Restore a previous state of blockchain
@@ -1232,7 +1232,7 @@ describe("ServiceStakingNativeToken", function () {
             expect(balanceAfter).to.gt(balanceBefore);
 
             // Check the final serviceIds set to be empty
-            const serviceIds = await serviceStaking.getServiceIds();
+            const serviceIds = await serviceStakingMechUsage.getServiceIds();
             expect(serviceIds.length).to.equal(0);
 
             // Restore a previous state of blockchain
@@ -1313,7 +1313,7 @@ describe("ServiceStakingNativeToken", function () {
             expect(balanceAfter.gt(balanceBefore));
 
             // Check the final serviceIds set to be empty
-            const serviceIds = await serviceStaking.getServiceIds();
+            const serviceIds = await serviceStakingTokenMechUsage.getServiceIds();
             expect(serviceIds.length).to.equal(0);
 
             // Restore a previous state of blockchain
