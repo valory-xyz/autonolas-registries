@@ -1,15 +1,9 @@
 'solc --version' running
 'solc ./ServiceStakingNativeToken-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
 'solc --version' running
-'solc ./ServiceStakingMechUsage-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
-'solc --version' running
-'solc ./ServiceStakingTokenMechUsage-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
-'solc --version' running
 'solc ./GnosisSafeSameAddressMultisig-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
 'solc --version' running
 'solc ./ServiceStakingToken-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
-'solc --version' running
-'solc ./MechAgentMod-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
 'solc --version' running
 'solc ./ServiceStakingBase-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
 INFO:Printers:
@@ -57,6 +51,8 @@ INFO:Printers:
     - calculateServiceStakingReward(uint256) (external)
     - checkpoint() (public)
     - constructor(ServiceStakingBase.StakingParams,address,bytes32) (internal)
+    - getNextRewardCheckpointTimestamp() (external)
+    - getServiceIds() (public)
     - isServiceStaked(uint256) (external)
     - stake(uint256) (external)
     - unstake(uint256) (external)
@@ -67,6 +63,8 @@ INFO:Printers:
     - _checkTokenStakingDeposit(uint256,uint256) (internal)
     - calculateServiceStakingReward(uint256) (external)
     - checkpoint() (public)
+    - getNextRewardCheckpointTimestamp() (external)
+    - getServiceIds() (public)
     - isServiceStaked(uint256) (external)
     - stake(uint256) (external)
     - unstake(uint256) (external)
@@ -78,230 +76,6 @@ INFO:Printers:
     - _withdraw(address,uint256) (internal)
     - constructor(ServiceStakingBase.StakingParams,address,bytes32) (public)
     - receive() (external)
-
-INFO:Printers:
-+ Contract IErrorsRegistries
-
-+ Contract ERC721 (Most derived contract)
-  - From ERC721
-    - _burn(uint256) (internal)
-    - _mint(address,uint256) (internal)
-    - _safeMint(address,uint256) (internal)
-    - _safeMint(address,uint256,bytes) (internal)
-    - approve(address,uint256) (public)
-    - balanceOf(address) (public)
-    - constructor(string,string) (internal)
-    - ownerOf(uint256) (public)
-    - safeTransferFrom(address,address,uint256) (public)
-    - safeTransferFrom(address,address,uint256,bytes) (public)
-    - setApprovalForAll(address,bool) (public)
-    - supportsInterface(bytes4) (public)
-    - tokenURI(uint256) (public)
-    - transferFrom(address,address,uint256) (public)
-
-+ Contract ERC721TokenReceiver
-  - From ERC721TokenReceiver
-    - onERC721Received(address,address,uint256,bytes) (external)
-
-+ Contract IMultisig (Most derived contract)
-  - From IMultisig
-    - nonce() (external)
-
-+ Contract IService (Most derived contract)
-  - From IService
-    - getService(uint256) (external)
-    - safeTransferFrom(address,address,uint256) (external)
-
-+ Contract ServiceStakingBase
-  - From ERC721TokenReceiver
-    - onERC721Received(address,address,uint256,bytes) (external)
-  - From ServiceStakingBase
-    - _calculateStakingRewards() (internal)
-    - _checkTokenStakingDeposit(uint256,uint256) (internal)
-    - _getMultisigNonces(address) (internal)
-    - _isRatioPass(uint256[],uint256[],uint256) (internal)
-    - _withdraw(address,uint256) (internal)
-    - calculateServiceStakingReward(uint256) (external)
-    - checkpoint() (public)
-    - constructor(ServiceStakingBase.StakingParams,address,bytes32) (internal)
-    - isServiceStaked(uint256) (external)
-    - stake(uint256) (external)
-    - unstake(uint256) (external)
-
-+ Contract IAgentMech (Most derived contract)
-  - From IAgentMech
-    - getRequestsCount(address) (external)
-
-+ Contract MechAgentMod
-  - From MechAgentMod
-    - _getLivenessRatio() (internal)
-    - _getMultisigNonces(address) (internal)
-    - _isRatioPass(uint256[],uint256[],uint256) (internal)
-    - constructor(address) (internal)
-
-+ Contract ServiceStakingNativeToken
-  - From ServiceStakingBase
-    - _calculateStakingRewards() (internal)
-    - _checkTokenStakingDeposit(uint256,uint256) (internal)
-    - calculateServiceStakingReward(uint256) (external)
-    - checkpoint() (public)
-    - isServiceStaked(uint256) (external)
-    - stake(uint256) (external)
-    - unstake(uint256) (external)
-  - From ERC721TokenReceiver
-    - onERC721Received(address,address,uint256,bytes) (external)
-  - From ServiceStakingNativeToken
-    - _getMultisigNonces(address) (internal)
-    - _isRatioPass(uint256[],uint256[],uint256) (internal)
-    - _withdraw(address,uint256) (internal)
-    - constructor(ServiceStakingBase.StakingParams,address,bytes32) (public)
-    - receive() (external)
-
-+ Contract ServiceStakingMechUsage (Most derived contract)
-  - From MechAgentMod
-    - constructor(address) (internal)
-  - From ServiceStakingNativeToken
-    - _withdraw(address,uint256) (internal)
-    - constructor(ServiceStakingBase.StakingParams,address,bytes32) (public)
-    - receive() (external)
-  - From ServiceStakingBase
-    - _calculateStakingRewards() (internal)
-    - _checkTokenStakingDeposit(uint256,uint256) (internal)
-    - calculateServiceStakingReward(uint256) (external)
-    - checkpoint() (public)
-    - isServiceStaked(uint256) (external)
-    - stake(uint256) (external)
-    - unstake(uint256) (external)
-  - From ERC721TokenReceiver
-    - onERC721Received(address,address,uint256,bytes) (external)
-  - From ServiceStakingMechUsage
-    - _getLivenessRatio() (internal)
-    - _getMultisigNonces(address) (internal)
-    - _isRatioPass(uint256[],uint256[],uint256) (internal)
-    - constructor(ServiceStakingBase.StakingParams,address,bytes32,address) (public)
-
-INFO:Printers:
-+ Contract IErrorsRegistries
-
-+ Contract ERC721 (Most derived contract)
-  - From ERC721
-    - _burn(uint256) (internal)
-    - _mint(address,uint256) (internal)
-    - _safeMint(address,uint256) (internal)
-    - _safeMint(address,uint256,bytes) (internal)
-    - approve(address,uint256) (public)
-    - balanceOf(address) (public)
-    - constructor(string,string) (internal)
-    - ownerOf(uint256) (public)
-    - safeTransferFrom(address,address,uint256) (public)
-    - safeTransferFrom(address,address,uint256,bytes) (public)
-    - setApprovalForAll(address,bool) (public)
-    - supportsInterface(bytes4) (public)
-    - tokenURI(uint256) (public)
-    - transferFrom(address,address,uint256) (public)
-
-+ Contract ERC721TokenReceiver
-  - From ERC721TokenReceiver
-    - onERC721Received(address,address,uint256,bytes) (external)
-
-+ Contract IMultisig (Most derived contract)
-  - From IMultisig
-    - nonce() (external)
-
-+ Contract IService (Most derived contract)
-  - From IService
-    - getService(uint256) (external)
-    - safeTransferFrom(address,address,uint256) (external)
-
-+ Contract ServiceStakingBase
-  - From ERC721TokenReceiver
-    - onERC721Received(address,address,uint256,bytes) (external)
-  - From ServiceStakingBase
-    - _calculateStakingRewards() (internal)
-    - _checkTokenStakingDeposit(uint256,uint256) (internal)
-    - _getMultisigNonces(address) (internal)
-    - _isRatioPass(uint256[],uint256[],uint256) (internal)
-    - _withdraw(address,uint256) (internal)
-    - calculateServiceStakingReward(uint256) (external)
-    - checkpoint() (public)
-    - constructor(ServiceStakingBase.StakingParams,address,bytes32) (internal)
-    - isServiceStaked(uint256) (external)
-    - stake(uint256) (external)
-    - unstake(uint256) (external)
-
-+ Contract IToken (Most derived contract)
-  - From IToken
-    - allowance(address,address) (external)
-    - approve(address,uint256) (external)
-    - balanceOf(address) (external)
-    - decimals() (external)
-    - ownerOf(uint256) (external)
-    - totalSupply() (external)
-    - transfer(address,uint256) (external)
-    - transferFrom(address,address,uint256) (external)
-
-+ Contract SafeTransferLib (Most derived contract)
-  - From SafeTransferLib
-    - safeTransfer(address,address,uint256) (internal)
-    - safeTransferFrom(address,address,address,uint256) (internal)
-
-+ Contract IServiceTokenUtility (Most derived contract)
-  - From IServiceTokenUtility
-    - mapServiceIdTokenDeposit(uint256) (external)
-
-+ Contract ServiceStakingToken
-  - From ServiceStakingBase
-    - _calculateStakingRewards() (internal)
-    - calculateServiceStakingReward(uint256) (external)
-    - checkpoint() (public)
-    - constructor(ServiceStakingBase.StakingParams,address,bytes32) (internal)
-    - isServiceStaked(uint256) (external)
-    - stake(uint256) (external)
-    - unstake(uint256) (external)
-  - From ERC721TokenReceiver
-    - onERC721Received(address,address,uint256,bytes) (external)
-  - From ServiceStakingToken
-    - _checkTokenStakingDeposit(uint256,uint256) (internal)
-    - _getMultisigNonces(address) (internal)
-    - _isRatioPass(uint256[],uint256[],uint256) (internal)
-    - _withdraw(address,uint256) (internal)
-    - constructor(ServiceStakingBase.StakingParams,address,address,address,bytes32) (public)
-    - deposit(uint256) (external)
-
-+ Contract IAgentMech (Most derived contract)
-  - From IAgentMech
-    - getRequestsCount(address) (external)
-
-+ Contract MechAgentMod
-  - From MechAgentMod
-    - _getLivenessRatio() (internal)
-    - _getMultisigNonces(address) (internal)
-    - _isRatioPass(uint256[],uint256[],uint256) (internal)
-    - constructor(address) (internal)
-
-+ Contract ServiceStakingTokenMechUsage (Most derived contract)
-  - From MechAgentMod
-    - constructor(address) (internal)
-  - From ServiceStakingToken
-    - _checkTokenStakingDeposit(uint256,uint256) (internal)
-    - _withdraw(address,uint256) (internal)
-    - constructor(ServiceStakingBase.StakingParams,address,address,address,bytes32) (public)
-    - deposit(uint256) (external)
-  - From ServiceStakingBase
-    - _calculateStakingRewards() (internal)
-    - calculateServiceStakingReward(uint256) (external)
-    - checkpoint() (public)
-    - constructor(ServiceStakingBase.StakingParams,address,bytes32) (internal)
-    - isServiceStaked(uint256) (external)
-    - stake(uint256) (external)
-    - unstake(uint256) (external)
-  - From ERC721TokenReceiver
-    - onERC721Received(address,address,uint256,bytes) (external)
-  - From ServiceStakingTokenMechUsage
-    - _getLivenessRatio() (internal)
-    - _getMultisigNonces(address) (internal)
-    - _isRatioPass(uint256[],uint256[],uint256) (internal)
-    - constructor(ServiceStakingBase.StakingParams,address,address,address,bytes32,address) (public)
 
 INFO:Printers:
 + Contract IGnosisSafe (Most derived contract)
@@ -359,6 +133,8 @@ INFO:Printers:
     - calculateServiceStakingReward(uint256) (external)
     - checkpoint() (public)
     - constructor(ServiceStakingBase.StakingParams,address,bytes32) (internal)
+    - getNextRewardCheckpointTimestamp() (external)
+    - getServiceIds() (public)
     - isServiceStaked(uint256) (external)
     - stake(uint256) (external)
     - unstake(uint256) (external)
@@ -389,6 +165,8 @@ INFO:Printers:
     - calculateServiceStakingReward(uint256) (external)
     - checkpoint() (public)
     - constructor(ServiceStakingBase.StakingParams,address,bytes32) (internal)
+    - getNextRewardCheckpointTimestamp() (external)
+    - getServiceIds() (public)
     - isServiceStaked(uint256) (external)
     - stake(uint256) (external)
     - unstake(uint256) (external)
@@ -401,22 +179,6 @@ INFO:Printers:
     - _withdraw(address,uint256) (internal)
     - constructor(ServiceStakingBase.StakingParams,address,address,address,bytes32) (public)
     - deposit(uint256) (external)
-
-INFO:Printers:
-+ Contract IMultisig (Most derived contract)
-  - From IMultisig
-    - nonce() (external)
-
-+ Contract IAgentMech (Most derived contract)
-  - From IAgentMech
-    - getRequestsCount(address) (external)
-
-+ Contract MechAgentMod (Most derived contract)
-  - From MechAgentMod
-    - _getLivenessRatio() (internal)
-    - _getMultisigNonces(address) (internal)
-    - _isRatioPass(uint256[],uint256[],uint256) (internal)
-    - constructor(address) (internal)
 
 INFO:Printers:
 + Contract IErrorsRegistries
@@ -463,8 +225,10 @@ INFO:Printers:
     - calculateServiceStakingReward(uint256) (external)
     - checkpoint() (public)
     - constructor(ServiceStakingBase.StakingParams,address,bytes32) (internal)
+    - getNextRewardCheckpointTimestamp() (external)
+    - getServiceIds() (public)
     - isServiceStaked(uint256) (external)
     - stake(uint256) (external)
     - unstake(uint256) (external)
 
-INFO:Slither:. analyzed (51 contracts)
+INFO:Slither:. analyzed (25 contracts)
