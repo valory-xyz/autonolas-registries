@@ -16,7 +16,7 @@ N/A
 #### Problems found instrumentally
 Several checks are obtained automatically. They are commented. Some issues found need to be fixed. <br>
 All automatic warnings are listed in the following file, concerns of which we address in more detail below: <br>
-[slither-full-old](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal4/analysis/slither_full_old.txt)
+[slither-full-04-10-23](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal4/analysis/slither_full_04_10_23.txt)
 
 Bad pattern (ref: reentrancy): <br>
 ```solidity
@@ -204,4 +204,11 @@ emit ServiceStaked(serviceId, msg.sender, service.multisig, nonces);
         }
 ```
 [x] fixed
+
+### Security issues. Updated 25-10-23
+The review has been performed based on the contract code in the following repository:<br>
+`https://github.com/valory-xyz/autonolas-registries` <br>
+commit: `v1.1.7.pre-internal-audit` or `387ba93deeb36849c1c205711b97a2c6da0f2745`<br> 
+Re-audit after extract Mech contracts into a separate repo. <br>
+I don't see any new problems after optimization. <br>
 

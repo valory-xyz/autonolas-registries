@@ -1,15 +1,9 @@
 'solc --version' running
 'solc ./ServiceStakingNativeToken-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
 'solc --version' running
-'solc ./ServiceStakingMechUsage-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
-'solc --version' running
-'solc ./ServiceStakingTokenMechUsage-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
-'solc --version' running
 'solc ./GnosisSafeSameAddressMultisig-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
 'solc --version' running
 'solc ./ServiceStakingToken-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
-'solc --version' running
-'solc ./MechAgentMod-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
 'solc --version' running
 'solc ./ServiceStakingBase-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal4/analysis/contracts' running
 INFO:Printers:Call Graph: ./ServiceStakingNativeToken-flatten.sol.all_contracts.call-graph.dot
@@ -17,23 +11,6 @@ Call Graph: ./ServiceStakingNativeToken-flatten.sol.ERC721.call-graph.dot
 Call Graph: ./ServiceStakingNativeToken-flatten.sol.IMultisig.call-graph.dot
 Call Graph: ./ServiceStakingNativeToken-flatten.sol.IService.call-graph.dot
 Call Graph: ./ServiceStakingNativeToken-flatten.sol.ServiceStakingNativeToken.call-graph.dot
-
-INFO:Printers:Call Graph: ./ServiceStakingMechUsage-flatten.sol.all_contracts.call-graph.dot
-Call Graph: ./ServiceStakingMechUsage-flatten.sol.ERC721.call-graph.dot
-Call Graph: ./ServiceStakingMechUsage-flatten.sol.IMultisig.call-graph.dot
-Call Graph: ./ServiceStakingMechUsage-flatten.sol.IService.call-graph.dot
-Call Graph: ./ServiceStakingMechUsage-flatten.sol.IAgentMech.call-graph.dot
-Call Graph: ./ServiceStakingMechUsage-flatten.sol.ServiceStakingMechUsage.call-graph.dot
-
-INFO:Printers:Call Graph: ./ServiceStakingTokenMechUsage-flatten.sol.all_contracts.call-graph.dot
-Call Graph: ./ServiceStakingTokenMechUsage-flatten.sol.ERC721.call-graph.dot
-Call Graph: ./ServiceStakingTokenMechUsage-flatten.sol.IMultisig.call-graph.dot
-Call Graph: ./ServiceStakingTokenMechUsage-flatten.sol.IService.call-graph.dot
-Call Graph: ./ServiceStakingTokenMechUsage-flatten.sol.IToken.call-graph.dot
-Call Graph: ./ServiceStakingTokenMechUsage-flatten.sol.SafeTransferLib.call-graph.dot
-Call Graph: ./ServiceStakingTokenMechUsage-flatten.sol.IServiceTokenUtility.call-graph.dot
-Call Graph: ./ServiceStakingTokenMechUsage-flatten.sol.IAgentMech.call-graph.dot
-Call Graph: ./ServiceStakingTokenMechUsage-flatten.sol.ServiceStakingTokenMechUsage.call-graph.dot
 
 INFO:Printers:Call Graph: ./GnosisSafeSameAddressMultisig-flatten.sol.all_contracts.call-graph.dot
 Call Graph: ./GnosisSafeSameAddressMultisig-flatten.sol.IGnosisSafe.call-graph.dot
@@ -48,15 +25,10 @@ Call Graph: ./ServiceStakingToken-flatten.sol.SafeTransferLib.call-graph.dot
 Call Graph: ./ServiceStakingToken-flatten.sol.IServiceTokenUtility.call-graph.dot
 Call Graph: ./ServiceStakingToken-flatten.sol.ServiceStakingToken.call-graph.dot
 
-INFO:Printers:Call Graph: ./MechAgentMod-flatten.sol.all_contracts.call-graph.dot
-Call Graph: ./MechAgentMod-flatten.sol.IMultisig.call-graph.dot
-Call Graph: ./MechAgentMod-flatten.sol.IAgentMech.call-graph.dot
-Call Graph: ./MechAgentMod-flatten.sol.MechAgentMod.call-graph.dot
-
 INFO:Printers:Call Graph: ./ServiceStakingBase-flatten.sol.all_contracts.call-graph.dot
 Call Graph: ./ServiceStakingBase-flatten.sol.ERC721.call-graph.dot
 Call Graph: ./ServiceStakingBase-flatten.sol.IMultisig.call-graph.dot
 Call Graph: ./ServiceStakingBase-flatten.sol.IService.call-graph.dot
 Call Graph: ./ServiceStakingBase-flatten.sol.ServiceStakingBase.call-graph.dot
 
-INFO:Slither:. analyzed (51 contracts)
+INFO:Slither:. analyzed (25 contracts)

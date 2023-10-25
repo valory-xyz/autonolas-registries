@@ -1,4 +1,4 @@
-// Sources flattened with hardhat v2.17.1 https://hardhat.org
+// Sources flattened with hardhat v2.18.2 https://hardhat.org
 
 // SPDX-License-Identifier: MIT
 
@@ -125,8 +125,6 @@ interface IErrorsRegistries {
 
 
 // File lib/solmate/src/tokens/ERC721.sol
-
-// Original license: SPDX_License_Identifier: MIT
 /// @notice Modern, minimalist, and gas efficient ERC-721 implementation.
 /// @author Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/tokens/ERC721.sol)
 abstract contract ERC721 {
@@ -358,8 +356,6 @@ abstract contract ERC721TokenReceiver {
 
 
 // File contracts/staking/ServiceStakingBase.sol
-
-// Original license: SPDX_License_Identifier: MIT
 // Multisig interface
 interface IMultisig {
     /// @dev Gets the multisig nonce.
@@ -471,9 +467,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         bytes32 configHash;
     }
 
-    event ServiceStaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256 nonce);
+    event ServiceStaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256[] nonces);
     event Checkpoint(uint256 availableRewards, uint256 numServices);
-    event ServiceUnstaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256 nonce,
+    event ServiceUnstaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256[] nonces,
         uint256 reward, uint256 tsStart);
     event Deposit(address indexed sender, uint256 amount, uint256 balance, uint256 availableRewards);
     event Withdraw(address indexed to, uint256 amount);
@@ -642,9 +638,6 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         // Check service staking deposit and token, if applicable
         _checkTokenStakingDeposit(serviceId, service.securityDeposit);
 
-        // Transfer the service for staking
-        IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
-
         // ServiceInfo struct will be an empty one since otherwise the safeTransferFrom above would fail
         ServiceInfo storage sInfo = mapServiceInfo[serviceId];
         sInfo.multisig = service.multisig;
@@ -656,12 +649,15 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         // Add the service Id to the set of staked services
         setServiceIds.push(serviceId);
 
-        emit ServiceStaked(serviceId, msg.sender, service.multisig, nonces[0]);
+        // Transfer the service for staking
+        IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
+
+        emit ServiceStaked(serviceId, msg.sender, service.multisig, nonces);
     }
 
     /// @dev Gets service multisig nonces.
     /// @param multisig Service multisig address.
-    /// @return nonces Set of one or more service multisig nonces depending on implementation.
+    /// @return nonces Set of a single service multisig nonce.
     function _getMultisigNonces(address multisig) internal view virtual returns (uint256[] memory nonces) {
         nonces = new uint256[](1);
         nonces[0] = IMultisig(multisig).nonce();
@@ -672,8 +668,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     ///         currentNonce - service multisig nonce at time now (block.timestamp);
     ///         lastNonce - service multisig nonce at the previous checkpoint or staking time (tsStart);
     ///         ratio = (currentNonce - lastNonce) / (block.timestamp - tsStart).
-    /// @param curNonces Current service multisig nonces.
-    /// @param lastNonces Last service multisig nonces.
+    /// @param curNonces Current service multisig set of a single nonce.
+    /// @param lastNonces Last service multisig set of a single nonce.
     /// @param ts Time difference between current and last timestamps.
     /// @return ratioPass True, if the liveness ratio passes the check.
     function _isRatioPass(
@@ -683,6 +679,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     ) internal view virtual returns (bool ratioPass)
     {
         // If the checkpoint was called in the exact same block, the ratio is zero
+        // If the current nonce is not greater than the last nonce, the ratio is zero
         if (ts > 0 && curNonces[0] > lastNonces[0]) {
             uint256 ratio = ((curNonces[0] - lastNonces[0]) * 1e18) / ts;
             ratioPass = (ratio >= livenessRatio);
@@ -707,60 +704,52 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256[][] memory serviceNonces
     )
     {
-        // Get the service Ids set length
-        uint256 size = setServiceIds.length;
-        serviceIds = new uint256[](size);
-
-        // Record service Ids
-        for (uint256 i = 0; i < size; ++i) {
-            // Get current service Id
-            serviceIds[i] = setServiceIds[i];
-        }
-
-        // Check the last checkpoint timestamp and the liveness period
+        // Check the last checkpoint timestamp and the liveness period, also check for available rewards to be not zero
         uint256 tsCheckpointLast = tsCheckpoint;
-        if (block.timestamp - tsCheckpointLast >= livenessPeriod) {
-            // Get available rewards and last checkpoint timestamp
-            lastAvailableRewards = availableRewards;
+        lastAvailableRewards = availableRewards;
+        if (block.timestamp - tsCheckpointLast >= livenessPeriod && lastAvailableRewards > 0) {
+            // Get the service Ids set length
+            uint256 size = setServiceIds.length;
 
-            // If available rewards are not zero, proceed with staking calculation
-            if (lastAvailableRewards > 0) {
-                // Get necessary arrays
-                eligibleServiceIds = new uint256[](size);
-                eligibleServiceRewards = new uint256[](size);
-                serviceNonces = new uint256[][](size);
+            // Get necessary arrays
+            serviceIds = new uint256[](size);
+            eligibleServiceIds = new uint256[](size);
+            eligibleServiceRewards = new uint256[](size);
+            serviceNonces = new uint256[][](size);
 
-                // Calculate each staked service reward eligibility
-                for (uint256 i = 0; i < size; ++i) {
-                    // Get the service info
-                    ServiceInfo storage sInfo = mapServiceInfo[serviceIds[i]];
+            // Calculate each staked service reward eligibility
+            for (uint256 i = 0; i < size; ++i) {
+                // Get current service Id
+                serviceIds[i] = setServiceIds[i];
 
-                    // Get current service multisig nonce
-                    serviceNonces[i] = _getMultisigNonces(sInfo.multisig);
+                // Get the service info
+                ServiceInfo storage sInfo = mapServiceInfo[serviceIds[i]];
 
-                    // Calculate the liveness nonce ratio
-                    // Get the last service checkpoint: staking start time or the global checkpoint timestamp
-                    uint256 serviceCheckpoint = tsCheckpointLast;
-                    uint256 ts = sInfo.tsStart;
-                    // Adjust the service checkpoint time if the service was staking less than the current staking period
-                    if (ts > serviceCheckpoint) {
-                        serviceCheckpoint = ts;
-                    }
+                // Get current service multisig nonce
+                serviceNonces[i] = _getMultisigNonces(sInfo.multisig);
 
-                    // Calculate the liveness ratio in 1e18 value
-                    // This subtraction is always positive or zero, as the last checkpoint can be at most block.timestamp
-                    ts = block.timestamp - serviceCheckpoint;
-                    bool ratioPass = _isRatioPass(serviceNonces[i], sInfo.nonces, ts);
+                // Calculate the liveness nonce ratio
+                // Get the last service checkpoint: staking start time or the global checkpoint timestamp
+                uint256 serviceCheckpoint = tsCheckpointLast;
+                uint256 ts = sInfo.tsStart;
+                // Adjust the service checkpoint time if the service was staking less than the current staking period
+                if (ts > serviceCheckpoint) {
+                    serviceCheckpoint = ts;
+                }
 
-                    // Record the reward for the service if it has provided enough transactions
-                    if (ratioPass) {
-                        // Calculate the reward up until now and record its value for the corresponding service
-                        uint256 reward = rewardsPerSecond * ts;
-                        totalRewards += reward;
-                        eligibleServiceRewards[numServices] = reward;
-                        eligibleServiceIds[numServices] = serviceIds[i];
-                        ++numServices;
-                    }
+                // Calculate the liveness ratio in 1e18 value
+                // This subtraction is always positive or zero, as the last checkpoint can be at most block.timestamp
+                ts = block.timestamp - serviceCheckpoint;
+                bool ratioPass = _isRatioPass(serviceNonces[i], sInfo.nonces, ts);
+
+                // Record the reward for the service if it has provided enough transactions
+                if (ratioPass) {
+                    // Calculate the reward up until now and record its value for the corresponding service
+                    uint256 reward = rewardsPerSecond * ts;
+                    totalRewards += reward;
+                    eligibleServiceRewards[numServices] = reward;
+                    eligibleServiceIds[numServices] = serviceIds[i];
+                    ++numServices;
                 }
             }
         }
@@ -863,7 +852,12 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         // Call the checkpoint
-        (uint256[] memory serviceIds, , , , , ) = checkpoint();
+        (uint256[] memory serviceIds, , , , , bool success) = checkpoint();
+
+        // If the checkpoint was not successful, the serviceIds set is not returned and needs to be allocated
+        if (!success) {
+            serviceIds = getServiceIds();
+        }
 
         // Get the service index in the set of services
         // The index must always exist as the service is currently staked, otherwise it has no record in the map
@@ -876,7 +870,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
         // Get the unstaked service data
         uint256 reward = sInfo.reward;
-        uint256 nonce = sInfo.nonces[0];
+        uint256[] memory nonces = sInfo.nonces;
         uint256 tsStart = sInfo.tsStart;
         address multisig = sInfo.multisig;
 
@@ -896,7 +890,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             _withdraw(multisig, reward);
         }
 
-        emit ServiceUnstaked(serviceId, msg.sender, multisig, nonce, reward, tsStart);
+        emit ServiceUnstaked(serviceId, msg.sender, multisig, nonces, reward, tsStart);
     }
 
     /// @dev Calculates service staking reward at current timestamp.
@@ -917,34 +911,51 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             uint256[] memory eligibleServiceRewards, , ) = _calculateStakingRewards();
 
         // If there are eligible services, proceed with staking calculation and update rewards for the service Id
-        if (numServices > 0) {
+        for (uint256 i = 0; i < numServices; ++i) {
             // Get the service index in the eligible service set and calculate its latest reward
-            for (uint256 i = 0; i < eligibleServiceIds.length; ++i) {
-                if (eligibleServiceIds[i] == serviceId) {
-                    // If total allocated rewards are not enough, adjust the reward value
-                    if (totalRewards > lastAvailableRewards) {
-                        reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards;
-                    } else {
-                        reward += eligibleServiceRewards[i];
-                    }
-                    break;
+            if (eligibleServiceIds[i] == serviceId) {
+                // If total allocated rewards are not enough, adjust the reward value
+                if (totalRewards > lastAvailableRewards) {
+                    reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards;
+                } else {
+                    reward += eligibleServiceRewards[i];
                 }
+                break;
             }
+        }
+    }
+
+    /// @dev Gets staked service Ids.
+    /// @return serviceIds Staked service Ids.
+    function getServiceIds() public view returns (uint256[] memory serviceIds) {
+        // Get the number of service Ids
+        uint256 size = setServiceIds.length;
+        serviceIds = new uint256[](size);
+
+        // Record service Ids
+        for (uint256 i = 0; i < size; ++i) {
+            serviceIds[i] = setServiceIds[i];
         }
     }
 
     /// @dev Checks if the service is staked.
     /// @param serviceId.
-    /// @return True, if the service is staked.
-    function isServiceStaked(uint256 serviceId) external view returns (bool) {
-        return mapServiceInfo[serviceId].tsStart > 0;
+    /// @return isStaked True, if the service is staked.
+    function isServiceStaked(uint256 serviceId) external view returns (bool isStaked) {
+        isStaked = (mapServiceInfo[serviceId].tsStart > 0);
+    }
+
+    /// @dev Gets the next reward checkpoint timestamp.
+    /// @return tsNext Next reward checkpoint timestamp.
+    function getNextRewardCheckpointTimestamp() external view returns (uint256 tsNext) {
+        // Last checkpoint timestamp plus the liveness period
+        tsNext = tsCheckpoint + livenessPeriod;
     }
 }
 
 
 // File contracts/staking/ServiceStakingNativeToken.sol
 
-// Original license: SPDX_License_Identifier: MIT
 /// @title ServiceStakingNativeToken - Smart contract for staking a service with the service having a native network token as the deposit
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
@@ -986,7 +997,7 @@ contract ServiceStakingNativeToken is ServiceStakingBase {
 
     /// @dev Gets service multisig nonces.
     /// @param multisig Service multisig address.
-    /// @return nonces Set of one or more service multisig nonces depending on implementation.
+    /// @return nonces Set of a single service multisig nonce.
     function _getMultisigNonces(address multisig) internal view virtual override returns (uint256[] memory nonces) {
         nonces = super._getMultisigNonces(multisig);
     }
@@ -996,8 +1007,8 @@ contract ServiceStakingNativeToken is ServiceStakingBase {
     ///         currentNonce - service multisig nonce at time now (block.timestamp);
     ///         lastNonce - service multisig nonce at the previous checkpoint or staking time (tsStart);
     ///         ratio = (currentNonce - lastNonce) / (block.timestamp - tsStart).
-    /// @param curNonces Current service multisig nonces.
-    /// @param lastNonces Last service multisig nonces.
+    /// @param curNonces Current service multisig set of a single nonce.
+    /// @param lastNonces Last service multisig set of a single nonce.
     /// @param ts Time difference between current and last timestamps.
     /// @return ratioPass True, if the liveness ratio passes the check.
     function _isRatioPass(

@@ -1,0 +1,1658 @@
+Notes: False positive. Non-readonly-reentrancy
+INFO:Detectors:
+Potential vulnerable to readonly-reentrancy function (if read in other function) ServiceStakingBase.calculateServiceStakingReward(uint256) (ServiceStakingNativeToken-flatten.sol#905-934):
+	State variables read that were written after the external call(s):
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at sInfo = mapServiceInfo[serviceId] (ServiceStakingNativeToken-flatten.sol#907)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at reward = sInfo.reward (ServiceStakingNativeToken-flatten.sol#908)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at sInfo.tsStart == 0 (ServiceStakingNativeToken-flatten.sol#911)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at revert ServiceNotStaked(uint256)(serviceId) (ServiceStakingNativeToken-flatten.sol#912)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at END_IF (ServiceStakingNativeToken-flatten.sol#911-913)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at NEW VARIABLE lastAvailableRewards (ServiceStakingNativeToken-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at NEW VARIABLE numServices (ServiceStakingNativeToken-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at NEW VARIABLE totalRewards (ServiceStakingNativeToken-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at NEW VARIABLE eligibleServiceIds (ServiceStakingNativeToken-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at NEW VARIABLE eligibleServiceRewards (ServiceStakingNativeToken-flatten.sol#917)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at (lastAvailableRewards,numServices,totalRewards,eligibleServiceIds,eligibleServiceRewards) = _calculateStakingRewards() (ServiceStakingNativeToken-flatten.sol#916-917)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at numServices > 0 (ServiceStakingNativeToken-flatten.sol#920)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at BEGIN_LOOP (ServiceStakingNativeToken-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at END_LOOP (ServiceStakingNativeToken-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at i = 0 (ServiceStakingNativeToken-flatten.sol#922)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at i < eligibleServiceIds.length (ServiceStakingNativeToken-flatten.sol#922)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at eligibleServiceIds[i] == serviceId (ServiceStakingNativeToken-flatten.sol#923)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at totalRewards > lastAvailableRewards (ServiceStakingNativeToken-flatten.sol#925)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards (ServiceStakingNativeToken-flatten.sol#926)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at reward += eligibleServiceRewards[i] (ServiceStakingNativeToken-flatten.sol#928)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at END_IF (ServiceStakingNativeToken-flatten.sol#925-929)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at BREAK (ServiceStakingNativeToken-flatten.sol#930)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at END_IF (ServiceStakingNativeToken-flatten.sol#923-931)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at ++ i (ServiceStakingNativeToken-flatten.sol#922)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at END_IF (ServiceStakingNativeToken-flatten.sol#920-933)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) was read at (lastAvailableRewards,numServices,totalRewards,eligibleServiceIds,eligibleServiceRewards) = _calculateStakingRewards() (ServiceStakingNativeToken-flatten.sol#916-917)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) was read at numServices > 0 (ServiceStakingNativeToken-flatten.sol#920)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) was read at BEGIN_LOOP (ServiceStakingNativeToken-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) was read at END_LOOP (ServiceStakingNativeToken-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) was read at i = 0 (ServiceStakingNativeToken-flatten.sol#922)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) was read at i < eligibleServiceIds.length (ServiceStakingNativeToken-flatten.sol#922)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) was read at eligibleServiceIds[i] == serviceId (ServiceStakingNativeToken-flatten.sol#923)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) was read at totalRewards > lastAvailableRewards (ServiceStakingNativeToken-flatten.sol#925)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) was read at reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards (ServiceStakingNativeToken-flatten.sol#926)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) was read at reward += eligibleServiceRewards[i] (ServiceStakingNativeToken-flatten.sol#928)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) was read at END_IF (ServiceStakingNativeToken-flatten.sol#925-929)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) was read at BREAK (ServiceStakingNativeToken-flatten.sol#930)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) was read at END_IF (ServiceStakingNativeToken-flatten.sol#923-931)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) was read at ++ i (ServiceStakingNativeToken-flatten.sol#922)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) was read at END_IF (ServiceStakingNativeToken-flatten.sol#920-933)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+Potential vulnerable to readonly-reentrancy function (if read in other function) ServiceStakingBase.isServiceStaked(uint256) (ServiceStakingNativeToken-flatten.sol#939-941):
+	State variables read that were written after the external call(s):
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingNativeToken-flatten.sol#514) was read at mapServiceInfo[serviceId].tsStart > 0 (ServiceStakingNativeToken-flatten.sol#940)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/readonly_reentrancy.md
+
+Notes: False positive. See previous report.
+INFO:Detectors:
+ServiceStakingBase.calculateServiceStakingReward(uint256) (ServiceStakingNativeToken-flatten.sol#905-934) uses a dangerous strict equality:
+	- sInfo.tsStart == 0 (ServiceStakingNativeToken-flatten.sol#911)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+
+Notes: False positive. See previous report.
+INFO:Detectors:
+Reentrancy in ServiceStakingBase.stake(uint256) (ServiceStakingNativeToken-flatten.sol#588-660):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (ServiceStakingNativeToken-flatten.sol#646)
+	State variables written after the call(s):
+	- setServiceIds.push(serviceId) (ServiceStakingNativeToken-flatten.sol#657)
+	ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516) can be used in cross function reentrancies:
+	- ServiceStakingBase._calculateStakingRewards() (ServiceStakingNativeToken-flatten.sol#700-767)
+	- ServiceStakingBase.setServiceIds (ServiceStakingNativeToken-flatten.sol#516)
+	- ServiceStakingBase.stake(uint256) (ServiceStakingNativeToken-flatten.sol#588-660)
+	- ServiceStakingBase.unstake(uint256) (ServiceStakingNativeToken-flatten.sol#858-900)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
+
+Notes: False positive. See previous report.
+INFO:Detectors:
+ServiceStakingBase unstake parameter from is not related to msg.sender IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (ServiceStakingNativeToken-flatten.sol#892)
+Reference: https://ventral.digital/posts/2022/8/18/sznsdaos-bountyboard-unauthorized-transferfrom-vulnerability
+
+Notes: False positive. See previous report.
+INFO:Detectors:
+Function ServiceStakingNativeToken._withdraw(address,uint256) (ServiceStakingNativeToken-flatten.sol#964-973) contains a low level call to a custom address
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/call_forward_to_protected.md
+
+Notes: False positive. See previous report.
+INFO:Detectors:
+Reentrancy in ServiceStakingBase.stake(uint256) (ServiceStakingNativeToken-flatten.sol#588-660):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (ServiceStakingNativeToken-flatten.sol#646)
+	State variables written after the call(s):
+	- sInfo.multisig = service.multisig (ServiceStakingNativeToken-flatten.sol#650)
+	- sInfo.owner = msg.sender (ServiceStakingNativeToken-flatten.sol#651)
+	- sInfo.nonces = nonces (ServiceStakingNativeToken-flatten.sol#653)
+	- sInfo.tsStart = block.timestamp (ServiceStakingNativeToken-flatten.sol#654)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-2
+
+Notes: False positive. See previous report.
+INFO:Detectors:
+Reentrancy in ServiceStakingBase.stake(uint256) (ServiceStakingNativeToken-flatten.sol#588-660):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (ServiceStakingNativeToken-flatten.sol#646)
+	Event emitted after the call(s):
+	- ServiceStaked(serviceId,msg.sender,service.multisig,nonces[0]) (ServiceStakingNativeToken-flatten.sol#659)
+Reentrancy in ServiceStakingBase.unstake(uint256) (ServiceStakingNativeToken-flatten.sol#858-900):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (ServiceStakingNativeToken-flatten.sol#892)
+	Event emitted after the call(s):
+	- ServiceUnstaked(serviceId,msg.sender,multisig,nonce,reward,tsStart) (ServiceStakingNativeToken-flatten.sol#899)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+Notes: False positive. See previous report.
+INFO:Detectors:
+ServiceStakingBase._isRatioPass(uint256[],uint256[],uint256) (ServiceStakingNativeToken-flatten.sol#679-690) uses timestamp for comparisons
+	Dangerous comparisons:
+	- ts > 0 && curNonces[0] > lastNonces[0] (ServiceStakingNativeToken-flatten.sol#686)
+	- ratioPass = (ratio >= livenessRatio) (ServiceStakingNativeToken-flatten.sol#688)
+ServiceStakingBase._calculateStakingRewards() (ServiceStakingNativeToken-flatten.sol#700-767) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp - tsCheckpointLast >= livenessPeriod (ServiceStakingNativeToken-flatten.sol#722)
+	- ts > serviceCheckpoint (ServiceStakingNativeToken-flatten.sol#746)
+ServiceStakingBase.calculateServiceStakingReward(uint256) (ServiceStakingNativeToken-flatten.sol#905-934) uses timestamp for comparisons
+	Dangerous comparisons:
+	- sInfo.tsStart == 0 (ServiceStakingNativeToken-flatten.sol#911)
+ServiceStakingBase.isServiceStaked(uint256) (ServiceStakingNativeToken-flatten.sol#939-941) uses timestamp for comparisons
+	Dangerous comparisons:
+	- mapServiceInfo[serviceId].tsStart > 0 (ServiceStakingNativeToken-flatten.sol#940)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+
+Notes: False positive. By design.
+INFO:Detectors:
+ServiceStakingBase.stake(uint256) (ServiceStakingNativeToken-flatten.sol#588-660) has a high cyclomatic complexity (12).
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cyclomatic-complexity
+
+Notes: False positive. Immutable code.
+INFO:Detectors:
+ERC721._burn(uint256) (ServiceStakingNativeToken-flatten.sol#298-313) is never used and should be removed
+ERC721._mint(address,uint256) (ServiceStakingNativeToken-flatten.sol#283-296) is never used and should be removed
+ERC721._safeMint(address,uint256) (ServiceStakingNativeToken-flatten.sol#319-328) is never used and should be removed
+ERC721._safeMint(address,uint256,bytes) (ServiceStakingNativeToken-flatten.sol#330-343) is never used and should be removed
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dead-code
+
+Notes: False positive. By design.
+INFO:Detectors:
+Low level call in ServiceStakingNativeToken._withdraw(address,uint256) (ServiceStakingNativeToken-flatten.sol#964-973):
+	- (result) = to.call{value: amount}() (ServiceStakingNativeToken-flatten.sol#969)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+
+Notes: False positive. By design.
+INFO:Detectors:
+Variable ERC721._ownerOf (ServiceStakingNativeToken-flatten.sol#157) is not in mixedCase
+Variable ERC721._balanceOf (ServiceStakingNativeToken-flatten.sol#159) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+
+Notes: False positive. 
+INFO:Detectors:
+ERC721 (ServiceStakingNativeToken-flatten.sol#132-344) does not implement functions:
+	- ERC721.tokenURI(uint256) (ServiceStakingNativeToken-flatten.sol#151)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unimplemented-functions
+
+Notes: False positive. See previous report.
+INFO:Detectors:
+Potential vulnerable to readonly-reentrancy function (if read in other function) ServiceStakingBase.calculateServiceStakingReward(uint256) (ServiceStakingMechUsage-flatten.sol#902-931):
+	State variables read that were written after the external call(s):
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at sInfo = mapServiceInfo[serviceId] (ServiceStakingMechUsage-flatten.sol#904)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at reward = sInfo.reward (ServiceStakingMechUsage-flatten.sol#905)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at sInfo.tsStart == 0 (ServiceStakingMechUsage-flatten.sol#908)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at revert ServiceNotStaked(uint256)(serviceId) (ServiceStakingMechUsage-flatten.sol#909)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at END_IF (ServiceStakingMechUsage-flatten.sol#908-910)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at NEW VARIABLE lastAvailableRewards (ServiceStakingMechUsage-flatten.sol#913)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at NEW VARIABLE numServices (ServiceStakingMechUsage-flatten.sol#913)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at NEW VARIABLE totalRewards (ServiceStakingMechUsage-flatten.sol#913)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at NEW VARIABLE eligibleServiceIds (ServiceStakingMechUsage-flatten.sol#913)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at NEW VARIABLE eligibleServiceRewards (ServiceStakingMechUsage-flatten.sol#914)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at (lastAvailableRewards,numServices,totalRewards,eligibleServiceIds,eligibleServiceRewards) = _calculateStakingRewards() (ServiceStakingMechUsage-flatten.sol#913-914)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at numServices > 0 (ServiceStakingMechUsage-flatten.sol#917)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at BEGIN_LOOP (ServiceStakingMechUsage-flatten.sol#919-929)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at END_LOOP (ServiceStakingMechUsage-flatten.sol#919-929)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at i = 0 (ServiceStakingMechUsage-flatten.sol#919)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at i < eligibleServiceIds.length (ServiceStakingMechUsage-flatten.sol#919)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at eligibleServiceIds[i] == serviceId (ServiceStakingMechUsage-flatten.sol#920)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at totalRewards > lastAvailableRewards (ServiceStakingMechUsage-flatten.sol#922)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards (ServiceStakingMechUsage-flatten.sol#923)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at reward += eligibleServiceRewards[i] (ServiceStakingMechUsage-flatten.sol#925)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at END_IF (ServiceStakingMechUsage-flatten.sol#922-926)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at BREAK (ServiceStakingMechUsage-flatten.sol#927)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at END_IF (ServiceStakingMechUsage-flatten.sol#920-928)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at ++ i (ServiceStakingMechUsage-flatten.sol#919)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at END_IF (ServiceStakingMechUsage-flatten.sol#917-930)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) was read at (lastAvailableRewards,numServices,totalRewards,eligibleServiceIds,eligibleServiceRewards) = _calculateStakingRewards() (ServiceStakingMechUsage-flatten.sol#913-914)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) was read at numServices > 0 (ServiceStakingMechUsage-flatten.sol#917)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) was read at BEGIN_LOOP (ServiceStakingMechUsage-flatten.sol#919-929)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) was read at END_LOOP (ServiceStakingMechUsage-flatten.sol#919-929)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) was read at i = 0 (ServiceStakingMechUsage-flatten.sol#919)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) was read at i < eligibleServiceIds.length (ServiceStakingMechUsage-flatten.sol#919)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) was read at eligibleServiceIds[i] == serviceId (ServiceStakingMechUsage-flatten.sol#920)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) was read at totalRewards > lastAvailableRewards (ServiceStakingMechUsage-flatten.sol#922)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) was read at reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards (ServiceStakingMechUsage-flatten.sol#923)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) was read at reward += eligibleServiceRewards[i] (ServiceStakingMechUsage-flatten.sol#925)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) was read at END_IF (ServiceStakingMechUsage-flatten.sol#922-926)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) was read at BREAK (ServiceStakingMechUsage-flatten.sol#927)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) was read at END_IF (ServiceStakingMechUsage-flatten.sol#920-928)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) was read at ++ i (ServiceStakingMechUsage-flatten.sol#919)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) was read at END_IF (ServiceStakingMechUsage-flatten.sol#917-930)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+Potential vulnerable to readonly-reentrancy function (if read in other function) ServiceStakingBase.isServiceStaked(uint256) (ServiceStakingMechUsage-flatten.sol#936-938):
+	State variables read that were written after the external call(s):
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingMechUsage-flatten.sol#511) was read at mapServiceInfo[serviceId].tsStart > 0 (ServiceStakingMechUsage-flatten.sol#937)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+			- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+			- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+			- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/readonly_reentrancy.md
+
+Notes: False positive. See previous report.
+INFO:Detectors:
+ServiceStakingBase.calculateServiceStakingReward(uint256) (ServiceStakingMechUsage-flatten.sol#902-931) uses a dangerous strict equality:
+	- sInfo.tsStart == 0 (ServiceStakingMechUsage-flatten.sol#908)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+
+Notes: False positive. See previous report.
+INFO:Detectors:
+Reentrancy in ServiceStakingBase.stake(uint256) (ServiceStakingMechUsage-flatten.sol#585-657):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (ServiceStakingMechUsage-flatten.sol#643)
+	State variables written after the call(s):
+	- setServiceIds.push(serviceId) (ServiceStakingMechUsage-flatten.sol#654)
+	ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513) can be used in cross function reentrancies:
+	- ServiceStakingBase._calculateStakingRewards() (ServiceStakingMechUsage-flatten.sol#697-764)
+	- ServiceStakingBase.setServiceIds (ServiceStakingMechUsage-flatten.sol#513)
+	- ServiceStakingBase.stake(uint256) (ServiceStakingMechUsage-flatten.sol#585-657)
+	- ServiceStakingBase.unstake(uint256) (ServiceStakingMechUsage-flatten.sol#855-897)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-
+
+Notes: False positive. See previous report.
+INFO:Detectors:
+ServiceStakingBase unstake parameter from is not related to msg.sender IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (ServiceStakingMechUsage-flatten.sol#889)
+Reference: https://ventral.digital/posts/2022/8/18/sznsdaos-bountyboard-unauthorized-transferfrom-vulnerability
+
+Notes: False positive. See previous report. 
+INFO:Detectors:
+Function ServiceStakingNativeToken._withdraw(address,uint256) (ServiceStakingMechUsage-flatten.sol#1036-1045) contains a low level call to a custom address
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/call_forward_to_protected.md
+
+Notes: False positive.  can be eliminated.
+INFO:Detectors:
+Reentrancy in ServiceStakingBase.stake(uint256) (ServiceStakingMechUsage-flatten.sol#585-657):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (ServiceStakingMechUsage-flatten.sol#643)
+	State variables written after the call(s):
+	- sInfo.multisig = service.multisig (ServiceStakingMechUsage-flatten.sol#647)
+	- sInfo.owner = msg.sender (ServiceStakingMechUsage-flatten.sol#648)
+	- sInfo.nonces = nonces (ServiceStakingMechUsage-flatten.sol#650)
+	- sInfo.tsStart = block.timestamp (ServiceStakingMechUsage-flatten.sol#651)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-2
+
+Notes: False positive.  can be eliminated.
+INFO:Detectors:
+Reentrancy in ServiceStakingBase.stake(uint256) (ServiceStakingMechUsage-flatten.sol#585-657):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (ServiceStakingMechUsage-flatten.sol#643)
+	Event emitted after the call(s):
+	- ServiceStaked(serviceId,msg.sender,service.multisig,nonces[0]) (ServiceStakingMechUsage-flatten.sol#656)
+Reentrancy in ServiceStakingBase.unstake(uint256) (ServiceStakingMechUsage-flatten.sol#855-897):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (ServiceStakingMechUsage-flatten.sol#889)
+	Event emitted after the call(s):
+	- ServiceUnstaked(serviceId,msg.sender,multisig,nonce,reward,tsStart) (ServiceStakingMechUsage-flatten.sol#896)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+Notes: False positive.  can be eliminated.
+INFO:Detectors:
+ServiceStakingBase._isRatioPass(uint256[],uint256[],uint256) (ServiceStakingMechUsage-flatten.sol#676-687) uses timestamp for comparisons
+	Dangerous comparisons:
+	- ts > 0 && curNonces[0] > lastNonces[0] (ServiceStakingMechUsage-flatten.sol#683)
+	- ratioPass = (ratio >= livenessRatio) (ServiceStakingMechUsage-flatten.sol#685)
+ServiceStakingBase._calculateStakingRewards() (ServiceStakingMechUsage-flatten.sol#697-764) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp - tsCheckpointLast >= livenessPeriod (ServiceStakingMechUsage-flatten.sol#719)
+	- ts > serviceCheckpoint (ServiceStakingMechUsage-flatten.sol#743)
+ServiceStakingBase.calculateServiceStakingReward(uint256) (ServiceStakingMechUsage-flatten.sol#902-931) uses timestamp for comparisons
+	Dangerous comparisons:
+	- sInfo.tsStart == 0 (ServiceStakingMechUsage-flatten.sol#908)
+ServiceStakingBase.isServiceStaked(uint256) (ServiceStakingMechUsage-flatten.sol#936-938) uses timestamp for comparisons
+	Dangerous comparisons:
+	- mapServiceInfo[serviceId].tsStart > 0 (ServiceStakingMechUsage-flatten.sol#937)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+
+Notes: False positive. see above.
+INFO:Detectors:
+ServiceStakingBase.stake(uint256) (ServiceStakingMechUsage-flatten.sol#585-657) has a high cyclomatic complexity (12).
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cyclomatic-complexity
+
+Notes: False positive. see above
+INFO:Detectors:
+ERC721._burn(uint256) (ServiceStakingMechUsage-flatten.sol#297-312) is never used and should be removed
+ERC721._mint(address,uint256) (ServiceStakingMechUsage-flatten.sol#282-295) is never used and should be removed
+ERC721._safeMint(address,uint256) (ServiceStakingMechUsage-flatten.sol#318-327) is never used and should be removed
+ERC721._safeMint(address,uint256,bytes) (ServiceStakingMechUsage-flatten.sol#329-342) is never used and should be removed
+ServiceStakingBase._getMultisigNonces(address) (ServiceStakingMechUsage-flatten.sol#662-665) is never used and should be removed
+ServiceStakingBase._isRatioPass(uint256[],uint256[],uint256) (ServiceStakingMechUsage-flatten.sol#676-687) is never used and should be removed
+ServiceStakingNativeToken._getMultisigNonces(address) (ServiceStakingMechUsage-flatten.sol#1062-1064) is never used and should be removed
+ServiceStakingNativeToken._isRatioPass(uint256[],uint256[],uint256) (ServiceStakingMechUsage-flatten.sol#1075-1082) is never used and should be removed
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dead-code
+
+Notes: False positive. see above
+INFO:Detectors:
+Low level call in ServiceStakingNativeToken._withdraw(address,uint256) (ServiceStakingMechUsage-flatten.sol#1036-1045):
+	- (result) = to.call{value: amount}() (ServiceStakingMechUsage-flatten.sol#1041)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+
+Notes: False positive. see above
+INFO:Detectors:
+Variable ERC721._ownerOf (ServiceStakingMechUsage-flatten.sol#156) is not in mixedCase
+Variable ERC721._balanceOf (ServiceStakingMechUsage-flatten.sol#158) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+
+Notes: False positive. see above
+INFO:Detectors:
+ERC721 (ServiceStakingMechUsage-flatten.sol#131-343) does not implement functions:
+	- ERC721.tokenURI(uint256) (ServiceStakingMechUsage-flatten.sol#150)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unimplemented-functions
+
+Notes: False positive. see above
+INFO:Detectors:
+Potential vulnerable to readonly-reentrancy function (if read in other function) ServiceStakingBase.calculateServiceStakingReward(uint256) (ServiceStakingTokenMechUsage-flatten.sol#905-934):
+	State variables read that were written after the external call(s):
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at sInfo = mapServiceInfo[serviceId] (ServiceStakingTokenMechUsage-flatten.sol#907)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at reward = sInfo.reward (ServiceStakingTokenMechUsage-flatten.sol#908)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at sInfo.tsStart == 0 (ServiceStakingTokenMechUsage-flatten.sol#911)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at revert ServiceNotStaked(uint256)(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#912)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at END_IF (ServiceStakingTokenMechUsage-flatten.sol#911-913)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at NEW VARIABLE lastAvailableRewards (ServiceStakingTokenMechUsage-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at NEW VARIABLE numServices (ServiceStakingTokenMechUsage-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at NEW VARIABLE totalRewards (ServiceStakingTokenMechUsage-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at NEW VARIABLE eligibleServiceIds (ServiceStakingTokenMechUsage-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at NEW VARIABLE eligibleServiceRewards (ServiceStakingTokenMechUsage-flatten.sol#917)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at (lastAvailableRewards,numServices,totalRewards,eligibleServiceIds,eligibleServiceRewards) = _calculateStakingRewards() (ServiceStakingTokenMechUsage-flatten.sol#916-917)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at numServices > 0 (ServiceStakingTokenMechUsage-flatten.sol#920)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at BEGIN_LOOP (ServiceStakingTokenMechUsage-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at END_LOOP (ServiceStakingTokenMechUsage-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at i = 0 (ServiceStakingTokenMechUsage-flatten.sol#922)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at i < eligibleServiceIds.length (ServiceStakingTokenMechUsage-flatten.sol#922)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at eligibleServiceIds[i] == serviceId (ServiceStakingTokenMechUsage-flatten.sol#923)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at totalRewards > lastAvailableRewards (ServiceStakingTokenMechUsage-flatten.sol#925)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards (ServiceStakingTokenMechUsage-flatten.sol#926)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at reward += eligibleServiceRewards[i] (ServiceStakingTokenMechUsage-flatten.sol#928)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at END_IF (ServiceStakingTokenMechUsage-flatten.sol#925-929)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at BREAK (ServiceStakingTokenMechUsage-flatten.sol#930)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at END_IF (ServiceStakingTokenMechUsage-flatten.sol#923-931)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at ++ i (ServiceStakingTokenMechUsage-flatten.sol#922)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at END_IF (ServiceStakingTokenMechUsage-flatten.sol#920-933)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) was read at (lastAvailableRewards,numServices,totalRewards,eligibleServiceIds,eligibleServiceRewards) = _calculateStakingRewards() (ServiceStakingTokenMechUsage-flatten.sol#916-917)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) was read at numServices > 0 (ServiceStakingTokenMechUsage-flatten.sol#920)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) was read at BEGIN_LOOP (ServiceStakingTokenMechUsage-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) was read at END_LOOP (ServiceStakingTokenMechUsage-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) was read at i = 0 (ServiceStakingTokenMechUsage-flatten.sol#922)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) was read at i < eligibleServiceIds.length (ServiceStakingTokenMechUsage-flatten.sol#922)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) was read at eligibleServiceIds[i] == serviceId (ServiceStakingTokenMechUsage-flatten.sol#923)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) was read at totalRewards > lastAvailableRewards (ServiceStakingTokenMechUsage-flatten.sol#925)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) was read at reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards (ServiceStakingTokenMechUsage-flatten.sol#926)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) was read at reward += eligibleServiceRewards[i] (ServiceStakingTokenMechUsage-flatten.sol#928)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) was read at END_IF (ServiceStakingTokenMechUsage-flatten.sol#925-929)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) was read at BREAK (ServiceStakingTokenMechUsage-flatten.sol#930)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) was read at END_IF (ServiceStakingTokenMechUsage-flatten.sol#923-931)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) was read at ++ i (ServiceStakingTokenMechUsage-flatten.sol#922)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) was read at END_IF (ServiceStakingTokenMechUsage-flatten.sol#920-933)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+Potential vulnerable to readonly-reentrancy function (if read in other function) ServiceStakingBase.isServiceStaked(uint256) (ServiceStakingTokenMechUsage-flatten.sol#939-941):
+	State variables read that were written after the external call(s):
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingTokenMechUsage-flatten.sol#514) was read at mapServiceInfo[serviceId].tsStart > 0 (ServiceStakingTokenMechUsage-flatten.sol#940)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/readonly_reentrancy.md
+
+Notes: False positive. see above
+INFO:Detectors:
+IToken (ServiceStakingTokenMechUsage-flatten.sol#949-992) has incorrect ERC721 function interface:IToken.approve(address,uint256) (ServiceStakingTokenMechUsage-flatten.sol#980)
+IToken (ServiceStakingTokenMechUsage-flatten.sol#949-992) has incorrect ERC721 function interface:IToken.transferFrom(address,address,uint256) (ServiceStakingTokenMechUsage-flatten.sol#987)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-erc721-interface
+
+Notes: False positive. see above
+INFO:Detectors:
+ServiceStakingBase.calculateServiceStakingReward(uint256) (ServiceStakingTokenMechUsage-flatten.sol#905-934) uses a dangerous strict equality:
+	- sInfo.tsStart == 0 (ServiceStakingTokenMechUsage-flatten.sol#911)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+
+Notes: False positive. can be eliminated
+INFO:Detectors:
+Reentrancy in ServiceStakingBase.stake(uint256) (ServiceStakingTokenMechUsage-flatten.sol#588-660):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (ServiceStakingTokenMechUsage-flatten.sol#646)
+	State variables written after the call(s):
+	- setServiceIds.push(serviceId) (ServiceStakingTokenMechUsage-flatten.sol#657)
+	ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516) can be used in cross function reentrancies:
+	- ServiceStakingBase._calculateStakingRewards() (ServiceStakingTokenMechUsage-flatten.sol#700-767)
+	- ServiceStakingBase.setServiceIds (ServiceStakingTokenMechUsage-flatten.sol#516)
+	- ServiceStakingBase.stake(uint256) (ServiceStakingTokenMechUsage-flatten.sol#588-660)
+	- ServiceStakingBase.unstake(uint256) (ServiceStakingTokenMechUsage-flatten.sol#858-900)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
+
+Notes: False positive. see above
+INFO:Detectors:
+ServiceStakingBase unstake parameter from is not related to msg.sender IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (ServiceStakingTokenMechUsage-flatten.sol#892)
+Reference: https://ventral.digital/posts/2022/8/18/sznsdaos-bountyboard-unauthorized-transferfrom-vulnerability
+INFO:Detectors:
+Reentrancy in ServiceStakingBase.stake(uint256) (ServiceStakingTokenMechUsage-flatten.sol#588-660):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (ServiceStakingTokenMechUsage-flatten.sol#646)
+	State variables written after the call(s):
+	- sInfo.multisig = service.multisig (ServiceStakingTokenMechUsage-flatten.sol#650)
+	- sInfo.owner = msg.sender (ServiceStakingTokenMechUsage-flatten.sol#651)
+	- sInfo.nonces = nonces (ServiceStakingTokenMechUsage-flatten.sol#653)
+	- sInfo.tsStart = block.timestamp (ServiceStakingTokenMechUsage-flatten.sol#654)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-2
+
+Notes: False positive. 
+INFO:Detectors:
+Reentrancy in ServiceStakingBase.stake(uint256) (ServiceStakingTokenMechUsage-flatten.sol#588-660):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (ServiceStakingTokenMechUsage-flatten.sol#646)
+	Event emitted after the call(s):
+	- ServiceStaked(serviceId,msg.sender,service.multisig,nonces[0]) (ServiceStakingTokenMechUsage-flatten.sol#659)
+
+Notes: False positive. see above
+Reentrancy in ServiceStakingBase.unstake(uint256) (ServiceStakingTokenMechUsage-flatten.sol#858-900):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (ServiceStakingTokenMechUsage-flatten.sol#892)
+	Event emitted after the call(s):
+	- ServiceUnstaked(serviceId,msg.sender,multisig,nonce,reward,tsStart) (ServiceStakingTokenMechUsage-flatten.sol#899)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+Notes: False positive. see above
+INFO:Detectors:
+ServiceStakingBase._isRatioPass(uint256[],uint256[],uint256) (ServiceStakingTokenMechUsage-flatten.sol#679-690) uses timestamp for comparisons
+	Dangerous comparisons:
+	- ts > 0 && curNonces[0] > lastNonces[0] (ServiceStakingTokenMechUsage-flatten.sol#686)
+	- ratioPass = (ratio >= livenessRatio) (ServiceStakingTokenMechUsage-flatten.sol#688)
+ServiceStakingBase._calculateStakingRewards() (ServiceStakingTokenMechUsage-flatten.sol#700-767) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp - tsCheckpointLast >= livenessPeriod (ServiceStakingTokenMechUsage-flatten.sol#722)
+	- ts > serviceCheckpoint (ServiceStakingTokenMechUsage-flatten.sol#746)
+ServiceStakingBase.calculateServiceStakingReward(uint256) (ServiceStakingTokenMechUsage-flatten.sol#905-934) uses timestamp for comparisons
+	Dangerous comparisons:
+	- sInfo.tsStart == 0 (ServiceStakingTokenMechUsage-flatten.sol#911)
+ServiceStakingBase.isServiceStaked(uint256) (ServiceStakingTokenMechUsage-flatten.sol#939-941) uses timestamp for comparisons
+	Dangerous comparisons:
+	- mapServiceInfo[serviceId].tsStart > 0 (ServiceStakingTokenMechUsage-flatten.sol#940)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+
+Notes: False positive.
+INFO:Detectors:
+SafeTransferLib.safeTransferFrom(address,address,address,uint256) (ServiceStakingTokenMechUsage-flatten.sol#1016-1047) uses assembly
+	- INLINE ASM (ServiceStakingTokenMechUsage-flatten.sol#1020-1042)
+SafeTransferLib.safeTransfer(address,address,uint256) (ServiceStakingTokenMechUsage-flatten.sol#1058-1088) uses assembly
+	- INLINE ASM (ServiceStakingTokenMechUsage-flatten.sol#1062-1083)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#assembly-usage
+
+Notes: False positive. see above
+INFO:Detectors:
+ServiceStakingBase.stake(uint256) (ServiceStakingTokenMechUsage-flatten.sol#588-660) has a high cyclomatic complexity (12).
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cyclomatic-complexity
+
+Notes: False positive. see above
+INFO:Detectors:
+ERC721._burn(uint256) (ServiceStakingTokenMechUsage-flatten.sol#298-313) is never used and should be removed
+ERC721._mint(address,uint256) (ServiceStakingTokenMechUsage-flatten.sol#283-296) is never used and should be removed
+ERC721._safeMint(address,uint256) (ServiceStakingTokenMechUsage-flatten.sol#319-328) is never used and should be removed
+ERC721._safeMint(address,uint256,bytes) (ServiceStakingTokenMechUsage-flatten.sol#330-343) is never used and should be removed
+ServiceStakingBase._checkTokenStakingDeposit(uint256,uint256) (ServiceStakingTokenMechUsage-flatten.sol#574-579) is never used and should be removed
+ServiceStakingBase._getMultisigNonces(address) (ServiceStakingTokenMechUsage-flatten.sol#665-668) is never used and should be removed
+ServiceStakingBase._isRatioPass(uint256[],uint256[],uint256) (ServiceStakingTokenMechUsage-flatten.sol#679-690) is never used and should be removed
+ServiceStakingToken._getMultisigNonces(address) (ServiceStakingTokenMechUsage-flatten.sol#1203-1205) is never used and should be removed
+ServiceStakingToken._isRatioPass(uint256[],uint256[],uint256) (ServiceStakingTokenMechUsage-flatten.sol#1216-1223) is never used and should be removed
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dead-code
+
+Notes: False positive. see above
+INFO:Detectors:
+Variable ERC721._ownerOf (ServiceStakingTokenMechUsage-flatten.sol#157) is not in mixedCase
+Variable ERC721._balanceOf (ServiceStakingTokenMechUsage-flatten.sol#159) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+
+Notes: False positive. see above
+INFO:Detectors:
+SafeTransferLib.safeTransferFrom(address,address,address,uint256) (ServiceStakingTokenMechUsage-flatten.sol#1016-1047) uses literals with too many digits:
+	- mstore(uint256,uint256)(0,0x23b872dd00000000000000000000000000000000000000000000000000000000) (ServiceStakingTokenMechUsage-flatten.sol#1025)
+SafeTransferLib.safeTransfer(address,address,uint256) (ServiceStakingTokenMechUsage-flatten.sol#1058-1088) uses literals with too many digits:
+	- mstore(uint256,uint256)(0,0xa9059cbb00000000000000000000000000000000000000000000000000000000) (ServiceStakingTokenMechUsage-flatten.sol#1067)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#too-many-digits
+
+Notes: False positive. see above
+INFO:Detectors:
+ERC721 (ServiceStakingTokenMechUsage-flatten.sol#132-344) does not implement functions:
+	- ERC721.tokenURI(uint256) (ServiceStakingTokenMechUsage-flatten.sol#151)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unimplemented-functions
+
+Notes: False positive. see above
+INFO:Detectors:
+Function SafeTransferLib.safeTransferFrom(address,address,address,uint256) (ServiceStakingTokenMechUsage-flatten.sol#1016-1047) contains magic numbers: 4, 36, 68
+Function SafeTransferLib.safeTransfer(address,address,uint256) (ServiceStakingTokenMechUsage-flatten.sol#1058-1088) contains magic numbers: 4, 36
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/magic_number.md
+
+Notes: False positive. 
+INFO:Detectors:
+Manipulated call found: (success) = multisig.call(payload) (GnosisSafeSameAddressMultisig-flatten.sol#124) in GnosisSafeSameAddressMultisig.create(address[],uint256,bytes) (GnosisSafeSameAddressMultisig-flatten.sol#91-150)
+Both destination and calldata could be manipulated
+	The call could be fully manipulated (arbitrary call) through GnosisSafeSameAddressMultisig.create(address[],uint256,bytes) (GnosisSafeSameAddressMultisig-flatten.sol#91-150)
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/arbitrary_call.md
+
+Notes: False positive. 
+ref: if (dataLength > DEFAULT_DATA_LENGTH) {
+INFO:Detectors:
+GnosisSafeSameAddressMultisig.create(address[],uint256,bytes).multisig (GnosisSafeSameAddressMultisig-flatten.sol#95) lacks a zero-check on :
+		- (success) = multisig.call(payload) (GnosisSafeSameAddressMultisig-flatten.sol#124)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#missing-zero-address-validation
+
+Notes: False positive. 
+INFO:Detectors:
+GnosisSafeSameAddressMultisig.create(address[],uint256,bytes) (GnosisSafeSameAddressMultisig-flatten.sol#91-150) uses assembly
+	- INLINE ASM (GnosisSafeSameAddressMultisig-flatten.sol#104-106)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#assembly-usage
+INFO:Detectors:
+
+Notes: False positive. 
+INFO:Detectors:
+Low level call in GnosisSafeSameAddressMultisig.create(address[],uint256,bytes) (GnosisSafeSameAddressMultisig-flatten.sol#91-150):
+	- (success) = multisig.call(payload) (GnosisSafeSameAddressMultisig-flatten.sol#124)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+
+Notes: False positive. constant DEFAULT_DATA_LENGTH not storage
+INFO:Detectors:
+In a function GnosisSafeSameAddressMultisig.create(address[],uint256,bytes) (GnosisSafeSameAddressMultisig-flatten.sol#91-150) variable GnosisSafeSameAddressMultisig.DEFAULT_DATA_LENGTH (GnosisSafeSameAddressMultisig-flatten.sol#59) is read multiple times
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/multiple_storage_read.md
+
+Notes: False positive. see above
+INFO:Detectors:
+Potential vulnerable to readonly-reentrancy function (if read in other function) ServiceStakingBase.calculateServiceStakingReward(uint256) (ServiceStakingToken-flatten.sol#905-934):
+	State variables read that were written after the external call(s):
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at sInfo = mapServiceInfo[serviceId] (ServiceStakingToken-flatten.sol#907)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at reward = sInfo.reward (ServiceStakingToken-flatten.sol#908)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at sInfo.tsStart == 0 (ServiceStakingToken-flatten.sol#911)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at revert ServiceNotStaked(uint256)(serviceId) (ServiceStakingToken-flatten.sol#912)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at END_IF (ServiceStakingToken-flatten.sol#911-913)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at NEW VARIABLE lastAvailableRewards (ServiceStakingToken-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at NEW VARIABLE numServices (ServiceStakingToken-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at NEW VARIABLE totalRewards (ServiceStakingToken-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at NEW VARIABLE eligibleServiceIds (ServiceStakingToken-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at NEW VARIABLE eligibleServiceRewards (ServiceStakingToken-flatten.sol#917)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at (lastAvailableRewards,numServices,totalRewards,eligibleServiceIds,eligibleServiceRewards) = _calculateStakingRewards() (ServiceStakingToken-flatten.sol#916-917)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at numServices > 0 (ServiceStakingToken-flatten.sol#920)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at BEGIN_LOOP (ServiceStakingToken-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at END_LOOP (ServiceStakingToken-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at i = 0 (ServiceStakingToken-flatten.sol#922)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at i < eligibleServiceIds.length (ServiceStakingToken-flatten.sol#922)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at eligibleServiceIds[i] == serviceId (ServiceStakingToken-flatten.sol#923)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at totalRewards > lastAvailableRewards (ServiceStakingToken-flatten.sol#925)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards (ServiceStakingToken-flatten.sol#926)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at reward += eligibleServiceRewards[i] (ServiceStakingToken-flatten.sol#928)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at END_IF (ServiceStakingToken-flatten.sol#925-929)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at BREAK (ServiceStakingToken-flatten.sol#930)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at END_IF (ServiceStakingToken-flatten.sol#923-931)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at ++ i (ServiceStakingToken-flatten.sol#922)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at END_IF (ServiceStakingToken-flatten.sol#920-933)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) was read at (lastAvailableRewards,numServices,totalRewards,eligibleServiceIds,eligibleServiceRewards) = _calculateStakingRewards() (ServiceStakingToken-flatten.sol#916-917)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) was read at numServices > 0 (ServiceStakingToken-flatten.sol#920)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) was read at BEGIN_LOOP (ServiceStakingToken-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) was read at END_LOOP (ServiceStakingToken-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) was read at i = 0 (ServiceStakingToken-flatten.sol#922)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) was read at i < eligibleServiceIds.length (ServiceStakingToken-flatten.sol#922)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) was read at eligibleServiceIds[i] == serviceId (ServiceStakingToken-flatten.sol#923)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) was read at totalRewards > lastAvailableRewards (ServiceStakingToken-flatten.sol#925)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) was read at reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards (ServiceStakingToken-flatten.sol#926)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) was read at reward += eligibleServiceRewards[i] (ServiceStakingToken-flatten.sol#928)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) was read at END_IF (ServiceStakingToken-flatten.sol#925-929)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) was read at BREAK (ServiceStakingToken-flatten.sol#930)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) was read at END_IF (ServiceStakingToken-flatten.sol#923-931)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) was read at ++ i (ServiceStakingToken-flatten.sol#922)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) was read at END_IF (ServiceStakingToken-flatten.sol#920-933)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+Potential vulnerable to readonly-reentrancy function (if read in other function) ServiceStakingBase.isServiceStaked(uint256) (ServiceStakingToken-flatten.sol#939-941):
+	State variables read that were written after the external call(s):
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingToken-flatten.sol#514) was read at mapServiceInfo[serviceId].tsStart > 0 (ServiceStakingToken-flatten.sol#940)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/readonly_reentrancy.md
+
+Notes: False positive. see above
+INFO:Detectors:
+IToken (ServiceStakingToken-flatten.sol#949-992) has incorrect ERC721 function interface:IToken.approve(address,uint256) (ServiceStakingToken-flatten.sol#980)
+IToken (ServiceStakingToken-flatten.sol#949-992) has incorrect ERC721 function interface:IToken.transferFrom(address,address,uint256) (ServiceStakingToken-flatten.sol#987)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-erc721-interface
+
+Notes: False positive. see above
+INFO:Detectors:
+ServiceStakingBase.calculateServiceStakingReward(uint256) (ServiceStakingToken-flatten.sol#905-934) uses a dangerous strict equality:
+	- sInfo.tsStart == 0 (ServiceStakingToken-flatten.sol#911)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+
+Notes: False positive. see above
+INFO:Detectors:
+Reentrancy in ServiceStakingBase.stake(uint256) (ServiceStakingToken-flatten.sol#588-660):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (ServiceStakingToken-flatten.sol#646)
+	State variables written after the call(s):
+	- setServiceIds.push(serviceId) (ServiceStakingToken-flatten.sol#657)
+	ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516) can be used in cross function reentrancies:
+	- ServiceStakingBase._calculateStakingRewards() (ServiceStakingToken-flatten.sol#700-767)
+	- ServiceStakingBase.setServiceIds (ServiceStakingToken-flatten.sol#516)
+	- ServiceStakingBase.stake(uint256) (ServiceStakingToken-flatten.sol#588-660)
+	- ServiceStakingBase.unstake(uint256) (ServiceStakingToken-flatten.sol#858-900)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
+
+Notes: False positive. see above
+INFO:Detectors:
+ServiceStakingBase unstake parameter from is not related to msg.sender IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (ServiceStakingToken-flatten.sol#892)
+Reference: https://ventral.digital/posts/2022/8/18/sznsdaos-bountyboard-unauthorized-transferfrom-vulnerability
+
+Notes: False positive. see above
+INFO:Detectors:
+Reentrancy in ServiceStakingBase.stake(uint256) (ServiceStakingToken-flatten.sol#588-660):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (ServiceStakingToken-flatten.sol#646)
+	State variables written after the call(s):
+	- sInfo.multisig = service.multisig (ServiceStakingToken-flatten.sol#650)
+	- sInfo.owner = msg.sender (ServiceStakingToken-flatten.sol#651)
+	- sInfo.nonces = nonces (ServiceStakingToken-flatten.sol#653)
+	- sInfo.tsStart = block.timestamp (ServiceStakingToken-flatten.sol#654)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-2
+
+Notes: False positive. see above
+INFO:Detectors:
+Reentrancy in ServiceStakingBase.stake(uint256) (ServiceStakingToken-flatten.sol#588-660):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (ServiceStakingToken-flatten.sol#646)
+	Event emitted after the call(s):
+	- ServiceStaked(serviceId,msg.sender,service.multisig,nonces[0]) (ServiceStakingToken-flatten.sol#659)
+Reentrancy in ServiceStakingBase.unstake(uint256) (ServiceStakingToken-flatten.sol#858-900):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (ServiceStakingToken-flatten.sol#892)
+	Event emitted after the call(s):
+	- ServiceUnstaked(serviceId,msg.sender,multisig,nonce,reward,tsStart) (ServiceStakingToken-flatten.sol#899)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+Notes: False positive. see above
+INFO:Detectors:
+ServiceStakingBase._isRatioPass(uint256[],uint256[],uint256) (ServiceStakingToken-flatten.sol#679-690) uses timestamp for comparisons
+	Dangerous comparisons:
+	- ts > 0 && curNonces[0] > lastNonces[0] (ServiceStakingToken-flatten.sol#686)
+	- ratioPass = (ratio >= livenessRatio) (ServiceStakingToken-flatten.sol#688)
+ServiceStakingBase._calculateStakingRewards() (ServiceStakingToken-flatten.sol#700-767) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp - tsCheckpointLast >= livenessPeriod (ServiceStakingToken-flatten.sol#722)
+	- ts > serviceCheckpoint (ServiceStakingToken-flatten.sol#746)
+ServiceStakingBase.calculateServiceStakingReward(uint256) (ServiceStakingToken-flatten.sol#905-934) uses timestamp for comparisons
+	Dangerous comparisons:
+	- sInfo.tsStart == 0 (ServiceStakingToken-flatten.sol#911)
+ServiceStakingBase.isServiceStaked(uint256) (ServiceStakingToken-flatten.sol#939-941) uses timestamp for comparisons
+	Dangerous comparisons:
+	- mapServiceInfo[serviceId].tsStart > 0 (ServiceStakingToken-flatten.sol#940)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+
+Notes: False positive. see above
+INFO:Detectors:
+SafeTransferLib.safeTransferFrom(address,address,address,uint256) (ServiceStakingToken-flatten.sol#1016-1047) uses assembly
+	- INLINE ASM (ServiceStakingToken-flatten.sol#1020-1042)
+SafeTransferLib.safeTransfer(address,address,uint256) (ServiceStakingToken-flatten.sol#1058-1088) uses assembly
+	- INLINE ASM (ServiceStakingToken-flatten.sol#1062-1083)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#assembly-usage
+
+Notes: False positive. see above
+INFO:Detectors:
+ServiceStakingBase.stake(uint256) (ServiceStakingToken-flatten.sol#588-660) has a high cyclomatic complexity (12).
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cyclomatic-complexity
+
+Notes: False positive. see above
+INFO:Detectors:
+ERC721._burn(uint256) (ServiceStakingToken-flatten.sol#298-313) is never used and should be removed
+ERC721._mint(address,uint256) (ServiceStakingToken-flatten.sol#283-296) is never used and should be removed
+ERC721._safeMint(address,uint256) (ServiceStakingToken-flatten.sol#319-328) is never used and should be removed
+ERC721._safeMint(address,uint256,bytes) (ServiceStakingToken-flatten.sol#330-343) is never used and should be removed
+ServiceStakingBase._checkTokenStakingDeposit(uint256,uint256) (ServiceStakingToken-flatten.sol#574-579) is never used and should be removed
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dead-code
+
+Notes: False positive. see above
+INFO:Detectors:
+Variable ERC721._ownerOf (ServiceStakingToken-flatten.sol#157) is not in mixedCase
+Variable ERC721._balanceOf (ServiceStakingToken-flatten.sol#159) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+
+Notes: False positive. see above
+INFO:Detectors:
+SafeTransferLib.safeTransferFrom(address,address,address,uint256) (ServiceStakingToken-flatten.sol#1016-1047) uses literals with too many digits:
+	- mstore(uint256,uint256)(0,0x23b872dd00000000000000000000000000000000000000000000000000000000) (ServiceStakingToken-flatten.sol#1025)
+SafeTransferLib.safeTransfer(address,address,uint256) (ServiceStakingToken-flatten.sol#1058-1088) uses literals with too many digits:
+	- mstore(uint256,uint256)(0,0xa9059cbb00000000000000000000000000000000000000000000000000000000) (ServiceStakingToken-flatten.sol#1067)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#too-many-digits
+
+Notes: False positive. see above
+INFO:Detectors:
+ERC721 (ServiceStakingToken-flatten.sol#132-344) does not implement functions:
+	- ERC721.tokenURI(uint256) (ServiceStakingToken-flatten.sol#151)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unimplemented-functions
+
+Notes: False positive. see above
+INFO:Detectors:
+Function SafeTransferLib.safeTransferFrom(address,address,address,uint256) (ServiceStakingToken-flatten.sol#1016-1047) contains magic numbers: 4, 36, 68
+Function SafeTransferLib.safeTransfer(address,address,uint256) (ServiceStakingToken-flatten.sol#1058-1088) contains magic numbers: 4, 36
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/magic_number.md
+
+Notes: False positive.
+INFO:Detectors:
+MechAgentMod._getMultisigNonces(address) (MechAgentMod-flatten.sol#48-52) is never used and should be removed
+MechAgentMod._isRatioPass(uint256[],uint256[],uint256) (MechAgentMod-flatten.sol#72-86) is never used and should be removed
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dead-code
+
+Notes: False positive.
+INFO:Detectors:
+MechAgentMod (MechAgentMod-flatten.sol#32-87) does not implement functions:
+	- MechAgentMod._getLivenessRatio() (MechAgentMod-flatten.sol#56)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unimplemented-functions
+
+Notes: False positive.
+INFO:Detectors:
+Potential vulnerable to readonly-reentrancy function (if read in other function) ServiceStakingBase.calculateServiceStakingReward(uint256) (ServiceStakingBase-flatten.sol#905-934):
+	State variables read that were written after the external call(s):
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at sInfo = mapServiceInfo[serviceId] (ServiceStakingBase-flatten.sol#907)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at reward = sInfo.reward (ServiceStakingBase-flatten.sol#908)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at sInfo.tsStart == 0 (ServiceStakingBase-flatten.sol#911)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at revert ServiceNotStaked(uint256)(serviceId) (ServiceStakingBase-flatten.sol#912)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at END_IF (ServiceStakingBase-flatten.sol#911-913)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at NEW VARIABLE lastAvailableRewards (ServiceStakingBase-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at NEW VARIABLE numServices (ServiceStakingBase-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at NEW VARIABLE totalRewards (ServiceStakingBase-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at NEW VARIABLE eligibleServiceIds (ServiceStakingBase-flatten.sol#916)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at NEW VARIABLE eligibleServiceRewards (ServiceStakingBase-flatten.sol#917)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at (lastAvailableRewards,numServices,totalRewards,eligibleServiceIds,eligibleServiceRewards) = _calculateStakingRewards() (ServiceStakingBase-flatten.sol#916-917)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at numServices > 0 (ServiceStakingBase-flatten.sol#920)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at BEGIN_LOOP (ServiceStakingBase-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at END_LOOP (ServiceStakingBase-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at i = 0 (ServiceStakingBase-flatten.sol#922)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at i < eligibleServiceIds.length (ServiceStakingBase-flatten.sol#922)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at eligibleServiceIds[i] == serviceId (ServiceStakingBase-flatten.sol#923)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at totalRewards > lastAvailableRewards (ServiceStakingBase-flatten.sol#925)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards (ServiceStakingBase-flatten.sol#926)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at reward += eligibleServiceRewards[i] (ServiceStakingBase-flatten.sol#928)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at END_IF (ServiceStakingBase-flatten.sol#925-929)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at BREAK (ServiceStakingBase-flatten.sol#930)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at END_IF (ServiceStakingBase-flatten.sol#923-931)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at ++ i (ServiceStakingBase-flatten.sol#922)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at END_IF (ServiceStakingBase-flatten.sol#920-933)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) was read at (lastAvailableRewards,numServices,totalRewards,eligibleServiceIds,eligibleServiceRewards) = _calculateStakingRewards() (ServiceStakingBase-flatten.sol#916-917)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) was read at numServices > 0 (ServiceStakingBase-flatten.sol#920)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) was read at BEGIN_LOOP (ServiceStakingBase-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) was read at END_LOOP (ServiceStakingBase-flatten.sol#922-932)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) was read at i = 0 (ServiceStakingBase-flatten.sol#922)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) was read at i < eligibleServiceIds.length (ServiceStakingBase-flatten.sol#922)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) was read at eligibleServiceIds[i] == serviceId (ServiceStakingBase-flatten.sol#923)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) was read at totalRewards > lastAvailableRewards (ServiceStakingBase-flatten.sol#925)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) was read at reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards (ServiceStakingBase-flatten.sol#926)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) was read at reward += eligibleServiceRewards[i] (ServiceStakingBase-flatten.sol#928)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) was read at END_IF (ServiceStakingBase-flatten.sol#925-929)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) was read at BREAK (ServiceStakingBase-flatten.sol#930)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) was read at END_IF (ServiceStakingBase-flatten.sol#923-931)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) was read at ++ i (ServiceStakingBase-flatten.sol#922)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) was read at END_IF (ServiceStakingBase-flatten.sol#920-933)
+		 This variable was written at (after external call):
+			- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+Potential vulnerable to readonly-reentrancy function (if read in other function) ServiceStakingBase.isServiceStaked(uint256) (ServiceStakingBase-flatten.sol#939-941):
+	State variables read that were written after the external call(s):
+	- ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) was read at mapServiceInfo[serviceId].tsStart > 0 (ServiceStakingBase-flatten.sol#940)
+		 This variable was written at (after external call):
+			- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+			- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+			- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+			- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/readonly_reentrancy.md
+
+Notes: False positive.
+INFO:Detectors:
+ServiceStakingBase.calculateServiceStakingReward(uint256) (ServiceStakingBase-flatten.sol#905-934) uses a dangerous strict equality:
+	- sInfo.tsStart == 0 (ServiceStakingBase-flatten.sol#911)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+
+Notes: False positive.
+INFO:Detectors:
+Reentrancy in ServiceStakingBase.stake(uint256) (ServiceStakingBase-flatten.sol#588-660):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (ServiceStakingBase-flatten.sol#646)
+	State variables written after the call(s):
+	- setServiceIds.push(serviceId) (ServiceStakingBase-flatten.sol#657)
+	ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516) can be used in cross function reentrancies:
+	- ServiceStakingBase._calculateStakingRewards() (ServiceStakingBase-flatten.sol#700-767)
+	- ServiceStakingBase.setServiceIds (ServiceStakingBase-flatten.sol#516)
+	- ServiceStakingBase.stake(uint256) (ServiceStakingBase-flatten.sol#588-660)
+	- ServiceStakingBase.unstake(uint256) (ServiceStakingBase-flatten.sol#858-900)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
+
+Notes: False positive.
+INFO:Detectors:
+ServiceStakingBase unstake parameter from is not related to msg.sender IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (ServiceStakingBase-flatten.sol#892)
+Reference: https://ventral.digital/posts/2022/8/18/sznsdaos-bountyboard-unauthorized-transferfrom-vulnerability
+
+Notes: False positive.
+INFO:Detectors:
+Reentrancy in ServiceStakingBase.stake(uint256) (ServiceStakingBase-flatten.sol#588-660):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (ServiceStakingBase-flatten.sol#646)
+	State variables written after the call(s):
+	- sInfo.multisig = service.multisig (ServiceStakingBase-flatten.sol#650)
+	- sInfo.owner = msg.sender (ServiceStakingBase-flatten.sol#651)
+	- sInfo.nonces = nonces (ServiceStakingBase-flatten.sol#653)
+	- sInfo.tsStart = block.timestamp (ServiceStakingBase-flatten.sol#654)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-2
+
+Notes: False positive.
+INFO:Detectors:
+Reentrancy in ServiceStakingBase.stake(uint256) (ServiceStakingBase-flatten.sol#588-660):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (ServiceStakingBase-flatten.sol#646)
+	Event emitted after the call(s):
+	- ServiceStaked(serviceId,msg.sender,service.multisig,nonces[0]) (ServiceStakingBase-flatten.sol#659)
+Reentrancy in ServiceStakingBase.unstake(uint256) (ServiceStakingBase-flatten.sol#858-900):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (ServiceStakingBase-flatten.sol#892)
+	Event emitted after the call(s):
+	- ServiceUnstaked(serviceId,msg.sender,multisig,nonce,reward,tsStart) (ServiceStakingBase-flatten.sol#899)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+Notes: False positive.
+INFO:Detectors:
+ServiceStakingBase._isRatioPass(uint256[],uint256[],uint256) (ServiceStakingBase-flatten.sol#679-690) uses timestamp for comparisons
+	Dangerous comparisons:
+	- ts > 0 && curNonces[0] > lastNonces[0] (ServiceStakingBase-flatten.sol#686)
+	- ratioPass = (ratio >= livenessRatio) (ServiceStakingBase-flatten.sol#688)
+ServiceStakingBase._calculateStakingRewards() (ServiceStakingBase-flatten.sol#700-767) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp - tsCheckpointLast >= livenessPeriod (ServiceStakingBase-flatten.sol#722)
+	- ts > serviceCheckpoint (ServiceStakingBase-flatten.sol#746)
+ServiceStakingBase.calculateServiceStakingReward(uint256) (ServiceStakingBase-flatten.sol#905-934) uses timestamp for comparisons
+	Dangerous comparisons:
+	- sInfo.tsStart == 0 (ServiceStakingBase-flatten.sol#911)
+ServiceStakingBase.isServiceStaked(uint256) (ServiceStakingBase-flatten.sol#939-941) uses timestamp for comparisons
+	Dangerous comparisons:
+	- mapServiceInfo[serviceId].tsStart > 0 (ServiceStakingBase-flatten.sol#940)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+
+Notes: False positive.
+INFO:Detectors:
+ServiceStakingBase.stake(uint256) (ServiceStakingBase-flatten.sol#588-660) has a high cyclomatic complexity (12).
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cyclomatic-complexity
+INFO:Detectors:
+ERC721._burn(uint256) (ServiceStakingBase-flatten.sol#298-313) is never used and should be removed
+ERC721._mint(address,uint256) (ServiceStakingBase-flatten.sol#283-296) is never used and should be removed
+ERC721._safeMint(address,uint256) (ServiceStakingBase-flatten.sol#319-328) is never used and should be removed
+ERC721._safeMint(address,uint256,bytes) (ServiceStakingBase-flatten.sol#330-343) is never used and should be removed
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dead-code
+
+Notes: False positive.
+INFO:Detectors:
+Variable ERC721._ownerOf (ServiceStakingBase-flatten.sol#157) is not in mixedCase
+Variable ERC721._balanceOf (ServiceStakingBase-flatten.sol#159) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+
+Notes: False positive.
+INFO:Detectors:
+ERC721 (ServiceStakingBase-flatten.sol#132-344) does not implement functions:
+	- ERC721.tokenURI(uint256) (ServiceStakingBase-flatten.sol#151)
+ServiceStakingBase (ServiceStakingBase-flatten.sol#451-942) does not implement functions:
+	- ServiceStakingBase._withdraw(address,uint256) (ServiceStakingBase-flatten.sol#584)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unimplemented-functions
+
+Notes: False positive.
+INFO:Detectors:
+ServiceStakingBase.balance (ServiceStakingBase-flatten.sol#506) should be constant 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#state-variables-that-could-be-declared-constant
+
+Notes: False positive.
+INFO:Detectors:
+In a function ServiceStakingBase.stake(uint256) (ServiceStakingBase-flatten.sol#588-660) variable ServiceStakingBase.agentIds (ServiceStakingBase-flatten.sol#512) is read multiple times
+In a function ServiceStakingBase.checkpoint() (ServiceStakingBase-flatten.sol#776-854) variable ServiceStakingBase.mapServiceInfo (ServiceStakingBase-flatten.sol#514) is read multiple times
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/multiple_storage_read.md
+
