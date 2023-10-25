@@ -3,7 +3,6 @@ module.exports = {
         "test/ComponentRegistryTest.sol",
         "test/ERC20Token.sol",
         "test/GnosisSafeABICreator.sol",
-        "test/MockAgentMech.sol",
         "test/MockOperatorContract.sol",
         "test/MockServiceRegistry.sol",
         "test/MockTimelock.sol",

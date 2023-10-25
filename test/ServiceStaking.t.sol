@@ -14,9 +14,6 @@ import {OperatorWhitelist} from "../contracts/utils/OperatorWhitelist.sol";
 import {GnosisSafeMultisig} from "../contracts/multisigs/GnosisSafeMultisig.sol";
 import "../contracts/staking/ServiceStakingNativeToken.sol";
 import {ServiceStakingToken} from "../contracts/staking/ServiceStakingToken.sol";
-import {ServiceStakingMechUsage} from "../contracts/staking/ServiceStakingMechUsage.sol";
-import {ServiceStakingTokenMechUsage} from "../contracts/staking/ServiceStakingTokenMechUsage.sol";
-import {MockAgentMech} from "../contracts/test/MockAgentMech.sol";
 import {SafeNonceLib} from "../contracts/test/SafeNonceLib.sol";
 
 contract BaseSetup is Test {
@@ -32,9 +29,6 @@ contract BaseSetup is Test {
     GnosisSafeMultisig internal gnosisSafeMultisig;
     ServiceStakingNativeToken internal serviceStakingNativeToken;
     ServiceStakingToken internal serviceStakingToken;
-    ServiceStakingMechUsage internal serviceStakingMechUsage;
-    ServiceStakingTokenMechUsage internal serviceStakingTokenMechUsage;
-    MockAgentMech internal agentMech;
     SafeNonceLib internal safeNonceLib;
 
     address payable[] internal users;
@@ -115,13 +109,6 @@ contract BaseSetup is Test {
             multisigProxyHash);
         serviceStakingToken = new ServiceStakingToken(stakingParams, address(serviceRegistry), address(serviceRegistryTokenUtility),
             address(token), multisigProxyHash);
-
-        // Deploy agent mech service staking
-        agentMech = new MockAgentMech();
-        serviceStakingMechUsage = new ServiceStakingMechUsage(stakingParams, address(serviceRegistry),
-            multisigProxyHash, address(agentMech));
-        serviceStakingTokenMechUsage = new ServiceStakingTokenMechUsage(stakingParams, address(serviceRegistry),
-            address(serviceRegistryTokenUtility), address(token), multisigProxyHash, address(agentMech));
 
         // Whitelist multisig implementations
         serviceRegistry.changeMultisigPermission(address(gnosisSafeMultisig), true);
@@ -425,166 +412,6 @@ contract ServiceStaking is BaseSetup {
                 uint256 serviceId = j + numServices + 1;
                 ServiceRegistryL2.Service memory service = serviceRegistry.getService(serviceId);
                 address payable multisig = payable(service.multisig);
-
-                // Get the nonce before
-                uint256 nonceBefore = GnosisSafe(multisig).nonce();
-
-                // Execute a specified number of nonces
-                for (uint8 n = 0; n < numNonces; ++n) {
-                    // Get the signature
-                    bytes memory signature = new bytes(65);
-                    bytes memory bAddress = abi.encode(agentInstances[j + numServices]);
-                    for (uint256 b = 0; b < 32; ++b) {
-                        signature[b] = bAddress[b];
-                    }
-                    for (uint256 b = 32; b < 64; ++b) {
-                        signature[b] = bytes1(0x00);
-                    }
-                    signature[64] = bytes1(0x01);
-                    vm.prank(agentInstances[j + numServices]);
-                    GnosisSafe(multisig).execTransaction(multisig, 0, payload, Enum.Operation.Call, 0, 0, 0, address(0),
-                        payable(address(0)), signature);
-                }
-
-                // Get the nonce after transactions
-                uint256 nonceAfter = GnosisSafe(multisig).nonce();
-                assertGe(nonceAfter, nonceBefore);
-            }
-
-            // Move one day ahead
-            vm.warp(block.timestamp + 1 days);
-
-            // Call the checkpoint
-            serviceStakingToken.checkpoint();
-
-            // Unstake if there are no available rewards
-            if (serviceStakingToken.availableRewards() == 0) {
-                for (uint256 j = 0; j < numServices; ++j) {
-                    uint256 serviceId = j + numServices + 1;
-                    // Unstake if the service is not yet unstaked, otherwise ignore
-                    if (!serviceStakingToken.isServiceStaked(serviceId)) {
-                        vm.startPrank(deployer);
-                        serviceStakingToken.unstake(serviceId);
-                        vm.stopPrank();
-                    }
-                }
-            }
-        }
-    }
-
-    /// @dev Test service staking with random number of executed tx-s (nonces) per day with AI agent mech.
-    /// @param numNonces Number of nonces per day.
-    function testNoncesAgentMech(uint8 numNonces) external {
-        // Send funds to a native token staking contract
-        address(serviceStakingNativeToken).call{value: 100 ether}("");
-
-        // Stake services
-        for (uint256 i = 0; i < numServices; ++i) {
-            uint256 serviceId = i + 1;
-            vm.startPrank(deployer);
-            serviceRegistry.approve(address(serviceStakingNativeToken), serviceId);
-            serviceStakingNativeToken.stake(serviceId);
-            vm.stopPrank();
-        }
-
-        // Get the number of necessary requests (must be at most half of number of nonces)
-        uint8 numRequests = numNonces / 2;
-
-        // Get the Safe data payload
-        payload = abi.encodeWithSelector(bytes4(keccak256("getThreshold()")));
-        // Number of days
-        for (uint256 i = 0; i < numDays; ++i) {
-            // Number of services
-            for (uint256 j = 0; j < numServices; ++j) {
-                uint256 serviceId = j + 1;
-                ServiceRegistryL2.Service memory service = serviceRegistry.getService(serviceId);
-                address payable multisig = payable(service.multisig);
-
-                // Post a specified number of requests
-                for (uint8 n = 0; n < numRequests; ++n) {
-                    agentMech.increaseRequestsCount(service.multisig);
-                }
-
-                // Get the nonce before
-                uint256 nonceBefore = GnosisSafe(multisig).nonce();
-
-                // Execute a specified number of nonces
-                for (uint8 n = 0; n < numNonces; ++n) {
-                    // Get the signature
-                    bytes memory signature = new bytes(65);
-                    bytes memory bAddress = abi.encode(agentInstances[j]);
-                    for (uint256 b = 0; b < 32; ++b) {
-                        signature[b] = bAddress[b];
-                    }
-                    for (uint256 b = 32; b < 64; ++b) {
-                        signature[b] = bytes1(0x00);
-                    }
-                    signature[64] = bytes1(0x01);
-
-                    vm.prank(agentInstances[j]);
-                    GnosisSafe(multisig).execTransaction(multisig, 0, payload, Enum.Operation.Call, 0, 0, 0, address(0),
-                        payable(address(0)), signature);
-                }
-
-                // Get the nonce after transactions
-                uint256 nonceAfter = GnosisSafe(multisig).nonce();
-                assertGe(nonceAfter, nonceBefore);
-            }
-
-            // Move one day ahead
-            vm.warp(block.timestamp + 1 days);
-
-            // Call the checkpoint
-            serviceStakingNativeToken.checkpoint();
-
-            // Unstake if there are no available rewards
-            if (serviceStakingNativeToken.availableRewards() == 0) {
-                for (uint256 j = 0; j < numServices; ++j) {
-                    uint256 serviceId = j + 1;
-                    // Unstake if the service is not yet unstaked, otherwise ignore
-                    if (!serviceStakingNativeToken.isServiceStaked(serviceId)) {
-                        vm.startPrank(deployer);
-                        serviceStakingNativeToken.unstake(serviceId);
-                        vm.stopPrank();
-                    }
-                }
-            }
-        }
-    }
-
-    /// @dev Test service staking based on ERC20 token with random number of executed tx-s (nonces) per day with AI agent mech.
-    /// @param numNonces Number of nonces per day.
-    function testNoncesTokenAgentMech(uint8 numNonces) external {
-        // Send tokens to a ERC20 token staking contract
-        token.approve(address(serviceStakingToken), 100 ether);
-        serviceStakingToken.deposit(100 ether);
-
-        // Stake services
-        for (uint256 i = 0; i < numServices; ++i) {
-            uint256 serviceId = i + numServices + 1;
-            vm.startPrank(deployer);
-            serviceRegistry.approve(address(serviceStakingToken), serviceId);
-            serviceStakingToken.stake(serviceId);
-            vm.stopPrank();
-        }
-
-        // Get the number of necessary requests (must be at most half of number of nonces)
-        uint8 numRequests = numNonces / 2;
-
-        // Get the Safe data payload
-        payload = abi.encodeWithSelector(bytes4(keccak256("getThreshold()")));
-        // Number of days
-        for (uint256 i = 0; i < numDays; ++i) {
-            // Number of services
-            for (uint256 j = 0; j < numServices; ++j) {
-                uint256 serviceId = j + numServices + 1;
-                ServiceRegistryL2.Service memory service = serviceRegistry.getService(serviceId);
-                address payable multisig = payable(service.multisig);
-
-                // Post a specified number of requests
-                for (uint8 n = 0; n < numRequests; ++n) {
-                    agentMech.increaseRequestsCount(service.multisig);
-                }
 
                 // Get the nonce before
                 uint256 nonceBefore = GnosisSafe(multisig).nonce();
