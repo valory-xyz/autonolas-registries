@@ -17,7 +17,6 @@ async function main() {
     const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
     const olasAddress = parsedData.olasAddress;
     const multisigProxyHash130 = parsedData.multisigProxyHash130;
-    const agentMechAddress = parsedData.agentMechAddress;
     let EOA;
 
     let networkURL;
@@ -58,29 +57,29 @@ async function main() {
     console.log("EOA is:", deployer);
 
     // Transaction signing and execution
-    console.log("16. EOA to deploy ServiceStakingTokenMechUsage");
+    console.log("16. EOA to deploy ServiceStakingToken");
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
-    const ServiceStakingTokenMechUsage = await ethers.getContractFactory("ServiceStakingTokenMechUsage");
-    console.log("You are signing the following transaction: ServiceStakingTokenMechUsage.connect(EOA).deploy()");
-    const serviceStakingTokenMechUsage = await ServiceStakingTokenMechUsage.connect(EOA).deploy(serviceStakingParams,
-        serviceRegistryAddress, serviceRegistryTokenUtilityAddress, olasAddress, multisigProxyHash130, agentMechAddress, { gasPrice });
-    const result = await serviceStakingTokenMechUsage.deployed();
+    const ServiceStakingToken = await ethers.getContractFactory("ServiceStakingToken");
+    console.log("You are signing the following transaction: ServiceStakingToken.connect(EOA).deploy()");
+    const serviceStakingToken = await ServiceStakingToken.connect(EOA).deploy(serviceStakingParams,
+        serviceRegistryAddress, serviceRegistryTokenUtilityAddress, olasAddress, multisigProxyHash130, { gasPrice });
+    const result = await serviceStakingToken.deployed();
 
     // Transaction details
-    console.log("Contract deployment: ServiceStakingTokenMechUsage");
-    console.log("Contract address:", serviceStakingTokenMechUsage.address);
+    console.log("Contract deployment: ServiceStakingToken");
+    console.log("Contract address:", serviceStakingToken.address);
     console.log("Transaction:", result.deployTransaction.hash);
     // Wait half a minute for the transaction completion
     await new Promise(r => setTimeout(r, 30000));
 
     // Writing updated parameters back to the JSON file
-    parsedData.serviceStakingTokenMechUsageAddress = serviceStakingTokenMechUsage.address;
+    parsedData.serviceStakingTokenAddress = serviceStakingToken.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
 
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_16_service_staking_token_mech_usage.js --network " + providerName + " " + serviceStakingTokenMechUsage.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_18_service_staking_token.js --network " + providerName + " " + serviceStakingToken.address, { encoding: "utf-8" });
     }
 }
 
