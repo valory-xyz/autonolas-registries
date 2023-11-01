@@ -345,7 +345,7 @@ describe("ServiceStaking", function () {
             const agentIds = await sStaking.getAgentIds();
             expect(agentIds.length).to.equal(testServiceParams.agentIds.length);
             for (let i = 0; i < agentIds.length; i++) {
-                expect(agentIds[i]).to.equal(testServiceParams.agentIds[i])
+                expect(agentIds[i]).to.equal(testServiceParams.agentIds[i]);
             }
 
             // Deposit to the contract
