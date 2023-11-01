@@ -573,19 +573,6 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
     }
 
-    /// @dev Gets staked service Ids.
-    /// @return serviceIds Staked service Ids.
-    function getServiceIds() public view returns (uint256[] memory serviceIds) {
-        // Get the number of service Ids
-        uint256 size = setServiceIds.length;
-        serviceIds = new uint256[](size);
-
-        // Record service Ids
-        for (uint256 i = 0; i < size; ++i) {
-            serviceIds[i] = setServiceIds[i];
-        }
-    }
-
     /// @dev Checks if the service is staked.
     /// @param serviceId.
     /// @return isStaked True, if the service is staked.
@@ -598,5 +585,24 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     function getNextRewardCheckpointTimestamp() external view returns (uint256 tsNext) {
         // Last checkpoint timestamp plus the liveness period
         tsNext = tsCheckpoint + livenessPeriod;
+    }
+
+    /// @dev Gets staked service info.
+    /// @param serviceId Service Id.
+    /// @return sInfo Struct object with the corresponding service info.
+    function getServiceInfo(uint256 serviceId) external view returns (ServiceInfo memory sInfo) {
+        sInfo = mapServiceInfo[serviceId];
+    }
+
+    /// @dev Gets staked service Ids.
+    /// @return Staked service Ids.
+    function getServiceIds() public view returns (uint256[] memory) {
+        return setServiceIds;
+    }
+
+    /// @dev Gets canonical agent Ids from the service configuration.
+    /// @return Agent Ids.
+    function getAgentIds() external view returns (uint256[] memory) {
+        return agentIds;
     }
 }
