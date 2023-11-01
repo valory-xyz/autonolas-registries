@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 const helpers = require("@nomicfoundation/hardhat-network-helpers");
 const safeContracts = require("@gnosis.pm/safe-contracts");
 
-describe("ServiceStakingNativeToken", function () {
+describe("ServiceStaking", function () {
     let componentRegistry;
     let agentRegistry;
     let serviceRegistry;
@@ -341,6 +341,13 @@ describe("ServiceStakingNativeToken", function () {
             const sStaking = await ServiceStakingNativeToken.deploy(testServiceParams, serviceRegistry.address, bytecodeHash);
             await sStaking.deployed();
 
+            // Check agent Ids
+            const agentIds = await sStaking.getAgentIds();
+            expect(agentIds.length).to.equal(testServiceParams.agentIds.length);
+            for (let i = 0; i < agentIds.length; i++) {
+                expect(agentIds[i]).to.equal(testServiceParams.agentIds[i])
+            }
+
             // Deposit to the contract
             await deployer.sendTransaction({to: sStaking.address, value: ethers.utils.parseEther("1")});
 
@@ -668,6 +675,11 @@ describe("ServiceStakingNativeToken", function () {
             // Call the checkpoint at this time
             await serviceStaking.checkpoint();
 
+            // Checking the nonce info
+            let serviceInfo = await serviceStaking.getServiceInfo(serviceId);
+            const lastNonce = serviceInfo.nonces[0];
+            expect(lastNonce).to.greaterThan(0);
+
             // Execute one more multisig tx
             nonce = await multisig.nonce();
             txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
@@ -676,6 +688,11 @@ describe("ServiceStakingNativeToken", function () {
 
             // Increase the time for the liveness period
             await helpers.time.increase(livenessPeriod);
+
+            // Checking the nonce info (it is not updated as none of checkpoint or unstake were not called)
+            serviceInfo = await serviceStaking.getServiceInfo(serviceId);
+            const lastLastNonce = serviceInfo.nonces[0];
+            expect(lastLastNonce).to.equal(lastNonce);
 
             // Calculate service staking reward that must be greater than zero
             const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
