@@ -222,8 +222,8 @@ contract ServiceStaking is BaseSetup {
                 assertGe(nonceAfter, nonceBefore);
             }
 
-            // Move one day ahead
-            vm.warp(block.timestamp + 1 days);
+            // Move several liveness checks ahead
+            vm.warp(block.timestamp + livenessPeriod * serviceStakingNativeToken.MAX_INACTIVITY_PERIODS() + 1);
 
             // Call the checkpoint
             serviceStakingNativeToken.checkpoint();
@@ -295,8 +295,8 @@ contract ServiceStaking is BaseSetup {
                 assertGe(nonceAfter, nonceBefore);
             }
 
-            // Move one day ahead
-            vm.warp(block.timestamp + 1 days);
+            // Move several liveness checks ahead
+            vm.warp(block.timestamp + livenessPeriod * serviceStakingNativeToken.MAX_INACTIVITY_PERIODS() + 1);
 
             // Call the checkpoint
             serviceStakingNativeToken.checkpoint();
@@ -366,8 +366,8 @@ contract ServiceStaking is BaseSetup {
                     0, 0, 0, address(0), payable(address(0)), signature);
             }
 
-            // Move one day ahead
-            vm.warp(block.timestamp + 1 days);
+            // Move several liveness checks ahead
+            vm.warp(block.timestamp + livenessPeriod * serviceStakingNativeToken.MAX_INACTIVITY_PERIODS() + 1);
 
             // Call the checkpoint
             serviceStakingNativeToken.checkpoint();
@@ -438,8 +438,8 @@ contract ServiceStaking is BaseSetup {
                 assertGe(nonceAfter, nonceBefore);
             }
 
-            // Move one day ahead
-            vm.warp(block.timestamp + 1 days);
+            // Move several liveness checks ahead
+            vm.warp(block.timestamp + livenessPeriod * serviceStakingToken.MAX_INACTIVITY_PERIODS() + 1);
 
             // Call the checkpoint
             serviceStakingToken.checkpoint();

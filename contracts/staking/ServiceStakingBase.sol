@@ -142,7 +142,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     // Contract version
     string public constant VERSION = "0.1.0";
     // Max number of accumulated inactivity periods after which the service can be evicted
-    uint256 public constant MAX_DOWNTIME_PERIODS = 3;
+    uint256 public constant MAX_INACTIVITY_PERIODS = 3;
     // Maximum number of staking services
     uint256 public immutable maxNumServices;
     // Rewards per second
@@ -165,7 +165,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     // Approved multisig proxy hash
     bytes32 public immutable proxyHash;
     // Max allowed inactivity
-    uint256 public immutable maxAllowedDowntime;
+    uint256 public immutable maxAllowedInactivity;
 
     // Token / ETH balance
     uint256 public balance;
@@ -231,7 +231,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         proxyHash = _proxyHash;
 
         // Calculate max allowed inactivity
-        maxAllowedDowntime = MAX_DOWNTIME_PERIODS * livenessPeriod;
+        maxAllowedInactivity = MAX_INACTIVITY_PERIODS * livenessPeriod;
 
         // Set the checkpoint timestamp to be the deployment one
         tsCheckpoint = block.timestamp;
@@ -379,7 +379,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256[] memory eligibleServiceRewards,
         uint256[] memory serviceIds,
         uint256[][] memory serviceNonces,
-        uint256[] memory serviceDowntime
+        uint256[] memory serviceInactivity
     )
     {
         // Check the last checkpoint timestamp and the liveness period, also check for available rewards to be not zero
@@ -394,7 +394,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             eligibleServiceIds = new uint256[](size);
             eligibleServiceRewards = new uint256[](size);
             serviceNonces = new uint256[][](size);
-            serviceDowntime = new uint256[](size);
+            serviceInactivity = new uint256[](size);
 
             // Calculate each staked service reward eligibility
             for (uint256 i = 0; i < size; ++i) {
@@ -429,7 +429,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                     eligibleServiceIds[numServices] = serviceIds[i];
                     ++numServices;
                 } else {
-                    serviceDowntime[i] = ts;
+                    serviceInactivity[i] = ts;
                 }
             }
         }
@@ -455,7 +455,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         (uint256 lastAvailableRewards, uint256 numServices, uint256 totalRewards,
             uint256[] memory eligibleServiceIds, uint256[] memory eligibleServiceRewards,
             uint256[] memory serviceIds, uint256[][] memory serviceNonces,
-            uint256[] memory serviceDowntime) = _calculateStakingRewards();
+            uint256[] memory serviceInactivity) = _calculateStakingRewards();
 
         // If there are eligible services, proceed with staking calculation and update rewards
         if (numServices > 0) {
@@ -512,8 +512,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 mapServiceInfo[curServiceId].nonces = serviceNonces[i];
 
                 // Increase service inactivity if it is greater than zero
-                if (serviceDowntime[i] > 0) {
-                    mapServiceInfo[curServiceId].inactivity += serviceDowntime[i];
+                if (serviceInactivity[i] > 0) {
+                    mapServiceInfo[curServiceId].inactivity += serviceInactivity[i];
                 } else {
                     // Otherwise, set it back to zero
                     mapServiceInfo[curServiceId].inactivity = 0;
@@ -543,8 +543,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         // Check that the service has staked long enough, or if there are no rewards left
         uint256 tsStart = sInfo.tsStart;
         uint256 ts = block.timestamp - tsStart;
-        if (ts <= maxAllowedDowntime && availableRewards > 0) {
-            revert NotEnoughTimeStaked(serviceId, ts, maxAllowedDowntime);
+        if (ts <= maxAllowedInactivity && availableRewards > 0) {
+            revert NotEnoughTimeStaked(serviceId, ts, maxAllowedInactivity);
         }
 
         // Call the checkpoint
@@ -599,7 +599,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256 inactivity = mapServiceInfo[serviceId].inactivity;
 
         // Evict the service if it is inactive more than the max number of inactivity periods
-        if (inactivity > maxAllowedDowntime) {
+        if (inactivity > maxAllowedInactivity) {
             // Get service Ids to find the service
             uint256[] memory serviceIds = getServiceIds();
 

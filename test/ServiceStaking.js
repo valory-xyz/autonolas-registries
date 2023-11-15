@@ -34,6 +34,7 @@ describe("ServiceStaking", function () {
     const agentParams = [[1, regBond]];
     const threshold = 1;
     const livenessPeriod = 10; // Ten seconds
+    let maxInactivity;
     const initSupply = "5" + "0".repeat(26);
     const payload = "0x";
     const serviceParams = {
@@ -103,6 +104,8 @@ describe("ServiceStaking", function () {
         const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
         serviceStaking = await ServiceStakingNativeToken.deploy(serviceParams, serviceRegistry.address, bytecodeHash);
         await serviceStaking.deployed();
+
+        maxInactivity = Number(await serviceStaking.MAX_INACTIVITY_PERIODS()) * livenessPeriod + 1;
 
         const ServiceStakingToken = await ethers.getContractFactory("ServiceStakingToken");
         serviceStakingToken = await ServiceStakingToken.deploy(serviceParams, serviceRegistry.address,
@@ -563,7 +566,7 @@ describe("ServiceStaking", function () {
             const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
 
             // Increase the time while the service does not reach the required amount of transactions per second (TPS)
-            await helpers.time.increase(livenessPeriod);
+            await helpers.time.increase(maxInactivity);
 
             // Calculate service staking reward that must be zero
             const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
@@ -619,6 +622,9 @@ describe("ServiceStaking", function () {
             let service = await serviceRegistry.getService(serviceId);
             let multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
 
+            // Increase the time before unstake
+            await helpers.time.increase(maxInactivity);
+
             // Unstake services
             let balanceBefore = await ethers.provider.getBalance(multisig.address);
             await serviceStaking.unstake(serviceId);
@@ -670,7 +676,7 @@ describe("ServiceStaking", function () {
             await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
 
             // Increase the time for the liveness period
-            await helpers.time.increase(livenessPeriod);
+            await helpers.time.increase(maxInactivity);
 
             // Call the checkpoint at this time
             await serviceStaking.checkpoint();
@@ -687,7 +693,7 @@ describe("ServiceStaking", function () {
             await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
 
             // Increase the time for the liveness period
-            await helpers.time.increase(livenessPeriod);
+            await helpers.time.increase(maxInactivity);
 
             // Checking the nonce info (it is not updated as none of checkpoint or unstake were not called)
             serviceInfo = await serviceStaking.getServiceInfo(serviceId);
@@ -767,7 +773,7 @@ describe("ServiceStaking", function () {
             await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
 
             // Increase the time for the liveness period
-            await helpers.time.increase(livenessPeriod);
+            await helpers.time.increase(maxInactivity);
 
             // Calculate service staking reward that must be greater than zero
             const reward = await serviceStakingToken.calculateServiceStakingReward(sId);
@@ -807,7 +813,7 @@ describe("ServiceStaking", function () {
             const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
 
             // Increase the time for the liveness period
-            await helpers.time.increase(livenessPeriod);
+            await helpers.time.increase(maxInactivity);
 
             // Construct the payload for the multisig
             let callData = [];
@@ -879,7 +885,7 @@ describe("ServiceStaking", function () {
             await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
 
             // Increase the time for the liveness period
-            await helpers.time.increase(livenessPeriod);
+            await helpers.time.increase(maxInactivity);
 
             // Calculate service staking reward that must be greater than zero
             const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
@@ -960,7 +966,7 @@ describe("ServiceStaking", function () {
 
 
             // Increase the time for the liveness period
-            await helpers.time.increase(livenessPeriod);
+            await helpers.time.increase(maxInactivity);
 
             for (let i = 0; i < 3; i++) {
                 // Calculate service staking reward that must be greater than zero except for the serviceId == 3
@@ -1053,6 +1059,9 @@ describe("ServiceStaking", function () {
             const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
             expect(Number(reward)).to.equal(expectedReward);
 
+            // Increase the time to be bigger than inactivity to unstake
+            await helpers.time.increase(maxInactivity);
+
             // Unstake the service
             const balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
             await serviceStaking.unstake(serviceId);
@@ -1085,11 +1094,11 @@ describe("ServiceStaking", function () {
             // Transfer the service to the attacker (note we need to use the transfer not to get another reentrancy call)
             await serviceRegistry.transferFrom(deployer.address, attacker.address, serviceId);
 
-            // Increase the time for the liveness period
-            await helpers.time.increase(livenessPeriod);
-
             // Stake and checkpoint
             await attacker.stakeAndCheckpoint(serviceId);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(maxInactivity);
 
             // Make sure the service have not earned any rewards
             const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
