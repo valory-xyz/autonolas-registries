@@ -135,7 +135,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     event Checkpoint(uint256 availableRewards, uint256 numServices);
     event ServiceUnstaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256[] nonces,
         uint256 reward, uint256 tsStart);
-    event ServiceEvicted(uint256 indexed serviceId, uint256 inactivity);
+    event ServiceEvicted(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256 inactivity);
     event Deposit(address indexed sender, uint256 amount, uint256 balance, uint256 availableRewards);
     event Withdraw(address indexed to, uint256 amount);
 
@@ -595,8 +595,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
     /// @dev Evicts the service due to its extended inactivity.
     function evict(uint256 serviceId) external {
-        // Get the service inactivity
-        uint256 inactivity = mapServiceInfo[serviceId].inactivity;
+        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+        // Get the service inactivity time
+        uint256 inactivity = sInfo.inactivity;
 
         // Evict the service if it is inactive more than the max number of inactivity periods
         if (inactivity > maxAllowedInactivity) {
@@ -621,11 +622,34 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             setServiceIds[idx] = setServiceIds[setServiceIds.length - 1];
             setServiceIds.pop();
 
-            emit ServiceEvicted(serviceId, inactivity);
+            emit ServiceEvicted(serviceId, sInfo.owner, sInfo.multisig, inactivity);
         }
     }
 
-    /// @dev Calculates service staking reward at current timestamp.
+    /// @dev Calculates service staking reward during the last checkpoint period.
+    /// @param serviceId Service Id.
+    /// @return reward Service reward.
+    function calculateServiceStakingLastReward(uint256 serviceId) public view returns (uint256 reward) {
+        // Calculate overall staking rewards
+        (uint256 lastAvailableRewards, uint256 numServices, uint256 totalRewards, uint256[] memory eligibleServiceIds,
+            uint256[] memory eligibleServiceRewards, , , ) = _calculateStakingRewards();
+
+        // If there are eligible services, proceed with staking calculation and update rewards for the service Id
+        for (uint256 i = 0; i < numServices; ++i) {
+            // Get the service index in the eligible service set and calculate its latest reward
+            if (eligibleServiceIds[i] == serviceId) {
+                // If total allocated rewards are not enough, adjust the reward value
+                if (totalRewards > lastAvailableRewards) {
+                    reward = (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards;
+                } else {
+                    reward = eligibleServiceRewards[i];
+                }
+                break;
+            }
+        }
+    }
+
+    /// @dev Calculates overall service staking reward at current timestamp.
     /// @param serviceId Service Id.
     /// @return reward Service reward.
     function calculateServiceStakingReward(uint256 serviceId) external view returns (uint256 reward) {
@@ -638,23 +662,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             revert ServiceNotStaked(serviceId);
         }
 
-        // Calculate overall staking rewards
-        (uint256 lastAvailableRewards, uint256 numServices, uint256 totalRewards, uint256[] memory eligibleServiceIds,
-            uint256[] memory eligibleServiceRewards, , , ) = _calculateStakingRewards();
-
-        // If there are eligible services, proceed with staking calculation and update rewards for the service Id
-        for (uint256 i = 0; i < numServices; ++i) {
-            // Get the service index in the eligible service set and calculate its latest reward
-            if (eligibleServiceIds[i] == serviceId) {
-                // If total allocated rewards are not enough, adjust the reward value
-                if (totalRewards > lastAvailableRewards) {
-                    reward += (eligibleServiceRewards[i] * lastAvailableRewards) / totalRewards;
-                } else {
-                    reward += eligibleServiceRewards[i];
-                }
-                break;
-            }
-        }
+        reward += calculateServiceStakingLastReward(serviceId);
     }
 
     /// @dev Checks if the service is staked.
