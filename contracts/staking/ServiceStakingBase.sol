@@ -82,6 +82,12 @@ error ServiceNotUnstaked(uint256 serviceId);
 /// @param serviceId Service Id.
 error ServiceNotFound(uint256 serviceId);
 
+/// @dev Service was not staked a minimum required time.
+/// @param serviceId Service Id.
+/// @param tsProvided Time the service is staked for.
+/// @param tsExpected Minimum time the service needs to be staked for.
+error NotEnoughTimeStaked(uint256 serviceId, uint256 tsProvided, uint256 tsExpected);
+
 // Service Info struct
 struct ServiceInfo {
     // Service multisig address
@@ -94,8 +100,8 @@ struct ServiceInfo {
     uint256 tsStart;
     // Accumulated service staking reward
     uint256 reward;
-    // Accumulated downtime that will be used to decide whether the service must be evicted
-    uint256 downtime;
+    // Accumulated inactivity that will be used to decide whether the service must be evicted
+    uint256 inactivity;
 }
 
 /// @title ServiceStakingBase - Base abstract smart contract for staking a service by its owner
@@ -129,13 +135,13 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     event Checkpoint(uint256 availableRewards, uint256 numServices);
     event ServiceUnstaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256[] nonces,
         uint256 reward, uint256 tsStart);
-    event ServiceEvicted(uint256 indexed serviceId, uint256 downtime);
+    event ServiceEvicted(uint256 indexed serviceId, uint256 inactivity);
     event Deposit(address indexed sender, uint256 amount, uint256 balance, uint256 availableRewards);
     event Withdraw(address indexed to, uint256 amount);
 
     // Contract version
     string public constant VERSION = "0.1.0";
-    // Max number of accumulated downtime periods after which the service can be evicted
+    // Max number of accumulated inactivity periods after which the service can be evicted
     uint256 public constant MAX_DOWNTIME_PERIODS = 3;
     // Maximum number of staking services
     uint256 public immutable maxNumServices;
@@ -158,6 +164,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     address public immutable serviceRegistry;
     // Approved multisig proxy hash
     bytes32 public immutable proxyHash;
+    // Max allowed inactivity
+    uint256 public immutable maxAllowedDowntime;
 
     // Token / ETH balance
     uint256 public balance;
@@ -222,6 +230,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         // Record provided multisig proxy bytecode hash
         proxyHash = _proxyHash;
 
+        // Calculate max allowed inactivity
+        maxAllowedDowntime = MAX_DOWNTIME_PERIODS * livenessPeriod;
+
         // Set the checkpoint timestamp to be the deployment one
         tsCheckpoint = block.timestamp;
     }
@@ -253,8 +264,6 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         if (sInfo.tsStart > 0) {
             revert ServiceNotUnstaked(serviceId);
         }
-
-        // TODO: Check that enough time has passed after the service was evicted such that it can be staked again
 
         // Check for the maximum number of staking services
         uint256 numStakingServices = setServiceIds.length;
@@ -502,9 +511,12 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 uint256 curServiceId = serviceIds[i];
                 mapServiceInfo[curServiceId].nonces = serviceNonces[i];
 
-                // Increase service downtime if it is greater than zero
+                // Increase service inactivity if it is greater than zero
                 if (serviceDowntime[i] > 0) {
-                    mapServiceInfo[curServiceId].downtime += serviceDowntime[i];
+                    mapServiceInfo[curServiceId].inactivity += serviceDowntime[i];
+                } else {
+                    // Otherwise, set it back to zero
+                    mapServiceInfo[curServiceId].inactivity = 0;
                 }
             }
 
@@ -528,6 +540,13 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             revert OwnerOnly(msg.sender, sInfo.owner);
         }
 
+        // Check that the service has staked long enough, or if there are no rewards left
+        uint256 tsStart = sInfo.tsStart;
+        uint256 ts = block.timestamp - tsStart;
+        if (ts <= maxAllowedDowntime && availableRewards > 0) {
+            revert NotEnoughTimeStaked(serviceId, ts, maxAllowedDowntime);
+        }
+
         // Call the checkpoint
         (uint256[] memory serviceIds, , , , , bool success) = checkpoint();
 
@@ -548,10 +567,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         // Get the unstaked service data
         uint256 reward = sInfo.reward;
         uint256[] memory nonces = sInfo.nonces;
-        uint256 tsStart = sInfo.tsStart;
         address multisig = sInfo.multisig;
 
-        // TODO: Add downtime to the global map of downtimers, in order to never let stake if that limit has been breached
+        // TODO: Add inactivity to the global map of inactivities, in order to never let stake if that limit has been breached
 
         // Clear all the data about the unstaked service
         // Delete the service info struct
@@ -575,13 +593,13 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         emit ServiceUnstaked(serviceId, msg.sender, multisig, nonces, reward, tsStart);
     }
 
-    /// @dev Evicts the service due to its extended downtime.
+    /// @dev Evicts the service due to its extended inactivity.
     function evict(uint256 serviceId) external {
-        // Get the service downtime
-        uint256 downtime = mapServiceInfo[serviceId].downtime;
+        // Get the service inactivity
+        uint256 inactivity = mapServiceInfo[serviceId].inactivity;
 
-        // Evict the service if it is inactive more than the max number of downtime periods
-        if (downtime > MAX_DOWNTIME_PERIODS * livenessPeriod) {
+        // Evict the service if it is inactive more than the max number of inactivity periods
+        if (inactivity > maxAllowedDowntime) {
             // Get service Ids to find the service
             uint256[] memory serviceIds = getServiceIds();
 
@@ -603,7 +621,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             setServiceIds[idx] = setServiceIds[setServiceIds.length - 1];
             setServiceIds.pop();
 
-            emit ServiceEvicted(serviceId, downtime);
+            emit ServiceEvicted(serviceId, inactivity);
         }
     }
 
