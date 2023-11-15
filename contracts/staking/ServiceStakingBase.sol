@@ -569,8 +569,6 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256[] memory nonces = sInfo.nonces;
         address multisig = sInfo.multisig;
 
-        // TODO: Add inactivity to the global map of inactivities, in order to never let stake if that limit has been breached
-
         // Clear all the data about the unstaked service
         // Delete the service info struct
         delete mapServiceInfo[serviceId];
