@@ -12,20 +12,17 @@ interface IServiceStaking {
     /// @param serviceId Service Id.
     function unstake(uint256 serviceId) external;
 
-    /// @dev Checkpoint to allocate rewards up until a current time.
-    /// @return All staking service Ids.
-    /// @return All staking updated nonces.
-    /// @return Number of reward-eligible staking services during current checkpoint period.
-    /// @return Eligible service Ids.
-    /// @return Eligible service rewards.
-    /// @return success True, if the checkpoint was successful.
+    /// @return All staking service Ids (including evicted ones during within a current epoch).
+    /// @return All staking updated nonces (including evicted ones during within a current epoch).
+    /// @return Set of eligible service Ids.
+    /// @return Corresponding set of eligible service rewards.
+    /// @return evictServiceIds Evicted service Ids.
     function checkpoint() external returns (
         uint256[] memory,
+        uint256[][] memory,
         uint256[] memory,
-        uint256,
         uint256[] memory,
-        uint256[] memory,
-        bool
+        uint256[] memory evictServiceIds
     );
 }
 

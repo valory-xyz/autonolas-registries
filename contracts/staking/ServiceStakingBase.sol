@@ -132,10 +132,10 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     }
 
     event ServiceStaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256[] nonces);
-    event Checkpoint(uint256 availableRewards, uint256 numServices);
+    event Checkpoint(uint256 indexed epoch, uint256 availableRewards, uint256[] serviceIds, uint256[] rewards);
     event ServiceUnstaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256[] nonces,
         uint256 reward, uint256 tsStart);
-    event ServiceEvicted(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256 inactivity);
+    event ServicesEvicted(uint256[] serviceIds, address[] owners, address[] multisigs, uint256[] serviceInactivity);
     event Deposit(address indexed sender, uint256 amount, uint256 balance, uint256 availableRewards);
     event Withdraw(address indexed to, uint256 amount);
 
@@ -167,6 +167,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     // Max allowed inactivity
     uint256 public immutable maxAllowedInactivity;
 
+    // Epoch counter
+    uint256 public epochCounter;
     // Token / ETH balance
     uint256 public balance;
     // Token / ETH available rewards
@@ -435,20 +437,80 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
     }
 
+    /// @dev Evicts the service due to its extended inactivity.
+    function _evict(uint256[] memory evictServiceIds) internal {
+        uint256 totalNumServices = evictServiceIds.length;
+        uint256 numEvictServices;
+
+        // Get the number of evicted services
+        for (uint256 i = 0; i < totalNumServices; ++i) {
+            if (evictServiceIds[i] > 0) {
+                numEvictServices++;
+            }
+        }
+
+        if (numEvictServices > 0) {
+            // Get arrays of exact sizes
+            uint256[] memory serviceIds = new uint256[](numEvictServices);
+            address[] memory owners = new address[](numEvictServices);
+            address[] memory multisigs = new address[](numEvictServices);
+            uint256[] memory serviceInactivity = new uint256[](numEvictServices);
+            uint256[] memory serviceIndexes = new uint256[](numEvictServices);
+
+            // Fill in arrays
+            uint256 sCounter;
+            uint256 serviceId;
+            for (uint256 i = 0; i < totalNumServices; ++i) {
+                if (evictServiceIds[i] > 0) {
+                    serviceId = evictServiceIds[i];
+                    serviceIds[sCounter] = serviceId;
+
+                    ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+                    owners[sCounter] = sInfo.owner;
+                    multisigs[sCounter] = sInfo.multisig;
+                    serviceInactivity[sCounter] = sInfo.inactivity;
+                    serviceIndexes[sCounter] = i;
+                    sCounter++;
+                }
+            }
+
+            // Evict services from the global set of staked services
+            uint256 idx;
+            for (uint256 i = numEvictServices - 1; i > 0; --i) {
+                // Decrease the number of services
+                totalNumServices--;
+                // Get the evicted service index
+                idx = serviceIndexes[i];
+                // Assign last service Id to the index that points to the evicted service Id
+                setServiceIds[idx] = setServiceIds[totalNumServices];
+                // Pop the last element
+                setServiceIds.pop();
+            }
+
+            // Deal with the very first element
+            // Get the evicted service index
+            idx = serviceIndexes[0];
+            // Assign last service Id to the index that points to the evicted service Id
+            setServiceIds[idx] = setServiceIds[totalNumServices - 1];
+            // Pop the last element
+            setServiceIds.pop();
+
+            emit ServicesEvicted(serviceIds, owners, multisigs, serviceInactivity);
+        }
+    }
+
     /// @dev Checkpoint to allocate rewards up until a current time.
-    /// @return All staking service Ids.
-    /// @return All staking updated nonces.
-    /// @return Number of reward-eligible staking services during current checkpoint period.
-    /// @return Eligible service Ids.
-    /// @return Eligible service rewards.
-    /// @return success True, if the checkpoint was successful.
+    /// @return All staking service Ids (including evicted ones during within a current epoch).
+    /// @return All staking updated nonces (including evicted ones during within a current epoch).
+    /// @return Set of eligible service Ids.
+    /// @return Corresponding set of eligible service rewards.
+    /// @return evictServiceIds Evicted service Ids.
     function checkpoint() public returns (
         uint256[] memory,
         uint256[][] memory,
-        uint256,
         uint256[] memory,
         uint256[] memory,
-        bool success
+        uint256[] memory evictServiceIds
     )
     {
         // Calculate staking rewards
@@ -457,9 +519,16 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             uint256[] memory serviceIds, uint256[][] memory serviceNonces,
             uint256[] memory serviceInactivity) = _calculateStakingRewards();
 
+        // Get arrays for eligible service Ids and rewards of exact size
+        uint256[] memory finalEligibleServiceIds;
+        uint256[] memory finalEligibleServiceRewards;
+        evictServiceIds = new uint256[](serviceIds.length);
+        uint256 curServiceId;
+
         // If there are eligible services, proceed with staking calculation and update rewards
         if (numServices > 0) {
-            uint256 curServiceId;
+            finalEligibleServiceIds = new uint256[](numServices);
+            finalEligibleServiceRewards = new uint256[](numServices);
             // If total allocated rewards are not enough, adjust the reward value
             if (totalRewards > lastAvailableRewards) {
                 // Traverse all the eligible services and adjust their rewards proportional to leftovers
@@ -472,6 +541,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                     updatedTotalRewards += updatedReward;
                     // Add reward to the overall service reward
                     curServiceId = eligibleServiceIds[i];
+                    finalEligibleServiceIds[i] = eligibleServiceIds[i];
+                    finalEligibleServiceRewards[i] = updatedReward;
                     mapServiceInfo[curServiceId].reward += updatedReward;
                 }
 
@@ -479,10 +550,12 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 updatedReward = (eligibleServiceRewards[0] * lastAvailableRewards) / totalRewards;
                 updatedTotalRewards += updatedReward;
                 curServiceId = eligibleServiceIds[0];
+                finalEligibleServiceIds[0] = eligibleServiceIds[0];
                 // If the reward adjustment happened to have small leftovers, add it to the first service
                 if (lastAvailableRewards > updatedTotalRewards) {
                     updatedReward += lastAvailableRewards - updatedTotalRewards;
                 }
+                finalEligibleServiceRewards[0] = updatedReward;
                 // Add reward to the overall service reward
                 mapServiceInfo[curServiceId].reward += updatedReward;
                 // Set available rewards to zero
@@ -492,6 +565,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 for (uint256 i = 0; i < numServices; ++i) {
                     // Add reward to the service overall reward
                     curServiceId = eligibleServiceIds[i];
+                    finalEligibleServiceIds[i] = eligibleServiceIds[i];
+                    finalEligibleServiceRewards[i] = eligibleServiceRewards[i];
                     mapServiceInfo[curServiceId].reward += eligibleServiceRewards[i];
                 }
 
@@ -505,30 +580,43 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
         // If service Ids are returned, then the checkpoint takes place
         if (serviceIds.length > 0) {
-            // Updated current service nonces
+            // Record service inactivities and updated current service nonces
             for (uint256 i = 0; i < serviceIds.length; ++i) {
                 // Get the current service Id
-                uint256 curServiceId = serviceIds[i];
+                curServiceId = serviceIds[i];
+                // Record service nonces
                 mapServiceInfo[curServiceId].nonces = serviceNonces[i];
 
                 // Increase service inactivity if it is greater than zero
                 if (serviceInactivity[i] > 0) {
-                    mapServiceInfo[curServiceId].inactivity += serviceInactivity[i];
+                    // Get the overall continuous service inactivity
+                    uint256 inactivity = mapServiceInfo[curServiceId].inactivity + serviceInactivity[i];
+                    mapServiceInfo[curServiceId].inactivity = inactivity;
+                    // Check for the maximum allowed inactivity time
+                    if (inactivity > maxAllowedInactivity) {
+                        // Evict a service if it has been inactive for more than a maximum allowed inactivity time
+                        evictServiceIds[i] = curServiceId;
+                    }
                 } else {
                     // Otherwise, set it back to zero
                     mapServiceInfo[curServiceId].inactivity = 0;
                 }
             }
 
+            // Evict inactive services
+            _evict(evictServiceIds);
+
             // Record the current timestamp such that next calculations start from this point of time
             tsCheckpoint = block.timestamp;
 
-            success = true;
+            // Increase the epoch counter
+            uint256 eCounter = epochCounter;
+            epochCounter = eCounter + 1;
 
-            emit Checkpoint(lastAvailableRewards, numServices);
+            emit Checkpoint(eCounter, lastAvailableRewards, finalEligibleServiceIds, finalEligibleServiceRewards);
         }
 
-        return (serviceIds, serviceNonces, numServices, eligibleServiceIds, eligibleServiceRewards, success);
+        return (serviceIds, serviceNonces, finalEligibleServiceIds, finalEligibleServiceRewards, evictServiceIds);
     }
 
     /// @dev Unstakes the service.
@@ -540,26 +628,37 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             revert OwnerOnly(msg.sender, sInfo.owner);
         }
 
-        // Check that the service has staked long enough, or if there are no rewards left
         uint256 tsStart = sInfo.tsStart;
+        // Check if the service is staked
+        if (tsStart == 0) {
+            revert ServiceNotStaked(serviceId);
+        }
+
+        // Check that the service has staked long enough, or if there are no rewards left
         uint256 ts = block.timestamp - tsStart;
         if (ts <= maxAllowedInactivity && availableRewards > 0) {
             revert NotEnoughTimeStaked(serviceId, ts, maxAllowedInactivity);
         }
 
         // Call the checkpoint
-        (uint256[] memory serviceIds, , , , , bool success) = checkpoint();
+        (uint256[] memory serviceIds, , , , uint256[] memory evictServiceIds) = checkpoint();
 
         // If the checkpoint was not successful, the serviceIds set is not returned and needs to be allocated
-        if (!success) {
+        if (serviceIds.length == 0) {
             serviceIds = getServiceIds();
+            evictServiceIds = new uint256[](serviceIds.length);
         }
 
         // Get the service index in the set of services
         // The index must always exist as the service is currently staked, otherwise it has no record in the map
         uint256 idx;
+        bool inSet;
         for (; idx < serviceIds.length; ++idx) {
-            if (serviceIds[idx] == serviceId) {
+            // Service is still in a global staking set if its index is found and the service was not evicted
+            if (serviceIds[idx] == serviceId && evictServiceIds[idx] != serviceId) {
+                inSet = true;
+                break;
+            } else if (evictServiceIds[idx] == serviceId) {
                 break;
             }
         }
@@ -575,7 +674,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
         // Update the set of staked service Ids
         // If the index was not found, the service was evicted and is not part of staked services set
-        if (idx < serviceIds.length) {
+        if (inSet) {
             setServiceIds[idx] = setServiceIds[setServiceIds.length - 1];
             setServiceIds.pop();
         }
@@ -589,39 +688,6 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         emit ServiceUnstaked(serviceId, msg.sender, multisig, nonces, reward, tsStart);
-    }
-
-    /// @dev Evicts the service due to its extended inactivity.
-    function evict(uint256 serviceId) external {
-        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
-        // Get the service inactivity time
-        uint256 inactivity = sInfo.inactivity;
-
-        // Evict the service if it is inactive more than the max number of inactivity periods
-        if (inactivity > maxAllowedInactivity) {
-            // Get service Ids to find the service
-            uint256[] memory serviceIds = getServiceIds();
-
-            // Get the service index in the set of services
-            // The index must always exist if the service is currently staked, otherwise it never existed or was evicted
-            uint256 idx;
-            for (; idx < serviceIds.length; ++idx) {
-                if (serviceIds[idx] == serviceId) {
-                    break;
-                }
-            }
-
-            // The service was already evicted
-            if (idx == serviceIds.length) {
-                revert ServiceNotFound(serviceId);
-            }
-
-            // Evict the service from the set of staked services
-            setServiceIds[idx] = setServiceIds[setServiceIds.length - 1];
-            setServiceIds.pop();
-
-            emit ServiceEvicted(serviceId, sInfo.owner, sInfo.multisig, inactivity);
-        }
     }
 
     /// @dev Calculates service staking reward during the last checkpoint period.
@@ -655,11 +721,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         ServiceInfo memory sInfo = mapServiceInfo[serviceId];
         reward = sInfo.reward;
 
-        // Check if the service is staked
-        if (sInfo.tsStart == 0) {
-            revert ServiceNotStaked(serviceId);
-        }
-
+        // Add pending reward
         reward += calculateServiceStakingLastReward(serviceId);
     }
 

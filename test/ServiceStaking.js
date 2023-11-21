@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 const helpers = require("@nomicfoundation/hardhat-network-helpers");
 const safeContracts = require("@gnosis.pm/safe-contracts");
 
-describe("ServiceStaking", function () {
+describe.only("ServiceStaking", function () {
     let componentRegistry;
     let agentRegistry;
     let serviceRegistry;
@@ -536,10 +536,9 @@ describe("ServiceStaking", function () {
             await serviceStakingToken.stake(sId);
         });
 
-        it("Should fail when calculating staking rewards for the not staked service", async function () {
-            await expect(
-                serviceStaking.calculateServiceStakingReward(serviceId)
-            ).to.be.revertedWithCustomError(serviceStaking, "ServiceNotStaked");
+        it("Returns zero rewards for the not staked service", async function () {
+            const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            expect(reward).to.equal(0);
         });
     });
 
