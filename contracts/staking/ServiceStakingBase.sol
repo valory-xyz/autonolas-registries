@@ -437,7 +437,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
     }
 
-    /// @dev Evicts the service due to its extended inactivity.
+    /// @dev Evicts services due to their extended inactivity.
+    /// @param evictServiceIds Service Ids to be evicted.
     function _evict(uint256[] memory evictServiceIds) internal {
         uint256 totalNumServices = evictServiceIds.length;
         uint256 numEvictServices;
