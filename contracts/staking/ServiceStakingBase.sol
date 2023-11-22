@@ -70,10 +70,6 @@ error LowerThan(uint256 provided, uint256 expected);
 /// @param serviceId Service Id.
 error WrongServiceConfiguration(uint256 serviceId);
 
-/// @dev Service is not staked.
-/// @param serviceId Service Id.
-error ServiceNotStaked(uint256 serviceId);
-
 /// @dev Service is not unstaked.
 /// @param serviceId Service Id.
 error ServiceNotUnstaked(uint256 serviceId);
@@ -109,6 +105,12 @@ struct ServiceInfo {
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
+    enum ServiceStakingState {
+        Unstaked,
+        Staked,
+        Evicted
+    }
+
     // Input staking parameters
     struct StakingParams {
         // Maximum number of staking services
@@ -373,6 +375,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     /// @param eligibleServiceRewards Corresponding rewards for eligible service Ids.
     /// @param serviceIds All the staking service Ids.
     /// @param serviceNonces Current service nonces.
+    /// @param serviceInactivity Service inactivity records.
     function _calculateStakingRewards() internal view returns (
         uint256 lastAvailableRewards,
         uint256 numServices,
@@ -629,11 +632,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             revert OwnerOnly(msg.sender, sInfo.owner);
         }
 
+        // Get the staking start time
+        // Note that if the service info exists, the service is staked or evicted, and thus start time is always valid
         uint256 tsStart = sInfo.tsStart;
-        // Check if the service is staked
-        if (tsStart == 0) {
-            revert ServiceNotStaked(serviceId);
-        }
 
         // Check that the service has staked long enough, or if there are no rewards left
         uint256 ts = block.timestamp - tsStart;
@@ -726,11 +727,16 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         reward += calculateServiceStakingLastReward(serviceId);
     }
 
-    /// @dev Checks if the service is staked.
+    /// @dev Gets the service staking state.
     /// @param serviceId.
-    /// @return isStaked True, if the service is staked.
-    function isServiceStaked(uint256 serviceId) external view returns (bool isStaked) {
-        isStaked = (mapServiceInfo[serviceId].tsStart > 0);
+    /// @return stakingState Staking state of the service.
+    function getServiceStakingState(uint256 serviceId) external view returns (ServiceStakingState stakingState) {
+        ServiceInfo memory sInfo = mapServiceInfo[serviceId];
+        if (sInfo.inactivity > maxAllowedInactivity) {
+            stakingState = ServiceStakingState.Evicted;
+        } else if (sInfo.tsStart > 0) {
+            stakingState = ServiceStakingState.Staked;
+        }
     }
 
     /// @dev Gets the next reward checkpoint timestamp.

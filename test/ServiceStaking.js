@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 const helpers = require("@nomicfoundation/hardhat-network-helpers");
 const safeContracts = require("@gnosis.pm/safe-contracts");
 
-describe.only("ServiceStaking", function () {
+describe("ServiceStaking", function () {
     let componentRegistry;
     let agentRegistry;
     let serviceRegistry;
@@ -233,6 +233,7 @@ describe.only("ServiceStaking", function () {
             await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
 
             await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, AddressZero, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+            await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, AddressZero, token.address, bytecodeHash)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
             await expect(ServiceStakingToken.deploy(testServiceParams, serviceRegistry.address, serviceRegistryTokenUtility.address, AddressZero, bytecodeHash)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroAddress");
         });
     });
@@ -543,6 +544,28 @@ describe.only("ServiceStaking", function () {
     });
 
     context("Staking and unstaking", function () {
+        it("Should fail when trying to unstake without staking for a minimum required time", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Approve services
+            await serviceRegistry.approve(serviceStaking.address, serviceId);
+
+            // Stake the service
+            await serviceStaking.stake(serviceId);
+
+            // Trying to unstake right away
+            await expect(
+                serviceStaking.unstake(serviceId)
+            ).to.be.revertedWithCustomError(serviceStaking, "NotEnoughTimeStaked");
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+
         it("Stake and unstake without any service activity", async function () {
             // Take a snapshot of the current state of the blockchain
             const snapshot = await helpers.takeSnapshot();
@@ -557,8 +580,8 @@ describe.only("ServiceStaking", function () {
             await serviceStaking.stake(serviceId);
 
             // Check that the service is staked
-            const isStaked = await serviceStaking.isServiceStaked(serviceId);
-            expect(isStaked).to.equal(true);
+            let stakingState = await serviceStaking.getServiceStakingState(serviceId);
+            expect(stakingState).to.equal(1);
 
             // Get the service multisig contract
             const service = await serviceRegistry.getService(serviceId);
@@ -571,17 +594,34 @@ describe.only("ServiceStaking", function () {
             const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
             expect(reward).to.equal(0);
 
+            // Call the checkpoint
+            await serviceStaking.checkpoint();
+
+            // By this time, services are evicted
+            // Check that the service is evicted
+            stakingState = await serviceStaking.getServiceStakingState(serviceId);
+            expect(stakingState).to.equal(2);
+
+            // After the eviction, check the final serviceIds set to be empty
+            const serviceIds = await serviceStaking.getServiceIds();
+            expect(serviceIds.length).to.equal(0);
+
+            // Try to stake evicted service
+            await expect(
+                serviceStaking.stake(serviceId)
+            ).to.be.revertedWithCustomError(serviceStaking, "ServiceNotUnstaked");
+
             // Unstake the service
             const balanceBefore = await ethers.provider.getBalance(multisig.address);
             await serviceStaking.unstake(serviceId);
             const balanceAfter = await ethers.provider.getBalance(multisig.address);
 
+            // Check that the service is unstaked
+            stakingState = await serviceStaking.getServiceStakingState(serviceId);
+            expect(stakingState).to.equal(0);
+
             // The multisig balance before and after unstake must be the same (zero reward)
             expect(balanceBefore).to.equal(balanceAfter);
-
-            // Check the final serviceIds set to be empty
-            const serviceIds = await serviceStaking.getServiceIds();
-            expect(serviceIds.length).to.equal(0);
 
             // Restore a previous state of blockchain
             snapshot.restore();
@@ -963,9 +1003,135 @@ describe.only("ServiceStaking", function () {
                 await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
             }
 
+            // Check staking status to be staked
+            for (let i = 0; i < 3; i++) {
+                const stakingState = await serviceStaking.getServiceStakingState(serviceId + i);
+                expect(stakingState).to.equal(1);
+            }
 
             // Increase the time for the liveness period
-            await helpers.time.increase(maxInactivity);
+            await helpers.time.increase(livenessPeriod);
+
+            // Call the checkpoint
+            await serviceStaking.checkpoint();
+
+            // Check staking status to be staked
+            for (let i = 0; i < 3; i++) {
+                const stakingState = await serviceStaking.getServiceStakingState(serviceId + i);
+                expect(stakingState).to.equal(1);
+            }
+
+            for (let i = 0; i < 3; i++) {
+                // Calculate service staking reward that must be greater than zero except for the serviceId == 3
+                const reward = await serviceStaking.calculateServiceStakingReward(serviceId + i);
+                if (i < 2) {
+                    expect(reward).to.greaterThan(0);
+                } else {
+                    expect(reward).to.equal(0);
+                }
+
+                // Get the service multisig contract
+                const service = await serviceRegistry.getService(serviceId + i);
+                const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+                // Unstake services
+                const balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+                await serviceStaking.unstake(serviceId + i);
+                const balanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+
+                // The balance before and after the unstake call must be different except for the serviceId == 3
+                if (i < 2) {
+                    expect(balanceAfter).to.gt(balanceBefore);
+                } else {
+                    expect(reward).to.equal(0);
+                }
+            }
+
+            // Check the final serviceIds set to be empty
+            const serviceIds = await serviceStaking.getServiceIds();
+            expect(serviceIds.length).to.equal(0);
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+
+        it("Stake and unstake with one service being inactive", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Create and deploy one more service (serviceId == 3)
+            await serviceRegistry.create(deployer.address, defaultHash, agentIds, agentParams, threshold);
+            await serviceRegistry.activateRegistration(deployer.address, serviceId + 2, {value: regDeposit});
+            await serviceRegistry.registerAgents(operator.address, serviceId + 2, [agentInstances[2].address], agentIds, {value: regBond});
+            await serviceRegistry.deploy(deployer.address, serviceId + 2, gnosisSafeMultisig.address, payload);
+
+            for (let i = 0; i < 3; i++) {
+                // Approve services
+                await serviceRegistry.approve(serviceStaking.address, serviceId + i);
+
+                // Stake the first service
+                await serviceStaking.stake(serviceId + i);
+
+                // Get the service multisig contract
+                const service = await serviceRegistry.getService(serviceId + i);
+                const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+                // Make transactions by the service multisig, except for the service Id == 3
+                if (i < 2) {
+                    const nonce = await multisig.nonce();
+                    const txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+                    const signMessageData = await safeContracts.safeSignMessage(agentInstances[i], multisig, txHashData, 0);
+                    await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+                }
+            }
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
+            // Calculate service staking reward that must be greater than zero except for the serviceId == 3
+            for (let i = 0; i < 2; i++) {
+                const reward = await serviceStaking.calculateServiceStakingReward(serviceId + i);
+                expect(reward).to.greaterThan(0);
+            }
+
+            // Call the checkpoint at this time
+            await serviceStaking.checkpoint();
+
+            // Execute one more multisig tx for services except for the service Id == 3
+            for (let i = 0; i < 2; i++) {
+                // Get the service multisig contract
+                const service = await serviceRegistry.getService(serviceId + i);
+                const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+                const nonce = await multisig.nonce();
+                const txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+                const signMessageData = await safeContracts.safeSignMessage(agentInstances[i], multisig, txHashData, 0);
+                await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+            }
+
+            // Check staking status to be staked
+            for (let i = 0; i < 3; i++) {
+                const stakingState = await serviceStaking.getServiceStakingState(serviceId + i);
+                expect(stakingState).to.equal(1);
+            }
+
+            // Increase the time for the twice the liveness period
+            await helpers.time.increase(2 * livenessPeriod);
+
+            // Call the checkpoint
+            await serviceStaking.checkpoint();
+
+            // Check staking status to be staked for the first two services
+            for (let i = 0; i < 2; i++) {
+                const stakingState = await serviceStaking.getServiceStakingState(serviceId + i);
+                expect(stakingState).to.equal(1);
+            }
+            // The last service must be evicted by that time
+            const stakingState = await serviceStaking.getServiceStakingState(serviceId + 2);
+            expect(stakingState).to.equal(2);
 
             for (let i = 0; i < 3; i++) {
                 // Calculate service staking reward that must be greater than zero except for the serviceId == 3
