@@ -133,11 +133,13 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         bytes32 configHash;
     }
 
-    event ServiceStaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256[] nonces);
+    event ServiceStaked(uint256 indexed epoch, uint256 indexed serviceId, address indexed multisig, address owner,
+        uint256[] nonces);
     event Checkpoint(uint256 indexed epoch, uint256 availableRewards, uint256[] serviceIds, uint256[] rewards);
-    event ServiceUnstaked(uint256 indexed serviceId, address indexed owner, address indexed multisig, uint256[] nonces,
-        uint256 reward, uint256 tsStart);
-    event ServicesEvicted(uint256[] serviceIds, address[] owners, address[] multisigs, uint256[] serviceInactivity);
+    event ServiceUnstaked(uint256 indexed epoch, uint256 indexed serviceId, address indexed multisig, address owner,
+        uint256[] nonces, uint256 reward, uint256 tsStart);
+    event ServicesEvicted(uint256 indexed epoch, uint256[] serviceIds, address[] owners, address[] multisigs,
+        uint256[] serviceInactivity);
     event Deposit(address indexed sender, uint256 amount, uint256 balance, uint256 availableRewards);
     event Withdraw(address indexed to, uint256 amount);
 
@@ -333,7 +335,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         // Transfer the service for staking
         IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
 
-        emit ServiceStaked(serviceId, msg.sender, service.multisig, nonces);
+        emit ServiceStaked(epochCounter, serviceId, service.multisig, msg.sender, nonces);
     }
 
     /// @dev Gets service multisig nonces.
@@ -499,7 +501,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             // Pop the last element
             setServiceIds.pop();
 
-            emit ServicesEvicted(serviceIds, owners, multisigs, serviceInactivity);
+            emit ServicesEvicted(epochCounter, serviceIds, owners, multisigs, serviceInactivity);
         }
     }
 
@@ -689,7 +691,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             _withdraw(multisig, reward);
         }
 
-        emit ServiceUnstaked(serviceId, msg.sender, multisig, nonces, reward, tsStart);
+        emit ServiceUnstaked(epochCounter, serviceId, multisig, msg.sender, nonces, reward, tsStart);
     }
 
     /// @dev Calculates service staking reward during the last checkpoint period.
