@@ -233,7 +233,7 @@ contract ServiceStaking is BaseSetup {
                 for (uint256 j = 0; j < numServices; ++j) {
                     uint256 serviceId = j + 1;
                     // Unstake if the service is not yet unstaked, otherwise ignore
-                    if (!serviceStakingNativeToken.isServiceStaked(serviceId)) {
+                    if (uint8(serviceStakingNativeToken.getServiceStakingState(serviceId)) > 0) {
                         vm.startPrank(deployer);
                         serviceStakingNativeToken.unstake(serviceId);
                         vm.stopPrank();
@@ -306,7 +306,7 @@ contract ServiceStaking is BaseSetup {
                 for (uint256 j = 0; j < numServices; ++j) {
                     uint256 serviceId = j + 1;
                     // Unstake if the service is not yet unstaked, otherwise ignore
-                    if (!serviceStakingNativeToken.isServiceStaked(serviceId)) {
+                    if (uint8(serviceStakingNativeToken.getServiceStakingState(serviceId)) > 0) {
                         vm.startPrank(deployer);
                         serviceStakingNativeToken.unstake(serviceId);
                         vm.stopPrank();
@@ -377,7 +377,7 @@ contract ServiceStaking is BaseSetup {
                 for (uint256 j = 0; j < numServices; ++j) {
                     uint256 serviceId = j + 1;
                     // Unstake if the service is not yet unstaked, otherwise ignore
-                    if (!serviceStakingNativeToken.isServiceStaked(serviceId)) {
+                    if (uint8(serviceStakingNativeToken.getServiceStakingState(serviceId)) > 0) {
                         vm.startPrank(deployer);
                         serviceStakingNativeToken.unstake(serviceId);
                         vm.stopPrank();
@@ -449,7 +449,7 @@ contract ServiceStaking is BaseSetup {
                 for (uint256 j = 0; j < numServices; ++j) {
                     uint256 serviceId = j + numServices + 1;
                     // Unstake if the service is not yet unstaked, otherwise ignore
-                    if (!serviceStakingToken.isServiceStaked(serviceId)) {
+                    if (uint8(serviceStakingToken.getServiceStakingState(serviceId)) > 0) {
                         vm.startPrank(deployer);
                         serviceStakingToken.unstake(serviceId);
                         vm.stopPrank();
