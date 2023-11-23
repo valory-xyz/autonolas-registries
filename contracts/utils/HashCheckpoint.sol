@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-/// @title Generic Registry - Smart contract for generic registry template
+/// @title Hash Checkpoint - Smart contract for checkpointing IPFS hashes on-chain
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-abstract contract HashCheckpoint {
+contract HashCheckpoint {
     error OwnerOnly(address sender, address owner);
     error ZeroAddress();
     error ZeroValue();
@@ -14,8 +14,6 @@ abstract contract HashCheckpoint {
 
     // Owner address
     address public owner;
-    // Unit manager
-    address public manager;
     // Base URI
     string public baseURI;
     // To better understand the CID anatomy, please refer to: https://proto.school/anatomy-of-a-cid/05
@@ -30,6 +28,13 @@ abstract contract HashCheckpoint {
     string public constant CID_PREFIX = "f01701220";
     // Map of address => latest IPFS hash
     mapping (address => bytes32) public latestHashes;
+
+    /// @dev Hash checkpoint constructor.
+    /// @param _baseURI Hash registry base URI.
+    constructor(string memory _baseURI) {
+        baseURI = _baseURI;
+        owner = msg.sender;
+    }
 
     /// @dev Changes the owner address.
     /// @param newOwner Address of a new owner.
@@ -46,22 +51,6 @@ abstract contract HashCheckpoint {
 
         owner = newOwner;
         emit OwnerUpdated(newOwner);
-    }
-
-    /// @dev Changes the unit manager.
-    /// @param newManager Address of a new unit manager.
-    function changeManager(address newManager) external virtual {
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero address
-        if (newManager == address(0)) {
-            revert ZeroAddress();
-        }
-
-        manager = newManager;
-        emit ManagerUpdated(newManager);
     }
     
     /// @dev Sets unit base URI.
