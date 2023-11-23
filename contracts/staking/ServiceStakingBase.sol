@@ -452,6 +452,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256 numEvictServices
     ) internal
     {
+        // Get the total number of staked services
+        // All the passed arrays have the length of the number of staked services
         uint256 totalNumServices = evictServiceIds.length;
 
         // Get arrays of exact sizes
