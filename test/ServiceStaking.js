@@ -38,7 +38,7 @@ describe("ServiceStaking", function () {
     const initSupply = "5" + "0".repeat(26);
     const payload = "0x";
     const serviceParams = {
-        maxNumServices: 10,
+        maxNumServices: 3,
         rewardsPerSecond: "1" + "0".repeat(15),
         minStakingDeposit: 10,
         livenessPeriod: livenessPeriod, // Ten seconds
@@ -316,6 +316,24 @@ describe("ServiceStaking", function () {
             await expect(
                 sStaking.stake(serviceId)
             ).to.be.revertedWithCustomError(sStaking, "WrongServiceConfiguration");
+        });
+
+        it("Should fail when the multisig hash is incorrect", async function () {
+            // Deploy a contract with a different service config specification
+            const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
+            const testBytecodeHash = "0x" + "0".repeat(63) + "1";
+            const sStaking = await ServiceStakingNativeToken.deploy(serviceParams, serviceRegistry.address, testBytecodeHash);
+            await sStaking.deployed();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: sStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Approve services
+            await serviceRegistry.approve(sStaking.address, serviceId);
+
+            await expect(
+                sStaking.stake(serviceId)
+            ).to.be.revertedWithCustomError(sStaking, "UnauthorizedMultisig");
         });
 
         it("Should fail when the specified threshold of the service does not match", async function () {
@@ -1162,6 +1180,61 @@ describe("ServiceStaking", function () {
             // Check the final serviceIds set to be empty
             const serviceIds = await serviceStaking.getServiceIds();
             expect(serviceIds.length).to.equal(0);
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+
+        it("Stake the full allowed number of services, evict all of them and stake again", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Create and deploy one more service (serviceId == 3)
+            await serviceRegistry.create(deployer.address, defaultHash, agentIds, agentParams, threshold);
+            await serviceRegistry.activateRegistration(deployer.address, serviceId + 2, {value: regDeposit});
+            await serviceRegistry.registerAgents(operator.address, serviceId + 2, [agentInstances[2].address], agentIds, {value: regBond});
+            await serviceRegistry.deploy(deployer.address, serviceId + 2, gnosisSafeMultisig.address, payload);
+
+            // Stake 3 initial services
+            for (let i = 0; i < 3; i++) {
+                // Approve services
+                await serviceRegistry.approve(serviceStaking.address, serviceId + i);
+
+                // Stake the first service
+                await serviceStaking.stake(serviceId + i);
+            }
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(maxInactivity);
+
+            // Call the checkpoint at this time (all services will be evicted)
+            await serviceStaking.checkpoint();
+
+            // Check the staking state of all the services
+            for (let i = 0; i < 3; i++) {
+                const stakingState = await serviceStaking.getServiceStakingState(serviceId + i);
+                expect(stakingState).to.equal(2);
+            }
+
+            // Try to stake the same service again
+            await expect(
+                serviceStaking.stake(serviceId)
+            ).to.be.revertedWithCustomError(serviceStaking, "ServiceNotUnstaked");
+
+            // Create and deploy yet one more service (serviceId == 4)
+            await serviceRegistry.create(deployer.address, defaultHash, [1], agentParams, threshold);
+            await serviceRegistry.activateRegistration(deployer.address, serviceId + 3, {value: regDeposit});
+            await serviceRegistry.registerAgents(operator.address, serviceId + 3, [agentInstances[3].address], agentIds, {value: regBond});
+            await serviceRegistry.deploy(deployer.address, serviceId + 3, gnosisSafeMultisig.address, payload);
+
+            // Approve services
+            await serviceRegistry.approve(serviceStaking.address, serviceId + 3);
+
+            // Stake the service
+            await serviceStaking.stake(serviceId + 3);
 
             // Restore a previous state of blockchain
             snapshot.restore();
