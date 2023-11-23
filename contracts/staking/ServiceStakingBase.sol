@@ -445,65 +445,61 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     /// @dev Evicts services due to their extended inactivity.
     /// @param evictServiceIds Service Ids to be evicted.
     /// @param serviceInactivity Corresponding service inactivity records.
-    function _evict(uint256[] memory evictServiceIds, uint256[] memory serviceInactivity) internal {
+    /// @param numEvictServices Number of services to evict.
+    function _evict(
+        uint256[] memory evictServiceIds,
+        uint256[] memory serviceInactivity,
+        uint256 numEvictServices
+    ) internal
+    {
         uint256 totalNumServices = evictServiceIds.length;
-        uint256 numEvictServices;
 
-        // Get the number of evicted services
+        // Get arrays of exact sizes
+        uint256[] memory serviceIds = new uint256[](numEvictServices);
+        address[] memory owners = new address[](numEvictServices);
+        address[] memory multisigs = new address[](numEvictServices);
+        uint256[] memory inactivity = new uint256[](numEvictServices);
+        uint256[] memory serviceIndexes = new uint256[](numEvictServices);
+
+        // Fill in arrays
+        uint256 sCounter;
+        uint256 serviceId;
         for (uint256 i = 0; i < totalNumServices; ++i) {
             if (evictServiceIds[i] > 0) {
-                numEvictServices++;
+                serviceId = evictServiceIds[i];
+                serviceIds[sCounter] = serviceId;
+
+                ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+                owners[sCounter] = sInfo.owner;
+                multisigs[sCounter] = sInfo.multisig;
+                inactivity[sCounter] = serviceInactivity[i];
+                serviceIndexes[sCounter] = i;
+                sCounter++;
             }
         }
 
-        if (numEvictServices > 0) {
-            // Get arrays of exact sizes
-            uint256[] memory serviceIds = new uint256[](numEvictServices);
-            address[] memory owners = new address[](numEvictServices);
-            address[] memory multisigs = new address[](numEvictServices);
-            uint256[] memory inactivity = new uint256[](numEvictServices);
-            uint256[] memory serviceIndexes = new uint256[](numEvictServices);
-
-            // Fill in arrays
-            uint256 sCounter;
-            uint256 serviceId;
-            for (uint256 i = 0; i < totalNumServices; ++i) {
-                if (evictServiceIds[i] > 0) {
-                    serviceId = evictServiceIds[i];
-                    serviceIds[sCounter] = serviceId;
-
-                    ServiceInfo storage sInfo = mapServiceInfo[serviceId];
-                    owners[sCounter] = sInfo.owner;
-                    multisigs[sCounter] = sInfo.multisig;
-                    inactivity[sCounter] = serviceInactivity[i];
-                    serviceIndexes[sCounter] = i;
-                    sCounter++;
-                }
-            }
-
-            // Evict services from the global set of staked services
-            uint256 idx;
-            for (uint256 i = numEvictServices - 1; i > 0; --i) {
-                // Decrease the number of services
-                totalNumServices--;
-                // Get the evicted service index
-                idx = serviceIndexes[i];
-                // Assign last service Id to the index that points to the evicted service Id
-                setServiceIds[idx] = setServiceIds[totalNumServices];
-                // Pop the last element
-                setServiceIds.pop();
-            }
-
-            // Deal with the very first element
+        // Evict services from the global set of staked services
+        uint256 idx;
+        for (uint256 i = numEvictServices - 1; i > 0; --i) {
+            // Decrease the number of services
+            totalNumServices--;
             // Get the evicted service index
-            idx = serviceIndexes[0];
+            idx = serviceIndexes[i];
             // Assign last service Id to the index that points to the evicted service Id
-            setServiceIds[idx] = setServiceIds[totalNumServices - 1];
+            setServiceIds[idx] = setServiceIds[totalNumServices];
             // Pop the last element
             setServiceIds.pop();
-
-            emit ServicesEvicted(epochCounter, serviceIds, owners, multisigs, inactivity);
         }
+
+        // Deal with the very first element
+        // Get the evicted service index
+        idx = serviceIndexes[0];
+        // Assign last service Id to the index that points to the evicted service Id
+        setServiceIds[idx] = setServiceIds[totalNumServices - 1];
+        // Pop the last element
+        setServiceIds.pop();
+
+        emit ServicesEvicted(epochCounter, serviceIds, owners, multisigs, inactivity);
     }
 
     /// @dev Checkpoint to allocate rewards up until a current time.
@@ -587,6 +583,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
         // If service Ids are returned, then the checkpoint takes place
         if (serviceIds.length > 0) {
+            numServices = 0;
             // Record service inactivities and updated current service nonces
             for (uint256 i = 0; i < serviceIds.length; ++i) {
                 // Get the current service Id
@@ -603,6 +600,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                     if (serviceInactivity[i] > maxAllowedInactivity) {
                         // Evict a service if it has been inactive for more than a maximum allowed inactivity time
                         evictServiceIds[i] = curServiceId;
+                        // Increase number of evicted services
+                        numServices++;
                     }
                 } else {
                     // Otherwise, set it back to zero
@@ -611,7 +610,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             }
 
             // Evict inactive services
-            _evict(evictServiceIds, serviceInactivity);
+            if (numServices > 0) {
+                _evict(evictServiceIds, serviceInactivity, numServices);
+            }
 
             // Record the current timestamp such that next calculations start from this point of time
             tsCheckpoint = block.timestamp;
