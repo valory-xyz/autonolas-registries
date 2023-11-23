@@ -74,7 +74,7 @@ async function main() {
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --contract contracts/HashCheckpoint.sol:HashCheckpoint --constructor-args scripts/deployment/l2/verify_18_hash_checkpoint_l2.js --network " + providerName + " " + hashCheckpoint.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --contract contracts/utils/HashCheckpoint.sol:HashCheckpoint --constructor-args scripts/deployment/l2/verify_18_hash_checkpoint.js --network " + providerName + " " + hashCheckpoint.address, { encoding: "utf-8" });
     }
 }
 
