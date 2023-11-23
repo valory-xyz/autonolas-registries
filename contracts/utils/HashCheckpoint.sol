@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
-
-import "../lib/solmate/src/tokens/ERC721.sol";
-import "./interfaces/IErrorsRegistries.sol";
+pragma solidity ^0.8.21;
 
 /// @title Generic Registry - Smart contract for generic registry template
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 abstract contract HashCheckpoint {
+    error OwnerOnly(address sender, address owner);
+    error ZeroAddress();
+    error ZeroValue();
     event OwnerUpdated(address indexed owner);
     event ManagerUpdated(address indexed manager);
     event BaseURIChanged(string baseURI);
-    event HashUpdated(address indexed address, bytes32 hash)
+    event HashUpdated(address indexed emitter, bytes32 hash);
 
     // Owner address
     address public owner;
@@ -83,8 +83,8 @@ abstract contract HashCheckpoint {
 
     /// @dev Emits a hash
     /// @param hash The hash to be emitted.
-    function emit(bytes32 hash) external virtual {
-        latestHash[msg.sender] = hash;
+    function checkpoint(bytes32 hash) external virtual {
+        latestHashes[msg.sender] = hash;
         emit HashUpdated(msg.sender, hash);
     }
 
@@ -112,10 +112,10 @@ abstract contract HashCheckpoint {
 
     /// @dev Latest hash
     /// @notice Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.
-    /// @param address The address that provided the hash.
+    /// @param _address The address that provided the hash.
     /// @return Latest hash string.
-    function latestHash(address _address) public view virtual override returns (string memory) {
-        bytes32 latest_hash = latestHash[_address];
+    function latestHash(address _address) public view virtual returns (string memory) {
+        bytes32 latest_hash = latestHashes[_address];
         // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
         // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
         return string(abi.encodePacked(CID_PREFIX, _toHex16(bytes16(latest_hash)),
@@ -124,10 +124,10 @@ abstract contract HashCheckpoint {
 
     /// @dev Hash URI
     /// @notice Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.
-    /// @param address The address that provided the hash.
+    /// @param _address The address that provided the hash.
     /// @return Latest hash URI string.
-    function latestHashURI(address _address) public view virtual override returns (string memory) {
-        bytes32 latest_hash = latestHash[_address];
+    function latestHashURI(address _address) public view virtual returns (string memory) {
+        bytes32 latest_hash = latestHashes[_address];
         // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
         // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation
         return string(abi.encodePacked(baseURI, CID_PREFIX, _toHex16(bytes16(latest_hash)),
