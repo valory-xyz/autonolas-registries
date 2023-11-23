@@ -111,7 +111,7 @@ contract HashCheckpoint {
             _toHex16(bytes16(latest_hash << 128))));
     }
 
-    /// @dev Hash URI
+    /// @dev Latest hash URI
     /// @notice Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.
     /// @param _address The address that provided the hash.
     /// @return Latest hash URI string.
