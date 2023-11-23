@@ -444,7 +444,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
     /// @dev Evicts services due to their extended inactivity.
     /// @param evictServiceIds Service Ids to be evicted.
-    function _evict(uint256[] memory evictServiceIds) internal {
+    /// @param serviceInactivity Corresponding service inactivity records.
+    function _evict(uint256[] memory evictServiceIds, uint256[] memory serviceInactivity) internal {
         uint256 totalNumServices = evictServiceIds.length;
         uint256 numEvictServices;
 
@@ -460,7 +461,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             uint256[] memory serviceIds = new uint256[](numEvictServices);
             address[] memory owners = new address[](numEvictServices);
             address[] memory multisigs = new address[](numEvictServices);
-            uint256[] memory serviceInactivity = new uint256[](numEvictServices);
+            uint256[] memory inactivity = new uint256[](numEvictServices);
             uint256[] memory serviceIndexes = new uint256[](numEvictServices);
 
             // Fill in arrays
@@ -474,7 +475,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                     ServiceInfo storage sInfo = mapServiceInfo[serviceId];
                     owners[sCounter] = sInfo.owner;
                     multisigs[sCounter] = sInfo.multisig;
-                    serviceInactivity[sCounter] = sInfo.inactivity;
+                    inactivity[sCounter] = serviceInactivity[i];
                     serviceIndexes[sCounter] = i;
                     sCounter++;
                 }
@@ -501,7 +502,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             // Pop the last element
             setServiceIds.pop();
 
-            emit ServicesEvicted(epochCounter, serviceIds, owners, multisigs, serviceInactivity);
+            emit ServicesEvicted(epochCounter, serviceIds, owners, multisigs, inactivity);
         }
     }
 
@@ -596,10 +597,10 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 // Increase service inactivity if it is greater than zero
                 if (serviceInactivity[i] > 0) {
                     // Get the overall continuous service inactivity
-                    uint256 inactivity = mapServiceInfo[curServiceId].inactivity + serviceInactivity[i];
-                    mapServiceInfo[curServiceId].inactivity = inactivity;
+                    serviceInactivity[i] = mapServiceInfo[curServiceId].inactivity + serviceInactivity[i];
+                    mapServiceInfo[curServiceId].inactivity = serviceInactivity[i];
                     // Check for the maximum allowed inactivity time
-                    if (inactivity > maxAllowedInactivity) {
+                    if (serviceInactivity[i] > maxAllowedInactivity) {
                         // Evict a service if it has been inactive for more than a maximum allowed inactivity time
                         evictServiceIds[i] = curServiceId;
                     }
@@ -610,7 +611,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             }
 
             // Evict inactive services
-            _evict(evictServiceIds);
+            _evict(evictServiceIds, serviceInactivity);
 
             // Record the current timestamp such that next calculations start from this point of time
             tsCheckpoint = block.timestamp;
@@ -658,11 +659,12 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256 idx;
         bool inSet;
         for (; idx < serviceIds.length; ++idx) {
-            // Service is still in a global staking set if its index is found and the service was not evicted
-            if (serviceIds[idx] == serviceId && evictServiceIds[idx] != serviceId) {
-                inSet = true;
+            // Service is still in a global staking set if it is found in the services set,
+            // and is not present in the evicted set
+            if (evictServiceIds[idx] == serviceId) {
                 break;
-            } else if (evictServiceIds[idx] == serviceId) {
+            } else if (serviceIds[idx] == serviceId) {
+                inSet = true;
                 break;
             }
         }
