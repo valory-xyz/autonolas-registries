@@ -260,7 +260,7 @@ describe("ServiceStaking", function () {
             await serviceRegistry.approve(sStaking.address, serviceId);
             await serviceRegistry.approve(sStaking.address, serviceId + 1);
 
-            // Stake the first service
+            // Stake the service
             await sStaking.stake(serviceId);
 
             // Staking next service is going to fail
@@ -519,7 +519,7 @@ describe("ServiceStaking", function () {
             // Approve services
             await serviceRegistry.approve(serviceStaking.address, serviceId);
 
-            // Stake the first service
+            // Stake the service
             await serviceStaking.stake(serviceId);
 
             // Try to unstake not by the owner
@@ -594,7 +594,7 @@ describe("ServiceStaking", function () {
             // Approve services
             await serviceRegistry.approve(serviceStaking.address, serviceId);
 
-            // Stake the first service
+            // Stake the service
             await serviceStaking.stake(serviceId);
 
             // Check that the service is staked
@@ -719,7 +719,7 @@ describe("ServiceStaking", function () {
             // Approve services
             await serviceRegistry.approve(serviceStaking.address, serviceId);
 
-            // Stake the first service
+            // Stake the service
             await serviceStaking.stake(serviceId);
 
             // Get the service multisig contract
@@ -804,7 +804,7 @@ describe("ServiceStaking", function () {
             // Approve services
             await serviceRegistry.approve(serviceStakingToken.address, sId);
 
-            // Stake the first service
+            // Stake the service
             await serviceStakingToken.stake(sId);
 
             // Get the service multisig contract
@@ -862,7 +862,7 @@ describe("ServiceStaking", function () {
             // Approve services
             await serviceRegistry.approve(serviceStaking.address, serviceId);
 
-            // Stake the first service
+            // Stake the service
             await serviceStaking.stake(serviceId);
 
             // Get the service multisig contract
@@ -916,7 +916,7 @@ describe("ServiceStaking", function () {
             // Approve services
             await serviceRegistry.approve(serviceStaking.address, serviceId);
 
-            // Stake the first service
+            // Stake the service
             await serviceStaking.stake(serviceId);
 
             // Get the service multisig contract
@@ -981,7 +981,7 @@ describe("ServiceStaking", function () {
                 // Approve services
                 await serviceRegistry.approve(serviceStaking.address, serviceId + i);
 
-                // Stake the first service
+                // Stake the service
                 await serviceStaking.stake(serviceId + i);
 
                 // Get the service multisig contract
@@ -1090,7 +1090,7 @@ describe("ServiceStaking", function () {
                 // Approve services
                 await serviceRegistry.approve(serviceStaking.address, serviceId + i);
 
-                // Stake the first service
+                // Stake the service
                 await serviceStaking.stake(serviceId + i);
 
                 // Get the service multisig contract
@@ -1203,7 +1203,7 @@ describe("ServiceStaking", function () {
                 // Approve services
                 await serviceRegistry.approve(serviceStaking.address, serviceId + i);
 
-                // Stake the first service
+                // Stake the service
                 await serviceStaking.stake(serviceId + i);
             }
 
@@ -1250,7 +1250,7 @@ describe("ServiceStaking", function () {
             // Approve services
             await serviceRegistry.approve(serviceStaking.address, serviceId);
 
-            // Stake the first service
+            // Stake the service
             await serviceStaking.stake(serviceId);
 
             // Take the staking timestamp
