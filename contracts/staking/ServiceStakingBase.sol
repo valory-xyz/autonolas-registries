@@ -210,6 +210,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         maxNumServices = _stakingParams.maxNumServices;
         rewardsPerSecond = _stakingParams.rewardsPerSecond;
         minStakingDeposit = _stakingParams.minStakingDeposit;
+        maxNumInactivityPeriods = _stakingParams.maxNumInactivityPeriods;
         livenessPeriod = _stakingParams.livenessPeriod;
         livenessRatio = _stakingParams.livenessRatio;
         numAgentInstances = _stakingParams.numAgentInstances;
@@ -239,7 +240,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         proxyHash = _proxyHash;
 
         // Calculate max allowed inactivity
-        maxAllowedInactivity = maxNumInactivityPeriods * livenessPeriod;
+        maxAllowedInactivity = _stakingParams.maxNumInactivityPeriods * livenessPeriod;
 
         // Set the checkpoint timestamp to be the deployment one
         tsCheckpoint = block.timestamp;

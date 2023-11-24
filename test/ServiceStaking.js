@@ -34,7 +34,6 @@ describe("ServiceStaking", function () {
     const agentParams = [[1, regBond]];
     const threshold = 1;
     const livenessPeriod = 10; // Ten seconds
-    let maxInactivity;
     const initSupply = "5" + "0".repeat(26);
     const payload = "0x";
     const serviceParams = {
@@ -49,6 +48,7 @@ describe("ServiceStaking", function () {
         threshold: 0,
         configHash: bytes32Zero
     };
+    const maxInactivity = serviceParams.maxNumInactivityPeriods * livenessPeriod + 1;
 
     beforeEach(async function () {
         signers = await ethers.getSigners();
@@ -105,8 +105,6 @@ describe("ServiceStaking", function () {
         const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
         serviceStaking = await ServiceStakingNativeToken.deploy(serviceParams, serviceRegistry.address, bytecodeHash);
         await serviceStaking.deployed();
-
-        maxInactivity = Number(await serviceStaking.maxNumInactivityPeriods()) * livenessPeriod + 1;
 
         const ServiceStakingToken = await ethers.getContractFactory("ServiceStakingToken");
         serviceStakingToken = await ServiceStakingToken.deploy(serviceParams, serviceRegistry.address,
