@@ -96,7 +96,7 @@ struct ServiceInfo {
     uint256 tsStart;
     // Accumulated service staking reward
     uint256 reward;
-    // Accumulated inactivity that will be used to decide whether the service must be evicted
+    // Accumulated inactivity that might lead to the service eviction
     uint256 inactivity;
 }
 
@@ -119,6 +119,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256 rewardsPerSecond;
         // Minimum service staking deposit value required for staking
         uint256 minStakingDeposit;
+        // Max number of accumulated inactivity periods after which the service is evicted
+        uint256 maxNumInactivityPeriods;
         // Liveness period
         uint256 livenessPeriod;
         // Liveness ratio in the format of 1e18
@@ -133,11 +135,11 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         bytes32 configHash;
     }
 
-    event ServiceStaked(uint256 indexed epoch, uint256 indexed serviceId, address indexed multisig, address owner,
+    event ServiceStaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
         uint256[] nonces);
     event Checkpoint(uint256 indexed epoch, uint256 availableRewards, uint256[] serviceIds, uint256[] rewards);
-    event ServiceUnstaked(uint256 indexed epoch, uint256 indexed serviceId, address indexed multisig, address owner,
-        uint256[] nonces, uint256 reward, uint256 tsStart);
+    event ServiceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
+        uint256[] nonces, uint256 reward);
     event ServicesEvicted(uint256 indexed epoch, uint256[] serviceIds, address[] owners, address[] multisigs,
         uint256[] serviceInactivity);
     event Deposit(address indexed sender, uint256 amount, uint256 balance, uint256 availableRewards);
@@ -145,8 +147,6 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
     // Contract version
     string public constant VERSION = "0.1.0";
-    // Max number of accumulated inactivity periods after which the service can be evicted
-    uint256 public constant MAX_INACTIVITY_PERIODS = 3;
     // Maximum number of staking services
     uint256 public immutable maxNumServices;
     // Rewards per second
@@ -154,6 +154,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     // Minimum service staking deposit value required for staking
     // The staking deposit must be always greater than 1 in order to distinguish between native and ERC20 tokens
     uint256 public immutable minStakingDeposit;
+    // Max number of accumulated inactivity periods after which the service is evicted
+    uint256 public immutable maxNumInactivityPeriods;
     // Liveness period
     uint256 public immutable livenessPeriod;
     // Liveness ratio in the format of 1e18
@@ -194,7 +196,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         // Initial checks
         if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
             _stakingParams.livenessPeriod == 0 || _stakingParams.livenessRatio == 0 ||
-            _stakingParams.numAgentInstances == 0) {
+            _stakingParams.numAgentInstances == 0 || _stakingParams.maxNumInactivityPeriods == 0) {
             revert ZeroValue();
         }
         if (_stakingParams.minStakingDeposit < 2) {
@@ -237,7 +239,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         proxyHash = _proxyHash;
 
         // Calculate max allowed inactivity
-        maxAllowedInactivity = MAX_INACTIVITY_PERIODS * livenessPeriod;
+        maxAllowedInactivity = maxNumInactivityPeriods * livenessPeriod;
 
         // Set the checkpoint timestamp to be the deployment one
         tsCheckpoint = block.timestamp;
@@ -258,6 +260,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     function _withdraw(address to, uint256 amount) internal virtual;
 
     /// @dev Stakes the service.
+    /// @notice Each service must be staked for a minimum of maxAllowedInactivity time, or until the funds are not zero.
+    ///         maxAllowedInactivity = maxNumInactivityPeriods * livenessPeriod
     /// @param serviceId Service Id.
     function stake(uint256 serviceId) external {
         // Check if there available rewards
@@ -267,6 +271,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
         // Check if the evicted service has not yet unstaked
         ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+        // tsStart being greater than zero means that the service was not yet unstaked: still staking or evicted
         if (sInfo.tsStart > 0) {
             revert ServiceNotUnstaked(serviceId);
         }
@@ -335,7 +340,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         // Transfer the service for staking
         IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
 
-        emit ServiceStaked(epochCounter, serviceId, service.multisig, msg.sender, nonces);
+        emit ServiceStaked(epochCounter, serviceId, msg.sender, service.multisig, nonces);
     }
 
     /// @dev Gets service multisig nonces.
@@ -424,7 +429,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 }
 
                 // Calculate the liveness ratio in 1e18 value
-                // This subtraction is always positive or zero, as the last checkpoint can be at most block.timestamp
+                // This subtraction is always positive or zero, as the last checkpoint is at most block.timestamp
                 ts = block.timestamp - serviceCheckpoint;
                 bool ratioPass = _isRatioPass(serviceNonces[i], sInfo.nonces, ts);
 
@@ -505,10 +510,10 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     }
 
     /// @dev Checkpoint to allocate rewards up until a current time.
-    /// @return All staking service Ids (including evicted ones during within a current epoch).
-    /// @return All staking updated nonces (including evicted ones during within a current epoch).
-    /// @return Set of eligible service Ids.
-    /// @return Corresponding set of eligible service rewards.
+    /// @return All staking service Ids (including evicted ones within a current epoch).
+    /// @return All staking updated nonces (including evicted ones within a current epoch).
+    /// @return Set of reward-eligible service Ids.
+    /// @return Corresponding set of reward-eligible service rewards.
     /// @return evictServiceIds Evicted service Ids.
     function checkpoint() public returns (
         uint256[] memory,
@@ -696,7 +701,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             _withdraw(multisig, reward);
         }
 
-        emit ServiceUnstaked(epochCounter, serviceId, multisig, msg.sender, nonces, reward, tsStart);
+        emit ServiceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward);
     }
 
     /// @dev Calculates service staking reward during the last checkpoint period.

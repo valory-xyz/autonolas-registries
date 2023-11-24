@@ -56,6 +56,8 @@ contract BaseSetup is Test {
     uint256 internal rewardsPerSecond = 0.0001 ether;
     // Minimum service staking deposit value required for staking
     uint256 internal minStakingDeposit = regDeposit;
+    // Max number of accumulated inactivity periods after which the service is evicted
+    uint256 internal maxNumInactivityPeriods = 3;
     // Liveness period
     uint256 internal livenessPeriod = 1 days;
     // Liveness ratio in the format of 1e18
@@ -104,7 +106,8 @@ contract BaseSetup is Test {
 
         // Deploy service staking native token and arbitrary ERC20 token
         ServiceStakingBase.StakingParams memory stakingParams = ServiceStakingBase.StakingParams(maxNumServices,
-            rewardsPerSecond, minStakingDeposit, livenessPeriod, livenessRatio, numAgentInstances, emptyArray, 0, bytes32(0));
+            rewardsPerSecond, minStakingDeposit, maxNumInactivityPeriods, livenessPeriod, livenessRatio,
+            numAgentInstances, emptyArray, 0, bytes32(0));
         serviceStakingNativeToken = new ServiceStakingNativeToken(stakingParams, address(serviceRegistry),
             multisigProxyHash);
         serviceStakingToken = new ServiceStakingToken(stakingParams, address(serviceRegistry), address(serviceRegistryTokenUtility),
@@ -223,7 +226,7 @@ contract ServiceStaking is BaseSetup {
             }
 
             // Move several liveness checks ahead
-            vm.warp(block.timestamp + livenessPeriod * serviceStakingNativeToken.MAX_INACTIVITY_PERIODS() + 1);
+            vm.warp(block.timestamp + livenessPeriod * serviceStakingNativeToken.maxNumInactivityPeriods() + 1);
 
             // Call the checkpoint
             serviceStakingNativeToken.checkpoint();
@@ -296,7 +299,7 @@ contract ServiceStaking is BaseSetup {
             }
 
             // Move several liveness checks ahead
-            vm.warp(block.timestamp + livenessPeriod * serviceStakingNativeToken.MAX_INACTIVITY_PERIODS() + 1);
+            vm.warp(block.timestamp + livenessPeriod * serviceStakingNativeToken.maxNumInactivityPeriods() + 1);
 
             // Call the checkpoint
             serviceStakingNativeToken.checkpoint();
@@ -367,7 +370,7 @@ contract ServiceStaking is BaseSetup {
             }
 
             // Move several liveness checks ahead
-            vm.warp(block.timestamp + livenessPeriod * serviceStakingNativeToken.MAX_INACTIVITY_PERIODS() + 1);
+            vm.warp(block.timestamp + livenessPeriod * serviceStakingNativeToken.maxNumInactivityPeriods() + 1);
 
             // Call the checkpoint
             serviceStakingNativeToken.checkpoint();
@@ -439,7 +442,7 @@ contract ServiceStaking is BaseSetup {
             }
 
             // Move several liveness checks ahead
-            vm.warp(block.timestamp + livenessPeriod * serviceStakingToken.MAX_INACTIVITY_PERIODS() + 1);
+            vm.warp(block.timestamp + livenessPeriod * serviceStakingToken.maxNumInactivityPeriods() + 1);
 
             // Call the checkpoint
             serviceStakingToken.checkpoint();

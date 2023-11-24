@@ -25,6 +25,7 @@
     "maxNumServices": "100",
     "rewardsPerSecond": "385802469136",
     "minStakingDeposit": "50000000000000000000",
+    "maxNumInactivityPeriods": "3",
     "livenessPeriod": "86400",
     "livenessRatio": "520833333333333",
     "numAgentInstances": "1",
