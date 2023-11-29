@@ -487,25 +487,16 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         // Evict services from the global set of staked services
-        uint256 idx;
-        for (uint256 i = numEvictServices - 1; i > 0; --i) {
+        for (uint256 i = numEvictServices; i > 0; --i) {
             // Decrease the number of services
             totalNumServices--;
             // Get the evicted service index
-            idx = serviceIndexes[i];
+            uint256 idx = serviceIndexes[i - 1];
             // Assign last service Id to the index that points to the evicted service Id
             setServiceIds[idx] = setServiceIds[totalNumServices];
             // Pop the last element
             setServiceIds.pop();
         }
-
-        // Deal with the very first element
-        // Get the evicted service index
-        idx = serviceIndexes[0];
-        // Assign last service Id to the index that points to the evicted service Id
-        setServiceIds[idx] = setServiceIds[totalNumServices - 1];
-        // Pop the last element
-        setServiceIds.pop();
 
         emit ServicesEvicted(epochCounter, serviceIds, owners, multisigs, inactivity);
     }
