@@ -232,8 +232,11 @@ numEvictServices == 1
 numEvictServices > 1
 numEvictServices == setServiceIds
 numEvictServices < setServiceIds
+```
+[x] tests are in place
 
-+ is it possible to exclude a special case
+```solidity
+is it possible to exclude a special case
         // Deal with the very first element
         // Get the evicted service index
         idx = serviceIndexes[0];
@@ -243,6 +246,8 @@ numEvictServices < setServiceIds
         setServiceIds.pop();
         and move it under for()
 ```
+[x] fixed
+
 
 #### Notes (unstake scenario)
 ```solidity
@@ -265,3 +270,4 @@ numEvictServices < setServiceIds
             revert NotEnoughTimeStaked(serviceId, ts, maxAllowedInactivity);
         } 
 ```
+[x] behaves as expected
