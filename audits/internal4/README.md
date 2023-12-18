@@ -210,5 +210,64 @@ The review has been performed based on the contract code in the following reposi
 `https://github.com/valory-xyz/autonolas-registries` <br>
 commit: `v1.1.7.pre-internal-audit` or `387ba93deeb36849c1c205711b97a2c6da0f2745`<br> 
 Re-audit after extract Mech contracts into a separate repo. <br>
+[slither-full-25-10-23](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal4/analysis/slither_full_25_10_23.txt)
 I don't see any new problems after optimization. <br>
 
+
+### Security issues. Updated 29-11-23
+The review has been performed based on the contract code in the following repository:<br>
+`https://github.com/valory-xyz/autonolas-registries` <br>
+commit: `tag: v1.1.8-pre-internal-audit` or `99eef0ffd2450311b2770faceac37191a13af5cb`<br>
+Re-audit after changes ServiceStakingBase. <br>
+[slither-full](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal4/analysis/slither_full.txt)
+
+#### Notes (critical improvements)
+Due to the impossibility of manually assessing the correctness of the logic at the boundaries of ```_evict``` 
+"evict" must be part of ServiceStaking.t.sol (fuzzing) <br>
+or equivalent in js tests <br>
+Clarification required on the source code of the tests: <br>
+```solidity
+We need cases:
+numEvictServices == 1
+numEvictServices > 1
+numEvictServices == setServiceIds
+numEvictServices < setServiceIds
+```
+[x] tests are in place
+
+```solidity
+is it possible to exclude a special case
+        // Deal with the very first element
+        // Get the evicted service index
+        idx = serviceIndexes[0];
+        // Assign last service Id to the index that points to the evicted service Id
+        setServiceIds[idx] = setServiceIds[totalNumServices - 1];
+        // Pop the last element
+        setServiceIds.pop();
+        and move it under for()
+```
+[x] fixed
+
+
+#### Notes (unstake scenario)
+```solidity
+        // Check that the service has staked long enough, or if there are no rewards left
+        uint256 ts = block.timestamp - tsStart;
+        if (ts <= maxAllowedInactivity && availableRewards > 0) {
+            revert NotEnoughTimeStaked(serviceId, ts, maxAllowedInactivity);
+        }
+
+        1.  Service staking
+        2.  Service inactive all time // if (serviceInactivity[i] > maxAllowedInactivity)
+        2a. Service evict    // _evict(evictServiceIds, serviceInactivity, numServices);
+        3.  Service try unstake in 1s after 2a. // => tsStart = sInfo.tsStart; ts = block.timestamp - tsStart;
+        ??? What will happen?
+
+        What is the expected scenario for this barrier?
+        // Check that the service has staked long enough, or if there are no rewards left
+        uint256 ts = block.timestamp - tsStart;
+        if (ts <= maxAllowedInactivity && availableRewards > 0) {
+            revert NotEnoughTimeStaked(serviceId, ts, maxAllowedInactivity);
+        } 
+```
+[x] behaves as expected

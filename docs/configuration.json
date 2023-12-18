@@ -184,7 +184,7 @@
       },
       {
         "name": "GnosisSafeSameAddressMultisig",
-        "artifact": "abis/0.8.19/GnosisSafeSameAddressMultisig.json",
+        "artifact": "abis/0.8.21/GnosisSafeSameAddressMultisig.json",
         "address": "0x6e7f594f680f7aBad18b7a63de50F0FeE47dfD06"
       }
     ]

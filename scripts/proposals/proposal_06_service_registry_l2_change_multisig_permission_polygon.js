@@ -67,7 +67,7 @@ async function main() {
     console.log("Polygon side payload from the fxChild to check on the fxGovernorTunnelAddress in processMessageFromRoot function:", data);
 
     // Send the message to mumbai receiver from the timelock
-    const timelockPayload = await fxRoot.interface.encodeFunctionData("sendMessageToChild", [fxGovernorTunnelAddress, data]);
+        const timelockPayload = await fxRoot.interface.encodeFunctionData("sendMessageToChild", [fxGovernorTunnelAddress, data]);
 
     const targets = [fxRootAddress];
     const values = [0];
