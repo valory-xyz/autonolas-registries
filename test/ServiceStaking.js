@@ -40,6 +40,7 @@ describe("ServiceStaking", function () {
         maxNumServices: 3,
         rewardsPerSecond: "1" + "0".repeat(15),
         minStakingDeposit: 10,
+        minNumStakingPeriods: 3,
         maxNumInactivityPeriods: 3,
         livenessPeriod: livenessPeriod, // Ten seconds
         livenessRatio: "1" + "0".repeat(16), // 0.01 transaction per second (TPS)
@@ -164,6 +165,7 @@ describe("ServiceStaking", function () {
                 maxNumServices: 0,
                 rewardsPerSecond: 0,
                 minStakingDeposit: 0,
+                minNumStakingPeriods: 0,
                 maxNumInactivityPeriods: 0,
                 livenessPeriod: 0,
                 livenessRatio: 0,
@@ -183,9 +185,6 @@ describe("ServiceStaking", function () {
             testServiceParams.rewardsPerSecond = 1;
             await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
 
-            testServiceParams.maxNumInactivityPeriods = 1;
-            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
-
             testServiceParams.livenessPeriod = 1;
             await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
 
@@ -193,6 +192,15 @@ describe("ServiceStaking", function () {
             await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
 
             testServiceParams.numAgentInstances = 1;
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
+
+            testServiceParams.minNumStakingPeriods = 1;
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "ZeroValue");
+
+            testServiceParams.maxNumInactivityPeriods = 2;
+            await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "LowerThan");
+
+            testServiceParams.maxNumInactivityPeriods = 1;
             await expect(ServiceStakingNativeToken.deploy(testServiceParams, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingNativeToken, "LowerThan");
 
             testServiceParams.minStakingDeposit = 2;
@@ -223,9 +231,6 @@ describe("ServiceStaking", function () {
             testServiceParams.rewardsPerSecond = 1;
             await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
 
-            testServiceParams.maxNumInactivityPeriods = 1;
-            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
-
             testServiceParams.livenessPeriod = 1;
             await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
 
@@ -233,6 +238,15 @@ describe("ServiceStaking", function () {
             await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
 
             testServiceParams.numAgentInstances = 1;
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+
+            testServiceParams.minNumStakingPeriods = 1;
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingToken, "ZeroValue");
+
+            testServiceParams.maxNumInactivityPeriods = 2;
+            await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingToken, "LowerThan");
+
+            testServiceParams.maxNumInactivityPeriods = 1;
             await expect(ServiceStakingToken.deploy(testServiceParams, AddressZero, AddressZero, AddressZero, bytes32Zero)).to.be.revertedWithCustomError(ServiceStakingToken, "LowerThan");
 
             testServiceParams.minStakingDeposit = 2;
