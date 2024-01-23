@@ -1,4 +1,4 @@
-pragma solidity =0.8.21;
+pragma solidity =0.8.23;
 
 import {IService} from "../contracts/interfaces/IService.sol";
 import "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
@@ -56,6 +56,8 @@ contract BaseSetup is Test {
     uint256 internal rewardsPerSecond = 0.0001 ether;
     // Minimum service staking deposit value required for staking
     uint256 internal minStakingDeposit = regDeposit;
+    // Min number of staking periods before the service can be unstaked
+    uint256 internal minNumStakingPeriods = 3;
     // Max number of accumulated inactivity periods after which the service is evicted
     uint256 internal maxNumInactivityPeriods = 3;
     // Liveness period
@@ -106,8 +108,8 @@ contract BaseSetup is Test {
 
         // Deploy service staking native token and arbitrary ERC20 token
         ServiceStakingBase.StakingParams memory stakingParams = ServiceStakingBase.StakingParams(maxNumServices,
-            rewardsPerSecond, minStakingDeposit, maxNumInactivityPeriods, livenessPeriod, livenessRatio,
-            numAgentInstances, emptyArray, 0, bytes32(0));
+            rewardsPerSecond, minStakingDeposit, minNumStakingPeriods, maxNumInactivityPeriods, livenessPeriod,
+            livenessRatio, numAgentInstances, emptyArray, 0, bytes32(0));
         serviceStakingNativeToken = new ServiceStakingNativeToken(stakingParams, address(serviceRegistry),
             multisigProxyHash);
         serviceStakingToken = new ServiceStakingToken(stakingParams, address(serviceRegistry), address(serviceRegistryTokenUtility),

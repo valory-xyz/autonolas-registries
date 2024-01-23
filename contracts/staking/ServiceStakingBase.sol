@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.23;
 
 import {ERC721TokenReceiver} from "../../lib/solmate/src/tokens/ERC721.sol";
 import "../interfaces/IErrorsRegistries.sol";
@@ -20,6 +20,14 @@ interface IService {
         FinishedRegistration,
         Deployed,
         TerminatedBonded
+    }
+
+    // Service agent params struct
+    struct AgentParams {
+        // Number of agent instances
+        uint32 slots;
+        // Bond per agent instance
+        uint96 bond;
     }
 
     // Service parameters
@@ -52,6 +60,13 @@ interface IService {
     /// @param serviceId Service Id.
     /// @return service Corresponding Service struct.
     function getService(uint256 serviceId) external view returns (Service memory service);
+
+    /// @dev Gets service agent parameters: number of agent instances (slots) and a bond amount.
+    /// @param serviceId Service Id.
+    /// @return numAgentIds Number of canonical agent Ids in the service.
+    /// @return agentParams Set of agent parameters for each canonical agent Id.
+    function getAgentParams(uint256 serviceId) external view
+        returns (uint256 numAgentIds, AgentParams[] memory agentParams);
 }
 
 /// @dev No rewards are available in the contract.
@@ -119,6 +134,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256 rewardsPerSecond;
         // Minimum service staking deposit value required for staking
         uint256 minStakingDeposit;
+        // Min number of staking periods before the service can be unstaked
+        uint256 minNumStakingPeriods;
         // Max number of accumulated inactivity periods after which the service is evicted
         uint256 maxNumInactivityPeriods;
         // Liveness period
@@ -170,8 +187,10 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     address public immutable serviceRegistry;
     // Approved multisig proxy hash
     bytes32 public immutable proxyHash;
-    // Max allowed inactivity
-    uint256 public immutable maxAllowedInactivity;
+    // Min staking duration
+    uint256 public immutable minStakingDuration;
+    // Max allowed inactivity period
+    uint256 public immutable maxInactivityDuration;
 
     // Epoch counter
     uint256 public epochCounter;
@@ -196,9 +215,19 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         // Initial checks
         if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
             _stakingParams.livenessPeriod == 0 || _stakingParams.livenessRatio == 0 ||
-            _stakingParams.numAgentInstances == 0 || _stakingParams.maxNumInactivityPeriods == 0) {
+            _stakingParams.numAgentInstances == 0 || _stakingParams.minNumStakingPeriods == 0 ||
+            _stakingParams.maxNumInactivityPeriods == 0) {
             revert ZeroValue();
         }
+
+        // Check that the min number of staking periods is not smaller than the max number of inactivity periods
+        // This check is necessary to avoid an attack scenario when the service is going to stake and unstake without
+        // any meaningful activity and just occupy the staking slot
+        if (_stakingParams.minNumStakingPeriods < _stakingParams.maxNumInactivityPeriods) {
+            revert LowerThan(_stakingParams.minNumStakingPeriods, _stakingParams.maxNumInactivityPeriods);
+        }
+
+        // Check the rest of parameters
         if (_stakingParams.minStakingDeposit < 2) {
             revert LowerThan(_stakingParams.minStakingDeposit, 2);
         }
@@ -239,19 +268,37 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         // Record provided multisig proxy bytecode hash
         proxyHash = _proxyHash;
 
-        // Calculate max allowed inactivity
-        maxAllowedInactivity = _stakingParams.maxNumInactivityPeriods * livenessPeriod;
+        // Calculate min staking duration
+        minStakingDuration = _stakingParams.minNumStakingPeriods * livenessPeriod;
+
+        // Calculate max allowed inactivity duration
+        maxInactivityDuration = _stakingParams.maxNumInactivityPeriods * livenessPeriod;
 
         // Set the checkpoint timestamp to be the deployment one
         tsCheckpoint = block.timestamp;
     }
 
     /// @dev Checks token / ETH staking deposit.
+    /// @param serviceId Service Id.
     /// @param stakingDeposit Staking deposit.
-    function _checkTokenStakingDeposit(uint256, uint256 stakingDeposit) internal view virtual {
+    function _checkTokenStakingDeposit(
+        uint256 serviceId,
+        uint256 stakingDeposit,
+        uint32[] memory
+    ) internal view virtual {
+        uint256 minDeposit = minStakingDeposit;
+
         // The staking deposit derived from a security deposit value must be greater or equal to the minimum defined one
-        if (stakingDeposit < minStakingDeposit) {
-            revert LowerThan(stakingDeposit, minStakingDeposit);
+        if (stakingDeposit < minDeposit) {
+            revert LowerThan(stakingDeposit, minDeposit);
+        }
+
+        // Check agent Id bonds to be not smaller than the minimum required deposit
+        (uint256 numAgentIds, IService.AgentParams[] memory agentParams) = IService(serviceRegistry).getAgentParams(serviceId);
+        for (uint256 i = 0; i < numAgentIds; ++i) {
+            if (agentParams[i].bond < minDeposit) {
+                revert LowerThan(agentParams[i].bond, minDeposit);
+            }
         }
     }
 
@@ -261,8 +308,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     function _withdraw(address to, uint256 amount) internal virtual;
 
     /// @dev Stakes the service.
-    /// @notice Each service must be staked for a minimum of maxAllowedInactivity time, or until the funds are not zero.
-    ///         maxAllowedInactivity = maxNumInactivityPeriods * livenessPeriod
+    /// @notice Each service must be staked for a minimum of maxInactivityDuration time, or until the funds are not zero.
+    ///         maxInactivityDuration = maxNumInactivityPeriods * livenessPeriod
     /// @param serviceId Service Id.
     function stake(uint256 serviceId) external {
         // Check if there available rewards
@@ -319,6 +366,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 revert WrongServiceConfiguration(serviceId);
             }
             for (uint256 i = 0; i < numAgents; ++i) {
+                // Check that the agent Ids
                 if (agentIds[i] != service.agentIds[i]) {
                     revert WrongAgentId(agentIds[i]);
                 }
@@ -326,7 +374,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         // Check service staking deposit and token, if applicable
-        _checkTokenStakingDeposit(serviceId, service.securityDeposit);
+        _checkTokenStakingDeposit(serviceId, service.securityDeposit, service.agentIds);
 
         // ServiceInfo struct will be an empty one since otherwise the safeTransferFrom above would fail
         sInfo.multisig = service.multisig;
@@ -596,7 +644,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                     serviceInactivity[i] = mapServiceInfo[curServiceId].inactivity + serviceInactivity[i];
                     mapServiceInfo[curServiceId].inactivity = serviceInactivity[i];
                     // Check for the maximum allowed inactivity time
-                    if (serviceInactivity[i] > maxAllowedInactivity) {
+                    if (serviceInactivity[i] > maxInactivityDuration) {
                         // Evict a service if it has been inactive for more than a maximum allowed inactivity time
                         evictServiceIds[i] = curServiceId;
                         // Increase number of evicted services
@@ -641,8 +689,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
         // Check that the service has staked long enough, or if there are no rewards left
         uint256 ts = block.timestamp - tsStart;
-        if (ts <= maxAllowedInactivity && availableRewards > 0) {
-            revert NotEnoughTimeStaked(serviceId, ts, maxAllowedInactivity);
+        if (ts <= minStakingDuration && availableRewards > 0) {
+            revert NotEnoughTimeStaked(serviceId, ts, minStakingDuration);
         }
 
         // Call the checkpoint
@@ -736,7 +784,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     /// @return stakingState Staking state of the service.
     function getServiceStakingState(uint256 serviceId) external view returns (ServiceStakingState stakingState) {
         ServiceInfo memory sInfo = mapServiceInfo[serviceId];
-        if (sInfo.inactivity > maxAllowedInactivity) {
+        if (sInfo.inactivity > maxInactivityDuration) {
             stakingState = ServiceStakingState.Evicted;
         } else if (sInfo.tsStart > 0) {
             stakingState = ServiceStakingState.Staked;

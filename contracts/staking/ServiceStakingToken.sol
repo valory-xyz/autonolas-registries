@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.23;
 
 import {ServiceStakingBase} from "./ServiceStakingBase.sol";
 import {SafeTransferLib} from "../utils/SafeTransferLib.sol";
@@ -12,6 +12,12 @@ interface IServiceTokenUtility {
     /// @return Token address.
     /// @return Token security deposit.
     function mapServiceIdTokenDeposit(uint256 serviceId) external view returns (address, uint96);
+
+    /// @dev Gets the agent Id bond in a specified service.
+    /// @param serviceId Service Id.
+    /// @param serviceId Agent Id.
+    /// @return bond Agent Id bond in a specified service Id.
+    function getAgentBond(uint256 serviceId, uint256 agentId) external view returns (uint256 bond);
 }
 
 /// @dev The token does not have enough decimals.
@@ -65,7 +71,8 @@ contract ServiceStakingToken is ServiceStakingBase {
 
     /// @dev Checks token staking deposit.
     /// @param serviceId Service Id.
-    function _checkTokenStakingDeposit(uint256 serviceId, uint256) internal view override {
+    /// @param agentIds Service agent Ids.
+    function _checkTokenStakingDeposit(uint256 serviceId, uint256, uint32[] memory agentIds) internal view override {
         // Get the service staking token and deposit
         (address token, uint96 stakingDeposit) =
             IServiceTokenUtility(serviceRegistryTokenUtility).mapServiceIdTokenDeposit(serviceId);
@@ -75,9 +82,19 @@ contract ServiceStakingToken is ServiceStakingBase {
             revert WrongStakingToken(stakingToken, token);
         }
 
+        uint256 minDeposit = minStakingDeposit;
+
         // The staking deposit must be greater or equal to the minimum defined one
-        if (stakingDeposit < minStakingDeposit) {
-            revert ValueLowerThan(stakingDeposit, minStakingDeposit);
+        if (stakingDeposit < minDeposit) {
+            revert ValueLowerThan(stakingDeposit, minDeposit);
+        }
+
+        // Check agent Id bonds to be not smaller than the minimum required deposit
+        for (uint256 i = 0; i < agentIds.length; ++i) {
+            uint256 bond = IServiceTokenUtility(serviceRegistryTokenUtility).getAgentBond(serviceId, agentIds[i]);
+            if (bond < minDeposit) {
+                revert ValueLowerThan(bond, minDeposit);
+            }
         }
     }
 
