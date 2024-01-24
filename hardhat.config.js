@@ -74,7 +74,7 @@ module.exports = {
             accounts: accounts,
         },
         arbitrumSepolia: {
-            url: 'https://sepolia-rollup.arbitrum.io/rpc',
+            url: "https://sepolia-rollup.arbitrum.io/rpc",
             accounts: accounts,
             chainId: 421614,
         },
