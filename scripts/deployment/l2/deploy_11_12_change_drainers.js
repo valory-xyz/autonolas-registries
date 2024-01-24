@@ -12,6 +12,14 @@ async function main() {
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
     const gasPriceInGwei = parsedData.gasPriceInGwei;
+    const serviceRegistryAddress = parsedData.serviceRegistryAddress;
+    const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
+
+    // NOTE: Bridge Mediator for chiado network is the one with the mock timelock to facilitate testing!
+    // NOTE: See autonolas-governance for the address match in bridges/gnosis/test/globals.json
+    // NOTE: Use the currently setup Bridge Mediator and mock Timelock contracts to set up
+    // NOTE: a corresponding testnet Bridge Mediator contract that comes from the parsedData
+    let bridgeMediatorAddress = parsedData.bridgeMediatorAddress;
     let EOA;
 
     let networkURL;
@@ -34,6 +42,8 @@ async function main() {
         networkURL = "https://rpc.gnosischain.com";
     } else if (providerName === "chiado") {
         networkURL = "https://rpc.chiadochain.net";
+        // Bridge mediator is deployed via a mock timelock on goerli in order to perform testing
+        bridgeMediatorAddress = "0x0a50009D55Ed5700ac8FF713709d5Ad5fa843896";
     } else if (providerName === "arbitrumOne") {
         networkURL = "https://arb1.arbitrum.io/rpc";
     } else if (providerName === "arbitrumSepolia") {
@@ -55,30 +65,26 @@ async function main() {
     const deployer = await EOA.getAddress();
     console.log("EOA is:", deployer);
 
-    // Transaction signing and execution
-    console.log("3. EOA to deploy GnosisSafeMultisig");
+    // Gas pricing
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
-    const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
-    console.log("You are signing the following transaction: GnosisSafeMultisig.connect(EOA).deploy()");
-    const gnosisSafeMultisig = await GnosisSafeMultisig.connect(EOA).deploy(parsedData.gnosisSafeAddress, parsedData.gnosisSafeProxyFactoryAddress, { gasPrice });
-    const result = await gnosisSafeMultisig.deployed();
 
+    // Get all the contracts
+    const serviceRegistry = await ethers.getContractAt("ServiceRegistryL2", serviceRegistryAddress);
+    const serviceRegistryTokenUtility = await ethers.getContractAt("ServiceRegistryTokenUtility", serviceRegistryTokenUtilityAddress);
+
+    // 11. EOA to change the drainer of ServiceRegistry to BridgeMediator
+    console.log("You are signing the following transaction: serviceRegistry.connect(EOA).changeDrainer(bridgeMediatorAddress)");
+    result = await serviceRegistry.connect(EOA).changeDrainer(bridgeMediatorAddress, { gasPrice });
     // Transaction details
-    console.log("Contract deployment: GnosisSafeMultisig");
-    console.log("Contract address:", gnosisSafeMultisig.address);
-    console.log("Transaction:", result.deployTransaction.hash);
-    // Wait half a minute for the transaction completion
-    await new Promise(r => setTimeout(r, 30000));
+    console.log("Contract address:", serviceRegistryAddress);
+    console.log("Transaction:", result.hash);
 
-    // Writing updated parameters back to the JSON file
-    parsedData.gnosisSafeMultisigImplementationAddress = gnosisSafeMultisig.address;
-    fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
-
-    // Contract verification
-    if (parsedData.contractVerification) {
-        const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --contract contracts/multisigs/GnosisSafeMultisig.sol:GnosisSafeMultisig --constructor-args scripts/deployment/l2/verify_03_gnosis_safe_multisig.js --network " + providerName + " " + gnosisSafeMultisig.address, { encoding: "utf-8" });
-    }
+    // 12. EOA to change the drainer of ServiceRegistryTokenUtility to BridgeMediator
+    console.log("You are signing the following transaction: serviceRegistryTokenUtility.connect(EOA).changeDrainer(bridgeMediatorAddress)");
+    result = await serviceRegistryTokenUtility.connect(EOA).changeDrainer(bridgeMediatorAddress, { gasPrice });
+    // Transaction details
+    console.log("Contract address:", serviceRegistryTokenUtilityAddress);
+    console.log("Transaction:", result.hash);
 }
 
 main()

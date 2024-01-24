@@ -12,9 +12,6 @@ async function main() {
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
     const gasPriceInGwei = parsedData.gasPriceInGwei;
-    const serviceRegistryAddress = parsedData.serviceRegistryAddress;
-    const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
-    const operatorWhitelistAddress = parsedData.operatorWhitelistAddress;
     let EOA;
 
     let networkURL;
@@ -58,33 +55,29 @@ async function main() {
     const deployer = await EOA.getAddress();
     console.log("EOA is:", deployer);
 
-    // Gas pricing
-    const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
-
     // Transaction signing and execution
-    console.log("12. EOA to deploy ServiceManagerToken");
-    const ServiceManagerToken = await ethers.getContractFactory("ServiceManagerToken");
-    console.log("You are signing the following transaction: ServiceManagerToken.connect(EOA).deploy()");
-    const serviceManagerToken = await ServiceManagerToken.connect(EOA).deploy(serviceRegistryAddress,
-        serviceRegistryTokenUtilityAddress, operatorWhitelistAddress, { gasPrice });
-    const result = await serviceManagerToken.deployed();
+    console.log("5. EOA to deploy GnosisSafeMultisig");
+    const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
+    const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
+    console.log("You are signing the following transaction: GnosisSafeMultisig.connect(EOA).deploy()");
+    const gnosisSafeMultisig = await GnosisSafeMultisig.connect(EOA).deploy(parsedData.gnosisSafeAddress, parsedData.gnosisSafeProxyFactoryAddress, { gasPrice });
+    const result = await gnosisSafeMultisig.deployed();
 
     // Transaction details
-    console.log("Contract deployment: ServiceManagerToken");
-    console.log("Contract address:", serviceManagerToken.address);
+    console.log("Contract deployment: GnosisSafeMultisig");
+    console.log("Contract address:", gnosisSafeMultisig.address);
     console.log("Transaction:", result.deployTransaction.hash);
-
     // Wait half a minute for the transaction completion
     await new Promise(r => setTimeout(r, 30000));
 
     // Writing updated parameters back to the JSON file
-    parsedData.serviceManagerTokenAddress = serviceManagerToken.address;
+    parsedData.gnosisSafeMultisigImplementationAddress = gnosisSafeMultisig.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
 
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_12_service_manager_token.js --network " + providerName + " " + serviceManagerToken.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --contract contracts/multisigs/GnosisSafeMultisig.sol:GnosisSafeMultisig --constructor-args scripts/deployment/l2/verify_03_gnosis_safe_multisig.js --network " + providerName + " " + gnosisSafeMultisig.address, { encoding: "utf-8" });
     }
 }
 

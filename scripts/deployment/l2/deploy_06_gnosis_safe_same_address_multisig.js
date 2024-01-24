@@ -12,9 +12,6 @@ async function main() {
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
     const gasPriceInGwei = parsedData.gasPriceInGwei;
-    const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
-    const serviceManagerTokenAddress = parsedData.serviceManagerTokenAddress;
-    let bridgeMediatorAddress = parsedData.bridgeMediatorAddress;
     let EOA;
 
     let networkURL;
@@ -37,8 +34,6 @@ async function main() {
         networkURL = "https://rpc.gnosischain.com";
     } else if (providerName === "chiado") {
         networkURL = "https://rpc.chiadochain.net";
-        // For the chiado network, the mock timelock contract is set as the owner
-        bridgeMediatorAddress = parsedData.bridgeMediatorMockTimelockAddress;
     } else if (providerName === "arbitrumOne") {
         networkURL = "https://arb1.arbitrum.io/rpc";
     } else if (providerName === "arbitrumSepolia") {
@@ -60,27 +55,30 @@ async function main() {
     const deployer = await EOA.getAddress();
     console.log("EOA is:", deployer);
 
-    // Get all the contracts
-    const serviceRegistryTokenUtility = await ethers.getContractAt("ServiceRegistryTokenUtility", serviceRegistryTokenUtilityAddress);
-    const serviceManagerToken = await ethers.getContractAt("ServiceManagerToken", serviceManagerTokenAddress);
-
-    // Gas pricing
-    const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
-
     // Transaction signing and execution
-    // 14. EOA to transfer ownership rights of ServiceRegistryTokenUtility to BridgeMediator calling `changeOwner(BridgeMediator)`;
-    console.log("You are signing the following transaction: ServiceRegistryTokenUtility.connect(EOA).changeOwner()");
-    let result = await serviceRegistryTokenUtility.connect(EOA).changeOwner(bridgeMediatorAddress, { gasPrice });
-    // Transaction details
-    console.log("Contract address:", serviceRegistryTokenUtilityAddress);
-    console.log("Transaction:", result.hash);
+    console.log("6. EOA to deploy GnosisSafeSameAddressMultisig");
+    const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
+    const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
+    console.log("You are signing the following transaction: GnosisSafeSameAddressMultisig.connect(EOA).deploy(multisigProxyHash130)");
+    const gnosisSafeSameAddressMultisig = await GnosisSafeMultisig.connect(EOA).deploy(parsedData.multisigProxyHash130, { gasPrice });
+    const result = await gnosisSafeSameAddressMultisig.deployed();
 
-    // 15. EOA to transfer ownership rights of ServiceManagerToken to BridgeMediator calling `changeOwner(BridgeMediator)`.
-    console.log("You are signing the following transaction: serviceManagerToken.connect(EOA).changeOwner()");
-    result = await serviceManagerToken.connect(EOA).changeOwner(bridgeMediatorAddress, { gasPrice });
     // Transaction details
-    console.log("Contract address:", serviceManagerTokenAddress);
-    console.log("Transaction:", result.hash);
+    console.log("Contract deployment: GnosisSafeSameAddressMultisig");
+    console.log("Contract address:", gnosisSafeSameAddressMultisig.address);
+    console.log("Transaction:", result.deployTransaction.hash);
+    // Wait half a minute for the transaction completion
+    await new Promise(r => setTimeout(r, 30000));
+
+    // Writing updated parameters back to the JSON file
+    parsedData.gnosisSafeSameAddressMultisigImplementationAddress = gnosisSafeSameAddressMultisig.address;
+    fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
+
+    // Contract verification
+    if (parsedData.contractVerification) {
+        const execSync = require("child_process").execSync;
+        execSync("npx hardhat verify --contract contracts/multisigs/GnosisSafeSameAddressMultisig.sol:GnosisSafeSameAddressMultisig --constructor-args scripts/deployment/l2/verify_04_gnosis_safe_same_address_multisig.js --network " + providerName + " " + gnosisSafeSameAddressMultisig.address, { encoding: "utf-8" });
+    }
 }
 
 main()

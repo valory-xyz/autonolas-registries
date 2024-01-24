@@ -60,7 +60,7 @@ async function main() {
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
 
     // Transaction signing and execution
-    console.log("11. EOA to deploy ServiceRegistryTokenUtility");
+    console.log("3. EOA to deploy ServiceRegistryTokenUtility");
     const ServiceRegistryTokenUtility = await ethers.getContractFactory("ServiceRegistryTokenUtility");
     console.log("You are signing the following transaction: ServiceRegistryTokenUtility.connect(EOA).deploy(serviceRegistryAddress)");
     const serviceRegistryTokenUtility = await ServiceRegistryTokenUtility.connect(EOA).deploy(serviceRegistryAddress, { gasPrice });
