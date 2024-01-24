@@ -74,7 +74,7 @@ async function main() {
 
     // 11. EOA to change the drainer of ServiceRegistry to BridgeMediator
     console.log("You are signing the following transaction: serviceRegistry.connect(EOA).changeDrainer(bridgeMediatorAddress)");
-    result = await serviceRegistry.connect(EOA).changeDrainer(bridgeMediatorAddress, { gasPrice });
+    let result = await serviceRegistry.connect(EOA).changeDrainer(bridgeMediatorAddress, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceRegistryAddress);
     console.log("Transaction:", result.hash);

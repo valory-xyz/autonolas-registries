@@ -70,7 +70,7 @@ async function main() {
     // Transaction signing and execution
     // 7. EOA to change the manager of ServiceRegistry to ServiceManager calling `changeManager(ServiceManager)`;
     console.log("7. You are signing the following transaction: serviceRegistry.connect(EOA).changeManager()");
-    let result = await serviceRegistry.connect(EOA).changeManager(serviceManagerAddress, { gasPrice });
+    let result = await serviceRegistry.connect(EOA).changeManager(serviceManagerTokenAddress, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceRegistryAddress);
     console.log("Transaction:", result.hash);
