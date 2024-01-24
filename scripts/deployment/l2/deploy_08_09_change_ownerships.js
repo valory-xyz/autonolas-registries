@@ -44,6 +44,10 @@ async function main() {
         networkURL = "https://rpc.chiadochain.net";
         // Bridge mediator is deployed via a mock timelock on goerli in order to perform testing
         bridgeMediatorAddress = "0x0a50009D55Ed5700ac8FF713709d5Ad5fa843896";
+    } else if (providerName === "arbitrumOne") {
+        networkURL = "https://arb1.arbitrum.io/rpc";
+    } else if (providerName === "arbitrumSepolia") {
+        networkURL = "https://sepolia-rollup.arbitrum.io/rpc";
     } else {
         console.log("Unknown network provider", providerName);
         return;
