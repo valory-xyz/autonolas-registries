@@ -331,7 +331,8 @@ async function main() {
         "mainnet": "etherscan",
         "goerli": "goerli.etherscan",
         "polygon": "polygonscan",
-        "polygonMumbai": "testnet.polygonscan"
+        "polygonMumbai": "testnet.polygonscan",
+        "arbitrumOne": "arbiscan",
     };
 
     console.log("\nVerifying deployed contracts vs the repo... If no error is output, then the contracts are correct.");
@@ -367,7 +368,9 @@ async function main() {
         "polygon": "scripts/deployment/l2/globals_polygon_mainnet.json",
         "polygonMumbai": "scripts/deployment/l2/globals_polygon_mumbai.json",
         "gnosis": "scripts/deployment/l2/globals_gnosis_mainnet.json",
-        "chiado": "scripts/deployment/l2/globals_gnosis_chiado.json"
+        "chiado": "scripts/deployment/l2/globals_gnosis_chiado.json",
+        "arbitrumOne": "scripts/deployment/l2/globals_arbitrum_one.json",
+        "arbitrumSepolia": "scripts/deployment/l2/globals_arbitrum_sepolia.json"
     };
 
     const providerLinks = {
@@ -376,7 +379,9 @@ async function main() {
         "polygon": "https://polygon-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MATIC,
         "polygonMumbai": "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MUMBAI,
         "gnosis": "https://rpc.gnosischain.com",
-        "chiado": "https://rpc.chiadochain.net"
+        "chiado": "https://rpc.chiadochain.net",
+        "arbitrumOne": "https://arb1.arbitrum.io/rpc",
+        "arbitrumSepolia": "https://sepolia-rollup.arbitrum.io/rpc"
     };
 
     // Get all the globals processed
