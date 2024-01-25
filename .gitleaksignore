@@ -94,3 +94,5 @@ aa8d7f898c8e713b2cd0eacc19e0f02f7f5958f7:scripts/deployment/l2/globals_arbitrum_
 4610fbf0f2d4123554e61dfeec011de08c9f0ec9:scripts/deployment/l2/globals_arbitrum_one.json:generic-api-key:2
 f329e1c2b3c952c5a2aab6778a4cce8d49f38c6f:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:1
 f329e1c2b3c952c5a2aab6778a4cce8d49f38c6f:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:2
+d384ead931db6a78095845158f8a250f72e75caf:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:1
+d384ead931db6a78095845158f8a250f72e75caf:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:2
