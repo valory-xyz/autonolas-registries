@@ -12,9 +12,11 @@ async function main() {
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
     const gasPriceInGwei = parsedData.gasPriceInGwei;
+    const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
     const serviceManagerTokenAddress = parsedData.serviceManagerTokenAddress;
-    let bridgeMediatorAddress = parsedData.bridgeMediatorAddress;
+    const gnosisSafeMultisigImplementationAddress = parsedData.gnosisSafeMultisigImplementationAddress;
+    const gnosisSafeSameAddressMultisigImplementationAddress = parsedData.gnosisSafeSameAddressMultisigImplementationAddress;
     let EOA;
 
     let networkURL;
@@ -37,8 +39,10 @@ async function main() {
         networkURL = "https://rpc.gnosischain.com";
     } else if (providerName === "chiado") {
         networkURL = "https://rpc.chiadochain.net";
-        // For the chiado network, the mock timelock contract is set as the owner
-        bridgeMediatorAddress = parsedData.bridgeMediatorMockTimelockAddress;
+    } else if (providerName === "arbitrumOne") {
+        networkURL = "https://arb1.arbitrum.io/rpc";
+    } else if (providerName === "arbitrumSepolia") {
+        networkURL = "https://sepolia-rollup.arbitrum.io/rpc";
     } else {
         console.log("Unknown network provider", providerName);
         return;
@@ -57,25 +61,39 @@ async function main() {
     console.log("EOA is:", deployer);
 
     // Get all the contracts
+    const serviceRegistry = await ethers.getContractAt("ServiceRegistryL2", serviceRegistryAddress);
     const serviceRegistryTokenUtility = await ethers.getContractAt("ServiceRegistryTokenUtility", serviceRegistryTokenUtilityAddress);
-    const serviceManagerToken = await ethers.getContractAt("ServiceManagerToken", serviceManagerTokenAddress);
 
     // Gas pricing
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
 
     // Transaction signing and execution
-    // 14. EOA to transfer ownership rights of ServiceRegistryTokenUtility to BridgeMediator calling `changeOwner(BridgeMediator)`;
-    console.log("You are signing the following transaction: ServiceRegistryTokenUtility.connect(EOA).changeOwner()");
-    let result = await serviceRegistryTokenUtility.connect(EOA).changeOwner(bridgeMediatorAddress, { gasPrice });
+    // 7. EOA to change the manager of ServiceRegistry to ServiceManager calling `changeManager(ServiceManager)`;
+    console.log("7. You are signing the following transaction: serviceRegistry.connect(EOA).changeManager()");
+    let result = await serviceRegistry.connect(EOA).changeManager(serviceManagerTokenAddress, { gasPrice });
+    // Transaction details
+    console.log("Contract address:", serviceRegistryAddress);
+    console.log("Transaction:", result.hash);
+
+    // 8. EOA to change the manager of ServiceRegistryTokenUtility to ServiceManagerToken calling `changeManager(ServiceManagerToken)`;
+    console.log("8. You are signing the following transaction: serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerTokenAddress)");
+    result = await serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerTokenAddress, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceRegistryTokenUtilityAddress);
     console.log("Transaction:", result.hash);
 
-    // 15. EOA to transfer ownership rights of ServiceManagerToken to BridgeMediator calling `changeOwner(BridgeMediator)`.
-    console.log("You are signing the following transaction: serviceManagerToken.connect(EOA).changeOwner()");
-    result = await serviceManagerToken.connect(EOA).changeOwner(bridgeMediatorAddress, { gasPrice });
+    // 9. EOA to whitelist GnosisSafeMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeMultisig)`;
+    console.log("9. You are signing the following transaction: serviceRegistry.connect(EOA).changeMultisigPermission()");
+    result = await serviceRegistry.connect(EOA).changeMultisigPermission(gnosisSafeMultisigImplementationAddress, true, { gasPrice });
     // Transaction details
-    console.log("Contract address:", serviceManagerTokenAddress);
+    console.log("Contract address:", serviceRegistryAddress);
+    console.log("Transaction:", result.hash);
+
+    // 10. EOA to whitelist GnosisSafeSameAddressMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeSameAddressMultisig)`;
+    console.log("10. You are signing the following transaction: serviceRegistry.connect(EOA).changeMultisigPermission()");
+    result = await serviceRegistry.connect(EOA).changeMultisigPermission(gnosisSafeSameAddressMultisigImplementationAddress, true, { gasPrice });
+    // Transaction details
+    console.log("Contract address:", serviceRegistryAddress);
     console.log("Transaction:", result.hash);
 }
 

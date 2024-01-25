@@ -13,7 +13,7 @@ async function main() {
     const providerName = parsedData.providerName;
     const gasPriceInGwei = parsedData.gasPriceInGwei;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
-    const serviceManagerAddress = parsedData.serviceManagerAddress;
+    const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
 
     // NOTE: Bridge Mediator for chiado network is the one with the mock timelock to facilitate testing!
     // NOTE: See autonolas-governance for the address match in bridges/gnosis/test/globals.json
@@ -44,6 +44,10 @@ async function main() {
         networkURL = "https://rpc.chiadochain.net";
         // Bridge mediator is deployed via a mock timelock on goerli in order to perform testing
         bridgeMediatorAddress = "0x0a50009D55Ed5700ac8FF713709d5Ad5fa843896";
+    } else if (providerName === "arbitrumOne") {
+        networkURL = "https://arb1.arbitrum.io/rpc";
+    } else if (providerName === "arbitrumSepolia") {
+        networkURL = "https://sepolia-rollup.arbitrum.io/rpc";
     } else {
         console.log("Unknown network provider", providerName);
         return;
@@ -66,21 +70,20 @@ async function main() {
 
     // Get all the contracts
     const serviceRegistry = await ethers.getContractAt("ServiceRegistryL2", serviceRegistryAddress);
-    const serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerAddress);
+    const serviceRegistryTokenUtility = await ethers.getContractAt("ServiceRegistryTokenUtility", serviceRegistryTokenUtilityAddress);
 
-    // Transaction signing and execution
-    // 8. EOA to transfer ownership rights of ServiceRegistry to FxGovernorTunnel calling `changeOwner(FxGovernorTunnel)`;
-    console.log("8. You are signing the following transaction: serviceRegistry.connect(EOA).changeOwner()");
-    let result = await serviceRegistry.connect(EOA).changeOwner(bridgeMediatorAddress, { gasPrice });
+    // 11. EOA to change the drainer of ServiceRegistry to BridgeMediator
+    console.log("You are signing the following transaction: serviceRegistry.connect(EOA).changeDrainer(bridgeMediatorAddress)");
+    let result = await serviceRegistry.connect(EOA).changeDrainer(bridgeMediatorAddress, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceRegistryAddress);
     console.log("Transaction:", result.hash);
 
-    // 9. EOA to transfer ownership rights of ServiceManager to FxGovernorTunnel calling `changeOwner(FxGovernorTunnel)`.
-    console.log("9.You are signing the following transaction: serviceManager.connect(EOA).changeOwner()");
-    result = await serviceManager.connect(EOA).changeOwner(bridgeMediatorAddress, { gasPrice });
+    // 12. EOA to change the drainer of ServiceRegistryTokenUtility to BridgeMediator
+    console.log("You are signing the following transaction: serviceRegistryTokenUtility.connect(EOA).changeDrainer(bridgeMediatorAddress)");
+    result = await serviceRegistryTokenUtility.connect(EOA).changeDrainer(bridgeMediatorAddress, { gasPrice });
     // Transaction details
-    console.log("Contract address:", serviceManagerAddress);
+    console.log("Contract address:", serviceRegistryTokenUtilityAddress);
     console.log("Transaction:", result.hash);
 }
 

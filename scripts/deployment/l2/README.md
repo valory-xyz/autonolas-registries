@@ -39,7 +39,7 @@ Other values in the `JSON` file are related to the registries. The deployed cont
 
 The script file name identifies the number of deployment steps taken from / to the number in the file name. For example:
 - `deploy_01_service_registry.js` will complete step 1 from [deploymentL2.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deploymentL2.md);
-- `deploy_08_09_change_ownerships.js` will complete steps 8 to 9.
+- `deploy_13_15_change_ownerships.js` will complete steps 13 to 15.
 
 NOTE: All the scripts MUST be strictly run in the sequential order from smallest to biggest numbers.
 
@@ -52,10 +52,5 @@ where `script_name` is a script name, i.e. `deploy_01_service_registry.js`, `net
 ## Validity checks and contract verification
 Each script controls the obtained values by checking them against the expected ones. Also, each script has a contract verification procedure.
 If a contract is deployed with arguments, these arguments are taken from the corresponding `verify_number_and_name` file, where `number_and_name` corresponds to the deployment script number and name.
-
-## Deployment of supplemental contracts
-For deploying supplemental contracts listed in [deployment.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deploymentL2.md),
-run all the scripts sequentially from `deploy_10_operator_whitelist.js` to `deploy_13_change_managers.js`.
-The script `deploy_14_15_change_ownerships.js` can be run after the approval of an off-chain vote.
 
 

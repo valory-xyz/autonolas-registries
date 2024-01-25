@@ -86,3 +86,7 @@ f876f6e96465e05f30236366a6cac1ed7b2017d8:scripts/deployment/l2/globals_gnosis_ma
 f876f6e96465e05f30236366a6cac1ed7b2017d8:scripts/deployment/l2/globals_gnosis_mainnet.json:generic-api-key:2
 eee7f30c9db1ea16fd4300ff73d182ba639c978c:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:1
 eee7f30c9db1ea16fd4300ff73d182ba639c978c:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:2
+5b4eeb188c8ca8b2f17a5848ecd5f56a04d33696:scripts/deployment/l2/globals_arbitrum_sepolia.json:generic-api-key:1
+5b4eeb188c8ca8b2f17a5848ecd5f56a04d33696:scripts/deployment/l2/globals_arbitrum_sepolia.json:generic-api-key:2
+aa8d7f898c8e713b2cd0eacc19e0f02f7f5958f7:scripts/deployment/l2/globals_arbitrum_sepolia.json:generic-api-key:1
+aa8d7f898c8e713b2cd0eacc19e0f02f7f5958f7:scripts/deployment/l2/globals_arbitrum_sepolia.json:generic-api-key:2

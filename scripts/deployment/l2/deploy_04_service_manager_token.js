@@ -13,6 +13,8 @@ async function main() {
     const providerName = parsedData.providerName;
     const gasPriceInGwei = parsedData.gasPriceInGwei;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
+    const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
+    const operatorWhitelistAddress = parsedData.operatorWhitelistAddress;
     let EOA;
 
     let networkURL;
@@ -35,6 +37,10 @@ async function main() {
         networkURL = "https://rpc.gnosischain.com";
     } else if (providerName === "chiado") {
         networkURL = "https://rpc.chiadochain.net";
+    } else if (providerName === "arbitrumOne") {
+        networkURL = "https://arb1.arbitrum.io/rpc";
+    } else if (providerName === "arbitrumSepolia") {
+        networkURL = "https://sepolia-rollup.arbitrum.io/rpc";
     } else {
         console.log("Unknown network provider", providerName);
         return;
@@ -56,28 +62,29 @@ async function main() {
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
 
     // Transaction signing and execution
-    console.log("10. EOA to deploy OperatorWhitelist");
-    const OperatorWhitelist = await ethers.getContractFactory("OperatorWhitelist");
-    console.log("You are signing the following transaction: OperatorWhitelist.connect(EOA).deploy(serviceRegistryAddress)");
-    const operatorWhitelist = await OperatorWhitelist.connect(EOA).deploy(serviceRegistryAddress, { gasPrice });
-    const result = await operatorWhitelist.deployed();
+    console.log("4. EOA to deploy ServiceManagerToken");
+    const ServiceManagerToken = await ethers.getContractFactory("ServiceManagerToken");
+    console.log("You are signing the following transaction: ServiceManagerToken.connect(EOA).deploy()");
+    const serviceManagerToken = await ServiceManagerToken.connect(EOA).deploy(serviceRegistryAddress,
+        serviceRegistryTokenUtilityAddress, operatorWhitelistAddress, { gasPrice });
+    const result = await serviceManagerToken.deployed();
 
     // Transaction details
-    console.log("Contract deployment: OperatorWhitelist");
-    console.log("Contract address:", operatorWhitelist.address);
+    console.log("Contract deployment: ServiceManagerToken");
+    console.log("Contract address:", serviceManagerToken.address);
     console.log("Transaction:", result.deployTransaction.hash);
 
     // Wait half a minute for the transaction completion
     await new Promise(r => setTimeout(r, 30000));
 
     // Writing updated parameters back to the JSON file
-    parsedData.operatorWhitelistAddress = operatorWhitelist.address;
+    parsedData.serviceManagerTokenAddress = serviceManagerToken.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
 
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_10_operator_whitelist.js --network " + providerName + " " + operatorWhitelist.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_04_service_manager_token.js --network " + providerName + " " + serviceManagerToken.address, { encoding: "utf-8" });
     }
 }
 

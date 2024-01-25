@@ -12,6 +12,7 @@ async function main() {
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
     const gasPriceInGwei = parsedData.gasPriceInGwei;
+    const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
     const serviceManagerTokenAddress = parsedData.serviceManagerTokenAddress;
     let bridgeMediatorAddress = parsedData.bridgeMediatorAddress;
@@ -39,6 +40,10 @@ async function main() {
         networkURL = "https://rpc.chiadochain.net";
         // For the chiado network, the mock timelock contract is set as the owner
         bridgeMediatorAddress = parsedData.bridgeMediatorMockTimelockAddress;
+    } else if (providerName === "arbitrumOne") {
+        networkURL = "https://arb1.arbitrum.io/rpc";
+    } else if (providerName === "arbitrumSepolia") {
+        networkURL = "https://sepolia-rollup.arbitrum.io/rpc";
     } else {
         console.log("Unknown network provider", providerName);
         return;
@@ -56,25 +61,34 @@ async function main() {
     const deployer = await EOA.getAddress();
     console.log("EOA is:", deployer);
 
-    // Get the contract
+    // Get all the contracts
+    const serviceRegistry = await ethers.getContractAt("ServiceRegistryL2", serviceRegistryAddress);
     const serviceRegistryTokenUtility = await ethers.getContractAt("ServiceRegistryTokenUtility", serviceRegistryTokenUtilityAddress);
+    const serviceManagerToken = await ethers.getContractAt("ServiceManagerToken", serviceManagerTokenAddress);
 
     // Gas pricing
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
 
     // Transaction signing and execution
-    // 13a. EOA to change the manager of ServiceRegistryTokenUtility to ServiceManagerToken calling `changeManager(ServiceManagerToken)`;
-    console.log("You are signing the following transaction: serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerTokenAddress)");
-    let result = await serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerTokenAddress, { gasPrice });
+    // 13. EOA to transfer ownership rights of ServiceRegistry to BridgeMediator calling `changeOwner(FxGovernorTunnel)`;
+    console.log("13. You are signing the following transaction: serviceRegistry.connect(EOA).changeOwner()");
+    let result = await serviceRegistry.connect(EOA).changeOwner(bridgeMediatorAddress, { gasPrice });
+    // Transaction details
+    console.log("Contract address:", serviceRegistryAddress);
+    console.log("Transaction:", result.hash);
+
+    // 14. EOA to transfer ownership rights of ServiceRegistryTokenUtility to BridgeMediator calling `changeOwner(BridgeMediator)`;
+    console.log("14. You are signing the following transaction: ServiceRegistryTokenUtility.connect(EOA).changeOwner()");
+    result = await serviceRegistryTokenUtility.connect(EOA).changeOwner(bridgeMediatorAddress, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceRegistryTokenUtilityAddress);
     console.log("Transaction:", result.hash);
 
-    // 13b. EOA to change the drainer of ServiceRegistryTokenUtility to BridgeMediator
-    console.log("You are signing the following transaction: serviceRegistryTokenUtility.connect(EOA).changeDrainer(bridgeMediatorAddress)");
-    result = await serviceRegistryTokenUtility.connect(EOA).changeDrainer(bridgeMediatorAddress, { gasPrice });
+    // 15. EOA to transfer ownership rights of ServiceManagerToken to BridgeMediator calling `changeOwner(BridgeMediator)`.
+    console.log("15. You are signing the following transaction: serviceManagerToken.connect(EOA).changeOwner()");
+    result = await serviceManagerToken.connect(EOA).changeOwner(bridgeMediatorAddress, { gasPrice });
     // Transaction details
-    console.log("Contract address:", serviceRegistryTokenUtilityAddress);
+    console.log("Contract address:", serviceManagerTokenAddress);
     console.log("Transaction:", result.hash);
 }
 

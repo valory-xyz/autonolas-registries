@@ -13,8 +13,6 @@ async function main() {
     const providerName = parsedData.providerName;
     const gasPriceInGwei = parsedData.gasPriceInGwei;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
-    const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
-    const operatorWhitelistAddress = parsedData.operatorWhitelistAddress;
     let EOA;
 
     let networkURL;
@@ -37,6 +35,10 @@ async function main() {
         networkURL = "https://rpc.gnosischain.com";
     } else if (providerName === "chiado") {
         networkURL = "https://rpc.chiadochain.net";
+    } else if (providerName === "arbitrumOne") {
+        networkURL = "https://arb1.arbitrum.io/rpc";
+    } else if (providerName === "arbitrumSepolia") {
+        networkURL = "https://sepolia-rollup.arbitrum.io/rpc";
     } else {
         console.log("Unknown network provider", providerName);
         return;
@@ -58,29 +60,28 @@ async function main() {
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
 
     // Transaction signing and execution
-    console.log("12. EOA to deploy ServiceManagerToken");
-    const ServiceManagerToken = await ethers.getContractFactory("ServiceManagerToken");
-    console.log("You are signing the following transaction: ServiceManagerToken.connect(EOA).deploy()");
-    const serviceManagerToken = await ServiceManagerToken.connect(EOA).deploy(serviceRegistryAddress,
-        serviceRegistryTokenUtilityAddress, operatorWhitelistAddress, { gasPrice });
-    const result = await serviceManagerToken.deployed();
+    console.log("3. EOA to deploy ServiceRegistryTokenUtility");
+    const ServiceRegistryTokenUtility = await ethers.getContractFactory("ServiceRegistryTokenUtility");
+    console.log("You are signing the following transaction: ServiceRegistryTokenUtility.connect(EOA).deploy(serviceRegistryAddress)");
+    const serviceRegistryTokenUtility = await ServiceRegistryTokenUtility.connect(EOA).deploy(serviceRegistryAddress, { gasPrice });
+    const result = await serviceRegistryTokenUtility.deployed();
 
     // Transaction details
-    console.log("Contract deployment: ServiceManagerToken");
-    console.log("Contract address:", serviceManagerToken.address);
+    console.log("Contract deployment: ServiceRegistryTokenUtility");
+    console.log("Contract address:", serviceRegistryTokenUtility.address);
     console.log("Transaction:", result.deployTransaction.hash);
 
     // Wait half a minute for the transaction completion
     await new Promise(r => setTimeout(r, 30000));
 
     // Writing updated parameters back to the JSON file
-    parsedData.serviceManagerTokenAddress = serviceManagerToken.address;
+    parsedData.serviceRegistryTokenUtilityAddress = serviceRegistryTokenUtility.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
 
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_12_service_manager_token.js --network " + providerName + " " + serviceManagerToken.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_03_service_registry_token_utility.js --network " + providerName + " " + serviceRegistryTokenUtility.address, { encoding: "utf-8" });
     }
 }
 
