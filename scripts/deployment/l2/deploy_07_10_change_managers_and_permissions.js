@@ -76,21 +76,21 @@ async function main() {
     console.log("Transaction:", result.hash);
 
     // 8. EOA to change the manager of ServiceRegistryTokenUtility to ServiceManagerToken calling `changeManager(ServiceManagerToken)`;
-    console.log("You are signing the following transaction: serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerTokenAddress)");
+    console.log("8. You are signing the following transaction: serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerTokenAddress)");
     result = await serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerTokenAddress, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceRegistryTokenUtilityAddress);
     console.log("Transaction:", result.hash);
 
     // 9. EOA to whitelist GnosisSafeMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeMultisig)`;
-    console.log("6. You are signing the following transaction: serviceRegistry.connect(EOA).changeMultisigPermission()");
+    console.log("9. You are signing the following transaction: serviceRegistry.connect(EOA).changeMultisigPermission()");
     result = await serviceRegistry.connect(EOA).changeMultisigPermission(gnosisSafeMultisigImplementationAddress, true, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceRegistryAddress);
     console.log("Transaction:", result.hash);
 
     // 10. EOA to whitelist GnosisSafeSameAddressMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeSameAddressMultisig)`;
-    console.log("7. You are signing the following transaction: serviceRegistry.connect(EOA).changeMultisigPermission()");
+    console.log("10. You are signing the following transaction: serviceRegistry.connect(EOA).changeMultisigPermission()");
     result = await serviceRegistry.connect(EOA).changeMultisigPermission(gnosisSafeSameAddressMultisigImplementationAddress, true, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceRegistryAddress);

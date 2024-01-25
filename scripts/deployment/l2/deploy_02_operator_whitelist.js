@@ -81,7 +81,7 @@ async function main() {
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_10_operator_whitelist.js --network " + providerName + " " + operatorWhitelist.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_02_operator_whitelist.js --network " + providerName + " " + operatorWhitelist.address, { encoding: "utf-8" });
     }
 }
 

@@ -77,7 +77,7 @@ async function main() {
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --contract contracts/multisigs/GnosisSafeSameAddressMultisig.sol:GnosisSafeSameAddressMultisig --constructor-args scripts/deployment/l2/verify_04_gnosis_safe_same_address_multisig.js --network " + providerName + " " + gnosisSafeSameAddressMultisig.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --contract contracts/multisigs/GnosisSafeSameAddressMultisig.sol:GnosisSafeSameAddressMultisig --constructor-args scripts/deployment/l2/verify_06_gnosis_safe_same_address_multisig.js --network " + providerName + " " + gnosisSafeSameAddressMultisig.address, { encoding: "utf-8" });
     }
 }
 
