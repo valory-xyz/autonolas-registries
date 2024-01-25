@@ -164,7 +164,7 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
 
     // Check manager
     const manager = await serviceRegistry.manager();
-    if (chainId === "1" || chainId === "5" || chainId === "100" || chainId === "10200") {
+    if (chainId !== "80001") {
         // ServiceRegistryManagerToken for L1 and L2 that currently have the full setup
         customExpect(manager, globalsInstance["serviceManagerTokenAddress"], log + ", function: manager()");
     } else {
@@ -218,7 +218,7 @@ async function checkServiceManager(chainId, provider, globalsInstance, configCon
     customExpect(paused, false, log + ", function: paused()");
 
     // Checks for L1 and L2 that currently have the full setup
-    if (chainId === "1" || chainId === "5" || chainId === "100" || chainId === "10200") {
+    if (chainId !== "80001") {
         // Version
         const version = await serviceManager.version();
         customExpect(version, "1.1.1", log + ", function: version()");
@@ -432,7 +432,7 @@ async function main() {
         await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryL2", log);
 
         // Path for L2 chains that operate with the ServiceManagerToken
-        if (configs[i]["chainId"] === "100" || configs[i]["chainId"] === "10200") {
+        if (configs[i]["chainId"] !== "80001") {
             log = initLog + ", contract: " + "ServiceManagerToken";
             await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerToken", log);
 
