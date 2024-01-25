@@ -98,3 +98,5 @@ d384ead931db6a78095845158f8a250f72e75caf:scripts/deployment/l2/globals_gnosis_ch
 d384ead931db6a78095845158f8a250f72e75caf:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:2
 7241e1885b93b5d5d2eeeb317eb0decc7099cbfe:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:1
 7241e1885b93b5d5d2eeeb317eb0decc7099cbfe:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:2
+7241e1885b93b5d5d2eeeb317eb0decc7099cbfe:scripts/deployment/l2/globals_arbitrum_one.json:generic-api-key:1
+7241e1885b93b5d5d2eeeb317eb0decc7099cbfe:scripts/deployment/l2/globals_arbitrum_one.json:generic-api-key:2
