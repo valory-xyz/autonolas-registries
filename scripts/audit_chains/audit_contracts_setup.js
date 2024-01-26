@@ -164,7 +164,7 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
 
     // Check manager
     const manager = await serviceRegistry.manager();
-    if (chainId === "1" || chainId === "5" || chainId === "100" || chainId === "10200") {
+    if (chainId !== "80001") {
         // ServiceRegistryManagerToken for L1 and L2 that currently have the full setup
         customExpect(manager, globalsInstance["serviceManagerTokenAddress"], log + ", function: manager()");
     } else {
@@ -218,7 +218,7 @@ async function checkServiceManager(chainId, provider, globalsInstance, configCon
     customExpect(paused, false, log + ", function: paused()");
 
     // Checks for L1 and L2 that currently have the full setup
-    if (chainId === "1" || chainId === "5" || chainId === "100" || chainId === "10200") {
+    if (chainId !== "80001") {
         // Version
         const version = await serviceManager.version();
         customExpect(version, "1.1.1", log + ", function: version()");
@@ -331,7 +331,8 @@ async function main() {
         "mainnet": "etherscan",
         "goerli": "goerli.etherscan",
         "polygon": "polygonscan",
-        "polygonMumbai": "testnet.polygonscan"
+        "polygonMumbai": "testnet.polygonscan",
+        "arbitrumOne": "arbiscan",
     };
 
     console.log("\nVerifying deployed contracts vs the repo... If no error is output, then the contracts are correct.");
@@ -367,7 +368,9 @@ async function main() {
         "polygon": "scripts/deployment/l2/globals_polygon_mainnet.json",
         "polygonMumbai": "scripts/deployment/l2/globals_polygon_mumbai.json",
         "gnosis": "scripts/deployment/l2/globals_gnosis_mainnet.json",
-        "chiado": "scripts/deployment/l2/globals_gnosis_chiado.json"
+        "chiado": "scripts/deployment/l2/globals_gnosis_chiado.json",
+        "arbitrumOne": "scripts/deployment/l2/globals_arbitrum_one.json",
+        "arbitrumSepolia": "scripts/deployment/l2/globals_arbitrum_sepolia.json"
     };
 
     const providerLinks = {
@@ -376,7 +379,9 @@ async function main() {
         "polygon": "https://polygon-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MATIC,
         "polygonMumbai": "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MUMBAI,
         "gnosis": "https://rpc.gnosischain.com",
-        "chiado": "https://rpc.chiadochain.net"
+        "chiado": "https://rpc.chiadochain.net",
+        "arbitrumOne": "https://arb1.arbitrum.io/rpc",
+        "arbitrumSepolia": "https://sepolia-rollup.arbitrum.io/rpc"
     };
 
     // Get all the globals processed
@@ -432,7 +437,7 @@ async function main() {
         await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryL2", log);
 
         // Path for L2 chains that operate with the ServiceManagerToken
-        if (configs[i]["chainId"] === "100" || configs[i]["chainId"] === "10200") {
+        if (configs[i]["chainId"] !== "80001") {
             log = initLog + ", contract: " + "ServiceManagerToken";
             await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerToken", log);
 
