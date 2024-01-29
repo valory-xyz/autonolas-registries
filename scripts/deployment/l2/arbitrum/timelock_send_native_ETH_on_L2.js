@@ -33,10 +33,6 @@ const main = async () => {
     const mockTimelock = (await ethers.getContractAt("MockTimelock", mockTimelockAddress)).connect(EOAsepolia);
     //console.log(mockTimelock.address);
 
-    const tokenAddress = "0xeDd71796B90eaCc56B074C39BAC90ED2Ca6D93Ee";
-    const erc20Token = (await ethers.getContractAt("ERC20Token", tokenAddress)).connect(EOAarbitrumSepolia);
-    //console.log(erc20Token.address);
-
     // Use l2Network to create an Arbitrum SDK EthBridger instance
     // We'll use EthBridger to retrieve the Inbox address
     const l2Network = await getL2Network(arbitrumSepoliaProvider);
@@ -47,10 +43,6 @@ const main = async () => {
     // Query the required gas params using the estimateAll method in Arbitrum SDK
     const l1ToL2MessageGasEstimate = new L1ToL2MessageGasEstimator(arbitrumSepoliaProvider);
     //console.log(l1ToL2MessageGasEstimate);
-
-    // To be able to estimate the gas related params to our L1-L2 message, we need to know how many bytes of calldata out
-    // retryable ticket will require
-    const calldata = erc20Token.interface.encodeFunctionData("transfer", [EOAarbitrumSepolia.address, 100]);
 
     // Users can override the estimated gas params when sending an L1-L2 message
     // Note that this is totally optional
@@ -71,18 +63,23 @@ const main = async () => {
         },
     };
 
+    // This calldata is just to send funds
+    const calldata = "0x";
+
     // The estimateAll method gives us the following values for sending an L1->L2 message
     // (1) maxSubmissionCost: The maximum cost to be paid for submitting the transaction
     // (2) gasLimit: The L2 gas limit
     // (3) deposit: The total amount to deposit on L1 to cover L2 gas and L2 call value
     let l2CallValue = 0;
-    // l2CallValue = ethers.utils.parseUnits("0.005");
+    l2CallValue = ethers.utils.parseUnits("0.005");
     // console.log("l2CallValue", l2CallValue);
+
+    // The estimate itself does not provide any ETH l2CallValue, as the value is supposed to be sitting on L2 side already
     const L1ToL2MessageGasParams = await l1ToL2MessageGasEstimate.estimateAll(
         {
             from: await mockTimelock.address,
-            to: await erc20Token.address,
-            l2CallValue: l2CallValue,
+            to: await EOAarbitrumSepolia.address,
+            l2CallValue: 0,
             excessFeeRefundAddress: await EOAarbitrumSepolia.address,
             callValueRefundAddress: await EOAarbitrumSepolia.address,
             data: calldata,
@@ -98,18 +95,20 @@ const main = async () => {
     console.log("L2 gas price:", gasPriceBid.toString());
 
     // ABI to send message to inbox
-    const inboxABI = ["function createRetryableTicket(address to, uint256 l2CallValue, uint256 maxSubmissionCost, address excessFeeRefundAddress, address callValueRefundAddress, uint256 gasLimit, uint256 maxFeePerGas, bytes calldata data)"];
+    // Unsafe version of sending messages to inbox, without full value verification
+    // for example, for just collecting funds from the mapped address on L2
+    const inboxABI = ["function unsafeCreateRetryableTicket(address to, uint256 l2CallValue, uint256 maxSubmissionCost, address excessFeeRefundAddress, address callValueRefundAddress, uint256 gasLimit, uint256 maxFeePerGas, bytes calldata data)"];
     const iface = new ethers.utils.Interface(inboxABI);
-    const timeloclCalldata = iface.encodeFunctionData("createRetryableTicket", [erc20Token.address, l2CallValue,
+    const timeloclCalldata = iface.encodeFunctionData("unsafeCreateRetryableTicket", [EOAarbitrumSepolia.address, l2CallValue,
         L1ToL2MessageGasParams.maxSubmissionCost, EOAarbitrumSepolia.address, EOAarbitrumSepolia.address,
         L1ToL2MessageGasParams.gasLimit, gasPriceBid, calldata]);
     const value = L1ToL2MessageGasParams.deposit;
     // console.log(timeloclCalldata);
     // console.log("value", value);
 
-    const tx = await mockTimelock.execute(inboxAddress, value, timeloclCalldata, {value: value});
-    //const gasPrice = ethers.utils.parseUnits("10", "gwei");
-    //const tx = await mockTimelock.execute(inboxAddress, value, timeloclCalldata, {value: value, gasPrice});
+    // Hardcode the gas limit in order to make sure the tx goes through
+    const gasLimit = 200000;
+    const tx = await mockTimelock.execute(inboxAddress, value, timeloclCalldata, {value: value, gasLimit: gasLimit});
 
     console.log(tx.hash);
     await tx.wait();
