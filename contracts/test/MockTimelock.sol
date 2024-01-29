@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.23;
 
 error WrongDataLength();
-error ExecFailed(uint256 callNumber, bytes payload);
+error ExecFailed(address target, uint256 value, bytes payload);
 
 /// @title MockTimelock - Mock of the Timelock contract
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -27,8 +27,16 @@ contract MockTimelock {
             // solhint-disable-next-line avoid-low-level-calls
             (bool success, ) = target.call{value: value}(payload);
             if (!success) {
-                revert ExecFailed(i, payload);
+                revert ExecFailed(target, value, payload);
             }
+        }
+    }
+
+    function execute(address target, uint256 value, bytes calldata payload) external payable {
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, ) = target.call{value: value}(payload);
+        if (!success) {
+            revert ExecFailed(target, value, payload);
         }
     }
 

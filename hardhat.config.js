@@ -13,6 +13,7 @@ require("@nomicfoundation/hardhat-toolbox");
 const ALCHEMY_API_KEY_MAINNET = process.env.ALCHEMY_API_KEY_MAINNET;
 const ALCHEMY_API_KEY_MATIC = process.env.ALCHEMY_API_KEY_MATIC;
 const ALCHEMY_API_KEY_GOERLI = process.env.ALCHEMY_API_KEY_GOERLI;
+const ALCHEMY_API_KEY_SEPOLIA = process.env.ALCHEMY_API_KEY_SEPOLIA;
 const ALCHEMY_API_KEY_MUMBAI = process.env.ALCHEMY_API_KEY_MUMBAI;
 let TESTNET_MNEMONIC = process.env.TESTNET_MNEMONIC;
 
@@ -78,6 +79,11 @@ module.exports = {
             accounts: accounts,
             chainId: 421614,
         },
+        sepolia: {
+            url: "https://eth-sepolia.g.alchemy.com/v2/" + ALCHEMY_API_KEY_SEPOLIA,
+            accounts: accounts,
+            chainId: 11155111,
+        },
         hardhat: {
             allowUnlimitedContractSize: true
         },
@@ -118,6 +124,7 @@ module.exports = {
             polygonMumbai: POLYGONSCAN_API_KEY,
             chiado: CHIADOSCAN_API_KEY,
             arbitrumSepolia: ARBISCAN_API_KEY,
+            sepolia: ETHERSCAN_API_KEY
         }
     },
     solidity: {

@@ -46,6 +46,7 @@
     "@ethersproject/wallet": "^5.7.0",
     "eth-permit": "^0.2.3",
     "ethereum-sources-downloader": "^0.1.21",
+    "@arbitrum/sdk": "^v3.1.9",
     "solhint": "^3.6.2"
   }
 }
