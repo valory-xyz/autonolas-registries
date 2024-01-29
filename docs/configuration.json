@@ -157,6 +157,16 @@
         "address": "0x43d28764bB39936185c84906983fB57A8A905a4F"
       },
       {
+        "name": "ServiceRegistryTokenUtility",
+        "artifact": "abis/0.8.23/ServiceRegistryTokenUtility.json",
+        "address": "0x131b5551c81e9B3E89E9ACE30A5B3D45144E3e42"
+      },
+      {
+        "name": "ServiceManagerToken",
+        "artifact": "abis/0.8.23/ServiceManagerToken.json",
+        "address": "0xE16adc7777B7C2a0d35033bd3504C028AB28EE8b"
+      },
+      {
         "name": "GnosisSafeMultisig",
         "artifact": "abis/0.8.19/GnosisSafeMultisig.json",
         "address": "0x9dEc6B62c197268242A768dc3b153AE7a2701396"
@@ -165,6 +175,11 @@
         "name": "GnosisSafeSameAddressMultisig",
         "artifact": "abis/0.8.19/GnosisSafeSameAddressMultisig.json",
         "address": "0xd6AA4Ec948d84f6Db8EEf25104CeE0Ecd280C74e"
+      },
+      {
+        "name": "OperatorWhitelist",
+        "artifact": "abis/0.8.23/OperatorWhitelist.json",
+        "address": "0x118173028162C1b7c6Bf8488bd5dA2abd7c30F9D"
       }
     ]
   },
