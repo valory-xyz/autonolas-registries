@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+[1.1.9]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.8...v1.1.9
+[1.1.8]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.7...v1.1.8
+[1.1.7]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.6...v1.1.7
 [1.1.6]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.4...v1.1.6
 [1.1.5]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.4...v1.1.5
 [1.1.4]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.3...v1.1.4
@@ -15,6 +18,30 @@ The format is based on [Common Changelog](https://common-changelog.org).
 [1.0.2]: https://github.com/valory-xyz/autonolas-registries/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/valory-xyz/autonolas-registries/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/valory-xyz/autonolas-registries/releases/tag/v1.0.0
+
+
+## [1.1.9] - 2024-01-29
+
+_No bytecode changes_.
+
+### Changed
+
+- Deployed `SeviceRegistryL2`, `ServiceRegistryTokenUtility`, `ServiceManagerToken`, `OperatorWhitelist`, `GnosisSafeMultisig`, `GnosisSafeSameAddressMultisig` contracts on Arbitrum ([#148](https://github.com/valory-xyz/autonolas-registries/pull/148))
+- Deployed `ServiceRegistryTokenUtility`, `ServiceManagerToken` and `OperatorWhitelist` contracts on Polyon ([#145](https://github.com/valory-xyz/autonolas-registries/pull/148))
+
+## [1.1.8] - 2024-01-23
+
+### Changed
+
+- Refactored `ServiceStakingBase.sol` for service staking ([#141](https://github.com/valory-xyz/autonolas-registries/pull/141)) with the subsequent internal audit ([#143](https://github.com/valory-xyz/autonolas-registries/pull/143)) 
+- Refactored `ServiceStakingBase.sol` for internal audit reaction ([#146](https://github.com/valory-xyz/autonolas-registries/pull/146)) 
+- Updated documentation
+
+## [1.1.7] - 2023-11-24
+- Created `ServiceStakingBase.sol` , `ServiceStakingNativeToken.sol`, `ServiceStakingToken.sol` for service staking. The latest internal audits with a focus on the above contracts is located in ([audit4](https://github.com/valory-xyz/autonolas-registries/tree/main/audits/internal4)) 
+- Refactored and redeployed `GnosisSafeSameAddressMultisig` contract for checking multisig proxy bytecode hashes ([#126](https://github.com/valory-xyz/autonolas-registries/pull/126))
+- Updated documentation
+- Added tests
 
 ## [1.1.6] - 2023-09-22
 
