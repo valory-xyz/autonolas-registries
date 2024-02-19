@@ -13,36 +13,25 @@ async function main() {
     const providerName = parsedData.providerName;
     const gasPriceInGwei = parsedData.gasPriceInGwei;
     const baseURI = parsedData.baseURI;
-    let EOA;
 
-    let networkURL;
+    let networkURL = parsedData.networkURL;
     if (providerName === "polygon") {
         if (!process.env.ALCHEMY_API_KEY_MATIC) {
             console.log("set ALCHEMY_API_KEY_MATIC env variable");
         }
-        networkURL = "https://polygon-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MATIC;
+        networkURL += process.env.ALCHEMY_API_KEY_MATIC;
     } else if (providerName === "polygonMumbai") {
         if (!process.env.ALCHEMY_API_KEY_MUMBAI) {
             console.log("set ALCHEMY_API_KEY_MUMBAI env variable");
             return;
         }
-        networkURL = "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MUMBAI;
-    } else if (providerName === "gnosis") {
-        if (!process.env.GNOSISSCAN_API_KEY) {
-            console.log("set GNOSISSCAN_API_KEY env variable");
-            return;
-        }
-        networkURL = "https://rpc.gnosischain.com";
-    } else if (providerName === "chiado") {
-        networkURL = "https://rpc.chiadochain.net";
-    } else {
-        console.log("Unknown network provider", providerName);
-        return;
+        networkURL += process.env.ALCHEMY_API_KEY_MUMBAI;
     }
 
     const provider = new ethers.providers.JsonRpcProvider(networkURL);
     const signers = await ethers.getSigners();
 
+    let EOA;
     if (useLedger) {
         EOA = new LedgerSigner(provider, derivationPath);
     } else {
@@ -53,7 +42,7 @@ async function main() {
     console.log("EOA is:", deployer);
 
     // Transaction signing and execution
-    console.log("1. EOA to deploy HashCheckpoint");
+    console.log("18. EOA to deploy HashCheckpoint");
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
     const HashCheckpoint = await ethers.getContractFactory("HashCheckpoint");
     console.log("You are signing the following transaction: HashCheckpoint.connect(EOA).deploy()");
