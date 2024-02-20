@@ -34,7 +34,9 @@ const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY;
 const GNOSISSCAN_API_KEY = process.env.GNOSISSCAN_API_KEY;
 const ARBISCAN_API_KEY = process.env.ARBISCAN_API_KEY;
-const CHIADOSCAN_API_KEY = "10200";
+const OPSCAN_API_KEY = process.env.OPSCAN_API_KEY;
+const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY;
+const CELOSCAN_API_KEY = process.env.CELOSCAN_API_KEY;
 
 module.exports = {
     networks: {
@@ -61,10 +63,30 @@ module.exports = {
             accounts: accounts,
             chainId: 42161,
         },
+        optimistic: {
+            url: "https://mainnet.optimism.io",
+            accounts: accounts,
+            chainId: 10,
+        },
+        base: {
+            url: "https://mainnet.base.org",
+            accounts: accounts,
+            chainId: 8453,
+        },
+        celo: {
+            url: "https://forno.celo.org",
+            accounts: accounts,
+            chainId: 42220,
+        },
         goerli: {
             url: "https://eth-goerli.g.alchemy.com/v2/" + ALCHEMY_API_KEY_GOERLI,
             chainId: 5,
             accounts: accounts,
+        },
+        sepolia: {
+            url: "https://eth-sepolia.g.alchemy.com/v2/" + ALCHEMY_API_KEY_SEPOLIA,
+            accounts: accounts,
+            chainId: 11155111,
         },
         polygonMumbai: {
             url: "https://polygon-mumbai.g.alchemy.com/v2/" + ALCHEMY_API_KEY_MUMBAI,
@@ -79,10 +101,20 @@ module.exports = {
             accounts: accounts,
             chainId: 421614,
         },
-        sepolia: {
-            url: "https://eth-sepolia.g.alchemy.com/v2/" + ALCHEMY_API_KEY_SEPOLIA,
+        optimisticSepolia: {
+            url: "https://sepolia.optimism.io",
             accounts: accounts,
-            chainId: 11155111,
+            chainId: 11155420,
+        },
+        baseSepolia: {
+            url: "https://sepolia.base.org",
+            accounts: accounts,
+            chainId: 84532,
+        },
+        celoAlfajores: {
+            url: "https://alfajores-forno.celo-testnet.org",
+            accounts: accounts,
+            chainId: 44787,
         },
         hardhat: {
             allowUnlimitedContractSize: true
@@ -114,17 +146,71 @@ module.exports = {
                     browserURL: "https://sepolia.arbiscan.io"
                 },
             },
+            {
+                network: "optimistic",
+                chainId: 10,
+                urls: {
+                    apiURL: "https://api-optimism.etherscan.io/api",
+                    browserURL: "https://sepolia-optimistic.etherscan.io"
+                },
+            },
+            {
+                network: "optimisticSepolia",
+                chainId: 11155420,
+                urls: {
+                    apiURL: "https://api-sepolia-optimism.etherscan.io/api",
+                    browserURL: "https://sepolia-optimistic.etherscan.io"
+                },
+            },
+            {
+                network: "base",
+                chainId: 8453,
+                urls: {
+                    apiURL: "https://api.basescan.org/api",
+                    browserURL: "https://basescan.org"
+                },
+            },
+            {
+                network: "baseSepolia",
+                chainId: 84532,
+                urls: {
+                    apiURL: "https://base-sepolia.blockscout.com/api",
+                    browserURL: "https://base-sepolia.blockscout.com/"
+                },
+            },
+            {
+                network: "celo",
+                chainId: 42220,
+                urls: {
+                    apiURL: "https://api.celoscan.io/api",
+                    browserURL: "https://explorer.celo.org/"
+                },
+            },
+            {
+                network: "celoAlfajores",
+                chainId: 44787,
+                urls: {
+                    apiURL: "https://api-alfajores.celoscan.io/api",
+                    browserURL: "https://alfajores-blockscout.celo-testnet.org/"
+                },
+            },
         ],
         apiKey: {
             mainnet: ETHERSCAN_API_KEY,
             polygon: POLYGONSCAN_API_KEY,
             gnosis: GNOSISSCAN_API_KEY,
             arbitrumOne: ARBISCAN_API_KEY,
+            optimistic: OPSCAN_API_KEY,
+            base: BASESCAN_API_KEY,
+            celo: CELOSCAN_API_KEY,
             goerli: ETHERSCAN_API_KEY,
+            sepolia: ETHERSCAN_API_KEY,
             polygonMumbai: POLYGONSCAN_API_KEY,
-            chiado: CHIADOSCAN_API_KEY,
+            chiado: GNOSISSCAN_API_KEY,
             arbitrumSepolia: ARBISCAN_API_KEY,
-            sepolia: ETHERSCAN_API_KEY
+            optimisticSepolia: OPSCAN_API_KEY,
+            baseSepolia: OPSCAN_API_KEY,
+            celoAlfajores: CELOSCAN_API_KEY
         }
     },
     solidity: {
