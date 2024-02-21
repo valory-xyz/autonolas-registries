@@ -4,7 +4,7 @@ const { ethers } = require("ethers");
 const { expect } = require("chai");
 const fs = require("fs");
 
-const verifyRepo = true;
+const verifyRepo = false;
 const verifySetup = true;
 
 // Custom expect that is wrapped into try / catch block
@@ -396,7 +396,7 @@ async function main() {
             "chiado": "https://rpc.chiadochain.net",
             "arbitrumOne": "https://arb1.arbitrum.io/rpc",
             "arbitrumSepolia": "https://sepolia-rollup.arbitrum.io/rpc",
-            "optimistic": "https://mainnet.optimism.io",
+            "optimistic": "https://optimism.drpc.org",
             "optimisticSepolia": "https://sepolia.optimism.io",
             "base": "https://mainnet.base.org",
             "baseSepolia": "https://sepolia.base.org",
@@ -418,17 +418,18 @@ async function main() {
 
         for (let i = 0; i < numChains; i++) {
             // Skip not fully setup networks
-            if (i == 8 || i == 12 || i == 13) {
+            if (i == 12 || i == 13) {
                 continue;
             }
 
             console.log("\n######## Verifying setup on CHAIN ID", configs[i]["chainId"]);
 
             const initLog = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"];
-
+            let log;
+            
             // L1 only contracts
             if (i < 2) {
-                let log = initLog + ", contract: " + "ComponentRegistry";
+                log = initLog + ", contract: " + "ComponentRegistry";
                 await checkComponentRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ComponentRegistry", log);
 
                 log = initLog + ", contract: " + "AgentRegistry";
