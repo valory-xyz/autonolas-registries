@@ -64,7 +64,7 @@ module.exports = {
             chainId: 42161,
         },
         optimistic: {
-            url: "https://mainnet.optimism.io",
+            url: "https://optimism.drpc.org",
             accounts: accounts,
             chainId: 10,
         },
@@ -150,7 +150,7 @@ module.exports = {
                 network: "optimistic",
                 chainId: 10,
                 urls: {
-                    apiURL: "https://api-optimism.etherscan.io/api",
+                    apiURL: "https://api-optimistic.etherscan.io/api",
                     browserURL: "https://sepolia-optimistic.etherscan.io"
                 },
             },

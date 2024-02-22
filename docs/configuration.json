@@ -334,32 +334,32 @@
       {
         "name": "ServiceRegistryL2",
         "artifact": "abis/0.8.23/ServiceRegistryL2.json",
-        "address": ""
+        "address": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44"
       },
       {
         "name": "ServiceRegistryTokenUtility",
         "artifact": "abis/0.8.23/ServiceRegistryTokenUtility.json",
-        "address": ""
+        "address": "0xBb7e1D6Cb6F243D6bdE81CE92a9f2aFF7Fbe7eac"
       },
       {
         "name": "ServiceManagerToken",
         "artifact": "abis/0.8.23/ServiceManagerToken.json",
-        "address": ""
+        "address": "0xFbBEc0C8b13B38a9aC0499694A69a10204c5E2aB"
       },
       {
         "name": "OperatorWhitelist",
         "artifact": "abis/0.8.23/OperatorWhitelist.json",
-        "address": ""
+        "address": "0x63e66d7ad413C01A7b49C7FF4e3Bb765C4E4bd1b"
       },
       {
         "name": "GnosisSafeMultisig",
         "artifact": "abis/0.8.23/GnosisSafeMultisig.json",
-        "address": ""
+        "address": "0xE43d4F4103b623B61E095E8bEA34e1bc8979e168"
       },
       {
         "name": "GnosisSafeSameAddressMultisig",
         "artifact": "abis/0.8.23/GnosisSafeSameAddressMultisig.json",
-        "address": ""
+        "address": "0xb09CcF0Dbf0C178806Aaee28956c74bd66d21f73"
       }
     ]
   },
@@ -406,32 +406,32 @@
       {
         "name": "ServiceRegistryL2",
         "artifact": "abis/0.8.23/ServiceRegistryL2.json",
-        "address": ""
+        "address": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE"
       },
       {
         "name": "ServiceRegistryTokenUtility",
         "artifact": "abis/0.8.23/ServiceRegistryTokenUtility.json",
-        "address": ""
+        "address": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5"
       },
       {
         "name": "ServiceManagerToken",
         "artifact": "abis/0.8.23/ServiceManagerToken.json",
-        "address": ""
+        "address": "0x63e66d7ad413C01A7b49C7FF4e3Bb765C4E4bd1b"
       },
       {
         "name": "OperatorWhitelist",
         "artifact": "abis/0.8.23/OperatorWhitelist.json",
-        "address": ""
+        "address": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44"
       },
       {
         "name": "GnosisSafeMultisig",
         "artifact": "abis/0.8.23/GnosisSafeMultisig.json",
-        "address": ""
+        "address": "0xBb7e1D6Cb6F243D6bdE81CE92a9f2aFF7Fbe7eac"
       },
       {
         "name": "GnosisSafeSameAddressMultisig",
         "artifact": "abis/0.8.23/GnosisSafeSameAddressMultisig.json",
-        "address": ""
+        "address": "0xFbBEc0C8b13B38a9aC0499694A69a10204c5E2aB"
       }
     ]
   },

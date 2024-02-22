@@ -4,6 +4,9 @@ const { ethers } = require("ethers");
 const { expect } = require("chai");
 const fs = require("fs");
 
+const verifyRepo = true;
+const verifySetup = true;
+
 // Custom expect that is wrapped into try / catch block
 function customExpect(arg1, arg2, log) {
     try {
@@ -325,139 +328,145 @@ async function main() {
     const configs = JSON.parse(dataFromJSON);
 
     const numChains = configs.length;
+
     // ################################# VERIFY CONTRACTS WITH REPO #################################
-    // For now gnosis chains are not supported
-    const networks = {
-        "mainnet": "etherscan",
-        "goerli": "goerli.etherscan",
-        "polygon": "polygonscan",
-        "polygonMumbai": "testnet.polygonscan",
-        "arbitrumOne": "arbiscan",
-    };
+    if (verifyRepo) {
+        // For now gnosis chains are not supported
+        const networks = {
+            "mainnet": "etherscan",
+            "goerli": "goerli.etherscan",
+            "polygon": "polygonscan",
+            "polygonMumbai": "testnet.polygonscan",
+            "arbitrumOne": "arbiscan",
+            "optimistic": "optimistic.etherscan"
+        };
 
-    console.log("\nVerifying deployed contracts vs the repo... If no error is output, then the contracts are correct.");
+        console.log("\nVerifying deployed contracts vs the repo... If no error is output, then the contracts are correct.");
 
-    // Traverse all chains
-    for (let i = 0; i < numChains; i++) {
-        // Skip gnosis chains
-        if (!networks[configs[i]["name"]]) {
-            continue;
-        }
+        // Traverse all chains
+        for (let i = 0; i < numChains; i++) {
+            // Skip gnosis chains
+            if (!networks[configs[i]["name"]]) {
+                continue;
+            }
 
-        console.log("\n\nNetwork:", configs[i]["name"]);
-        const network = networks[configs[i]["name"]];
-        const contracts = configs[i]["contracts"];
+            console.log("\n\nNetwork:", configs[i]["name"]);
+            const network = networks[configs[i]["name"]];
+            const contracts = configs[i]["contracts"];
 
-        // Verify contracts
-        for (let j = 0; j < contracts.length; j++) {
-            console.log("Checking " + contracts[j]["name"]);
-            const execSync = require("child_process").execSync;
-            try {
-                execSync("scripts/audit_chains/audit_repo_contract.sh " + network + " " + contracts[j]["name"] + " " + contracts[j]["address"]);
-            } catch (err) {
-                err.stderr.toString();
+            // Verify contracts
+            for (let j = 0; j < contracts.length; j++) {
+                console.log("Checking " + contracts[j]["name"]);
+                const execSync = require("child_process").execSync;
+                try {
+                    execSync("scripts/audit_chains/audit_repo_contract.sh " + network + " " + contracts[j]["name"] + " " + contracts[j]["address"]);
+                } catch (err) {
+                    err.stderr.toString();
+                }
             }
         }
     }
     // ################################# /VERIFY CONTRACTS WITH REPO #################################
 
     // ################################# VERIFY CONTRACTS SETUP #################################
-    const globalNames = {
-        "mainnet": "scripts/deployment/globals_mainnet.json",
-        "goerli": "scripts/deployment/globals_goerli.json",
-        "polygon": "scripts/deployment/l2/globals_polygon_mainnet.json",
-        "polygonMumbai": "scripts/deployment/l2/globals_polygon_mumbai.json",
-        "gnosis": "scripts/deployment/l2/globals_gnosis_mainnet.json",
-        "chiado": "scripts/deployment/l2/globals_gnosis_chiado.json",
-        "arbitrumOne": "scripts/deployment/l2/globals_arbitrum_one.json",
-        "arbitrumSepolia": "scripts/deployment/l2/globals_arbitrum_sepolia.json"
-    };
+    if (verifySetup) {
+        const globalNames = {
+            "mainnet": "scripts/deployment/globals_mainnet.json",
+            "goerli": "scripts/deployment/globals_goerli.json",
+            "polygon": "scripts/deployment/l2/globals_polygon_mainnet.json",
+            "polygonMumbai": "scripts/deployment/l2/globals_polygon_mumbai.json",
+            "gnosis": "scripts/deployment/l2/globals_gnosis_mainnet.json",
+            "chiado": "scripts/deployment/l2/globals_gnosis_chiado.json",
+            "arbitrumOne": "scripts/deployment/l2/globals_arbitrum_one.json",
+            "arbitrumSepolia": "scripts/deployment/l2/globals_arbitrum_sepolia.json",
+            "optimistic": "scripts/deployment/l2/globals_optimistic_mainnet.json",
+            "optimisticSepolia": "scripts/deployment/l2/globals_optimistic_sepolia.json",
+            "base": "scripts/deployment/l2/globals_base_mainnet.json",
+            "baseSepolia": "scripts/deployment/l2/globals_base_sepolia.json",
+            "celo": "scripts/deployment/l2/globals_celo_mainnet.json",
+            "celoAlfajores": "scripts/deployment/l2/globals_celo_alfajores.json"
+        };
 
-    const providerLinks = {
-        "mainnet": "https://eth-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MAINNET,
-        "goerli": "https://eth-goerli.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_GOERLI,
-        "polygon": "https://polygon-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MATIC,
-        "polygonMumbai": "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MUMBAI,
-        "gnosis": "https://rpc.gnosischain.com",
-        "chiado": "https://rpc.chiadochain.net",
-        "arbitrumOne": "https://arb1.arbitrum.io/rpc",
-        "arbitrumSepolia": "https://sepolia-rollup.arbitrum.io/rpc"
-    };
+        const providerLinks = {
+            "mainnet": "https://eth-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MAINNET,
+            "goerli": "https://eth-goerli.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_GOERLI,
+            "polygon": "https://polygon-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MATIC,
+            "polygonMumbai": "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MUMBAI,
+            "gnosis": "https://rpc.gnosischain.com",
+            "chiado": "https://rpc.chiadochain.net",
+            "arbitrumOne": "https://arb1.arbitrum.io/rpc",
+            "arbitrumSepolia": "https://sepolia-rollup.arbitrum.io/rpc",
+            "optimistic": "https://optimism.drpc.org",
+            "optimisticSepolia": "https://sepolia.optimism.io",
+            "base": "https://mainnet.base.org",
+            "baseSepolia": "https://sepolia.base.org",
+            "celo": "https://forno.celo.org",
+            "celoAlfajores": "https://alfajores-forno.celo-testnet.org"
+        };
 
-    // Get all the globals processed
-    const globals = new Array();
-    const providers = new Array();
-    for (let i = 0; i < numChains; i++) {
-        const dataJSON = fs.readFileSync(globalNames[configs[i]["name"]], "utf8");
-        globals.push(JSON.parse(dataJSON));
-        const provider = new ethers.providers.JsonRpcProvider(providerLinks[configs[i]["name"]]);
-        providers.push(provider);
-    }
-
-    console.log("\nVerifying deployed contracts setup... If no error is output, then the contracts are correct.");
-
-    // L1 contracts
-    for (let i = 0; i < 2; i++) {
-        console.log("\n######## Verifying setup on CHAIN ID", configs[i]["chainId"]);
-
-        const initLog = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"];
-
-        let log = initLog + ", contract: " + "ComponentRegistry";
-        await checkComponentRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ComponentRegistry", log);
-
-        log = initLog + ", contract: " + "AgentRegistry";
-        await checkAgentRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "AgentRegistry", log);
-
-        log = initLog + ", contract: " + "ServiceRegistry";
-        await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistry", log);
-
-        log = initLog + ", contract: " + "ServiceManagerToken";
-        await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerToken", log);
-
-        log = initLog + ", contract: " + "ServiceRegistryTokenUtility";
-        await checkServiceRegistryTokenUtility(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryTokenUtility", log);
-
-        log = initLog + ", contract: " + "OperatorWhitelist";
-        await checkOperatorWhitelist(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "OperatorWhitelist", log);
-
-        log = initLog + ", contract: " + "GnosisSafeMultisig";
-        await checkGnosisSafeImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeMultisig", log);
-
-        log = initLog + ", contract: " + "GnosisSafeSameAddressMultisig";
-        await checkGnosisSafeSameAddressImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeSameAddressMultisig", log);
-    }
-
-    // L2 contracts
-    for (let i = 2; i < numChains; i++) {
-        console.log("\n######## Verifying setup on CHAIN ID", configs[i]["chainId"]);
-
-        const initLog = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"];
-
-        let log = initLog + ", contract: " + "ServiceRegistryL2";
-        await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryL2", log);
-
-        // Path for L2 chains that operate with the ServiceManagerToken
-        if (configs[i]["chainId"] !== "80001") {
-            log = initLog + ", contract: " + "ServiceManagerToken";
-            await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerToken", log);
-
-            log = initLog + ", contract: " + "ServiceRegistryTokenUtility";
-            await checkServiceRegistryTokenUtility(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryTokenUtility", log);
-
-            log = initLog + ", contract: " + "OperatorWhitelist";
-            await checkOperatorWhitelist(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "OperatorWhitelist", log);
-        } else {
-            log = initLog + ", contract: " + "ServiceManager";
-            await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManager", log);
+        // Get all the globals processed
+        const globals = new Array();
+        const providers = new Array();
+        for (let i = 0; i < numChains; i++) {
+            const dataJSON = fs.readFileSync(globalNames[configs[i]["name"]], "utf8");
+            globals.push(JSON.parse(dataJSON));
+            const provider = new ethers.providers.JsonRpcProvider(providerLinks[configs[i]["name"]]);
+            providers.push(provider);
         }
 
-        log = initLog + ", contract: " + "GnosisSafeMultisig";
-        await checkGnosisSafeImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeMultisig", log);
+        console.log("\nVerifying deployed contracts setup... If no error is output, then the contracts are correct.");
 
-        log = initLog + ", contract: " + "GnosisSafeSameAddressMultisig";
-        await checkGnosisSafeSameAddressImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeSameAddressMultisig", log);
+        for (let i = 0; i < numChains; i++) {
+            // Skip not fully setup networks
+            if (i == 12) {
+                continue;
+            }
+
+            console.log("\n######## Verifying setup on CHAIN ID", configs[i]["chainId"]);
+
+            const initLog = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"];
+            let log;
+
+            // L1 only contracts
+            if (i < 2) {
+                log = initLog + ", contract: " + "ComponentRegistry";
+                await checkComponentRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ComponentRegistry", log);
+
+                log = initLog + ", contract: " + "AgentRegistry";
+                await checkAgentRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "AgentRegistry", log);
+            }
+
+            log = initLog + ", contract: " + "ServiceRegistry";
+            if (i < 2) {
+                await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistry", log);
+            } else {
+                // L2 contracts addition
+                log += "L2";
+                await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryL2", log);
+            }
+
+            // Path for chains that operate with the ServiceManagerToken
+            if (configs[i]["chainId"] !== "80001") {
+                log = initLog + ", contract: " + "ServiceManagerToken";
+                await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerToken", log);
+
+                log = initLog + ", contract: " + "ServiceRegistryTokenUtility";
+                await checkServiceRegistryTokenUtility(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryTokenUtility", log);
+
+                log = initLog + ", contract: " + "OperatorWhitelist";
+                await checkOperatorWhitelist(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "OperatorWhitelist", log);
+            } else {
+                log = initLog + ", contract: " + "ServiceManager";
+                await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManager", log);
+            }
+
+            log = initLog + ", contract: " + "GnosisSafeMultisig";
+            await checkGnosisSafeImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeMultisig", log);
+
+            log = initLog + ", contract: " + "GnosisSafeSameAddressMultisig";
+            await checkGnosisSafeSameAddressImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeSameAddressMultisig", log);
+        }
     }
-
     // ################################# /VERIFY CONTRACTS SETUP #################################
 }
 
