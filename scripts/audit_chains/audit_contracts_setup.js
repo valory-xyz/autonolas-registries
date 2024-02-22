@@ -4,7 +4,7 @@ const { ethers } = require("ethers");
 const { expect } = require("chai");
 const fs = require("fs");
 
-const verifyRepo = false;
+const verifyRepo = true;
 const verifySetup = true;
 
 // Custom expect that is wrapped into try / catch block
@@ -418,7 +418,7 @@ async function main() {
 
         for (let i = 0; i < numChains; i++) {
             // Skip not fully setup networks
-            if (i == 12 || i == 13) {
+            if (i == 12) {
                 continue;
             }
 
@@ -426,7 +426,7 @@ async function main() {
 
             const initLog = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"];
             let log;
-            
+
             // L1 only contracts
             if (i < 2) {
                 log = initLog + ", contract: " + "ComponentRegistry";
