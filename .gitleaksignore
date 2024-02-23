@@ -149,3 +149,7 @@ e042f634d7a5f6879dbdb46ba3723d4072e042b0:scripts/deployment/l2/arbitrum/timelock
 5bb96caf3ef171da746dcd494e2ff245503c8894:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:2
 5bb96caf3ef171da746dcd494e2ff245503c8894:scripts/deployment/l2/globals_optimistic_mainnet.json:generic-api-key:2
 5bb96caf3ef171da746dcd494e2ff245503c8894:scripts/deployment/l2/globals_optimistic_mainnet.json:generic-api-key:2
+70ca39e30b445d899a5adc1cd47f2f0039791be6:scripts/deployment/l2/globals_optimistic_sepolia.json:generic-api-key:1
+70ca39e30b445d899a5adc1cd47f2f0039791be6:scripts/deployment/l2/globals_optimistic_sepolia.json:generic-api-key:2
+70ca39e30b445d899a5adc1cd47f2f0039791be6:scripts/deployment/l2/globals_base_sepolia.json:generic-api-key:1
+70ca39e30b445d899a5adc1cd47f2f0039791be6:scripts/deployment/l2/globals_base_sepolia.json:generic-api-key:2
