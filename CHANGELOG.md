@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+[1.1.10]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.9...v1.1.10
 [1.1.9]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.8...v1.1.9
 [1.1.8]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.7...v1.1.8
 [1.1.7]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.6...v1.1.7
@@ -19,6 +20,14 @@ The format is based on [Common Changelog](https://common-changelog.org).
 [1.0.1]: https://github.com/valory-xyz/autonolas-registries/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/valory-xyz/autonolas-registries/releases/tag/v1.0.0
 
+
+## [1.1.10] - 2024-03-01
+
+_No bytecode changes_.
+
+### Changed
+
+- Deployed `SeviceRegistryL2`, `ServiceRegistryTokenUtility`, `ServiceManagerToken`, `OperatorWhitelist`, `GnosisSafeMultisig`, `GnosisSafeSameAddressMultisig` contracts on Optimism, Base, Celo ([#155](https://github.com/valory-xyz/autonolas-registries/pull/155))
 
 ## [1.1.9] - 2024-01-29
 
