@@ -29,6 +29,7 @@ Parameters of the `globals.json` file:
 - `useLedger`: a flag whether to use the hardware wallet (`true`) or proceed with the seed-phrase accounts (`false`);
 - `derivationPath`: a string with the derivation path;
 - `providerName`: a network type (see `hardhat.config.js` for the network configurations);
+- `networkURL`: string with the network RPC URL;
 - `gasPriceInGwei`: gas price in gwei, check with the specific network for the correct gas price during the deployment.
 - `bridgeMediatorAddress`: corresponding Bridge Mediator contract address deployed for the L1-L2 bridge-related deployment.
 
