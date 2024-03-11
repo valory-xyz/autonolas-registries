@@ -50,7 +50,7 @@ const main = async () => {
 
     // To be able to estimate the gas related params to our L1-L2 message, we need to know how many bytes of calldata out
     // retryable ticket will require
-    const calldata = erc20Token.interface.encodeFunctionData("transfer", [EOAarbitrumSepolia.address, 100]);
+    const calldata = erc20Token.interface.encodeFunctionData("mint", [EOAarbitrumSepolia.address, 100]);
 
     // Users can override the estimated gas params when sending an L1-L2 message
     // Note that this is totally optional
@@ -100,16 +100,16 @@ const main = async () => {
     // ABI to send message to inbox
     const inboxABI = ["function createRetryableTicket(address to, uint256 l2CallValue, uint256 maxSubmissionCost, address excessFeeRefundAddress, address callValueRefundAddress, uint256 gasLimit, uint256 maxFeePerGas, bytes calldata data)"];
     const iface = new ethers.utils.Interface(inboxABI);
-    const timeloclCalldata = iface.encodeFunctionData("createRetryableTicket", [erc20Token.address, l2CallValue,
+    const timelockCalldata = iface.encodeFunctionData("createRetryableTicket", [erc20Token.address, l2CallValue,
         L1ToL2MessageGasParams.maxSubmissionCost, EOAarbitrumSepolia.address, EOAarbitrumSepolia.address,
         L1ToL2MessageGasParams.gasLimit, gasPriceBid, calldata]);
     const value = L1ToL2MessageGasParams.deposit;
-    // console.log(timeloclCalldata);
+    // console.log(timelockCalldata);
     // console.log("value", value);
 
-    const tx = await mockTimelock.execute(inboxAddress, value, timeloclCalldata, {value: value});
+    const tx = await mockTimelock.execute(inboxAddress, value, timelockCalldata, {value: value});
     //const gasPrice = ethers.utils.parseUnits("10", "gwei");
-    //const tx = await mockTimelock.execute(inboxAddress, value, timeloclCalldata, {value: value, gasPrice});
+    //const tx = await mockTimelock.execute(inboxAddress, value, timelockCalldata, {value: value, gasPrice});
 
     console.log(tx.hash);
     await tx.wait();

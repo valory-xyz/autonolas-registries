@@ -73,7 +73,7 @@ As more multisigs come into play, their underlying implementation of the generic
 
 ### Prerequisites
 - This repository follows the standard [`Hardhat`](https://hardhat.org/tutorial/) development process.
-- The code is written on Solidity `0.8.15`, `0.8.19`, `0.8.21`.
+- The code is written on Solidity starting from version `0.8.15`.
 - The standard versions of Node.js along with Yarn are required to proceed further (confirmed to work with Yarn `1.22.19` and npx/npm `10.1.0` and node `v18.17.0`).
 
 ### Install the dependencies
