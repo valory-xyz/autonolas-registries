@@ -14,7 +14,9 @@ contract ServiceStakingFactory is IErrorsRegistries {
 
     // Contract owner address
     address public owner;
-    // Mapping of staking service implementation bytecode hashes
+    // Nonce
+    uint256 public nonce;
+    // Mapping of staking service implementation bytecode hashes => implementation addresses
     mapping(bytes32 => bool) public mapImplementationHashes;
     // Mapping of staking service instances
     mapping(address => bool) public mapInstances;
@@ -40,22 +42,36 @@ contract ServiceStakingFactory is IErrorsRegistries {
         emit OwnerUpdated(newOwner);
     }
 
-    function addImplementation(bytes32 implementationHash) external {
+    function changeImplementationStatuses(bytes32[] memory implementationHashes, bool[] memory statuses) external {
         // Check for the ownership
         if (msg.sender != owner) {
             revert OwnerOnly(msg.sender, owner);
         }
 
-        mapImplementationHashes[implementationHash] = true;
+        if (implementationHashes.length != statuses.length) {
+            revert WrongArrayLength(implementationHashes.length, statuses.length);
+        }
+
+        for (uint256 i = 0; i < implementationHashes.length; ++i) {
+            if (implementationHashes[i] == 0) {
+                revert ZeroValue();
+            }
+            mapImplementationHashes[implementationHashes[i]] = statuses[i];
+        }
     }
 
-    function createServiceStakingInstance(bytes memory bytecode, bytes memory initPayload, bytes32 salt) external returns (address instance) {
+    function createServiceStakingInstance(
+        bytes memory bytecode,
+        bytes memory initPayload
+    ) external returns (address instance) {
         // Check for the whitelisted bytecode hash
         bytes32 implementationHash = keccak256(bytecode);
         if (!mapImplementationHashes[implementationHash]) {
             revert();
         }
 
+        uint256 localNonce = nonce;
+        bytes32 salt = bytes32(localNonce);
         assembly {
             instance := create2(0, add(bytecode, 0x20), mload(bytecode), salt)
             if iszero(extcodesize(instance)) {
@@ -79,6 +95,7 @@ contract ServiceStakingFactory is IErrorsRegistries {
         }
 
         mapInstances[instance] = true;
+        nonce = localNonce + 1;
 
         emit InstanceCreated(instance, implementationHash);
     }
