@@ -26,7 +26,7 @@ contract ServiceStakingFactory is IErrorsRegistries {
     uint256 public nonce;
     // Mapping of staking service implementations => implementation status
     mapping(address => bool) public mapImplementations;
-    // Mapping of staking service instances => implementation address
+    // Mapping of staking service proxy instances => implementation address
     mapping(address => address) public mapInstanceImplementations;
 
     constructor() {
@@ -49,7 +49,7 @@ contract ServiceStakingFactory is IErrorsRegistries {
         owner = newOwner;
         emit OwnerUpdated(newOwner);
     }
-    
+
     function changeImplementationStatuses(address[] memory implementations, bool[] memory statuses) external {
         // Check for the ownership
         if (msg.sender != owner) {
