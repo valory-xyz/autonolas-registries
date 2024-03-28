@@ -29,63 +29,23 @@ contract ServiceStakingFactory is IErrorsRegistries {
     // Mapping of staking service proxy instances => implementation address
     mapping(address => address) public mapInstanceImplementations;
 
-    constructor() {
-        owner = msg.sender;
-    }
-
-    /// @dev Changes the owner address.
-    /// @param newOwner Address of a new owner.
-    function changeOwner(address newOwner) external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero address
-        if (newOwner == address(0)) {
-            revert ZeroAddress();
-        }
-
-        owner = newOwner;
-        emit OwnerUpdated(newOwner);
-    }
-
-    function changeImplementationStatuses(address[] memory implementations, bool[] memory statuses) external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        if (implementations.length != statuses.length) {
-            revert WrongArrayLength(implementations.length, statuses.length);
-        }
-
-        for (uint256 i = 0; i < implementations.length; ++i) {
-            if (implementations[i] == address(0)) {
-                revert ZeroAddress();
-            }
-
-            // Check for the ERC165 compatibility with ServiceStakingBase
-            if (!(IERC165(implementations[i]).supportsInterface(0x01ffc9a7) && // ERC165 Interface ID for ERC165
-                IERC165(implementations[i]).supportsInterface(0xa694fc3a) && // bytes4(keccak256("stake(uint256)"))
-                IERC165(implementations[i]).supportsInterface(0x2e17de78) && // bytes4(keccak256("unstake(uint256)"))
-                IERC165(implementations[i]).supportsInterface(0xc2c4c5c1) && // bytes4(keccak256("checkpoint()"))
-                IERC165(implementations[i]).supportsInterface(0x78e06136) && // bytes4(keccak256("calculateServiceStakingReward(uint256)"))
-                IERC165(implementations[i]).supportsInterface(0x82a8ea58) // bytes4(keccak256("getServiceInfo(uint256)"))
-            )) {
-                revert();
-            }
-            
-            mapImplementations[implementations[i]] = statuses[i];
-        }
-    }
-
     function createServiceStakingInstance(
         address implementation,
         bytes memory initPayload
     ) external returns (address instance) {
-        // Check for the whitelisted implementation address
+        // Check for the implementation address
         if (!mapImplementations[implementation]) {
+            mapImplementations[implementation] = true;
+        }
+
+        // Check for the ERC165 compatibility with ServiceStakingBase
+        if (!(IERC165(implementation).supportsInterface(0x01ffc9a7) && // ERC165 Interface ID for ERC165
+            IERC165(implementation).supportsInterface(0xa694fc3a) && // bytes4(keccak256("stake(uint256)"))
+            IERC165(implementation).supportsInterface(0x2e17de78) && // bytes4(keccak256("unstake(uint256)"))
+            IERC165(implementation).supportsInterface(0xc2c4c5c1) && // bytes4(keccak256("checkpoint()"))
+            IERC165(implementation).supportsInterface(0x78e06136) && // bytes4(keccak256("calculateServiceStakingReward(uint256)"))
+            IERC165(implementation).supportsInterface(0x82a8ea58) // bytes4(keccak256("getServiceInfo(uint256)"))
+        )) {
             revert();
         }
 
