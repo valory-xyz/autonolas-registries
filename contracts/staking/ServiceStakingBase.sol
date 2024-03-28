@@ -154,9 +154,11 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
     event ServiceStaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
         uint256[] nonces);
-    event Checkpoint(uint256 indexed epoch, uint256 availableRewards, uint256[] serviceIds, uint256[] rewards);
+    event Checkpoint(uint256 indexed epoch, uint256 availableRewards, uint256[] serviceIds, uint256[] rewards,
+        uint256 epochLength);
     event ServiceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
         uint256[] nonces, uint256 reward);
+    event ServiceInactivityWarning(uint256 epoch, uint256 indexed serviceId, uint256 serviceInactivity);
     event ServicesEvicted(uint256 indexed epoch, uint256[] serviceIds, address[] owners, address[] multisigs,
         uint256[] serviceInactivity);
     event Deposit(address indexed sender, uint256 amount, uint256 balance, uint256 availableRewards);
@@ -630,6 +632,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
         // If service Ids are returned, then the checkpoint takes place
         if (serviceIds.length > 0) {
+            uint256 eCounter = epochCounter;
             numServices = 0;
             // Record service inactivities and updated current service nonces
             for (uint256 i = 0; i < serviceIds.length; ++i) {
@@ -649,6 +652,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                         evictServiceIds[i] = curServiceId;
                         // Increase number of evicted services
                         numServices++;
+                    } else {
+                        emit ServiceInactivityWarning(eCounter, curServiceId, serviceInactivity[i]);
                     }
                 } else {
                     // Otherwise, set it back to zero
@@ -661,14 +666,16 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 _evict(evictServiceIds, serviceInactivity, numServices);
             }
 
+            // Record the actual epoch length
+            uint256 epochLength = block.timestamp - tsCheckpoint;
             // Record the current timestamp such that next calculations start from this point of time
             tsCheckpoint = block.timestamp;
 
             // Increase the epoch counter
-            uint256 eCounter = epochCounter;
             epochCounter = eCounter + 1;
 
-            emit Checkpoint(eCounter, lastAvailableRewards, finalEligibleServiceIds, finalEligibleServiceRewards);
+            emit Checkpoint(eCounter, lastAvailableRewards, finalEligibleServiceIds, finalEligibleServiceRewards,
+                epochLength);
         }
 
         return (serviceIds, serviceNonces, finalEligibleServiceIds, finalEligibleServiceRewards, evictServiceIds);
@@ -742,6 +749,18 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         emit ServiceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward);
+    }
+
+    /// @dev ERC165 support interface.
+    /// @param interfaceId Function selector.
+    function supportsInterface(bytes4 interfaceId) external virtual view returns (bool) {
+        return
+            interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
+            interfaceId == 0xa694fc3a || // bytes4(keccak256("stake(uint256)"))
+            interfaceId == 0x2e17de78 || // bytes4(keccak256("unstake(uint256)"))
+            interfaceId == 0xc2c4c5c1 || // bytes4(keccak256("checkpoint()"))
+            interfaceId == 0x78e06136 || // bytes4(keccak256("calculateServiceStakingReward(uint256)"))
+            interfaceId == 0x82a8ea58; // bytes4(keccak256("getServiceInfo(uint256)"))
     }
 
     /// @dev Calculates service staking reward during the last checkpoint period.
