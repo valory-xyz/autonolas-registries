@@ -5,12 +5,13 @@ const { ethers } = require("hardhat");
 describe.only("ServiceStaking", function () {
     let serviceStaking;
     let serviceStakingFactory;
+    let signers;
+    let deployer;
     const AddressZero = ethers.constants.AddressZero;
 
     beforeEach(async function () {
         signers = await ethers.getSigners();
         deployer = signers[0];
-        operator = signers[1];
 
         const ServiceStaking = await ethers.getContractFactory("MockServiceStaking");
         serviceStaking = await ServiceStaking.deploy();
