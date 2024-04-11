@@ -8,9 +8,22 @@ interface IERC165 {
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }
 
+/// @dev Provided incorrect data length.
+/// @param expected Expected minimum data length.
+/// @param provided Provided data length.
+error IncorrectDataLength(uint256 expected, uint256 provided);
+
+/// @dev The deployed implementation must be a contract.
+/// @param implementation Implementation address.
+error ContractOnly(address implementation);
+
 /// @dev Proxy creation failed.
 /// @param implementation Implementation address.
 error ProxyCreationFailed(address implementation);
+
+/// @dev Proxy instance initialization failed
+/// @param instance Proxy instance address.
+error InitializationFailed(address instance);
 
 /// @title ServiceStakingFactory - Smart contract for service staking factory
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -20,6 +33,8 @@ contract ServiceStakingFactory is IErrorsRegistries {
     event OwnerUpdated(address indexed owner);
     event InstanceCreated(address indexed instance, address indexed implementation);
 
+    // Minimum data length that contains at least a selector (4 bytes or 32 bits)
+    uint256 public constant SELECTOR_DATA_LENGTH = 4;
     // Contract owner address
     address public owner;
     // Nonce
@@ -33,6 +48,22 @@ contract ServiceStakingFactory is IErrorsRegistries {
         address implementation,
         bytes memory initPayload
     ) external returns (address instance) {
+        // Check for the zero implementation address
+        if (implementation == address(0)) {
+            revert ZeroAddress();
+        }
+
+        // Check that the implementation is the contract
+        if (implementation.code.length == 0) {
+            revert ContractOnly(implementation);
+        }
+
+        // The payload length must be at least of the a function selector size
+        // TODO calculate the minimum payload for the staking base contract
+        if (initPayload.length < SELECTOR_DATA_LENGTH) {
+            revert IncorrectDataLength(initPayload.length, SELECTOR_DATA_LENGTH);
+        }
+
         // Check for the implementation address
         if (!mapImplementations[implementation]) {
             mapImplementations[implementation] = true;
@@ -56,15 +87,23 @@ contract ServiceStakingFactory is IErrorsRegistries {
         assembly {
             instance := create2(0x0, add(0x20, deploymentData), mload(deploymentData), salt)
         }
-        if (address(instance) == address(0)) {
+        // Check that the proxy creation was successful
+        if (instance == address(0)) {
             revert ProxyCreationFailed(implementation);
         }
-        
+
         // Initialize the proxy instance
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            if eq(call(gas(), instance, 0, add(initPayload, 0x20), mload(initPayload), 0, 0), 0) {
-                revert(0, 0)
+        (bool success, bytes memory returnData) = instance.call(initPayload);
+        // Process unsuccessful call
+        if (!success) {
+            // Get the revert message bytes
+            if (returnData.length > 0) {
+                assembly {
+                    let returnDataSize := mload(returnData)
+                    revert(add(32, returnData), returnDataSize)
+                }
+            } else {
+                revert InitializationFailed(instance);
             }
         }
 
