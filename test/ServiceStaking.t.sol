@@ -110,6 +110,9 @@ contract BaseSetup is Test {
         // Get the multisig proxy bytecode hash
         bytes32 multisigProxyHash = keccak256(address(gnosisSafeProxy).code);
 
+        // Deploy service staking factory
+        serviceStakingFactory = new ServiceStakingFactory();
+
         // Deploy service staking native token and arbitrary ERC20 token
         ServiceStakingBase.StakingParams memory stakingParams = ServiceStakingBase.StakingParams(maxNumServices,
             rewardsPerSecond, minStakingDeposit, minNumStakingPeriods, maxNumInactivityPeriods, livenessPeriod,
@@ -117,12 +120,15 @@ contract BaseSetup is Test {
         serviceStakingNativeTokenImplementation = new ServiceStakingNativeToken();
         serviceStakingTokenImplementation = new ServiceStakingToken();
 
-        bytes memory initPayload = abi.encodeWithSignature("initialize", stakingParams, address(serviceRegistry),
-            multisigProxyHash);
-        serviceStakingNativeToken = ServiceStakingNativeToken(payable(serviceStakingFactory.createServiceStakingInstance(
-            address(serviceStakingNativeTokenImplementation), initPayload)));
-        initPayload = abi.encodeWithSignature("initialize", stakingParams, address(serviceRegistry),
-            address(serviceRegistryTokenUtility), address(token), multisigProxyHash);
+        // Initialization payload and deployment of serviceStakingNativeToken
+        bytes memory initPayload = abi.encodeWithSelector(serviceStakingNativeTokenImplementation.initialize.selector,
+            stakingParams, address(serviceRegistry), multisigProxyHash);
+        serviceStakingNativeToken = ServiceStakingNativeToken(serviceStakingFactory.createServiceStakingInstance(
+            address(serviceStakingNativeTokenImplementation), initPayload));
+
+        // Initialization payload and deployment of serviceStakingToken
+        initPayload = abi.encodeWithSelector(serviceStakingTokenImplementation.initialize.selector,
+            stakingParams, address(serviceRegistry), address(serviceRegistryTokenUtility), address(token), multisigProxyHash);
         serviceStakingToken = ServiceStakingToken(serviceStakingFactory.createServiceStakingInstance(
             address(serviceStakingTokenImplementation), initPayload));
 

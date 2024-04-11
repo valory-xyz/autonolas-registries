@@ -2,7 +2,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe.only("ServiceStaking", function () {
+describe("ServiceStaking", function () {
     let serviceStaking;
     let serviceStakingFactory;
     let signers;
@@ -62,6 +62,12 @@ describe.only("ServiceStaking", function () {
             const proxy = await ethers.getContractAt("ServiceStakingProxy", instances[0]);
             const implementation = await proxy.getImplementation();
             expect(implementation).to.equal(serviceStaking.address);
+
+            // Verify instance by just comparing the implementation
+            await serviceStakingFactory.verifyInstance(instances[0]);
+
+            // Try the implementation that does not exist
+            await serviceStakingFactory.verifyInstance(deployer.address);
         });
     });
 });

@@ -4,8 +4,9 @@ pragma solidity ^0.8.23;
 import "../interfaces/IErrorsRegistries.sol";
 import "./ServiceStakingProxy.sol";
 
-interface IERC165 {
-    function supportsInterface(bytes4 interfaceId) external view returns (bool);
+interface IVerifier {
+    function verifyImplementation(address implementation) external view returns (bool);
+    function verifyInstance(address instance) external view returns (bool);
 }
 
 /// @dev Provided incorrect data length.
@@ -31,12 +32,15 @@ error InitializationFailed(address instance);
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract ServiceStakingFactory is IErrorsRegistries {
     event OwnerUpdated(address indexed owner);
+    event VerifierUpdated(address indexed verifier);
     event InstanceCreated(address indexed instance, address indexed implementation);
 
     // Minimum data length that contains at least a selector (4 bytes or 32 bits)
     uint256 public constant SELECTOR_DATA_LENGTH = 4;
     // Contract owner address
     address public owner;
+    // Verifier address
+    address public verifier;
     // Nonce
     uint256 public nonce;
     // Mapping of staking service implementations => implementation status
@@ -44,10 +48,39 @@ contract ServiceStakingFactory is IErrorsRegistries {
     // Mapping of staking service proxy instances => implementation address
     mapping(address => address) public mapInstanceImplementations;
 
+    /// @dev Changes the owner address.
+    /// @param newOwner Address of a new owner.
+    function changeOwner(address newOwner) external {
+        // Check for the ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for the zero address
+        if (newOwner == address(0)) {
+            revert ZeroAddress();
+        }
+
+        owner = newOwner;
+        emit OwnerUpdated(newOwner);
+    }
+
+    /// @dev Changes the verifier address.
+    /// @param newVerifier Address of a new verifier.
+    function changeVerifier(address newVerifier) external {
+        // Check for the ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        verifier = newVerifier;
+        emit VerifierUpdated(newVerifier);
+    }
+
     function createServiceStakingInstance(
         address implementation,
         bytes memory initPayload
-    ) external returns (address instance) {
+    ) external returns (address payable instance) {
         // Check for the zero implementation address
         if (implementation == address(0)) {
             revert ZeroAddress();
@@ -69,14 +102,9 @@ contract ServiceStakingFactory is IErrorsRegistries {
             mapImplementations[implementation] = true;
         }
 
-        // Check for the ERC165 compatibility with ServiceStakingBase
-        if (!(IERC165(implementation).supportsInterface(0x01ffc9a7) && // ERC165 Interface ID for ERC165
-            IERC165(implementation).supportsInterface(0xa694fc3a) && // bytes4(keccak256("stake(uint256)"))
-            IERC165(implementation).supportsInterface(0x2e17de78) && // bytes4(keccak256("unstake(uint256)"))
-            IERC165(implementation).supportsInterface(0xc2c4c5c1) && // bytes4(keccak256("checkpoint()"))
-            IERC165(implementation).supportsInterface(0x78e06136) && // bytes4(keccak256("calculateServiceStakingReward(uint256)"))
-            IERC165(implementation).supportsInterface(0x82a8ea58) // bytes4(keccak256("getServiceInfo(uint256)"))
-        )) {
+        // Provide additional checks, if needed
+        address localVerifier = verifier;
+        if (localVerifier != address (0) && !IVerifier(localVerifier).verifyImplementation(implementation)) {
             revert();
         }
 
@@ -111,5 +139,19 @@ contract ServiceStakingFactory is IErrorsRegistries {
         nonce = localNonce + 1;
 
         emit InstanceCreated(instance, implementation);
+    }
+
+    /// @notice This function must never revert.
+    function verifyInstance(address instance) external view returns (bool success) {
+        address implementation = mapInstanceImplementations[instance];
+        if (implementation == address(0)) {
+            return false;
+        }
+
+        // Provide additional checks, if needed
+        address localVerifier = verifier;
+        if (localVerifier != address (0)) {
+            success = IVerifier(localVerifier).verifyInstance(instance);
+        }
     }
 }
