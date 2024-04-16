@@ -26,6 +26,10 @@ error ProxyCreationFailed(address implementation);
 /// @param instance Proxy instance address.
 error InitializationFailed(address instance);
 
+/// @dev Proxy instance has no implementation in the factory.
+/// @param instance Proxy instance address.
+error InstanceHasNoImplementation(address instance);
+
 /// @title ServiceStakingFactory - Smart contract for service staking factory
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
@@ -47,6 +51,10 @@ contract ServiceStakingFactory is IErrorsRegistries {
     mapping(address => bool) public mapImplementations;
     // Mapping of staking service proxy instances => implementation address
     mapping(address => address) public mapInstanceImplementations;
+
+    constructor() {
+        owner = msg.sender;
+    }
 
     /// @dev Changes the owner address.
     /// @param newOwner Address of a new owner.
@@ -141,17 +149,18 @@ contract ServiceStakingFactory is IErrorsRegistries {
         emit InstanceCreated(instance, implementation);
     }
 
-    /// @notice This function must never revert.
     function verifyInstance(address instance) external view returns (bool success) {
         address implementation = mapInstanceImplementations[instance];
         if (implementation == address(0)) {
-            return false;
+            revert InstanceHasNoImplementation(instance);
         }
 
         // Provide additional checks, if needed
         address localVerifier = verifier;
         if (localVerifier != address (0)) {
             success = IVerifier(localVerifier).verifyInstance(instance);
+        } else {
+            success = true;
         }
     }
 }
