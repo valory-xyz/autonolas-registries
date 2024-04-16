@@ -20,7 +20,6 @@ contract ServiceStakingVerifier {
         rewardsPerSecondLimit = _rewardsPerSecondLimit;
     }
 
-    /// @notice This function can revert.
     function verifyImplementation(address implementation) external view returns (bool success){
         // Check for the ERC165 compatibility with ServiceStakingBase
         if ((IERC165(implementation).supportsInterface(0x01ffc9a7) && // ERC165 Interface ID for ERC165
@@ -35,7 +34,6 @@ contract ServiceStakingVerifier {
     }
 
     // TODO try / catch? As it must not revert
-    /// @notice This function must NOT revert.
     function verifyInstance(address instance) external view returns (bool success) {
         // Check for the staking parameters
         uint256 rewardsPerSecond = IServiceStaking(instance).rewardsPerSecond();
