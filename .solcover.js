@@ -5,6 +5,7 @@ module.exports = {
         "test/GnosisSafeABICreator.sol",
         "test/MockOperatorContract.sol",
         "test/MockServiceRegistry.sol",
+        "test/MockServiceStaking.sol",
         "test/MockTimelock.sol",
         "test/ReentrancyAttacker.sol",
         "test/ReentrancyTokenAttacker.sol",

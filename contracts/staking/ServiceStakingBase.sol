@@ -69,6 +69,9 @@ interface IService {
         returns (uint256 numAgentIds, AgentParams[] memory agentParams);
 }
 
+/// @dev The contract is already initialized.
+error AlreadyInitialized();
+
 /// @dev No rewards are available in the contract.
 error NoRewardsAvailable();
 
@@ -167,32 +170,32 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     // Contract version
     string public constant VERSION = "0.1.0";
     // Maximum number of staking services
-    uint256 public immutable maxNumServices;
+    uint256 public maxNumServices;
     // Rewards per second
-    uint256 public immutable rewardsPerSecond;
+    uint256 public rewardsPerSecond;
     // Minimum service staking deposit value required for staking
     // The staking deposit must be always greater than 1 in order to distinguish between native and ERC20 tokens
-    uint256 public immutable minStakingDeposit;
+    uint256 public minStakingDeposit;
     // Max number of accumulated inactivity periods after which the service is evicted
-    uint256 public immutable maxNumInactivityPeriods;
+    uint256 public maxNumInactivityPeriods;
     // Liveness period
-    uint256 public immutable livenessPeriod;
+    uint256 public livenessPeriod;
     // Liveness ratio in the format of 1e18
-    uint256 public immutable livenessRatio;
+    uint256 public livenessRatio;
     // Number of agent instances in the service
-    uint256 public immutable numAgentInstances;
+    uint256 public numAgentInstances;
     // Optional service multisig threshold requirement
-    uint256 public immutable threshold;
+    uint256 public threshold;
     // Optional service configuration hash requirement
-    bytes32 public immutable configHash;
+    bytes32 public configHash;
     // ServiceRegistry contract address
-    address public immutable serviceRegistry;
+    address public serviceRegistry;
     // Approved multisig proxy hash
-    bytes32 public immutable proxyHash;
+    bytes32 public proxyHash;
     // Min staking duration
-    uint256 public immutable minStakingDuration;
+    uint256 public minStakingDuration;
     // Max allowed inactivity period
-    uint256 public immutable maxInactivityDuration;
+    uint256 public maxInactivityDuration;
 
     // Epoch counter
     uint256 public epochCounter;
@@ -209,11 +212,16 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     // Set of currently staking serviceIds
     uint256[] public setServiceIds;
 
-    /// @dev ServiceStakingBase constructor.
+    /// @dev ServiceStakingBase initialization.
     /// @param _stakingParams Service staking parameters.
     /// @param _serviceRegistry ServiceRegistry contract address.
     /// @param _proxyHash Approved multisig proxy hash.
-    constructor(StakingParams memory _stakingParams, address _serviceRegistry, bytes32 _proxyHash) {
+    function _initialize(StakingParams memory _stakingParams, address _serviceRegistry, bytes32 _proxyHash) internal {
+        // Double initialization check
+        if (serviceRegistry != address(0)) {
+            revert AlreadyInitialized();
+        }
+        
         // Initial checks
         if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
             _stakingParams.livenessPeriod == 0 || _stakingParams.livenessRatio == 0 ||

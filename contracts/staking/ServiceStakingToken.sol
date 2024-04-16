@@ -41,25 +41,26 @@ error ValueLowerThan(uint256 provided, uint256 expected);
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract ServiceStakingToken is ServiceStakingBase {
     // ServiceRegistryTokenUtility address
-    address public immutable serviceRegistryTokenUtility;
+    address public serviceRegistryTokenUtility;
     // Security token address for staking corresponding to the service deposit token
-    address public immutable stakingToken;
+    address public stakingToken;
 
-    /// @dev ServiceStakingToken constructor.
+    /// @dev ServiceStakingToken initialization.
     /// @param _stakingParams Service staking parameters.
     /// @param _serviceRegistry ServiceRegistry contract address.
     /// @param _serviceRegistryTokenUtility ServiceRegistryTokenUtility contract address.
     /// @param _stakingToken Address of a service staking token.
     /// @param _proxyHash Approved multisig proxy hash.
-    constructor(
+    function initialize(
         StakingParams memory _stakingParams,
         address _serviceRegistry,
         address _serviceRegistryTokenUtility,
         address _stakingToken,
         bytes32 _proxyHash
-    )
-        ServiceStakingBase(_stakingParams, _serviceRegistry, _proxyHash)
+    ) external
     {
+        _initialize(_stakingParams, _serviceRegistry, _proxyHash);
+
         // Initial checks
         if (_stakingToken == address(0) || _serviceRegistryTokenUtility == address(0)) {
             revert ZeroAddress();

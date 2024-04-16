@@ -14,6 +14,7 @@ import {OperatorWhitelist} from "../contracts/utils/OperatorWhitelist.sol";
 import {GnosisSafeMultisig} from "../contracts/multisigs/GnosisSafeMultisig.sol";
 import "../contracts/staking/ServiceStakingNativeToken.sol";
 import {ServiceStakingToken} from "../contracts/staking/ServiceStakingToken.sol";
+import {ServiceStakingFactory} from "../contracts/staking/ServiceStakingFactory.sol";
 import {SafeNonceLib} from "../contracts/test/SafeNonceLib.sol";
 
 contract BaseSetup is Test {
@@ -27,8 +28,11 @@ contract BaseSetup is Test {
     GnosisSafeProxy internal gnosisSafeProxy;
     GnosisSafeProxyFactory internal gnosisSafeProxyFactory;
     GnosisSafeMultisig internal gnosisSafeMultisig;
+    ServiceStakingNativeToken internal serviceStakingNativeTokenImplementation;
     ServiceStakingNativeToken internal serviceStakingNativeToken;
+    ServiceStakingToken internal serviceStakingTokenImplementation;
     ServiceStakingToken internal serviceStakingToken;
+    ServiceStakingFactory internal serviceStakingFactory;
     SafeNonceLib internal safeNonceLib;
 
     address payable[] internal users;
@@ -106,14 +110,27 @@ contract BaseSetup is Test {
         // Get the multisig proxy bytecode hash
         bytes32 multisigProxyHash = keccak256(address(gnosisSafeProxy).code);
 
+        // Deploy service staking factory
+        serviceStakingFactory = new ServiceStakingFactory();
+
         // Deploy service staking native token and arbitrary ERC20 token
         ServiceStakingBase.StakingParams memory stakingParams = ServiceStakingBase.StakingParams(maxNumServices,
             rewardsPerSecond, minStakingDeposit, minNumStakingPeriods, maxNumInactivityPeriods, livenessPeriod,
             livenessRatio, numAgentInstances, emptyArray, 0, bytes32(0));
-        serviceStakingNativeToken = new ServiceStakingNativeToken(stakingParams, address(serviceRegistry),
-            multisigProxyHash);
-        serviceStakingToken = new ServiceStakingToken(stakingParams, address(serviceRegistry), address(serviceRegistryTokenUtility),
-            address(token), multisigProxyHash);
+        serviceStakingNativeTokenImplementation = new ServiceStakingNativeToken();
+        serviceStakingTokenImplementation = new ServiceStakingToken();
+
+        // Initialization payload and deployment of serviceStakingNativeToken
+        bytes memory initPayload = abi.encodeWithSelector(serviceStakingNativeTokenImplementation.initialize.selector,
+            stakingParams, address(serviceRegistry), multisigProxyHash);
+        serviceStakingNativeToken = ServiceStakingNativeToken(serviceStakingFactory.createServiceStakingInstance(
+            address(serviceStakingNativeTokenImplementation), initPayload));
+
+        // Initialization payload and deployment of serviceStakingToken
+        initPayload = abi.encodeWithSelector(serviceStakingTokenImplementation.initialize.selector,
+            stakingParams, address(serviceRegistry), address(serviceRegistryTokenUtility), address(token), multisigProxyHash);
+        serviceStakingToken = ServiceStakingToken(serviceStakingFactory.createServiceStakingInstance(
+            address(serviceStakingTokenImplementation), initPayload));
 
         // Whitelist multisig implementations
         serviceRegistry.changeMultisigPermission(address(gnosisSafeMultisig), true);

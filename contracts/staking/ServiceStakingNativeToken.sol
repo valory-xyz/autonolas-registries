@@ -8,13 +8,13 @@ import {ServiceStakingBase} from "./ServiceStakingBase.sol";
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract ServiceStakingNativeToken is ServiceStakingBase {
-    /// @dev ServiceStakingNativeToken constructor.
+    /// @dev ServiceStakingNativeToken initialization.
     /// @param _stakingParams Service staking parameters.
     /// @param _serviceRegistry ServiceRegistry contract address.
     /// @param _proxyHash Approved multisig proxy hash.
-    constructor(StakingParams memory _stakingParams, address _serviceRegistry, bytes32 _proxyHash)
-        ServiceStakingBase(_stakingParams, _serviceRegistry, _proxyHash)
-    {}
+    function initialize(StakingParams memory _stakingParams, address _serviceRegistry, bytes32 _proxyHash) external {
+        _initialize(_stakingParams, _serviceRegistry, _proxyHash);
+    }
 
     /// @dev Withdraws the reward amount to a service owner.
     /// @param to Address to.
