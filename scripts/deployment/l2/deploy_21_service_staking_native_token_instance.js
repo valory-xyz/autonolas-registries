@@ -14,7 +14,11 @@ async function main() {
     const gasPriceInGwei = parsedData.gasPriceInGwei;
     const serviceStakingParams = parsedData.serviceStakingParams;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
+    const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
+    const olasAddress = parsedData.olasAddress;
     const multisigProxyHash130 = parsedData.multisigProxyHash130;
+    const serviceStakingNativeTokenAddress = parsedData.serviceStakingNativeTokenAddress;
+    const serviceStakingFactoryAddress = parsedData.serviceStakingFactoryAddress;
 
     let networkURL = parsedData.networkURL;
     if (providerName === "polygon") {
@@ -43,30 +47,37 @@ async function main() {
     const deployer = await EOA.getAddress();
     console.log("EOA is:", deployer);
 
+    // Get ServiceStakingFactory contract instance
+    const serviceStakingFactory = await ethers.getContractAt("ServiceStakingFactory", serviceStakingFactoryAddress);
+    // Get ServiceStakingToken omplementation contract instance
+    const serviceStakingNativeToken = await ethers.getContractAt("ServiceStakingToken", serviceStakingNativeTokenAddress);
+
     // Transaction signing and execution
-    console.log("17. EOA to deploy ServiceStakingNativeToken");
+    console.log("21. EOA to deploy ServiceStakingNativeTokenInstance via the ServiceStakingFactory");
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
-    const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
-    console.log("You are signing the following transaction: ServiceStakingNativeToken.connect(EOA).deploy()");
-    const serviceStakingNativeToken = await ServiceStakingNativeToken.connect(EOA).deploy({ gasPrice });
-    const result = await serviceStakingNativeToken.deployed();
+    console.log("You are signing the following transaction: ServiceStakingFactory.connect(EOA).createServiceStakingInstance()");
+    const initPayload = serviceStakingNativeToken.interface.encodeFunctionData("initialize", [serviceStakingParams,
+        serviceRegistryAddress, multisigProxyHash130]);
+    const serviceStakingNativeTokenInstanceAddress = await serviceStakingFactory.callStatic.createServiceStakingInstance(
+        serviceStakingNativeTokenAddress, initPayload);
+    const result = await serviceStakingFactory.createServiceStakingInstance(serviceStakingNativeTokenAddress, initPayload);
 
     // Transaction details
-    console.log("Contract deployment: ServiceStakingNativeToken");
-    console.log("Contract address:", serviceStakingNativeToken.address);
-    console.log("Transaction:", result.deployTransaction.hash);
-    
+    console.log("Contract deployment: ServiceStakingFactory");
+    console.log("Contract address:", serviceStakingFactory.address);
+    console.log("Transaction:", result.hash);
+
     // Wait half a minute for the transaction completion
     await new Promise(r => setTimeout(r, 30000));
 
     // Writing updated parameters back to the JSON file
-    parsedData.serviceStakingNativeTokenAddress = serviceStakingNativeToken.address;
+    parsedData.serviceStakingNativeTokenInstanceAddress = serviceStakingNativeTokenInstanceAddress;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
 
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --network " + providerName + " " + serviceStakingNativeToken.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_21_service_staking_native_token_instance.js --network " + providerName + " " + serviceStakingNativeToken.address, { encoding: "utf-8" });
     }
 }
 

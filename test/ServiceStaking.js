@@ -52,6 +52,7 @@ describe("ServiceStaking", function () {
         threshold: 0,
         configHash: bytes32Zero
     };
+    "maxNumInactivityPeriods":"3","livenessPeriod":"86400","livenessRatio":"700000000000000","numAgentInstances":"1","agentIds":["12"],"threshold":"0","configHash":"0x0000000000000000000000000000000000000000000000000000000000000000"
     const maxInactivity = serviceParams.maxNumInactivityPeriods * livenessPeriod + 1;
 
     beforeEach(async function () {

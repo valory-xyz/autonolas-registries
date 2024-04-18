@@ -24,12 +24,12 @@ async function main() {
             console.log("set ALCHEMY_API_KEY_MATIC env variable");
         }
         networkURL += process.env.ALCHEMY_API_KEY_MATIC;
-    } else if (providerName === "polygonMumbai") {
-        if (!process.env.ALCHEMY_API_KEY_MUMBAI) {
-            console.log("set ALCHEMY_API_KEY_MUMBAI env variable");
+    } else if (providerName === "polygonAmoy") {
+        if (!process.env.ALCHEMY_API_KEY_AMOY) {
+            console.log("set ALCHEMY_API_KEY_AMOY env variable");
             return;
         }
-        networkURL += process.env.ALCHEMY_API_KEY_MUMBAI;
+        networkURL += process.env.ALCHEMY_API_KEY_AMOY;
     }
 
     const provider = new ethers.providers.JsonRpcProvider(networkURL);
@@ -50,8 +50,7 @@ async function main() {
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
     const ServiceStakingToken = await ethers.getContractFactory("ServiceStakingToken");
     console.log("You are signing the following transaction: ServiceStakingToken.connect(EOA).deploy()");
-    const serviceStakingToken = await ServiceStakingToken.connect(EOA).deploy(serviceStakingParams,
-        serviceRegistryAddress, serviceRegistryTokenUtilityAddress, olasAddress, multisigProxyHash130, { gasPrice });
+    const serviceStakingToken = await ServiceStakingToken.connect(EOA).deploy({ gasPrice });
     const result = await serviceStakingToken.deployed();
 
     // Transaction details
@@ -68,7 +67,7 @@ async function main() {
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_18_service_staking_token.js --network " + providerName + " " + serviceStakingToken.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --network " + providerName + " " + serviceStakingToken.address, { encoding: "utf-8" });
     }
 }
 
