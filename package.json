@@ -47,6 +47,6 @@
     "eth-permit": "^0.2.3",
     "ethereum-sources-downloader": "^0.1.21",
     "solhint": "^3.6.2",
-    "@arbitrum/sdk": "^v3.1.9"
+    "@arbitrum/sdk": "^v3.3.3"
   }
 }

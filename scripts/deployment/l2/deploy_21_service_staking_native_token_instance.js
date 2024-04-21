@@ -63,8 +63,8 @@ async function main() {
     const result = await serviceStakingFactory.createServiceStakingInstance(serviceStakingNativeTokenAddress, initPayload);
 
     // Transaction details
-    console.log("Contract deployment: ServiceStakingFactory");
-    console.log("Contract address:", serviceStakingFactory.address);
+    console.log("Contract deployment: ServiceStakingProxy");
+    console.log("Contract address:", serviceStakingNativeTokenInstanceAddress);
     console.log("Transaction:", result.hash);
 
     // Wait half a minute for the transaction completion
@@ -77,7 +77,7 @@ async function main() {
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_21_service_staking_native_token_instance.js --network " + providerName + " " + serviceStakingNativeToken.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_21_service_staking_native_token_instance.js --network " + providerName + " " + serviceStakingNativeTokenInstanceAddress, { encoding: "utf-8" });
     }
 }
 
