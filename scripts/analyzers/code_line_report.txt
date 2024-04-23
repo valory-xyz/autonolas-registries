@@ -1,0 +1,10 @@
+      | Contract                                                                                                                 |   CodeLine |
+----------------------------------------------------------------------------------------------------------------------------------------------
+    1 | ServiceStakingBase.sol                                                                                                   |        474 |
+    2 | ServiceStakingFactory.sol                                                                                                |         99 |
+    3 | ServiceStakingNativeToken.sol                                                                                            |         32 |
+    4 | ServiceStakingProxy.sol                                                                                                  |         31 |
+    5 | ServiceStakingToken.sol                                                                                                  |         71 |
+    6 | ServiceStakingVerifier.sol                                                                                               |         30 |
+----------------------------------------------------------------------------------------------------------------------------------------------
+    6 | All Registries contract                                                                                                  |        737 |
