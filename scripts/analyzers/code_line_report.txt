@@ -6,5 +6,7 @@
     4 | ServiceStakingProxy.sol                                                                                                  |         31 |
     5 | ServiceStakingToken.sol                                                                                                  |         71 |
     6 | ServiceStakingVerifier.sol                                                                                               |         30 |
+    7 | contracts/interfaces/IErrorsRegistries.sol                                                                               |         28 |
+    8 | contracts/interfaces/IToken.sol                                                                                          |         11 |
 ----------------------------------------------------------------------------------------------------------------------------------------------
-    6 | All Registries contract                                                                                                  |        737 |
+    8 | All Registries contract                                                                                                  |        776 |
