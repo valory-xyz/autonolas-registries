@@ -54,6 +54,9 @@ for element in "${all_imports_conc[@]}"; do
     fi
 done
 
+#  Note that for registries it is not required an extra check on equal interface because analyzed contracts are all in the same repo
+# so we are not having imports "./..." and "../..." but just "../..."
+
 # New array to store unique combinations of "import" and "interface"
 all_imports_conc_n_d=()
 # First we need to concatenated import-interface pairs
