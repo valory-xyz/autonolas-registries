@@ -28,6 +28,7 @@ describe("ServiceStaking", function () {
     let agentInstances;
     let bytecodeHash;
     const AddressZero = ethers.constants.AddressZero;
+    const HashZero = ethers.constants.HashZero;
     const defaultHash = "0x" + "5".repeat(64);
     const bytes32Zero = "0x" + "0".repeat(64);
     const regDeposit = 1000;
@@ -39,7 +40,7 @@ describe("ServiceStaking", function () {
     const livenessPeriod = 10; // Ten seconds
     const initSupply = "5" + "0".repeat(26);
     const payload = "0x";
-    const serviceParams = {
+    let serviceParams = {
         maxNumServices: 3,
         rewardsPerSecond: "1" + "0".repeat(15),
         minStakingDeposit: 10,
@@ -50,7 +51,10 @@ describe("ServiceStaking", function () {
         numAgentInstances: 1,
         agentIds: [],
         threshold: 0,
-        configHash: bytes32Zero
+        configHash: HashZero,
+        proxyHash: HashZero,
+        serviceRegistry: AddressZero,
+        activityChecker: AddressZero
     };
     "maxNumInactivityPeriods":"3","livenessPeriod":"86400","livenessRatio":"700000000000000","numAgentInstances":"1","agentIds":["12"],"threshold":"0","configHash":"0x0000000000000000000000000000000000000000000000000000000000000000"
     const maxInactivity = serviceParams.maxNumInactivityPeriods * livenessPeriod + 1;

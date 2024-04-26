@@ -166,10 +166,10 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256 threshold;
         // Optional service configuration hash requirement
         bytes32 configHash;
-        // ServiceRegistry contract address
-        address serviceRegistry;
         // Approved multisig proxy hash
         bytes32 proxyHash;
+        // ServiceRegistry contract address
+        address serviceRegistry;
         // Service activity checker address
         address activityChecker;
     }
@@ -188,6 +188,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
     // Contract version
     string public constant VERSION = "0.1.0";
+    // Staking parameters for initialization
     // Maximum number of staking services
     uint256 public maxNumServices;
     // Rewards per second
@@ -205,17 +206,18 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     uint256 public threshold;
     // Optional service configuration hash requirement
     bytes32 public configHash;
-    // ServiceRegistry contract address
-    address public serviceRegistry;
     // Approved multisig proxy hash
     bytes32 public proxyHash;
+    // ServiceRegistry contract address
+    address public serviceRegistry;
     // Service activity checker address
     address public activityChecker;
+
+    // The rest of state variables
     // Min staking duration
     uint256 public minStakingDuration;
     // Max allowed inactivity period
     uint256 public maxInactivityDuration;
-
     // Epoch counter
     uint256 public epochCounter;
     // Token / ETH balance
