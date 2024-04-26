@@ -146,6 +146,11 @@ contract ServiceStakingFactory is IErrorsRegistries {
             }
         }
 
+        // Check that the created proxy instance does not violate defined limits
+        if (localVerifier != address (0) && !IVerifier(localVerifier).verifyInstance(instance)) {
+            revert();
+        }
+
         mapInstanceImplementations[instance] = implementation;
         nonce = localNonce + 1;
 

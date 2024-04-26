@@ -265,6 +265,11 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             revert ZeroAddress();
         }
 
+        // Check for the Activity Checker to be the contract
+        if (_stakingParams.activityChecker.code.length == 0) {
+            revert ZeroValue();
+        }
+
         // Assign all the required parameters
         maxNumServices = _stakingParams.maxNumServices;
         rewardsPerSecond = _stakingParams.rewardsPerSecond;

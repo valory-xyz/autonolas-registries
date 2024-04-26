@@ -7,6 +7,7 @@ interface IERC165 {
 
 interface IServiceStaking{
     function rewardsPerSecond() external view returns (uint256);
+    function stakingToken() external view returns (address);
 }
 
 /// @title ServiceStakingVerifier - Smart contract for service staking contracts verification
@@ -14,11 +15,17 @@ interface IServiceStaking{
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract ServiceStakingVerifier {
+    address public immutable olas;
     uint256 public rewardsPerSecondLimit;
 
-    constructor(uint256 _rewardsPerSecondLimit) {
+    constructor(address _olas, uint256 _rewardsPerSecondLimit) {
+        // TODO: verifications
+        olas = _olas;
         rewardsPerSecondLimit = _rewardsPerSecondLimit;
     }
+
+    // TODO Whitelisting of implementation for now in order to follow exact protocol business logic
+    // TODO Being able to cancel whitelisting
 
     /// @dev Verifies a service staking implementation contract.
     /// @param implementation Service staking implementation contract address.
@@ -43,6 +50,11 @@ contract ServiceStakingVerifier {
         uint256 rewardsPerSecond = IServiceStaking(instance).rewardsPerSecond();
         if (rewardsPerSecondLimit >= rewardsPerSecond) {
             success = true;
+        }
+
+        address token = IServiceStaking(instance).stakingToken();
+        if (token != olas) {
+            revert();
         }
     }
 }
