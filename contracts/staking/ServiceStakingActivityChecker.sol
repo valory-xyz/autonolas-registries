@@ -15,7 +15,7 @@ error ZeroValue();
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-contract ServiceStakingActiveChecker {
+contract ServiceStakingActivityChecker {
     // Liveness ratio in the format of 1e18
     uint256 public immutable livenessRatio;
 
