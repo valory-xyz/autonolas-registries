@@ -85,6 +85,9 @@ contract ServiceStakingFactory is IErrorsRegistries {
         emit VerifierUpdated(newVerifier);
     }
 
+    /// @dev Creates a service staking contract instance.
+    /// @param implementation Service staking blanc implementation address.
+    /// @param initPayload Initialization payload.
     function createServiceStakingInstance(
         address implementation,
         bytes memory initPayload
@@ -149,6 +152,9 @@ contract ServiceStakingFactory is IErrorsRegistries {
         emit InstanceCreated(instance, implementation);
     }
 
+    /// @dev Verifies a service staking contract instance.
+    /// @param instance Service staking proxy instance.
+    /// @return success True, if verification is successful.
     function verifyInstance(address instance) external view returns (bool success) {
         address implementation = mapInstanceImplementations[instance];
         if (implementation == address(0)) {

@@ -166,6 +166,12 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256 threshold;
         // Optional service configuration hash requirement
         bytes32 configHash;
+        // ServiceRegistry contract address
+        address serviceRegistry;
+        // Approved multisig proxy hash
+        bytes32 proxyHash;
+        // Service activity checker address
+        address activityChecker;
     }
 
     event ServiceStaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
@@ -203,12 +209,12 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     address public serviceRegistry;
     // Approved multisig proxy hash
     bytes32 public proxyHash;
+    // Service activity checker address
+    address public activityChecker;
     // Min staking duration
     uint256 public minStakingDuration;
     // Max allowed inactivity period
     uint256 public maxInactivityDuration;
-    // Service activity checker address
-    address public activityChecker;
 
     // Epoch counter
     uint256 public epochCounter;
@@ -227,13 +233,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
     /// @dev ServiceStakingBase initialization.
     /// @param _stakingParams Service staking parameters.
-    /// @param _serviceRegistry ServiceRegistry contract address.
-    /// @param _proxyHash Approved multisig proxy hash.
     function _initialize(
-        StakingParams memory _stakingParams,
-        address _serviceRegistry,
-        bytes32 _proxyHash,
-        address _activityChecker
+        StakingParams memory _stakingParams
     ) internal {
         // Double initialization check
         if (serviceRegistry != address(0)) {
@@ -258,7 +259,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         if (_stakingParams.minStakingDeposit < 2) {
             revert LowerThan(_stakingParams.minStakingDeposit, 2);
         }
-        if (_serviceRegistry == address(0) || _activityChecker == address(0)) {
+        if (_stakingParams.serviceRegistry == address(0) || _stakingParams.activityChecker == address(0)) {
             revert ZeroAddress();
         }
 
@@ -269,8 +270,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         maxNumInactivityPeriods = _stakingParams.maxNumInactivityPeriods;
         livenessPeriod = _stakingParams.livenessPeriod;
         numAgentInstances = _stakingParams.numAgentInstances;
-        serviceRegistry = _serviceRegistry;
-        activityChecker = _activityChecker;
+        serviceRegistry = _stakingParams.serviceRegistry;
+        activityChecker = _stakingParams.activityChecker;
 
         // Assign optional parameters
         threshold = _stakingParams.threshold;
@@ -288,12 +289,12 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         // Check for the multisig proxy bytecode hash value
-        if (_proxyHash == bytes32(0)) {
+        if (_stakingParams.proxyHash == bytes32(0)) {
             revert ZeroValue();
         }
 
         // Record provided multisig proxy bytecode hash
-        proxyHash = _proxyHash;
+        proxyHash = _stakingParams.proxyHash;
 
         // Calculate min staking duration
         minStakingDuration = _stakingParams.minNumStakingPeriods * livenessPeriod;

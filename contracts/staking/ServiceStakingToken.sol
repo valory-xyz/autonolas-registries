@@ -47,21 +47,15 @@ contract ServiceStakingToken is ServiceStakingBase {
 
     /// @dev ServiceStakingToken initialization.
     /// @param _stakingParams Service staking parameters.
-    /// @param _serviceRegistry ServiceRegistry contract address.
     /// @param _serviceRegistryTokenUtility ServiceRegistryTokenUtility contract address.
     /// @param _stakingToken Address of a service staking token.
-    /// @param _proxyHash Approved multisig proxy hash.
-    /// @param _activityChecker Service activity checker address.
     function initialize(
         StakingParams memory _stakingParams,
-        address _serviceRegistry,
         address _serviceRegistryTokenUtility,
-        address _stakingToken,
-        bytes32 _proxyHash,
-        address _activityChecker
+        address _stakingToken
     ) external
     {
-        _initialize(_stakingParams, _serviceRegistry, _proxyHash, _activityChecker);
+        _initialize(_stakingParams);
 
         // Initial checks
         if (_stakingToken == address(0) || _serviceRegistryTokenUtility == address(0)) {
