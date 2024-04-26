@@ -2,13 +2,28 @@
 pragma solidity ^0.8.23;
 
 import {ERC721TokenReceiver} from "../../lib/solmate/src/tokens/ERC721.sol";
-import "../interfaces/IErrorsRegistries.sol";
+import {IErrorsRegistries} from "../interfaces/IErrorsRegistries.sol";
 
-// Multisig interface
-interface IMultisig {
-    /// @dev Gets the multisig nonce.
-    /// @return Multisig nonce.
-    function nonce() external view returns (uint256);
+interface IActivityChecker {
+    /// @dev Gets service multisig nonces.
+    /// @param multisig Service multisig address.
+    /// @return nonces Set of a single service multisig nonce.
+    function getMultisigNonces(address multisig) external view returns (uint256[] memory nonces);
+
+    /// @dev Checks if the service multisig liveness ratio passes the defined liveness threshold.
+    /// @notice The formula for calculating the ratio is the following:
+    ///         currentNonce - service multisig nonce at time now (block.timestamp);
+    ///         lastNonce - service multisig nonce at the previous checkpoint or staking time (tsStart);
+    ///         ratio = (currentNonce - lastNonce) / (block.timestamp - tsStart).
+    /// @param curNonces Current service multisig set of a single nonce.
+    /// @param lastNonces Last service multisig set of a single nonce.
+    /// @param ts Time difference between current and last timestamps.
+    /// @return ratioPass True, if the liveness ratio passes the check.
+    function isRatioPass(
+        uint256[] memory curNonces,
+        uint256[] memory lastNonces,
+        uint256 ts
+    ) external view returns (bool ratioPass);
 }
 
 // Service Registry interface
@@ -143,8 +158,6 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256 maxNumInactivityPeriods;
         // Liveness period
         uint256 livenessPeriod;
-        // Liveness ratio in the format of 1e18
-        uint256 livenessRatio;
         // Number of agent instances in the service
         uint256 numAgentInstances;
         // Optional agent Ids requirement
@@ -180,8 +193,6 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     uint256 public maxNumInactivityPeriods;
     // Liveness period
     uint256 public livenessPeriod;
-    // Liveness ratio in the format of 1e18
-    uint256 public livenessRatio;
     // Number of agent instances in the service
     uint256 public numAgentInstances;
     // Optional service multisig threshold requirement
@@ -196,6 +207,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     uint256 public minStakingDuration;
     // Max allowed inactivity period
     uint256 public maxInactivityDuration;
+    // Service activity checker address
+    address public activityChecker;
 
     // Epoch counter
     uint256 public epochCounter;
@@ -216,7 +229,12 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     /// @param _stakingParams Service staking parameters.
     /// @param _serviceRegistry ServiceRegistry contract address.
     /// @param _proxyHash Approved multisig proxy hash.
-    function _initialize(StakingParams memory _stakingParams, address _serviceRegistry, bytes32 _proxyHash) internal {
+    function _initialize(
+        StakingParams memory _stakingParams,
+        address _serviceRegistry,
+        bytes32 _proxyHash,
+        address _activityChecker
+    ) internal {
         // Double initialization check
         if (serviceRegistry != address(0)) {
             revert AlreadyInitialized();
@@ -224,9 +242,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         
         // Initial checks
         if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
-            _stakingParams.livenessPeriod == 0 || _stakingParams.livenessRatio == 0 ||
-            _stakingParams.numAgentInstances == 0 || _stakingParams.minNumStakingPeriods == 0 ||
-            _stakingParams.maxNumInactivityPeriods == 0) {
+            _stakingParams.livenessPeriod == 0 || _stakingParams.numAgentInstances == 0 ||
+            _stakingParams.minNumStakingPeriods == 0 || _stakingParams.maxNumInactivityPeriods == 0) {
             revert ZeroValue();
         }
 
@@ -241,7 +258,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         if (_stakingParams.minStakingDeposit < 2) {
             revert LowerThan(_stakingParams.minStakingDeposit, 2);
         }
-        if (_serviceRegistry == address(0)) {
+        if (_serviceRegistry == address(0) || _activityChecker == address(0)) {
             revert ZeroAddress();
         }
 
@@ -251,9 +268,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         minStakingDeposit = _stakingParams.minStakingDeposit;
         maxNumInactivityPeriods = _stakingParams.maxNumInactivityPeriods;
         livenessPeriod = _stakingParams.livenessPeriod;
-        livenessRatio = _stakingParams.livenessRatio;
         numAgentInstances = _stakingParams.numAgentInstances;
         serviceRegistry = _serviceRegistry;
+        activityChecker = _activityChecker;
 
         // Assign optional parameters
         threshold = _stakingParams.threshold;
@@ -389,7 +406,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         // ServiceInfo struct will be an empty one since otherwise the safeTransferFrom above would fail
         sInfo.multisig = service.multisig;
         sInfo.owner = msg.sender;
-        uint256[] memory nonces = _getMultisigNonces(service.multisig);
+        // This function might revert if it's incorrectly implemented, however this is not a protocol's responsibility
+        // It is safe to revert in this place
+        uint256[] memory nonces = IActivityChecker(activityChecker).getMultisigNonces(service.multisig);
         sInfo.nonces = nonces;
         sInfo.tsStart = block.timestamp;
 
@@ -402,34 +421,37 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         emit ServiceStaked(epochCounter, serviceId, msg.sender, service.multisig, nonces);
     }
 
-    /// @dev Gets service multisig nonces.
-    /// @param multisig Service multisig address.
-    /// @return nonces Set of a single service multisig nonce.
-    function _getMultisigNonces(address multisig) internal view virtual returns (uint256[] memory nonces) {
-        nonces = new uint256[](1);
-        nonces[0] = IMultisig(multisig).nonce();
-    }
-
-    /// @dev Checks if the service multisig liveness ratio passes the defined liveness threshold.
-    /// @notice The formula for calculating the ratio is the following:
-    ///         currentNonce - service multisig nonce at time now (block.timestamp);
-    ///         lastNonce - service multisig nonce at the previous checkpoint or staking time (tsStart);
-    ///         ratio = (currentNonce - lastNonce) / (block.timestamp - tsStart).
-    /// @param curNonces Current service multisig set of a single nonce.
-    /// @param lastNonces Last service multisig set of a single nonce.
+    /// @dev Checks the ratio pass based on external activity checker implementation.
+    /// @param multisig Multisig address.
+    /// @param lastNonces Last checked service multisig nonces.
     /// @param ts Time difference between current and last timestamps.
-    /// @return ratioPass True, if the liveness ratio passes the check.
-    function _isRatioPass(
-        uint256[] memory curNonces,
+    /// @return ratioPass True, if the defined nonce ratio passes the check.
+    /// @return currentNonces Current multisig nonces.
+    function _checkRatioPass(
+        address multisig,
         uint256[] memory lastNonces,
         uint256 ts
-    ) internal view virtual returns (bool ratioPass)
+    ) internal view returns (bool ratioPass, uint256[] memory currentNonces)
     {
-        // If the checkpoint was called in the exact same block, the ratio is zero
-        // If the current nonce is not greater than the last nonce, the ratio is zero
-        if (ts > 0 && curNonces[0] > lastNonces[0]) {
-            uint256 ratio = ((curNonces[0] - lastNonces[0]) * 1e18) / ts;
-            ratioPass = (ratio >= livenessRatio);
+        // Get current service multisig nonce
+        // This is a low level call since it must never revert
+        (bool success, bytes memory returnData) = activityChecker.staticcall(abi.encodeWithSelector(
+            IActivityChecker.getMultisigNonces.selector, multisig));
+
+        // If the function call was successful, check the return value
+        // The return data length must be the exact number of full slots
+        if (success && returnData.length > 63 && (returnData.length % 32 == 0)) {
+            // Parse nonces
+            currentNonces = abi.decode(returnData, (uint256[]));
+
+            // Get the ratio pass activity check
+            (success, returnData) = activityChecker.staticcall(abi.encodeWithSelector(
+                IActivityChecker.isRatioPass.selector, currentNonces, lastNonces, ts));
+
+            // The return data must match the size of bool
+            if (success && returnData.length == 1) {
+                ratioPass = abi.decode(returnData, (bool));
+            }
         }
     }
 
@@ -472,11 +494,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 // Get current service Id
                 serviceIds[i] = setServiceIds[i];
 
+                // TODO Check if storage is needed
                 // Get the service info
                 ServiceInfo storage sInfo = mapServiceInfo[serviceIds[i]];
-
-                // Get current service multisig nonce
-                serviceNonces[i] = _getMultisigNonces(sInfo.multisig);
 
                 // Calculate the liveness nonce ratio
                 // Get the last service checkpoint: staking start time or the global checkpoint timestamp
@@ -490,7 +510,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 // Calculate the liveness ratio in 1e18 value
                 // This subtraction is always positive or zero, as the last checkpoint is at most block.timestamp
                 ts = block.timestamp - serviceCheckpoint;
-                bool ratioPass = _isRatioPass(serviceNonces[i], sInfo.nonces, ts);
+
+                bool ratioPass;
+                (ratioPass, serviceNonces[i]) = _checkRatioPass(sInfo.multisig, sInfo.nonces, ts);
 
                 // Record the reward for the service if it has provided enough transactions
                 if (ratioPass) {
