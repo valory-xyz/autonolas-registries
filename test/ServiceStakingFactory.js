@@ -117,11 +117,13 @@ describe("ServiceStaking", function () {
             const instances = new Array(2);
 
             // Create a first instance
-            instances[0] = await serviceStakingFactory.callStatic.createServiceStakingInstance(serviceStaking.address, initPayload);
+            instances[0] = await serviceStakingFactory.callStatic.createServiceStakingInstance(serviceStaking.address,
+                initPayload);
             await serviceStakingFactory.createServiceStakingInstance(serviceStaking.address, initPayload);
 
             // Create a second instance
-            instances[1] = await serviceStakingFactory.callStatic.createServiceStakingInstance(serviceStaking.address, initPayload);
+            instances[1] = await serviceStakingFactory.callStatic.createServiceStakingInstance(serviceStaking.address,
+                initPayload);
             await serviceStakingFactory.createServiceStakingInstance(serviceStaking.address, initPayload);
 
             // Make sure instances have different addresses
@@ -151,6 +153,8 @@ describe("ServiceStaking", function () {
             const initPayload = serviceStaking.interface.encodeFunctionData("initialize", [token.address]);
             const instance = await serviceStakingFactory.callStatic.createServiceStakingInstance(
                 serviceStaking.address, initPayload);
+            const instanceAddress = await serviceStakingFactory.getProxyAddress(serviceStaking.address);
+            expect(instanceAddress).to.equal(instance);
             await serviceStakingFactory.createServiceStakingInstance(serviceStaking.address, initPayload);
 
             // Check the parameter by the verifier
@@ -255,29 +259,6 @@ describe("ServiceStaking", function () {
             await expect(
                 serviceStakingFactory.createServiceStakingInstance(serviceStaking.address, initPayload)
             ).to.be.revertedWithCustomError(serviceStakingFactory, "UnverifiedProxy");
-            return;
-
-            // Check the parameter by the verifier
-            const proxy = await ethers.getContractAt("MockServiceStaking", instance);
-            let success = await serviceStakingFactory.verifyInstance(instance);
-            expect(success).to.be.true;
-
-            // Try to check the instance without implementation
-            await expect(
-                serviceStakingFactory.verifyInstance(AddressZero)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "InstanceHasNoImplementation");
-
-            // Check the instance when the parameter is changed
-            await proxy.changeRewardsPerSecond();
-            success = await serviceStakingFactory.verifyInstance(instance);
-            expect(success).to.be.false;
-
-            // Set verifier back to the zero address
-            await serviceStakingFactory.changeVerifier(AddressZero);
-
-            // Verify again without a verifier and it must pass
-            success = await serviceStakingFactory.verifyInstance(instance);
-            expect(success).to.be.true;
         });
     });
 });

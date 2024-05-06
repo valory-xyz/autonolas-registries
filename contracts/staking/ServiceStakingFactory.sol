@@ -93,7 +93,33 @@ contract ServiceStakingFactory is IErrorsRegistries {
         emit VerifierUpdated(newVerifier);
     }
 
-    // TODO Pre-calculate the address function
+    /// @dev Calculates a new proxy address based on the deployment data and provided nonce.
+    /// @notice New address = first 20 bytes of keccak256(0xff + address(this) + s + keccak256(deploymentData)).
+    /// @param implementation Implementation contract address.
+    /// @param localNonce Nonce.
+    function getProxyAddressWithNonce(address implementation, uint256 localNonce) public view returns (address) {
+        // Get salt based on chain Id and nonce values
+        bytes32 salt = keccak256(abi.encodePacked(block.chainid, localNonce));
+
+        // Get the deployment data based on the proxy bytecode and the implementation address
+        bytes memory deploymentData = abi.encodePacked(type(ServiceStakingProxy).creationCode,
+            uint256(uint160(implementation)));
+
+        // Get the hash forming the contract address
+        bytes32 hash = keccak256(
+            abi.encodePacked(
+                bytes1(0xff), address(this), salt, keccak256(deploymentData)
+            )
+        );
+
+        return address(uint160(uint256(hash)));
+    }
+
+    /// @dev Calculates a new proxy address based on the deployment data and utilizing a current contract nonce.
+    /// @param implementation Implementation contract address.
+    function getProxyAddress(address implementation) external view returns (address) {
+        return getProxyAddressWithNonce(implementation, nonce);
+    }
 
     /// @dev Creates a service staking contract instance.
     /// @param implementation Service staking blanc implementation address.
@@ -130,8 +156,12 @@ contract ServiceStakingFactory is IErrorsRegistries {
         }
 
         uint256 localNonce = nonce;
+        // Get salt based on chain Id and nonce values
         bytes32 salt = keccak256(abi.encodePacked(block.chainid, localNonce));
-        bytes memory deploymentData = abi.encodePacked(type(ServiceStakingProxy).creationCode, uint256(uint160(implementation)));
+        // Get the deployment data based on the proxy bytecode and the implementation address
+        bytes memory deploymentData = abi.encodePacked(type(ServiceStakingProxy).creationCode,
+            uint256(uint160(implementation)));
+
         // solhint-disable-next-line no-inline-assembly
         assembly {
             instance := create2(0x0, add(0x20, deploymentData), mload(deploymentData), salt)

@@ -12,11 +12,6 @@ async function main() {
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
     const gasPriceInGwei = parsedData.gasPriceInGwei;
-    const serviceStakingParams = parsedData.serviceStakingParams;
-    const serviceRegistryAddress = parsedData.serviceRegistryAddress;
-    const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
-    const olasAddress = parsedData.olasAddress;
-    const multisigProxyHash130 = parsedData.multisigProxyHash130;
 
     let networkURL = parsedData.networkURL;
     if (providerName === "polygon") {

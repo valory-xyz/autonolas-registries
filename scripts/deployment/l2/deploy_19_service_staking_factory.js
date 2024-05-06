@@ -44,7 +44,8 @@ async function main() {
     console.log("19. EOA to deploy ServiceStakingFactory");
     const ServiceStakingFactory = await ethers.getContractFactory("ServiceStakingFactory");
     console.log("You are signing the following transaction: ServiceStakingFactory.connect(EOA).deploy()");
-    const serviceStakingFactory = await ServiceStakingFactory.connect(EOA).deploy();
+    const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
+    const serviceStakingFactory = await ServiceStakingFactory.connect(EOA).deploy({ gasPrice });
     const result = await serviceStakingFactory.deployed();
 
     // Transaction details

@@ -460,7 +460,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 IActivityChecker.isRatioPass.selector, currentNonces, lastNonces, ts));
 
             // The return data must match the size of bool
-            if (success && returnData.length == 1) {
+            if (success && returnData.length == 32) {
                 ratioPass = abi.decode(returnData, (bool));
             }
         }
@@ -792,7 +792,45 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         emit ServiceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward);
     }
 
-    // TODO claim
+    /// @dev Claims rewards for the service.
+    /// @param serviceId Service Id.
+    function claim(uint256 serviceId) external {
+        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+        // Check for the service ownership
+        if (msg.sender != sInfo.owner) {
+            revert OwnerOnly(msg.sender, sInfo.owner);
+        }
+
+        // Get the staking start time
+        // Note that if the service info exists, the service is staked or evicted, and thus start time is always valid
+        uint256 tsStart = sInfo.tsStart;
+
+        // Check that the service has staked long enough, or if there are no rewards left
+        uint256 ts = block.timestamp - tsStart;
+        if (ts <= minStakingDuration && availableRewards > 0) {
+            revert NotEnoughTimeStaked(serviceId, ts, minStakingDuration);
+        }
+
+        // TODO Check if sInfo needs to be re-referenced
+        // Call the checkpoint
+        checkpoint();
+
+        // Get the claimed service data
+        uint256 reward = sInfo.reward;
+        uint256[] memory nonces = sInfo.nonces;
+        address multisig = sInfo.multisig;
+
+        // Adjust start staking time
+        sInfo.tsStart = tsCheckpoint;
+
+        // Transfer accumulated rewards to the service multisig
+        if (reward > 0) {
+            sInfo.reward = 0;
+            _withdraw(multisig, reward);
+        }
+
+        emit ServiceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward);
+    }
 
     /// @dev Calculates service staking reward during the last checkpoint period.
     /// @param serviceId Service Id.

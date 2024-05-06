@@ -119,7 +119,7 @@ describe("ServiceStaking", function () {
 
         const ServiceStakingActivityChecker = await ethers.getContractFactory("ServiceStakingActivityChecker");
         serviceStakingActivityChecker = await ServiceStakingActivityChecker.deploy(livenessRatio);
-        await serviceStakingActivityChecker.deployed;
+        await serviceStakingActivityChecker.deployed();
         serviceParams.activityChecker = serviceStakingActivityChecker.address;
 
         const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
@@ -926,7 +926,7 @@ describe("ServiceStaking", function () {
             snapshot.restore();
         });
 
-        it.skip("Stake and unstake with the service activity", async function () {
+        it("Stake and unstake with the service activity", async function () {
             // Take a snapshot of the current state of the blockchain
             const snapshot = await helpers.takeSnapshot();
 
@@ -969,14 +969,13 @@ describe("ServiceStaking", function () {
             // Increase the time for the liveness period
             await helpers.time.increase(maxInactivity);
 
-            // Checking the nonce info (it is not updated as none of checkpoint or unstake were not called)
+            // Checking the nonce info (it is not updated as none of checkpoint or unstake were called)
             serviceInfo = await serviceStaking.getServiceInfo(serviceId);
             const lastLastNonce = serviceInfo.nonces[0];
             expect(lastLastNonce).to.equal(lastNonce);
 
             // Calculate service staking reward that must be greater than zero
             const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
-            console.log(reward);
             expect(reward).to.greaterThan(0);
 
             // Unstake the service
@@ -1509,7 +1508,7 @@ describe("ServiceStaking", function () {
 
             // Nonce is just 1 as there was 1 transaction
             const ratio = (10**18 * 1.0) / tsDiff;
-            expect(ratio).to.greaterThan(Number(serviceParams.livenessRatio));
+            expect(ratio).to.greaterThan(Number(livenessRatio));
 
             // Calculate service staking reward that must match the calculated reward
             const reward = await serviceStaking.calculateServiceStakingReward(serviceId);

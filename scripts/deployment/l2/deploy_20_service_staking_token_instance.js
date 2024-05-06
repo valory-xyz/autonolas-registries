@@ -11,7 +11,6 @@ async function main() {
     const useLedger = parsedData.useLedger;
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
-    const gasPriceInGwei = parsedData.gasPriceInGwei;
     const serviceStakingParams = parsedData.serviceStakingParams;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
@@ -54,7 +53,6 @@ async function main() {
 
     // Transaction signing and execution
     console.log("20. EOA to deploy ServiceStakingTokenInstance via the ServiceStakingFactory");
-    const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
     console.log("You are signing the following transaction: ServiceStakingFactory.connect(EOA).createServiceStakingInstance()");
     const initPayload = serviceStakingToken.interface.encodeFunctionData("initialize", [serviceStakingParams,
         serviceRegistryAddress, serviceRegistryTokenUtilityAddress, olasAddress, multisigProxyHash130]);
