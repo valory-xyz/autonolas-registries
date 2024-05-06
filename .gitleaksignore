@@ -195,3 +195,8 @@ e042f634d7a5f6879dbdb46ba3723d4072e042b0:scripts/deployment/l2/arbitrum/timelock
 3cd86528136716257ae06ae1ef7c89c4b166856c:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:2
 3cd86528136716257ae06ae1ef7c89c4b166856c:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:2
 3cd86528136716257ae06ae1ef7c89c4b166856c:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:2
+4af750c75a650d2213841afab96632293bbf1029:scripts/deployment/l2/globals_arbitrum_sepolia.json:generic-api-key:2
+4af750c75a650d2213841afab96632293bbf1029:scripts/deployment/l2/globals_arbitrum_sepolia.json:generic-api-key:2
+4af750c75a650d2213841afab96632293bbf1029:scripts/deployment/l2/globals_arbitrum_sepolia.json:generic-api-key:2
+3cd86528136716257ae06ae1ef7c89c4b166856c:scripts/deployment/l2/globals_arbitrum_sepolia.json:generic-api-key:2
+3cd86528136716257ae06ae1ef7c89c4b166856c:scripts/deployment/l2/globals_arbitrum_sepolia.json:generic-api-key:2
