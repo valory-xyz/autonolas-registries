@@ -182,6 +182,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256 epochLength);
     event ServiceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
         uint256[] nonces, uint256 reward);
+    event RewardClaimed(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
+        uint256[] nonces, uint256 reward);
     event ServiceInactivityWarning(uint256 epoch, uint256 indexed serviceId, uint256 serviceInactivity);
     event ServicesEvicted(uint256 indexed epoch, uint256[] serviceIds, address[] owners, address[] multisigs,
         uint256[] serviceInactivity);
@@ -829,7 +831,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
             _withdraw(multisig, reward);
         }
 
-        emit ServiceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward);
+        emit RewardClaimed(epochCounter, serviceId, msg.sender, multisig, nonces, reward);
     }
 
     /// @dev Calculates service staking reward during the last checkpoint period.
