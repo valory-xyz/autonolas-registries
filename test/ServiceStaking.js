@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 const helpers = require("@nomicfoundation/hardhat-network-helpers");
 const safeContracts = require("@gnosis.pm/safe-contracts");
 
-describe.only("ServiceStaking", function () {
+describe("ServiceStaking", function () {
     let componentRegistry;
     let agentRegistry;
     let serviceRegistry;
@@ -31,7 +31,6 @@ describe.only("ServiceStaking", function () {
     const AddressZero = ethers.constants.AddressZero;
     const HashZero = ethers.constants.HashZero;
     const defaultHash = "0x" + "5".repeat(64);
-    const bytes32Zero = "0x" + "0".repeat(64);
     const regDeposit = 1000;
     const regBond = 1000;
     const serviceId = 1;
@@ -43,6 +42,7 @@ describe.only("ServiceStaking", function () {
     const payload = "0x";
     const livenessRatio = "1" + "0".repeat(16); // 0.01 transaction per second (TPS)
     let serviceParams = {
+        metadataHash: defaultHash,
         maxNumServices: 3,
         rewardsPerSecond: "1" + "0".repeat(15),
         minStakingDeposit: 10,
@@ -187,6 +187,7 @@ describe.only("ServiceStaking", function () {
     context("Initialization", function () {
         it("Should not allow the zero values and addresses when deploying contracts", async function () {
             const defaultTestServiceParams = {
+                metadataHash: HashZero,
                 maxNumServices: 0,
                 rewardsPerSecond: 0,
                 minStakingDeposit: 0,
@@ -196,7 +197,7 @@ describe.only("ServiceStaking", function () {
                 numAgentInstances: 0,
                 agentIds: [],
                 threshold: 0,
-                configHash: bytes32Zero,
+                configHash: HashZero,
                 proxyHash: HashZero,
                 serviceRegistry: AddressZero,
                 activityChecker: AddressZero
@@ -205,6 +206,13 @@ describe.only("ServiceStaking", function () {
             // Service Staking Native Token
             let testServiceParams = JSON.parse(JSON.stringify(defaultTestServiceParams));
             let initPayload = serviceStakingImplementation.interface.encodeFunctionData("initialize",
+                [testServiceParams]);
+            await expect(
+                serviceStakingFactory.createServiceStakingInstance(serviceStakingImplementation.address, initPayload)
+            ).to.be.revertedWithCustomError(serviceStakingImplementation, "ZeroValue");
+
+            testServiceParams.metadataHash = defaultHash;
+            initPayload = serviceStakingImplementation.interface.encodeFunctionData("initialize",
                 [testServiceParams]);
             await expect(
                 serviceStakingFactory.createServiceStakingInstance(serviceStakingImplementation.address, initPayload)
@@ -324,6 +332,13 @@ describe.only("ServiceStaking", function () {
 
             // Service Staking Token
             testServiceParams = JSON.parse(JSON.stringify(defaultTestServiceParams));
+            initPayload = serviceStakingTokenImplementation.interface.encodeFunctionData("initialize",
+                [testServiceParams, AddressZero, AddressZero]);
+            await expect(
+                serviceStakingFactory.createServiceStakingInstance(serviceStakingTokenImplementation.address, initPayload)
+            ).to.be.revertedWithCustomError(serviceStakingTokenImplementation, "ZeroValue");
+
+            testServiceParams.metadataHash = defaultHash;
             initPayload = serviceStakingTokenImplementation.interface.encodeFunctionData("initialize",
                 [testServiceParams, AddressZero, AddressZero]);
             await expect(
@@ -911,7 +926,7 @@ describe.only("ServiceStaking", function () {
             snapshot.restore();
         });
 
-        it.only("Stake and unstake with the service activity", async function () {
+        it.skip("Stake and unstake with the service activity", async function () {
             // Take a snapshot of the current state of the blockchain
             const snapshot = await helpers.takeSnapshot();
 

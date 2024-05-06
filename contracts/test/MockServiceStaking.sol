@@ -5,10 +5,16 @@ pragma solidity ^0.8.23;
 contract MockServiceStaking {
     uint256 public serviceId;
     uint256 public rewardsPerSecond;
+    address public token;
 
-    function initialize() external {
+    function initialize(address _token) external {
         serviceId = 2;
         rewardsPerSecond = 0.0001 ether;
+        token = _token;
+    }
+
+    function stakingToken() external view returns (address) {
+        return token;
     }
 
     function stake(uint256) external {}

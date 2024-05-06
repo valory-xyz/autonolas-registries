@@ -146,6 +146,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
     // Input staking parameters
     struct StakingParams {
+        // Metadata staking information
+        bytes32 metadataHash;
         // Maximum number of staking services
         uint256 maxNumServices;
         // Rewards per second
@@ -244,9 +246,10 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
         
         // Initial checks
-        if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
-            _stakingParams.livenessPeriod == 0 || _stakingParams.numAgentInstances == 0 ||
-            _stakingParams.minNumStakingPeriods == 0 || _stakingParams.maxNumInactivityPeriods == 0) {
+        if (_stakingParams.metadataHash == 0 || _stakingParams.maxNumServices == 0 ||
+            _stakingParams.rewardsPerSecond == 0 || _stakingParams.livenessPeriod == 0 ||
+            _stakingParams.numAgentInstances == 0 || _stakingParams.minNumStakingPeriods == 0 ||
+            _stakingParams.maxNumInactivityPeriods == 0) {
             revert ZeroValue();
         }
 
@@ -789,17 +792,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         emit ServiceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward);
     }
 
-    /// @dev ERC165 support interface.
-    /// @param interfaceId Function selector.
-    function supportsInterface(bytes4 interfaceId) external virtual view returns (bool) {
-        return
-            interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
-            interfaceId == 0xa694fc3a || // bytes4(keccak256("stake(uint256)"))
-            interfaceId == 0x2e17de78 || // bytes4(keccak256("unstake(uint256)"))
-            interfaceId == 0xc2c4c5c1 || // bytes4(keccak256("checkpoint()"))
-            interfaceId == 0x78e06136 || // bytes4(keccak256("calculateServiceStakingReward(uint256)"))
-            interfaceId == 0x82a8ea58; // bytes4(keccak256("getServiceInfo(uint256)"))
-    }
+    // TODO claim
 
     /// @dev Calculates service staking reward during the last checkpoint period.
     /// @param serviceId Service Id.

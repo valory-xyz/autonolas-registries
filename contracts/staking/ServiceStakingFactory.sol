@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import "../interfaces/IErrorsRegistries.sol";
-import "./ServiceStakingProxy.sol";
+import {IErrorsRegistries} from "../interfaces/IErrorsRegistries.sol";
+import {ServiceStakingProxy} from "./ServiceStakingProxy.sol";
 
 interface IVerifier {
     function verifyImplementation(address implementation) external view returns (bool);
@@ -30,6 +30,14 @@ error InitializationFailed(address instance);
 /// @param instance Proxy instance address.
 error InstanceHasNoImplementation(address instance);
 
+/// @dev Implementation is not verified.
+/// @param implementation Implementation address.
+error UnverifiedImplementation(address implementation);
+
+/// @dev Proxy instance is not verified.
+/// @param instance Proxy instance address.
+error UnverifiedProxy(address instance);
+
 /// @title ServiceStakingFactory - Smart contract for service staking factory
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
@@ -37,16 +45,16 @@ error InstanceHasNoImplementation(address instance);
 contract ServiceStakingFactory is IErrorsRegistries {
     event OwnerUpdated(address indexed owner);
     event VerifierUpdated(address indexed verifier);
-    event InstanceCreated(address indexed instance, address indexed implementation);
+    event InstanceCreated(address indexed sender, address indexed instance, address indexed implementation);
 
     // Minimum data length that contains at least a selector (4 bytes or 32 bits)
     uint256 public constant SELECTOR_DATA_LENGTH = 4;
+    // Nonce
+    uint256 public nonce;
     // Contract owner address
     address public owner;
     // Verifier address
     address public verifier;
-    // Nonce
-    uint256 public nonce;
     // Mapping of staking service implementations => implementation status
     mapping(address => bool) public mapImplementations;
     // Mapping of staking service proxy instances => implementation address
@@ -85,6 +93,8 @@ contract ServiceStakingFactory is IErrorsRegistries {
         emit VerifierUpdated(newVerifier);
     }
 
+    // TODO Pre-calculate the address function
+
     /// @dev Creates a service staking contract instance.
     /// @param implementation Service staking blanc implementation address.
     /// @param initPayload Initialization payload.
@@ -116,7 +126,7 @@ contract ServiceStakingFactory is IErrorsRegistries {
         // Provide additional checks, if needed
         address localVerifier = verifier;
         if (localVerifier != address (0) && !IVerifier(localVerifier).verifyImplementation(implementation)) {
-            revert();
+            revert UnverifiedImplementation(implementation);
         }
 
         uint256 localNonce = nonce;
@@ -148,13 +158,13 @@ contract ServiceStakingFactory is IErrorsRegistries {
 
         // Check that the created proxy instance does not violate defined limits
         if (localVerifier != address (0) && !IVerifier(localVerifier).verifyInstance(instance)) {
-            revert();
+            revert UnverifiedProxy(instance);
         }
 
         mapInstanceImplementations[instance] = implementation;
         nonce = localNonce + 1;
 
-        emit InstanceCreated(instance, implementation);
+        emit InstanceCreated(msg.sender, instance, implementation);
     }
 
     /// @dev Verifies a service staking contract instance.
