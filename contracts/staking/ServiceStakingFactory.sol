@@ -5,7 +5,14 @@ import {IErrorsRegistries} from "../interfaces/IErrorsRegistries.sol";
 import {ServiceStakingProxy} from "./ServiceStakingProxy.sol";
 
 interface IVerifier {
+    /// @dev Verifies a service staking implementation contract.
+    /// @param implementation Service staking implementation contract address.
+    /// @return success True, if verification is successful.
     function verifyImplementation(address implementation) external view returns (bool);
+
+    /// @dev Verifies a service staking proxy instance.
+    /// @param instance Service staking proxy instance.
+    /// @return True, if verification is successful.
     function verifyInstance(address instance) external view returns (bool);
 }
 

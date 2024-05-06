@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-interface IServiceStaking{
+interface IServiceStaking {
+    /// @dev Gets rewards per second in a service staking contract.
+    /// @return Rewards per second.
     function rewardsPerSecond() external view returns (uint256);
+
+    /// @dev Gets service staking token.
+    /// @return Service staking token address.
     function stakingToken() external view returns (address);
 }
 
@@ -143,7 +148,7 @@ contract ServiceStakingVerifier {
         }
     }
 
-    /// @dev Verifies a service staking contract instance.
+    /// @dev Verifies a service staking proxy instance.
     /// @param instance Service staking proxy instance.
     /// @return True, if verification is successful.
     function verifyInstance(address instance) external view returns (bool) {
