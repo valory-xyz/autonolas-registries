@@ -96,6 +96,7 @@ contract ServiceStakingToken is ServiceStakingBase {
     }
 
     /// @dev Withdraws the reward amount to a service owner.
+    /// @notice The balance is always greater or equal the amount, as follows from the Base contract logic.
     /// @param to Address to.
     /// @param amount Amount to withdraw.
     function _withdraw(address to, uint256 amount) internal override {

@@ -12,6 +12,7 @@ async function main() {
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
     const gasPriceInGwei = parsedData.gasPriceInGwei;
+    const serviceStakingVerifierAddress = parsedData.serviceStakingVerifierAddress;
 
     let networkURL = parsedData.networkURL;
     if (providerName === "polygon") {
@@ -41,11 +42,12 @@ async function main() {
     console.log("EOA is:", deployer);
 
     // Transaction signing and execution
-    console.log("19. EOA to deploy ServiceStakingFactory");
+    console.log("20. EOA to deploy ServiceStakingFactory");
     const ServiceStakingFactory = await ethers.getContractFactory("ServiceStakingFactory");
     console.log("You are signing the following transaction: ServiceStakingFactory.connect(EOA).deploy()");
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
-    const serviceStakingFactory = await ServiceStakingFactory.connect(EOA).deploy({ gasPrice });
+    const serviceStakingFactory = await ServiceStakingFactory.connect(EOA).deploy(serviceStakingVerifierAddress,
+        { gasPrice });
     const result = await serviceStakingFactory.deployed();
 
     // Transaction details
@@ -63,7 +65,7 @@ async function main() {
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --network " + providerName + " " + serviceStakingFactory.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_20_service_staking_factory.js --network " + providerName + " " + serviceStakingFactory.address, { encoding: "utf-8" });
     }
 }
 

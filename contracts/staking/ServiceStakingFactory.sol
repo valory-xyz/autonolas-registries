@@ -62,8 +62,11 @@ contract ServiceStakingFactory is IErrorsRegistries {
     // Mapping of staking service proxy instances => implementation address
     mapping(address => address) public mapInstanceImplementations;
 
-    constructor() {
+    /// @dev ServiceStakingFactory constructor.
+    /// @param _verifier Verifier contract address (can be zero).
+    constructor(address _verifier) {
         owner = msg.sender;
+        verifier = _verifier;
     }
 
     /// @dev Changes the owner address.

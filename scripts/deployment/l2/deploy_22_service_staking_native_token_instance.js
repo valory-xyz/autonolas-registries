@@ -50,7 +50,7 @@ async function main() {
     const serviceStakingNativeToken = await ethers.getContractAt("ServiceStakingToken", serviceStakingNativeTokenAddress);
 
     // Transaction signing and execution
-    console.log("21. EOA to deploy ServiceStakingNativeTokenInstance via the ServiceStakingFactory");
+    console.log("22. EOA to deploy ServiceStakingNativeTokenInstance via the ServiceStakingFactory");
     console.log("You are signing the following transaction: ServiceStakingFactory.connect(EOA).createServiceStakingInstance()");
     const initPayload = serviceStakingNativeToken.interface.encodeFunctionData("initialize", [serviceStakingParams,
         serviceRegistryAddress, multisigProxyHash130]);
@@ -73,7 +73,7 @@ async function main() {
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_21_service_staking_native_token_instance.js --network " + providerName + " " + serviceStakingNativeTokenInstanceAddress, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_22_service_staking_native_token_instance.js --network " + providerName + " " + serviceStakingNativeTokenInstanceAddress, { encoding: "utf-8" });
     }
 }
 

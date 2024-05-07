@@ -20,10 +20,6 @@ describe("ServiceStaking", function () {
         serviceStaking = await ServiceStaking.deploy();
         await serviceStaking.deployed();
 
-        const ServiceStakingFactory = await ethers.getContractFactory("ServiceStakingFactory");
-        serviceStakingFactory = await ServiceStakingFactory.deploy();
-        await serviceStakingFactory.deployed();
-
         const Token = await ethers.getContractFactory("ERC20Token");
         token = await Token.deploy();
         await token.deployed();
@@ -31,6 +27,10 @@ describe("ServiceStaking", function () {
         const ServiceStakingVerifier = await ethers.getContractFactory("ServiceStakingVerifier");
         serviceStakingVerifier = await ServiceStakingVerifier.deploy(token.address, rewardsPerSecondLimit);
         await serviceStakingVerifier.deployed();
+
+        const ServiceStakingFactory = await ethers.getContractFactory("ServiceStakingFactory");
+        serviceStakingFactory = await ServiceStakingFactory.deploy(AddressZero);
+        await serviceStakingFactory.deployed();
     });
 
     context("Initialization", function () {
