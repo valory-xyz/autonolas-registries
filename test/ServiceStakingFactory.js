@@ -138,7 +138,7 @@ describe("ServiceStaking", function () {
             await serviceStakingFactory.verifyInstance(instances[0]);
 
             // Try the implementation that does not exist
-            const res = await serviceStakingFactory.verifyInstance(deployer.address)
+            const res = await serviceStakingFactory.verifyInstance(deployer.address);
             expect(res).to.be.false;
         });
     });
@@ -162,7 +162,7 @@ describe("ServiceStaking", function () {
             expect(success).to.be.true;
 
             // Try to check the instance without implementation
-            success = await serviceStakingFactory.callStatic.verifyInstance(AddressZero)
+            success = await serviceStakingFactory.callStatic.verifyInstance(AddressZero);
             expect(success).to.be.false;
 
             // Check the instance when the parameter is changed
