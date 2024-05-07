@@ -10,7 +10,13 @@ interface IServiceStaking {
 
     /// @dev Unstakes the service.
     /// @param serviceId Service Id.
-    function unstake(uint256 serviceId) external;
+    /// @return Reward amount.
+    function unstake(uint256 serviceId) external returns (uint256);
+
+    /// @dev Claims the service reward.
+    /// @param serviceId Service Id.
+    /// @return Reward amount.
+    function claim(uint256 serviceId) external returns (uint256);
 
     /// @return All staking service Ids (including evicted ones during within a current epoch).
     /// @return All staking updated nonces (including evicted ones during within a current epoch).
@@ -45,6 +51,8 @@ contract ReentrancyStakingAttacker is ERC721TokenReceiver {
     uint256 internal _nonce;
     // Owners
     address[] public owners;
+    // Service Id
+    uint256 public localServiceId;
 
     constructor(address _serviceStaking, address _serviceRegistry) {
         serviceStaking = _serviceStaking;
@@ -53,7 +61,11 @@ contract ReentrancyStakingAttacker is ERC721TokenReceiver {
     
     /// @dev Failing receive.
     receive() external payable {
-        revert();
+        if (attack) {
+            IServiceStaking(serviceStaking).claim(localServiceId);
+        } else {
+            revert();
+        }
     }
 
     function setAttack(bool status) external {
@@ -79,6 +91,18 @@ contract ReentrancyStakingAttacker is ERC721TokenReceiver {
     /// @dev Unstake the service.
     function unstake(uint256 serviceId) external {
         IServiceStaking(serviceStaking).unstake(serviceId);
+    }
+
+    /// @dev Claim the reward.
+    function claim(uint256 serviceId) external {
+        localServiceId = serviceId;
+        IServiceStaking(serviceStaking).claim(serviceId);
+    }
+
+    /// @dev Stake the service.
+    function stake(uint256 serviceId) external {
+        IServiceRegistry(serviceRegistry).approve(serviceStaking, serviceId);
+        IServiceStaking(serviceStaking).stake(serviceId);
     }
 
     /// @dev Stake the service and call the checkpoint right away.

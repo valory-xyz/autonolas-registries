@@ -726,7 +726,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
     /// @dev Unstakes the service.
     /// @param serviceId Service Id.
-    function unstake(uint256 serviceId) external {
+    /// @return reward Staking reward.
+    function unstake(uint256 serviceId) external returns (uint256 reward) {
         ServiceInfo storage sInfo = mapServiceInfo[serviceId];
         // Check for the service ownership
         if (msg.sender != sInfo.owner) {
@@ -768,7 +769,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         // Get the unstaked service data
-        uint256 reward = sInfo.reward;
+        reward = sInfo.reward;
         uint256[] memory nonces = sInfo.nonces;
         address multisig = sInfo.multisig;
 
@@ -796,42 +797,33 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
     /// @dev Claims rewards for the service.
     /// @param serviceId Service Id.
-    function claim(uint256 serviceId) external {
+    /// @return reward Staking reward.
+    function claim(uint256 serviceId) external returns (uint256 reward) {
         ServiceInfo storage sInfo = mapServiceInfo[serviceId];
         // Check for the service ownership
         if (msg.sender != sInfo.owner) {
             revert OwnerOnly(msg.sender, sInfo.owner);
         }
 
-        // Get the staking start time
-        // Note that if the service info exists, the service is staked or evicted, and thus start time is always valid
-        uint256 tsStart = sInfo.tsStart;
-
-        // Check that the service has staked long enough, or if there are no rewards left
-        uint256 ts = block.timestamp - tsStart;
-        if (ts <= minStakingDuration && availableRewards > 0) {
-            revert NotEnoughTimeStaked(serviceId, ts, minStakingDuration);
-        }
-
-        // TODO Check if sInfo needs to be re-referenced
         // Call the checkpoint
         checkpoint();
 
         // Get the claimed service data
-        uint256 reward = sInfo.reward;
-        uint256[] memory nonces = sInfo.nonces;
-        address multisig = sInfo.multisig;
+        reward = sInfo.reward;
 
-        // Adjust start staking time
-        sInfo.tsStart = tsCheckpoint;
-
-        // Transfer accumulated rewards to the service multisig
-        if (reward > 0) {
-            sInfo.reward = 0;
-            _withdraw(multisig, reward);
+        // Check for the zero reward, or for the reentrancy attack
+        if (reward == 0) {
+            revert ZeroValue();
         }
 
-        emit RewardClaimed(epochCounter, serviceId, msg.sender, multisig, nonces, reward);
+        // Zero the reward field
+        sInfo.reward = 0;
+
+        // Transfer accumulated rewards to the service multisig
+        address multisig = sInfo.multisig;
+        _withdraw(multisig, reward);
+
+        emit RewardClaimed(epochCounter, serviceId, msg.sender, multisig, sInfo.nonces, reward);
     }
 
     /// @dev Calculates service staking reward during the last checkpoint period.

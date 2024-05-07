@@ -1546,9 +1546,15 @@ describe("ServiceStaking", function () {
             // Stake the service
             await serviceStaking.stake(serviceId);
 
-            // Take the staking timestamp
-            let block = await ethers.provider.getBlock("latest");
-            const tsStart = block.timestamp;
+            // Try to claim not by the service owner
+            await expect(
+                serviceStaking.connect(signers[1]).claim(serviceId)
+            ).to.be.revertedWithCustomError(serviceStaking, "OwnerOnly");
+
+            // Try to claim right away
+            await expect(
+                serviceStaking.claim(serviceId)
+            ).to.be.revertedWithCustomError(serviceStaking, "ZeroValue");
 
             // Get the service multisig contract
             const service = await serviceRegistry.getService(serviceId);
@@ -1563,8 +1569,17 @@ describe("ServiceStaking", function () {
             // Increase the time for the liveness period
             await helpers.time.increase(livenessPeriod);
 
-            // Call the checkpoint at this time
-            await serviceStaking.checkpoint();
+            let reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            let claimReward = await serviceStaking.callStatic.claim(serviceId);
+            expect(reward).to.equal(claimReward);
+
+            // Call claim (calls checkpoint as well)
+            await serviceStaking.claim(serviceId);
+
+            // Try to claim again right away
+            await expect(
+                serviceStaking.claim(serviceId)
+            ).to.be.revertedWithCustomError(serviceStaking, "ZeroValue");
 
             // Execute one more multisig tx
             nonce = await multisig.nonce();
@@ -1575,35 +1590,33 @@ describe("ServiceStaking", function () {
             // Increase the time for the liveness period
             await helpers.time.increase(livenessPeriod);
 
-            block = await ethers.provider.getBlock("latest");
-            const tsEnd = block.timestamp;
+            // Check that the reward during unstake now is the same as the claimed reward
+            reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            claimReward = await serviceStaking.callStatic.claim(serviceId);
+            expect(reward).to.equal(claimReward);
 
-            // Get the expected reward
-            const tsDiff = tsEnd - tsStart;
-            const expectedReward = serviceParams.rewardsPerSecond * tsDiff;
-
-            // Nonce is just 1 as there was 1 transaction
-            const ratio = (10**18 * 1.0) / tsDiff;
-            expect(ratio).to.greaterThan(Number(livenessRatio));
-
-            // Calculate service staking reward that must match the calculated reward
-            const reward = await serviceStaking.calculateServiceStakingReward(serviceId);
-            expect(Number(reward)).to.equal(expectedReward);
-
-            // Increase the time to be bigger than inactivity to unstake
-            await helpers.time.increase(maxInactivity);
-
-            // Unstake the service
-            const balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
-            await serviceStaking.unstake(serviceId);
-            const balanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+            // Claim the reward
+            let balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
+            await serviceStaking.claim(serviceId);
+            let balanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
 
             // The balance before and after the unstake call must be different
             expect(balanceAfter).to.gt(balanceBefore);
 
-            // Check the final serviceIds set to be empty
-            const serviceIds = await serviceStaking.getServiceIds();
-            expect(serviceIds.length).to.equal(0);
+            // Execute one more multisig tx
+            nonce = await multisig.nonce();
+            txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+            signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
+            // Check that the reward during unstake now is the same as the claimed reward
+            reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            let unstakedReward = await serviceStaking.callStatic.unstake(serviceId);
+            expect(reward).to.equal(unstakedReward);
+            expect(claimReward).to.gte(unstakedReward);
 
             // Restore a previous state of blockchain
             snapshot.restore();
@@ -1648,6 +1661,51 @@ describe("ServiceStaking", function () {
 
             // Check that the service got no reward
             expect(balanceAfter).to.equal(balanceBefore);
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+
+        it("Trying to reenter the claim function", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: serviceStaking.address, value: ethers.utils.parseEther("1")});
+
+            // Get the service multisig contract
+            const service = await serviceRegistry.getService(serviceId);
+            const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+            // Transfer the service to the attacker (note we need to use the transfer not to get another reentrancy call)
+            await serviceRegistry.transferFrom(deployer.address, attacker.address, serviceId);
+
+            // Stake and checkpoint
+            await attacker.stake(serviceId);
+
+            // Make transactions by the service multisig
+            let nonce = await multisig.nonce();
+            let txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+            let signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Increase the time for the liveness period
+            await helpers.time.increase(livenessPeriod);
+
+            let reward = await serviceStaking.calculateServiceStakingReward(serviceId);
+            expect(reward).to.gt(0);
+
+            // Try to perform a reentrancy attack during claim
+            await attacker.claim(serviceId);
+            // Receive funds by attacker and call claim() right away
+            nonce = await multisig.nonce();
+            txHashData = await safeContracts.buildContractCall(attacker, "getThreshold", [], nonce, 0, 0);
+            txHashData.data = "0x";
+            txHashData.value = reward;
+            signMessageData = await safeContracts.safeSignMessage(agentInstances[0], multisig, txHashData, 0);
+            await expect(
+                safeContracts.executeTx(multisig, txHashData, [signMessageData], 0)
+            ).to.be.reverted;
 
             // Restore a previous state of blockchain
             snapshot.restore();
