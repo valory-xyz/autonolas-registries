@@ -114,7 +114,7 @@ describe("ServiceStaking", function () {
         await multiSend.deployed();
 
         const ServiceStakingFactory = await ethers.getContractFactory("ServiceStakingFactory");
-        serviceStakingFactory = await ServiceStakingFactory.deploy();
+        serviceStakingFactory = await ServiceStakingFactory.deploy(AddressZero);
         await serviceStakingFactory.deployed();
 
         const ServiceStakingActivityChecker = await ethers.getContractFactory("ServiceStakingActivityChecker");
