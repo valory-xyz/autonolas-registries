@@ -150,8 +150,14 @@ contract ServiceStakingVerifier {
 
     /// @dev Verifies a service staking proxy instance.
     /// @param instance Service staking proxy instance.
+    /// @param implementation Service staking implementation.
     /// @return True, if verification is successful.
-    function verifyInstance(address instance) external view returns (bool) {
+    function verifyInstance(address instance, address implementation) external view returns (bool) {
+        // If the implementations check is true, and the implementation is not whitelisted, the verification is failed
+        if (implementationsCheck && !mapImplementations[implementation]) {
+            return false;
+        }
+
         // Check for the staking parameters
         uint256 rewardsPerSecond = IServiceStaking(instance).rewardsPerSecond();
         if (rewardsPerSecond > rewardsPerSecondLimit) {

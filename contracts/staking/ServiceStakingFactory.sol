@@ -12,8 +12,9 @@ interface IVerifier {
 
     /// @dev Verifies a service staking proxy instance.
     /// @param instance Service staking proxy instance.
+    /// @param implementation Service staking implementation.
     /// @return True, if verification is successful.
-    function verifyInstance(address instance) external view returns (bool);
+    function verifyInstance(address instance, address implementation) external view returns (bool);
 }
 
 /// @dev Provided incorrect data length.
@@ -32,10 +33,6 @@ error ProxyCreationFailed(address implementation);
 /// @dev Proxy instance initialization failed
 /// @param instance Proxy instance address.
 error InitializationFailed(address instance);
-
-/// @dev Proxy instance has no implementation in the factory.
-/// @param instance Proxy instance address.
-error InstanceHasNoImplementation(address instance);
 
 /// @dev Implementation is not verified.
 /// @param implementation Implementation address.
@@ -62,8 +59,6 @@ contract ServiceStakingFactory is IErrorsRegistries {
     address public owner;
     // Verifier address
     address public verifier;
-    // Mapping of staking service implementations => implementation status
-    mapping(address => bool) public mapImplementations;
     // Mapping of staking service proxy instances => implementation address
     mapping(address => address) public mapInstanceImplementations;
 
@@ -146,19 +141,13 @@ contract ServiceStakingFactory is IErrorsRegistries {
         }
 
         // The payload length must be at least of the a function selector size
-        // TODO calculate the minimum payload for the staking base contract
         if (initPayload.length < SELECTOR_DATA_LENGTH) {
             revert IncorrectDataLength(initPayload.length, SELECTOR_DATA_LENGTH);
         }
 
-        // Check for the implementation address
-        if (!mapImplementations[implementation]) {
-            mapImplementations[implementation] = true;
-        }
-
         // Provide additional checks, if needed
         address localVerifier = verifier;
-        if (localVerifier != address (0) && !IVerifier(localVerifier).verifyImplementation(implementation)) {
+        if (localVerifier != address(0) && !IVerifier(localVerifier).verifyImplementation(implementation)) {
             revert UnverifiedImplementation(implementation);
         }
 
@@ -194,7 +183,7 @@ contract ServiceStakingFactory is IErrorsRegistries {
         }
 
         // Check that the created proxy instance does not violate defined limits
-        if (localVerifier != address (0) && !IVerifier(localVerifier).verifyInstance(instance)) {
+        if (localVerifier != address(0) && !IVerifier(localVerifier).verifyInstance(instance, implementation)) {
             revert UnverifiedProxy(instance);
         }
 
@@ -210,13 +199,13 @@ contract ServiceStakingFactory is IErrorsRegistries {
     function verifyInstance(address instance) external view returns (bool success) {
         address implementation = mapInstanceImplementations[instance];
         if (implementation == address(0)) {
-            revert InstanceHasNoImplementation(instance);
+            return false;
         }
 
         // Provide additional checks, if needed
         address localVerifier = verifier;
         if (localVerifier != address (0)) {
-            success = IVerifier(localVerifier).verifyInstance(instance);
+            success = IVerifier(localVerifier).verifyInstance(instance, implementation);
         } else {
             success = true;
         }

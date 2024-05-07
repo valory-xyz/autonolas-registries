@@ -138,9 +138,8 @@ describe("ServiceStaking", function () {
             await serviceStakingFactory.verifyInstance(instances[0]);
 
             // Try the implementation that does not exist
-            await expect(
-                serviceStakingFactory.verifyInstance(deployer.address)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "InstanceHasNoImplementation");
+            const res = await serviceStakingFactory.verifyInstance(deployer.address)
+            expect(res).to.be.false;
         });
     });
 
@@ -163,16 +162,22 @@ describe("ServiceStaking", function () {
             expect(success).to.be.true;
 
             // Try to check the instance without implementation
-            await expect(
-                serviceStakingFactory.verifyInstance(AddressZero)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "InstanceHasNoImplementation");
+            success = await serviceStakingFactory.callStatic.verifyInstance(AddressZero)
+            expect(success).to.be.false;
 
             // Check the instance when the parameter is changed
             await proxy.changeRewardsPerSecond();
             success = await serviceStakingFactory.verifyInstance(instance);
             expect(success).to.be.false;
 
-            // Set verifier back to the zero address
+            // Set the implementations check
+            await serviceStakingVerifier.setImplementationsCheck(true);
+
+            // Verify with a non whitelisted instance by the verifier contract itself
+            success = await serviceStakingVerifier.verifyInstance(instance, AddressZero);
+            expect(success).to.be.false;
+
+            // Set verifier back to the zero address (no verification by the verifier)
             await serviceStakingFactory.changeVerifier(AddressZero);
 
             // Verify again without a verifier and it must pass
