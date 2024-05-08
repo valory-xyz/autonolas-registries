@@ -156,12 +156,12 @@ struct ServiceInfo {
     uint256 inactivity;
 }
 
-/// @title ServiceStakingBase - Base abstract smart contract for staking a service by its owner
+/// @title StakingBase - Base abstract smart contract for staking a service by its owner
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-abstract contract ServiceStakingBase is ERC721TokenReceiver {
-    enum ServiceStakingState {
+abstract contract StakingBase is ERC721TokenReceiver {
+    enum StakingState {
         Unstaked,
         Staked,
         Evicted
@@ -260,7 +260,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver {
     // Set of currently staking serviceIds
     uint256[] public setServiceIds;
 
-    /// @dev ServiceStakingBase initialization.
+    /// @dev StakingBase initialization.
     /// @param _stakingParams Service staking parameters.
     function _initialize(
         StakingParams memory _stakingParams
@@ -852,7 +852,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver {
     /// @dev Calculates service staking reward during the last checkpoint period.
     /// @param serviceId Service Id.
     /// @return reward Service reward.
-    function calculateServiceStakingLastReward(uint256 serviceId) public view returns (uint256 reward) {
+    function calculateStakingLastReward(uint256 serviceId) public view returns (uint256 reward) {
         // Calculate overall staking rewards
         (uint256 lastAvailableRewards, uint256 numServices, uint256 totalRewards, uint256[] memory eligibleServiceIds,
             uint256[] memory eligibleServiceRewards, , , ) = _calculateStakingRewards();
@@ -875,24 +875,24 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver {
     /// @dev Calculates overall service staking reward at current timestamp.
     /// @param serviceId Service Id.
     /// @return reward Service reward.
-    function calculateServiceStakingReward(uint256 serviceId) external view returns (uint256 reward) {
+    function calculateStakingReward(uint256 serviceId) external view returns (uint256 reward) {
         // Get current service reward
         ServiceInfo memory sInfo = mapServiceInfo[serviceId];
         reward = sInfo.reward;
 
         // Add pending reward
-        reward += calculateServiceStakingLastReward(serviceId);
+        reward += calculateStakingLastReward(serviceId);
     }
 
     /// @dev Gets the service staking state.
     /// @param serviceId.
     /// @return stakingState Staking state of the service.
-    function getServiceStakingState(uint256 serviceId) external view returns (ServiceStakingState stakingState) {
+    function getStakingState(uint256 serviceId) external view returns (StakingState stakingState) {
         ServiceInfo memory sInfo = mapServiceInfo[serviceId];
         if (sInfo.inactivity > maxInactivityDuration) {
-            stakingState = ServiceStakingState.Evicted;
+            stakingState = StakingState.Evicted;
         } else if (sInfo.tsStart > 0) {
-            stakingState = ServiceStakingState.Staked;
+            stakingState = StakingState.Staked;
         }
     }
 

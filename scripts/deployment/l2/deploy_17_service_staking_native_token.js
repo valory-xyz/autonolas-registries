@@ -41,29 +41,29 @@ async function main() {
     console.log("EOA is:", deployer);
 
     // Transaction signing and execution
-    console.log("17. EOA to deploy ServiceStakingNativeToken");
+    console.log("17. EOA to deploy StakingNativeToken");
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
-    const ServiceStakingNativeToken = await ethers.getContractFactory("ServiceStakingNativeToken");
-    console.log("You are signing the following transaction: ServiceStakingNativeToken.connect(EOA).deploy()");
-    const serviceStakingNativeToken = await ServiceStakingNativeToken.connect(EOA).deploy({ gasPrice });
-    const result = await serviceStakingNativeToken.deployed();
+    const StakingNativeToken = await ethers.getContractFactory("StakingNativeToken");
+    console.log("You are signing the following transaction: StakingNativeToken.connect(EOA).deploy()");
+    const stakingNativeToken = await StakingNativeToken.connect(EOA).deploy({ gasPrice });
+    const result = await stakingNativeToken.deployed();
 
     // Transaction details
-    console.log("Contract deployment: ServiceStakingNativeToken");
-    console.log("Contract address:", serviceStakingNativeToken.address);
+    console.log("Contract deployment: StakingNativeToken");
+    console.log("Contract address:", stakingNativeToken.address);
     console.log("Transaction:", result.deployTransaction.hash);
     
     // Wait half a minute for the transaction completion
     await new Promise(r => setTimeout(r, 30000));
 
     // Writing updated parameters back to the JSON file
-    parsedData.serviceStakingNativeTokenAddress = serviceStakingNativeToken.address;
+    parsedData.stakingNativeTokenAddress = stakingNativeToken.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
 
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --network " + providerName + " " + serviceStakingNativeToken.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --network " + providerName + " " + stakingNativeToken.address, { encoding: "utf-8" });
     }
 }
 

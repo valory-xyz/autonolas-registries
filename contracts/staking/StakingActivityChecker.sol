@@ -11,15 +11,15 @@ interface IMultisig {
 /// @dev Zero value when it has to be different from zero.
 error ZeroValue();
 
-/// @title ServiceStakingActiveChecker - Smart contract for performing a service staking activity check
+/// @title StakingActiveChecker - Smart contract for performing a service staking activity check
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-contract ServiceStakingActivityChecker {
+contract StakingActivityChecker {
     // Liveness ratio in the format of 1e18
     uint256 public immutable livenessRatio;
 
-    /// @dev ServiceStakingNativeToken initialization.
+    /// @dev StakingNativeToken initialization.
     /// @param _livenessRatio Liveness ratio in the format of 1e18.
     constructor(uint256 _livenessRatio) {
         // Check for zero value

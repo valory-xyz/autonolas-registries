@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import {ServiceStakingProxy} from "./ServiceStakingProxy.sol";
+import {StakingProxy} from "./StakingProxy.sol";
 
 interface IVerifier {
     /// @dev Verifies a service staking implementation contract.
@@ -55,11 +55,11 @@ struct InstanceParams {
     bool isActive;
 }
 
-/// @title ServiceStakingFactory - Smart contract for service staking factory
+/// @title StakingFactory - Smart contract for service staking factory
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-contract ServiceStakingFactory {
+contract StakingFactory {
     event OwnerUpdated(address indexed owner);
     event VerifierUpdated(address indexed verifier);
     event InstanceCreated(address indexed sender, address indexed instance, address indexed implementation);
@@ -75,7 +75,7 @@ contract ServiceStakingFactory {
     // Mapping of staking service proxy instances => InstanceParams struct
     mapping(address => InstanceParams) public mapInstanceParams;
 
-    /// @dev ServiceStakingFactory constructor.
+    /// @dev StakingFactory constructor.
     /// @param _verifier Verifier contract address (can be zero).
     constructor(address _verifier) {
         owner = msg.sender;
@@ -120,7 +120,7 @@ contract ServiceStakingFactory {
         bytes32 salt = keccak256(abi.encodePacked(block.chainid, localNonce));
 
         // Get the deployment data based on the proxy bytecode and the implementation address
-        bytes memory deploymentData = abi.encodePacked(type(ServiceStakingProxy).creationCode,
+        bytes memory deploymentData = abi.encodePacked(type(StakingProxy).creationCode,
             uint256(uint160(implementation)));
 
         // Get the hash forming the contract address
@@ -142,7 +142,7 @@ contract ServiceStakingFactory {
     /// @dev Creates a service staking contract instance.
     /// @param implementation Service staking blanc implementation address.
     /// @param initPayload Initialization payload.
-    function createServiceStakingInstance(
+    function createStakingInstance(
         address implementation,
         bytes memory initPayload
     ) external returns (address payable instance) {
@@ -171,7 +171,7 @@ contract ServiceStakingFactory {
         // Get salt based on chain Id and nonce values
         bytes32 salt = keccak256(abi.encodePacked(block.chainid, localNonce));
         // Get the deployment data based on the proxy bytecode and the implementation address
-        bytes memory deploymentData = abi.encodePacked(type(ServiceStakingProxy).creationCode,
+        bytes memory deploymentData = abi.encodePacked(type(StakingProxy).creationCode,
             uint256(uint160(implementation)));
 
         // solhint-disable-next-line no-inline-assembly

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import {ServiceStakingBase} from "./ServiceStakingBase.sol";
+import {StakingBase} from "./StakingBase.sol";
 import {SafeTransferLib} from "../utils/SafeTransferLib.sol";
 import "../interfaces/IToken.sol";
 
@@ -38,17 +38,17 @@ error WrongStakingToken(address expected, address provided);
 /// @param expected Expected value.
 error ValueLowerThan(uint256 provided, uint256 expected);
 
-/// @title ServiceStakingToken - Smart contract for staking a service by its owner when the service has an ERC20 token as the deposit
+/// @title StakingToken - Smart contract for staking a service by its owner when the service has an ERC20 token as the deposit
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-contract ServiceStakingToken is ServiceStakingBase {
+contract StakingToken is StakingBase {
     // ServiceRegistryTokenUtility address
     address public serviceRegistryTokenUtility;
     // Security token address for staking corresponding to the service deposit token
     address public stakingToken;
 
-    /// @dev ServiceStakingToken initialization.
+    /// @dev StakingToken initialization.
     /// @param _stakingParams Service staking parameters.
     /// @param _serviceRegistryTokenUtility ServiceRegistryTokenUtility contract address.
     /// @param _stakingToken Address of a service staking token.

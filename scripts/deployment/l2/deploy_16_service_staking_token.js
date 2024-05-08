@@ -41,28 +41,28 @@ async function main() {
     console.log("EOA is:", deployer);
 
     // Transaction signing and execution
-    console.log("16. EOA to deploy ServiceStakingToken");
+    console.log("16. EOA to deploy StakingToken");
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
-    const ServiceStakingToken = await ethers.getContractFactory("ServiceStakingToken");
-    console.log("You are signing the following transaction: ServiceStakingToken.connect(EOA).deploy()");
-    const serviceStakingToken = await ServiceStakingToken.connect(EOA).deploy({ gasPrice });
-    const result = await serviceStakingToken.deployed();
+    const StakingToken = await ethers.getContractFactory("StakingToken");
+    console.log("You are signing the following transaction: StakingToken.connect(EOA).deploy()");
+    const stakingToken = await StakingToken.connect(EOA).deploy({ gasPrice });
+    const result = await stakingToken.deployed();
 
     // Transaction details
-    console.log("Contract deployment: ServiceStakingToken");
-    console.log("Contract address:", serviceStakingToken.address);
+    console.log("Contract deployment: StakingToken");
+    console.log("Contract address:", stakingToken.address);
     console.log("Transaction:", result.deployTransaction.hash);
     // Wait half a minute for the transaction completion
     await new Promise(r => setTimeout(r, 30000));
 
     // Writing updated parameters back to the JSON file
-    parsedData.serviceStakingTokenAddress = serviceStakingToken.address;
+    parsedData.stakingTokenAddress = stakingToken.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
 
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --network " + providerName + " " + serviceStakingToken.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --network " + providerName + " " + stakingToken.address, { encoding: "utf-8" });
     }
 }
 
