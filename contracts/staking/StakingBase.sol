@@ -3,6 +3,7 @@ pragma solidity ^0.8.23;
 
 import {ERC721TokenReceiver} from "../../lib/solmate/src/tokens/ERC721.sol";
 
+// Staking Activity Checker interface
 interface IActivityChecker {
     /// @dev Gets service multisig nonces.
     /// @param multisig Service multisig address.

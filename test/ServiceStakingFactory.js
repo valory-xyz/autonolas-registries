@@ -210,29 +210,29 @@ describe("Staking", function () {
             // Try to set implementation statuses with the wrong number of parameters
             await expect(
                 stakingVerifier.setImplementationsStatuses([], [], true)
-            ).to.be.revertedWithCustomError(stakingFactory, "WrongArrayLength");
+            ).to.be.revertedWithCustomError(stakingVerifier, "WrongArrayLength");
 
             await expect(
                 stakingVerifier.setImplementationsStatuses([AddressZero], [], true)
-            ).to.be.revertedWithCustomError(stakingFactory, "WrongArrayLength");
+            ).to.be.revertedWithCustomError(stakingVerifier, "WrongArrayLength");
 
             await expect(
                 stakingVerifier.setImplementationsStatuses([], [true], true)
-            ).to.be.revertedWithCustomError(stakingFactory, "WrongArrayLength");
+            ).to.be.revertedWithCustomError(stakingVerifier, "WrongArrayLength");
 
             await expect(
                 stakingVerifier.setImplementationsStatuses([AddressZero], [true], true)
-            ).to.be.revertedWithCustomError(stakingFactory, "ZeroAddress");
+            ).to.be.revertedWithCustomError(stakingVerifier, "ZeroAddress");
 
             // Try to change the staking param limits not by the owner
             await expect(
                 stakingVerifier.connect(signers[1]).changeStakingLimits(0)
-            ).to.be.revertedWithCustomError(stakingFactory, "OwnerOnly");
+            ).to.be.revertedWithCustomError(stakingVerifier, "OwnerOnly");
 
             // Try to change the staking param limits with the zero value
             await expect(
                 stakingVerifier.changeStakingLimits(0)
-            ).to.be.revertedWithCustomError(stakingFactory, "ZeroValue");
+            ).to.be.revertedWithCustomError(stakingVerifier, "ZeroValue");
 
             // Try to set instance activity not by instance deployer
             await expect(

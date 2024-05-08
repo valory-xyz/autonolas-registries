@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+// Staking instance interface
 interface IStaking {
     /// @dev Gets rewards per second in a service staking contract.
     /// @return Rewards per second.

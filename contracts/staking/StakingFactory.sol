@@ -3,7 +3,8 @@ pragma solidity ^0.8.23;
 
 import {StakingProxy} from "./StakingProxy.sol";
 
-interface IVerifier {
+// Staking verifier interface
+interface IStakingVerifier {
     /// @dev Verifies a service staking implementation contract.
     /// @param implementation Service staking implementation contract address.
     /// @return success True, if verification is successful.
@@ -167,7 +168,7 @@ contract StakingFactory {
 
         // Provide additional checks, if needed
         address localVerifier = verifier;
-        if (localVerifier != address(0) && !IVerifier(localVerifier).verifyImplementation(implementation)) {
+        if (localVerifier != address(0) && !IStakingVerifier(localVerifier).verifyImplementation(implementation)) {
             revert UnverifiedImplementation(implementation);
         }
 
@@ -203,7 +204,7 @@ contract StakingFactory {
         }
 
         // Check that the created proxy instance does not violate defined limits
-        if (localVerifier != address(0) && !IVerifier(localVerifier).verifyInstance(instance, implementation)) {
+        if (localVerifier != address(0) && !IStakingVerifier(localVerifier).verifyInstance(instance, implementation)) {
             revert UnverifiedProxy(instance);
         }
 
@@ -253,7 +254,7 @@ contract StakingFactory {
         // Provide additional checks, if needed
         address localVerifier = verifier;
         if (localVerifier != address (0)) {
-            success = IVerifier(localVerifier).verifyInstance(instance, implementation);
+            success = IStakingVerifier(localVerifier).verifyInstance(instance, implementation);
         } else {
             success = true;
         }

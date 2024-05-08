@@ -3,7 +3,6 @@ pragma solidity ^0.8.23;
 
 import {StakingBase} from "./StakingBase.sol";
 import {SafeTransferLib} from "../utils/SafeTransferLib.sol";
-import "../interfaces/IToken.sol";
 
 /// @dev Provided zero token address.
 error ZeroTokenAddress();
