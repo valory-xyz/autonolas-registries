@@ -12,10 +12,8 @@ async function main() {
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
     const serviceStakingParams = parsedData.serviceStakingParams;
-    const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
     const olasAddress = parsedData.olasAddress;
-    const multisigProxyHash130 = parsedData.multisigProxyHash130;
     const serviceStakingTokenAddress = parsedData.serviceStakingTokenAddress;
     const serviceStakingFactoryAddress = parsedData.serviceStakingFactoryAddress;
 
@@ -55,7 +53,7 @@ async function main() {
     console.log("21. EOA to deploy ServiceStakingTokenInstance via the ServiceStakingFactory");
     console.log("You are signing the following transaction: ServiceStakingFactory.connect(EOA).createServiceStakingInstance()");
     const initPayload = serviceStakingToken.interface.encodeFunctionData("initialize", [serviceStakingParams,
-        serviceRegistryAddress, serviceRegistryTokenUtilityAddress, olasAddress, multisigProxyHash130]);
+        serviceRegistryTokenUtilityAddress, olasAddress]);
     const serviceStakingTokenInstanceAddress = await serviceStakingFactory.callStatic.createServiceStakingInstance(
         serviceStakingTokenAddress, initPayload);
     const result = await serviceStakingFactory.createServiceStakingInstance(serviceStakingTokenAddress, initPayload);

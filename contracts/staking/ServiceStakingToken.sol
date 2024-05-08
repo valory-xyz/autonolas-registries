@@ -5,6 +5,9 @@ import {ServiceStakingBase} from "./ServiceStakingBase.sol";
 import {SafeTransferLib} from "../utils/SafeTransferLib.sol";
 import "../interfaces/IToken.sol";
 
+/// @dev Provided zero token address.
+error ZeroTokenAddress();
+
 // Service Registry Token Utility interface
 interface IServiceTokenUtility {
     /// @dev Gets the service security token info.
@@ -59,7 +62,7 @@ contract ServiceStakingToken is ServiceStakingBase {
 
         // Initial checks
         if (_stakingToken == address(0) || _serviceRegistryTokenUtility == address(0)) {
-            revert ZeroAddress();
+            revert ZeroTokenAddress();
         }
 
         stakingToken = _stakingToken;

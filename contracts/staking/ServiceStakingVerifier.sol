@@ -139,13 +139,14 @@ contract ServiceStakingVerifier {
 
     /// @dev Verifies a service staking implementation contract.
     /// @param implementation Service staking implementation contract address.
-    /// @return success True, if verification is successful.
-    function verifyImplementation(address implementation) external view returns (bool success){
-        success = true;
+    /// @return True, if verification is successful.
+    function verifyImplementation(address implementation) external view returns (bool){
         // Check the operator whitelisting status, if the whitelisting check is set
         if (implementationsCheck) {
-            success = mapImplementations[implementation];
+            return mapImplementations[implementation];
         }
+
+        return true;
     }
 
     /// @dev Verifies a service staking proxy instance.

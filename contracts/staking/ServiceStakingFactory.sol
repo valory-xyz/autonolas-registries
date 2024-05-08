@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import {IErrorsRegistries} from "../interfaces/IErrorsRegistries.sol";
 import {ServiceStakingProxy} from "./ServiceStakingProxy.sol";
 
 interface IVerifier {
@@ -16,6 +15,14 @@ interface IVerifier {
     /// @return True, if verification is successful.
     function verifyInstance(address instance, address implementation) external view returns (bool);
 }
+
+/// @dev Only `owner` has a privilege, but the `sender` was provided.
+/// @param sender Sender address.
+/// @param owner Required sender address as an owner.
+error OwnerOnly(address sender, address owner);
+
+/// @dev Provided zero address.
+error ZeroAddress();
 
 /// @dev Provided incorrect data length.
 /// @param expected Expected minimum data length.
@@ -42,11 +49,17 @@ error UnverifiedImplementation(address implementation);
 /// @param instance Proxy instance address.
 error UnverifiedProxy(address instance);
 
+struct InstanceParams {
+    address implementation;
+    address deployer;
+    bool isActive;
+}
+
 /// @title ServiceStakingFactory - Smart contract for service staking factory
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-contract ServiceStakingFactory is IErrorsRegistries {
+contract ServiceStakingFactory {
     event OwnerUpdated(address indexed owner);
     event VerifierUpdated(address indexed verifier);
     event InstanceCreated(address indexed sender, address indexed instance, address indexed implementation);
@@ -59,8 +72,8 @@ contract ServiceStakingFactory is IErrorsRegistries {
     address public owner;
     // Verifier address
     address public verifier;
-    // Mapping of staking service proxy instances => implementation address
-    mapping(address => address) public mapInstanceImplementations;
+    // Mapping of staking service proxy instances => InstanceParams struct
+    mapping(address => InstanceParams) public mapInstanceParams;
 
     /// @dev ServiceStakingFactory constructor.
     /// @param _verifier Verifier contract address (can be zero).
@@ -190,18 +203,46 @@ contract ServiceStakingFactory is IErrorsRegistries {
             revert UnverifiedProxy(instance);
         }
 
-        mapInstanceImplementations[instance] = implementation;
+        // Record instance params
+        InstanceParams memory instanceParams = InstanceParams(implementation, msg.sender, true);
+        mapInstanceParams[instance] = instanceParams;
+        // Increase the nonce
         nonce = localNonce + 1;
 
         emit InstanceCreated(msg.sender, instance, implementation);
     }
 
+    /// @dev Sets the instance activity flag.
+    /// @param instance Proxy instance address.
+    /// @param isActive Activity flag.
+    function setInstanceActivity(address instance, bool isActive) external {
+        // Get proxy instance params
+        InstanceParams storage instanceParams = mapInstanceParams[instance];
+        address deployer = instanceParams.deployer;
+
+        // Check for the instance deployer
+        if (msg.sender != deployer) {
+            revert OwnerOnly(msg.sender, deployer);
+        }
+
+        instanceParams.isActive = isActive;
+    }
+    
     /// @dev Verifies a service staking contract instance.
     /// @param instance Service staking proxy instance.
     /// @return success True, if verification is successful.
     function verifyInstance(address instance) external view returns (bool success) {
-        address implementation = mapInstanceImplementations[instance];
+        // Get proxy instance params
+        InstanceParams storage instanceParams = mapInstanceParams[instance];
+        address implementation = instanceParams.implementation;
+
+        // Check that the implementation corresponds to the proxy instance
         if (implementation == address(0)) {
+            return false;
+        }
+
+        // Check for the instance being active
+        if (!instanceParams.isActive) {
             return false;
         }
 

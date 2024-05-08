@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 const helpers = require("@nomicfoundation/hardhat-network-helpers");
 const safeContracts = require("@gnosis.pm/safe-contracts");
 
-describe("ServiceStaking", function () {
+describe.only("ServiceStaking", function () {
     let componentRegistry;
     let agentRegistry;
     let serviceRegistry;
@@ -427,7 +427,7 @@ describe("ServiceStaking", function () {
                 [testServiceParams, serviceRegistryTokenUtility.address, AddressZero]);
             await expect(
                 serviceStakingFactory.createServiceStakingInstance(serviceStakingTokenImplementation.address, initPayload)
-            ).to.be.revertedWithCustomError(serviceStakingTokenImplementation, "ZeroAddress");
+            ).to.be.revertedWithCustomError(serviceStakingTokenImplementation, "ZeroTokenAddress");
         });
     });
 

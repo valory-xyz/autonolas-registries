@@ -84,6 +84,30 @@ interface IService {
         returns (uint256 numAgentIds, AgentParams[] memory agentParams);
 }
 
+/// @dev Only `owner` has a privilege, but the `sender` was provided.
+/// @param sender Sender address.
+/// @param owner Required sender address as an owner.
+error OwnerOnly(address sender, address owner);
+
+/// @dev Provided zero address.
+error ZeroAddress();
+
+/// @dev Provided zero value.
+error ZeroValue();
+
+/// @dev Agent Id is not correctly provided for the current routine.
+/// @param agentId Component Id.
+error WrongAgentId(uint256 agentId);
+
+/// @dev Wrong state of a service.
+/// @param state Service state.
+/// @param serviceId Service Id.
+error WrongServiceState(uint256 state, uint256 serviceId);
+
+/// @dev Multisig is not whitelisted.
+/// @param multisig Address of a multisig implementation.
+error UnauthorizedMultisig(address multisig);
+
 /// @dev The contract is already initialized.
 error AlreadyInitialized();
 
@@ -137,7 +161,7 @@ struct ServiceInfo {
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
+abstract contract ServiceStakingBase is ERC721TokenReceiver {
     enum ServiceStakingState {
         Unstaked,
         Staked,
@@ -301,7 +325,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         // Check for the multisig proxy bytecode hash value
-        if (_stakingParams.proxyHash == bytes32(0)) {
+        if (_stakingParams.proxyHash == 0) {
             revert ZeroValue();
         }
 
@@ -379,7 +403,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         // Check the configuration hash, if applicable
-        if (configHash != bytes32(0) && configHash != service.configHash) {
+        if (configHash != 0 && configHash != service.configHash) {
             revert WrongServiceConfiguration(serviceId);
         }
         // Check the threshold, if applicable

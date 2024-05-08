@@ -42,7 +42,7 @@ async function main() {
     console.log("EOA is:", deployer);
 
     // Transaction signing and execution
-    console.log("16. EOA to deploy ServiceStakingActivityChecker");
+    console.log("18. EOA to deploy ServiceStakingActivityChecker");
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
     const ServiceStakingActivityChecker = await ethers.getContractFactory("ServiceStakingActivityChecker");
     console.log("You are signing the following transaction: ServiceStakingActivityChecker.connect(EOA).deploy()");
@@ -58,7 +58,7 @@ async function main() {
     await new Promise(r => setTimeout(r, 30000));
 
     // Writing updated parameters back to the JSON file
-    parsedData.serviceStakingTokenAddress = serviceStakingActivityChecker.address;
+    parsedData.serviceStakingActivityCheckerAddress = serviceStakingActivityChecker.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
 
     // Contract verification

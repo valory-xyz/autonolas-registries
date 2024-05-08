@@ -60,7 +60,7 @@ async function main() {
     await new Promise(r => setTimeout(r, 30000));
 
     // Writing updated parameters back to the JSON file
-    parsedData.serviceStakingFactoryAddress = serviceStakingVerifier.address;
+    parsedData.serviceStakingVerifierAddress = serviceStakingVerifier.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
 
     // Contract verification

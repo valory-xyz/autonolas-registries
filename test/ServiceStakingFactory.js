@@ -183,6 +183,12 @@ describe("ServiceStaking", function () {
             // Verify again without a verifier and it must pass
             success = await serviceStakingFactory.verifyInstance(instance);
             expect(success).to.be.true;
+
+            // Set the instance inactive
+            await serviceStakingFactory.setInstanceActivity(instance, false);
+            // The verification is going to fail
+            success = await serviceStakingFactory.verifyInstance(instance);
+            expect(success).to.be.false;
         });
 
         it("Should fail when setting verification implementations with incorrect parameters", async function () {
@@ -227,6 +233,11 @@ describe("ServiceStaking", function () {
             await expect(
                 serviceStakingVerifier.changeStakingLimits(0)
             ).to.be.revertedWithCustomError(serviceStakingFactory, "ZeroValue");
+
+            // Try to set instance activity not by instance deployer
+            await expect(
+                serviceStakingFactory.setInstanceActivity(AddressZero, true)
+            ).to.be.revertedWithCustomError(serviceStakingFactory, "OwnerOnly");
         });
 
         it("Setting verification implementations", async function () {
