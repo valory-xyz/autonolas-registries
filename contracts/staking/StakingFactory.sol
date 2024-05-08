@@ -49,9 +49,13 @@ error UnverifiedImplementation(address implementation);
 /// @param instance Proxy instance address.
 error UnverifiedProxy(address instance);
 
+// Instance params struct
 struct InstanceParams {
+    // Implementation of a created proxy instance
     address implementation;
+    // Instance deployer
     address deployer;
+    // Instance activity flag
     bool isActive;
 }
 
