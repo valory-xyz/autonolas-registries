@@ -58,6 +58,19 @@ function generateReport() {
         totalCodeLines += codeLines;
         contractNumber++;
     });
+
+        // Manually specified contracts in contracts/ directory
+    const contractsInContractsDir = [
+        "utils/SafeTransferLib.sol",
+    ];
+
+    contractsInContractsDir.forEach(contractName => {
+        const contractPath = "contracts/" + contractName;
+        const codeLines = getCodeLines(contractPath);
+        report += `${contractNumber.toString().padStart(5)} | ${contractPath.padEnd(120)} | ${codeLines.toString().padStart(10)} |\n`;
+        totalCodeLines += codeLines;
+        contractNumber++;
+    });
     
     //Add separator 
     report += "-".repeat(142) + "\n";

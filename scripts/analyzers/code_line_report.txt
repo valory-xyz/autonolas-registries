@@ -7,5 +7,6 @@
     5 | StakingProxy.sol                                                                                                         |         30 |
     6 | StakingToken.sol                                                                                                         |         58 |
     7 | StakingVerifier.sol                                                                                                      |         96 |
+    8 | contracts/utils/SafeTransferLib.sol                                                                                      |         41 |
 ----------------------------------------------------------------------------------------------------------------------------------------------
-    7 | All Registries contract                                                                                                  |        871 |
+    8 | All Registries contract                                                                                                  |        912 |
