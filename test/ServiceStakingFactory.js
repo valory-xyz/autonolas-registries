@@ -185,7 +185,7 @@ describe("Staking", function () {
             expect(success).to.be.true;
 
             // Set the instance inactive
-            await stakingFactory.setInstanceActivity(instance, false);
+            await stakingFactory.setInstanceStatus(instance, false);
             // The verification is going to fail
             success = await stakingFactory.verifyInstance(instance);
             expect(success).to.be.false;
@@ -236,7 +236,7 @@ describe("Staking", function () {
 
             // Try to set instance activity not by instance deployer
             await expect(
-                stakingFactory.setInstanceActivity(AddressZero, true)
+                stakingFactory.setInstanceStatus(AddressZero, true)
             ).to.be.revertedWithCustomError(stakingFactory, "OwnerOnly");
         });
 

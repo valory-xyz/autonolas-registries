@@ -56,8 +56,8 @@ struct InstanceParams {
     address implementation;
     // Instance deployer
     address deployer;
-    // Instance activity flag
-    bool isActive;
+    // Instance status flag
+    bool isEnabled;
 }
 
 /// @title StakingFactory - Smart contract for service staking factory
@@ -217,10 +217,10 @@ contract StakingFactory {
         emit InstanceCreated(msg.sender, instance, implementation);
     }
 
-    /// @dev Sets the instance activity flag.
+    /// @dev Sets the instance status flag.
     /// @param instance Proxy instance address.
-    /// @param isActive Activity flag.
-    function setInstanceActivity(address instance, bool isActive) external {
+    /// @param isEnabled Activity flag.
+    function setInstanceStatus(address instance, bool isEnabled) external {
         // Get proxy instance params
         InstanceParams storage instanceParams = mapInstanceParams[instance];
         address deployer = instanceParams.deployer;
@@ -230,7 +230,7 @@ contract StakingFactory {
             revert OwnerOnly(msg.sender, deployer);
         }
 
-        instanceParams.isActive = isActive;
+        instanceParams.isEnabled = isEnabled;
     }
     
     /// @dev Verifies a service staking contract instance.
@@ -247,7 +247,7 @@ contract StakingFactory {
         }
 
         // Check for the instance being active
-        if (!instanceParams.isActive) {
+        if (!instanceParams.isEnabled) {
             return false;
         }
 
