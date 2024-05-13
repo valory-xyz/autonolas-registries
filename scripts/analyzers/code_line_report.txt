@@ -1,0 +1,12 @@
+      | Contract                                                                                                                 |   CodeLine |
+----------------------------------------------------------------------------------------------------------------------------------------------
+    1 | StakingActivityChecker.sol                                                                                               |         29 |
+    2 | StakingBase.sol                                                                                                          |        502 |
+    3 | StakingFactory.sol                                                                                                       |        134 |
+    4 | StakingNativeToken.sol                                                                                                   |         22 |
+    5 | StakingProxy.sol                                                                                                         |         30 |
+    6 | StakingToken.sol                                                                                                         |         58 |
+    7 | StakingVerifier.sol                                                                                                      |         96 |
+    8 | contracts/utils/SafeTransferLib.sol                                                                                      |         41 |
+----------------------------------------------------------------------------------------------------------------------------------------------
+    8 | All Registries contract                                                                                                  |        912 |

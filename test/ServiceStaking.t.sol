@@ -12,8 +12,11 @@ import {ServiceRegistryTokenUtility} from "../contracts/ServiceRegistryTokenUtil
 import {ServiceManagerToken} from "../contracts/ServiceManagerToken.sol";
 import {OperatorWhitelist} from "../contracts/utils/OperatorWhitelist.sol";
 import {GnosisSafeMultisig} from "../contracts/multisigs/GnosisSafeMultisig.sol";
-import "../contracts/staking/ServiceStakingNativeToken.sol";
-import {ServiceStakingToken} from "../contracts/staking/ServiceStakingToken.sol";
+import "../contracts/staking/StakingNativeToken.sol";
+import {StakingToken} from "../contracts/staking/StakingToken.sol";
+import {StakingVerifier} from "../contracts/staking/StakingVerifier.sol";
+import {StakingFactory} from "../contracts/staking/StakingFactory.sol";
+import {StakingActivityChecker} from "../contracts/staking/StakingActivityChecker.sol";
 import {SafeNonceLib} from "../contracts/test/SafeNonceLib.sol";
 
 contract BaseSetup is Test {
@@ -27,8 +30,13 @@ contract BaseSetup is Test {
     GnosisSafeProxy internal gnosisSafeProxy;
     GnosisSafeProxyFactory internal gnosisSafeProxyFactory;
     GnosisSafeMultisig internal gnosisSafeMultisig;
-    ServiceStakingNativeToken internal serviceStakingNativeToken;
-    ServiceStakingToken internal serviceStakingToken;
+    StakingNativeToken internal stakingNativeTokenImplementation;
+    StakingNativeToken internal stakingNativeToken;
+    StakingToken internal stakingTokenImplementation;
+    StakingToken internal stakingToken;
+    StakingVerifier internal stakingVerifier;
+    StakingFactory internal stakingFactory;
+    StakingActivityChecker internal stakingActivityChecker;
     SafeNonceLib internal safeNonceLib;
 
     address payable[] internal users;
@@ -106,14 +114,36 @@ contract BaseSetup is Test {
         // Get the multisig proxy bytecode hash
         bytes32 multisigProxyHash = keccak256(address(gnosisSafeProxy).code);
 
+        // Deploy service staking verifier
+        stakingVerifier = new StakingVerifier(address(token), rewardsPerSecond);
+
+        // Deploy service staking factory
+        stakingFactory = new StakingFactory(address(0));
+
+        // Deploy service staking activity checker
+        stakingActivityChecker = new StakingActivityChecker(livenessRatio);
+
         // Deploy service staking native token and arbitrary ERC20 token
-        ServiceStakingBase.StakingParams memory stakingParams = ServiceStakingBase.StakingParams(maxNumServices,
-            rewardsPerSecond, minStakingDeposit, minNumStakingPeriods, maxNumInactivityPeriods, livenessPeriod,
-            livenessRatio, numAgentInstances, emptyArray, 0, bytes32(0));
-        serviceStakingNativeToken = new ServiceStakingNativeToken(stakingParams, address(serviceRegistry),
-            multisigProxyHash);
-        serviceStakingToken = new ServiceStakingToken(stakingParams, address(serviceRegistry), address(serviceRegistryTokenUtility),
-            address(token), multisigProxyHash);
+        StakingBase.StakingParams memory stakingParams = StakingBase.StakingParams(
+            bytes32(uint256(uint160(address(msg.sender)))), maxNumServices, rewardsPerSecond, minStakingDeposit,
+            minNumStakingPeriods, maxNumInactivityPeriods, livenessPeriod, numAgentInstances, emptyArray, 0, bytes32(0),
+            multisigProxyHash, address(serviceRegistry), address(stakingActivityChecker));
+        stakingNativeTokenImplementation = new StakingNativeToken();
+        stakingTokenImplementation = new StakingToken();
+
+        // Initialization payload and deployment of stakingNativeToken
+        bytes memory initPayload = abi.encodeWithSelector(stakingNativeTokenImplementation.initialize.selector,
+            stakingParams, address(serviceRegistry), multisigProxyHash);
+        stakingNativeToken = StakingNativeToken(stakingFactory.createStakingInstance(
+            address(stakingNativeTokenImplementation), initPayload));
+
+        // Set the stakingVerifier
+        stakingFactory.changeVerifier(address(stakingVerifier));
+        // Initialization payload and deployment of stakingToken
+        initPayload = abi.encodeWithSelector(stakingTokenImplementation.initialize.selector,
+            stakingParams, address(serviceRegistryTokenUtility), address(token));
+        stakingToken = StakingToken(stakingFactory.createStakingInstance(
+            address(stakingTokenImplementation), initPayload));
 
         // Whitelist multisig implementations
         serviceRegistry.changeMultisigPermission(address(gnosisSafeMultisig), true);
@@ -171,7 +201,7 @@ contract BaseSetup is Test {
     }
 }
 
-contract ServiceStaking is BaseSetup {
+contract Staking is BaseSetup {
     function setUp() public override {
         super.setUp();
     }
@@ -180,14 +210,14 @@ contract ServiceStaking is BaseSetup {
     /// @param numNonces Number of nonces per day.
     function testNonces(uint8 numNonces) external {
         // Send funds to a native token staking contract
-        address(serviceStakingNativeToken).call{value: 100 ether}("");
+        address(stakingNativeToken).call{value: 100 ether}("");
 
         // Stake services
         for (uint256 i = 0; i < numServices; ++i) {
             uint256 serviceId = i + 1;
             vm.startPrank(deployer);
-            serviceRegistry.approve(address(serviceStakingNativeToken), serviceId);
-            serviceStakingNativeToken.stake(serviceId);
+            serviceRegistry.approve(address(stakingNativeToken), serviceId);
+            stakingNativeToken.stake(serviceId);
             vm.stopPrank();
         }
 
@@ -228,19 +258,19 @@ contract ServiceStaking is BaseSetup {
             }
 
             // Move several liveness checks ahead
-            vm.warp(block.timestamp + livenessPeriod * serviceStakingNativeToken.maxNumInactivityPeriods() + 1);
+            vm.warp(block.timestamp + livenessPeriod * stakingNativeToken.maxNumInactivityPeriods() + 1);
 
             // Call the checkpoint
-            serviceStakingNativeToken.checkpoint();
+            stakingNativeToken.checkpoint();
 
             // Unstake if there are no available rewards
-            if (serviceStakingNativeToken.availableRewards() == 0) {
+            if (stakingNativeToken.availableRewards() == 0) {
                 for (uint256 j = 0; j < numServices; ++j) {
                     uint256 serviceId = j + 1;
                     // Unstake if the service is not yet unstaked, otherwise ignore
-                    if (uint8(serviceStakingNativeToken.getServiceStakingState(serviceId)) > 0) {
+                    if (uint8(stakingNativeToken.getStakingState(serviceId)) > 0) {
                         vm.startPrank(deployer);
-                        serviceStakingNativeToken.unstake(serviceId);
+                        stakingNativeToken.unstake(serviceId);
                         vm.stopPrank();
                     }
                 }
@@ -253,14 +283,14 @@ contract ServiceStaking is BaseSetup {
     /// @param numNonces Number of nonces per day.
     function testNoncesLimited(uint8 numNonces) external {
         // Send funds to a native token staking contract
-        address(serviceStakingNativeToken).call{value: 100 ether}("");
+        address(stakingNativeToken).call{value: 100 ether}("");
 
         // Stake services
         for (uint256 i = 0; i < numServices; ++i) {
             uint256 serviceId = i + 1;
             vm.startPrank(deployer);
-            serviceRegistry.approve(address(serviceStakingNativeToken), serviceId);
-            serviceStakingNativeToken.stake(serviceId);
+            serviceRegistry.approve(address(stakingNativeToken), serviceId);
+            stakingNativeToken.stake(serviceId);
             vm.stopPrank();
         }
 
@@ -301,19 +331,19 @@ contract ServiceStaking is BaseSetup {
             }
 
             // Move several liveness checks ahead
-            vm.warp(block.timestamp + livenessPeriod * serviceStakingNativeToken.maxNumInactivityPeriods() + 1);
+            vm.warp(block.timestamp + livenessPeriod * stakingNativeToken.maxNumInactivityPeriods() + 1);
 
             // Call the checkpoint
-            serviceStakingNativeToken.checkpoint();
+            stakingNativeToken.checkpoint();
 
             // Unstake if there are no available rewards
-            if (serviceStakingNativeToken.availableRewards() == 0) {
+            if (stakingNativeToken.availableRewards() == 0) {
                 for (uint256 j = 0; j < numServices; ++j) {
                     uint256 serviceId = j + 1;
                     // Unstake if the service is not yet unstaked, otherwise ignore
-                    if (uint8(serviceStakingNativeToken.getServiceStakingState(serviceId)) > 0) {
+                    if (uint8(stakingNativeToken.getStakingState(serviceId)) > 0) {
                         vm.startPrank(deployer);
-                        serviceStakingNativeToken.unstake(serviceId);
+                        stakingNativeToken.unstake(serviceId);
                         vm.stopPrank();
                     }
                 }
@@ -325,14 +355,14 @@ contract ServiceStaking is BaseSetup {
     /// @param numNonces Number of nonces to increase / decrease per day.
     function testManipulateNonces(uint128 numNonces) external {
         // Send funds to a native token staking contract
-        address(serviceStakingNativeToken).call{value: 100 ether}("");
+        address(stakingNativeToken).call{value: 100 ether}("");
 
         // Stake services
         for (uint256 i = 0; i < numServices; ++i) {
             uint256 serviceId = i + 1;
             vm.startPrank(deployer);
-            serviceRegistry.approve(address(serviceStakingNativeToken), serviceId);
-            serviceStakingNativeToken.stake(serviceId);
+            serviceRegistry.approve(address(stakingNativeToken), serviceId);
+            stakingNativeToken.stake(serviceId);
             vm.stopPrank();
         }
 
@@ -372,19 +402,19 @@ contract ServiceStaking is BaseSetup {
             }
 
             // Move several liveness checks ahead
-            vm.warp(block.timestamp + livenessPeriod * serviceStakingNativeToken.maxNumInactivityPeriods() + 1);
+            vm.warp(block.timestamp + livenessPeriod * stakingNativeToken.maxNumInactivityPeriods() + 1);
 
             // Call the checkpoint
-            serviceStakingNativeToken.checkpoint();
+            stakingNativeToken.checkpoint();
 
             // Unstake if there are no available rewards
-            if (serviceStakingNativeToken.availableRewards() == 0) {
+            if (stakingNativeToken.availableRewards() == 0) {
                 for (uint256 j = 0; j < numServices; ++j) {
                     uint256 serviceId = j + 1;
                     // Unstake if the service is not yet unstaked, otherwise ignore
-                    if (uint8(serviceStakingNativeToken.getServiceStakingState(serviceId)) > 0) {
+                    if (uint8(stakingNativeToken.getStakingState(serviceId)) > 0) {
                         vm.startPrank(deployer);
-                        serviceStakingNativeToken.unstake(serviceId);
+                        stakingNativeToken.unstake(serviceId);
                         vm.stopPrank();
                     }
                 }
@@ -396,15 +426,15 @@ contract ServiceStaking is BaseSetup {
     /// @param numNonces Number of nonces per day.
     function testNoncesToken(uint8 numNonces) external {
         // Send tokens to a ERC20 token staking contract
-        token.approve(address(serviceStakingToken), 100 ether);
-        serviceStakingToken.deposit(100 ether);
+        token.approve(address(stakingToken), 100 ether);
+        stakingToken.deposit(100 ether);
 
         // Stake services
         for (uint256 i = 0; i < numServices; ++i) {
             uint256 serviceId = i + numServices + 1;
             vm.startPrank(deployer);
-            serviceRegistry.approve(address(serviceStakingToken), serviceId);
-            serviceStakingToken.stake(serviceId);
+            serviceRegistry.approve(address(stakingToken), serviceId);
+            stakingToken.stake(serviceId);
             vm.stopPrank();
         }
 
@@ -444,19 +474,19 @@ contract ServiceStaking is BaseSetup {
             }
 
             // Move several liveness checks ahead
-            vm.warp(block.timestamp + livenessPeriod * serviceStakingToken.maxNumInactivityPeriods() + 1);
+            vm.warp(block.timestamp + livenessPeriod * stakingToken.maxNumInactivityPeriods() + 1);
 
             // Call the checkpoint
-            serviceStakingToken.checkpoint();
+            stakingToken.checkpoint();
 
             // Unstake if there are no available rewards
-            if (serviceStakingToken.availableRewards() == 0) {
+            if (stakingToken.availableRewards() == 0) {
                 for (uint256 j = 0; j < numServices; ++j) {
                     uint256 serviceId = j + numServices + 1;
                     // Unstake if the service is not yet unstaked, otherwise ignore
-                    if (uint8(serviceStakingToken.getServiceStakingState(serviceId)) > 0) {
+                    if (uint8(stakingToken.getStakingState(serviceId)) > 0) {
                         vm.startPrank(deployer);
-                        serviceStakingToken.unstake(serviceId);
+                        stakingToken.unstake(serviceId);
                         vm.stopPrank();
                     }
                 }

@@ -5,7 +5,7 @@ workflow: [deploymentL2.md](https://github.com/valory-xyz/autonolas-registries/b
 ## Observations
 - There are several files with global parameters based on the corresponding network. In order to work with the configuration,
   please copy `gobals_network.json` file to file the `gobals.json` one, where `network` is the corresponding network.
-  For example: `cp gobals_polygon_mumbai.json gobals.json`.
+  For example: `cp gobals_polygon_amoy.json gobals.json`.
 - Please note: if you encounter the `Unknown Error 0x6b0c`, then it is likely because the ledger is not connected or logged in.
 
 ## Steps to engage
@@ -22,7 +22,7 @@ npx hardhat compile
 command as described in the [main readme](https://github.com/valory-xyz/autonolas-registries/blob/main/README.md).
 
 
-Create a `globals.json` file in the root folder, or copy it from the file with pre-defined parameters (i.e., `scripts/deployment/l2/gobals_polygon_mumbai.json` for the mumbai testnet).
+Create a `globals.json` file in the root folder, or copy it from the file with pre-defined parameters (i.e., `scripts/deployment/l2/gobals_polygon_amoy.json` for the amoy testnet).
 
 Parameters of the `globals.json` file:
 - `contractVerification`: a flag for verifying contracts in deployment scripts (`true`) or skipping it (`false`);

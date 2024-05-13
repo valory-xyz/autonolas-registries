@@ -2,13 +2,28 @@
 pragma solidity ^0.8.23;
 
 import {ERC721TokenReceiver} from "../../lib/solmate/src/tokens/ERC721.sol";
-import "../interfaces/IErrorsRegistries.sol";
 
-// Multisig interface
-interface IMultisig {
-    /// @dev Gets the multisig nonce.
-    /// @return Multisig nonce.
-    function nonce() external view returns (uint256);
+// Staking Activity Checker interface
+interface IActivityChecker {
+    /// @dev Gets service multisig nonces.
+    /// @param multisig Service multisig address.
+    /// @return nonces Set of a single service multisig nonce.
+    function getMultisigNonces(address multisig) external view returns (uint256[] memory nonces);
+
+    /// @dev Checks if the service multisig liveness ratio passes the defined liveness threshold.
+    /// @notice The formula for calculating the ratio is the following:
+    ///         currentNonce - service multisig nonce at time now (block.timestamp);
+    ///         lastNonce - service multisig nonce at the previous checkpoint or staking time (tsStart);
+    ///         ratio = (currentNonce - lastNonce) / (block.timestamp - tsStart).
+    /// @param curNonces Current service multisig set of a single nonce.
+    /// @param lastNonces Last service multisig set of a single nonce.
+    /// @param ts Time difference between current and last timestamps.
+    /// @return ratioPass True, if the liveness ratio passes the check.
+    function isRatioPass(
+        uint256[] memory curNonces,
+        uint256[] memory lastNonces,
+        uint256 ts
+    ) external view returns (bool ratioPass);
 }
 
 // Service Registry interface
@@ -69,6 +84,33 @@ interface IService {
         returns (uint256 numAgentIds, AgentParams[] memory agentParams);
 }
 
+/// @dev Only `owner` has a privilege, but the `sender` was provided.
+/// @param sender Sender address.
+/// @param owner Required sender address as an owner.
+error OwnerOnly(address sender, address owner);
+
+/// @dev Provided zero address.
+error ZeroAddress();
+
+/// @dev Provided zero value.
+error ZeroValue();
+
+/// @dev Agent Id is not correctly provided for the current routine.
+/// @param agentId Component Id.
+error WrongAgentId(uint256 agentId);
+
+/// @dev Wrong state of a service.
+/// @param state Service state.
+/// @param serviceId Service Id.
+error WrongServiceState(uint256 state, uint256 serviceId);
+
+/// @dev Multisig is not whitelisted.
+/// @param multisig Address of a multisig implementation.
+error UnauthorizedMultisig(address multisig);
+
+/// @dev The contract is already initialized.
+error AlreadyInitialized();
+
 /// @dev No rewards are available in the contract.
 error NoRewardsAvailable();
 
@@ -115,12 +157,12 @@ struct ServiceInfo {
     uint256 inactivity;
 }
 
-/// @title ServiceStakingBase - Base abstract smart contract for staking a service by its owner
+/// @title StakingBase - Base abstract smart contract for staking a service by its owner
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
-    enum ServiceStakingState {
+abstract contract StakingBase is ERC721TokenReceiver {
+    enum StakingState {
         Unstaked,
         Staked,
         Evicted
@@ -128,6 +170,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
     // Input staking parameters
     struct StakingParams {
+        // Metadata staking information
+        bytes32 metadataHash;
         // Maximum number of staking services
         uint256 maxNumServices;
         // Rewards per second
@@ -140,8 +184,6 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256 maxNumInactivityPeriods;
         // Liveness period
         uint256 livenessPeriod;
-        // Liveness ratio in the format of 1e18
-        uint256 livenessRatio;
         // Number of agent instances in the service
         uint256 numAgentInstances;
         // Optional agent Ids requirement
@@ -150,13 +192,23 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         uint256 threshold;
         // Optional service configuration hash requirement
         bytes32 configHash;
+        // Approved multisig proxy hash
+        bytes32 proxyHash;
+        // ServiceRegistry contract address
+        address serviceRegistry;
+        // Service activity checker address
+        address activityChecker;
     }
 
     event ServiceStaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
         uint256[] nonces);
-    event Checkpoint(uint256 indexed epoch, uint256 availableRewards, uint256[] serviceIds, uint256[] rewards);
+    event Checkpoint(uint256 indexed epoch, uint256 availableRewards, uint256[] serviceIds, uint256[] rewards,
+        uint256 epochLength);
     event ServiceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
         uint256[] nonces, uint256 reward);
+    event RewardClaimed(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
+        uint256[] nonces, uint256 reward);
+    event ServiceInactivityWarning(uint256 epoch, uint256 indexed serviceId, uint256 serviceInactivity);
     event ServicesEvicted(uint256 indexed epoch, uint256[] serviceIds, address[] owners, address[] multisigs,
         uint256[] serviceInactivity);
     event Deposit(address indexed sender, uint256 amount, uint256 balance, uint256 availableRewards);
@@ -164,34 +216,36 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
     // Contract version
     string public constant VERSION = "0.1.0";
+    // Staking parameters for initialization
     // Maximum number of staking services
-    uint256 public immutable maxNumServices;
+    uint256 public maxNumServices;
     // Rewards per second
-    uint256 public immutable rewardsPerSecond;
+    uint256 public rewardsPerSecond;
     // Minimum service staking deposit value required for staking
     // The staking deposit must be always greater than 1 in order to distinguish between native and ERC20 tokens
-    uint256 public immutable minStakingDeposit;
+    uint256 public minStakingDeposit;
     // Max number of accumulated inactivity periods after which the service is evicted
-    uint256 public immutable maxNumInactivityPeriods;
+    uint256 public maxNumInactivityPeriods;
     // Liveness period
-    uint256 public immutable livenessPeriod;
-    // Liveness ratio in the format of 1e18
-    uint256 public immutable livenessRatio;
+    uint256 public livenessPeriod;
     // Number of agent instances in the service
-    uint256 public immutable numAgentInstances;
+    uint256 public numAgentInstances;
     // Optional service multisig threshold requirement
-    uint256 public immutable threshold;
+    uint256 public threshold;
     // Optional service configuration hash requirement
-    bytes32 public immutable configHash;
-    // ServiceRegistry contract address
-    address public immutable serviceRegistry;
+    bytes32 public configHash;
     // Approved multisig proxy hash
-    bytes32 public immutable proxyHash;
-    // Min staking duration
-    uint256 public immutable minStakingDuration;
-    // Max allowed inactivity period
-    uint256 public immutable maxInactivityDuration;
+    bytes32 public proxyHash;
+    // ServiceRegistry contract address
+    address public serviceRegistry;
+    // Service activity checker address
+    address public activityChecker;
 
+    // The rest of state variables
+    // Min staking duration
+    uint256 public minStakingDuration;
+    // Max allowed inactivity period
+    uint256 public maxInactivityDuration;
     // Epoch counter
     uint256 public epochCounter;
     // Token / ETH balance
@@ -207,14 +261,19 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     // Set of currently staking serviceIds
     uint256[] public setServiceIds;
 
-    /// @dev ServiceStakingBase constructor.
+    /// @dev StakingBase initialization.
     /// @param _stakingParams Service staking parameters.
-    /// @param _serviceRegistry ServiceRegistry contract address.
-    /// @param _proxyHash Approved multisig proxy hash.
-    constructor(StakingParams memory _stakingParams, address _serviceRegistry, bytes32 _proxyHash) {
+    function _initialize(
+        StakingParams memory _stakingParams
+    ) internal {
+        // Double initialization check
+        if (serviceRegistry != address(0)) {
+            revert AlreadyInitialized();
+        }
+        
         // Initial checks
-        if (_stakingParams.maxNumServices == 0 || _stakingParams.rewardsPerSecond == 0 ||
-            _stakingParams.livenessPeriod == 0 || _stakingParams.livenessRatio == 0 ||
+        if (_stakingParams.metadataHash == 0 || _stakingParams.maxNumServices == 0 ||
+            _stakingParams.rewardsPerSecond == 0 || _stakingParams.livenessPeriod == 0 ||
             _stakingParams.numAgentInstances == 0 || _stakingParams.minNumStakingPeriods == 0 ||
             _stakingParams.maxNumInactivityPeriods == 0) {
             revert ZeroValue();
@@ -231,8 +290,13 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         if (_stakingParams.minStakingDeposit < 2) {
             revert LowerThan(_stakingParams.minStakingDeposit, 2);
         }
-        if (_serviceRegistry == address(0)) {
+        if (_stakingParams.serviceRegistry == address(0) || _stakingParams.activityChecker == address(0)) {
             revert ZeroAddress();
+        }
+
+        // Check for the Activity Checker to be the contract
+        if (_stakingParams.activityChecker.code.length == 0) {
+            revert ZeroValue();
         }
 
         // Assign all the required parameters
@@ -241,9 +305,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         minStakingDeposit = _stakingParams.minStakingDeposit;
         maxNumInactivityPeriods = _stakingParams.maxNumInactivityPeriods;
         livenessPeriod = _stakingParams.livenessPeriod;
-        livenessRatio = _stakingParams.livenessRatio;
         numAgentInstances = _stakingParams.numAgentInstances;
-        serviceRegistry = _serviceRegistry;
+        serviceRegistry = _stakingParams.serviceRegistry;
+        activityChecker = _stakingParams.activityChecker;
 
         // Assign optional parameters
         threshold = _stakingParams.threshold;
@@ -261,12 +325,12 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         // Check for the multisig proxy bytecode hash value
-        if (_proxyHash == bytes32(0)) {
+        if (_stakingParams.proxyHash == 0) {
             revert ZeroValue();
         }
 
         // Record provided multisig proxy bytecode hash
-        proxyHash = _proxyHash;
+        proxyHash = _stakingParams.proxyHash;
 
         // Calculate min staking duration
         minStakingDuration = _stakingParams.minNumStakingPeriods * livenessPeriod;
@@ -339,7 +403,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         // Check the configuration hash, if applicable
-        if (configHash != bytes32(0) && configHash != service.configHash) {
+        if (configHash != 0 && configHash != service.configHash) {
             revert WrongServiceConfiguration(serviceId);
         }
         // Check the threshold, if applicable
@@ -379,7 +443,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         // ServiceInfo struct will be an empty one since otherwise the safeTransferFrom above would fail
         sInfo.multisig = service.multisig;
         sInfo.owner = msg.sender;
-        uint256[] memory nonces = _getMultisigNonces(service.multisig);
+        // This function might revert if it's incorrectly implemented, however this is not a protocol's responsibility
+        // It is safe to revert in this place
+        uint256[] memory nonces = IActivityChecker(activityChecker).getMultisigNonces(service.multisig);
         sInfo.nonces = nonces;
         sInfo.tsStart = block.timestamp;
 
@@ -392,34 +458,37 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         emit ServiceStaked(epochCounter, serviceId, msg.sender, service.multisig, nonces);
     }
 
-    /// @dev Gets service multisig nonces.
-    /// @param multisig Service multisig address.
-    /// @return nonces Set of a single service multisig nonce.
-    function _getMultisigNonces(address multisig) internal view virtual returns (uint256[] memory nonces) {
-        nonces = new uint256[](1);
-        nonces[0] = IMultisig(multisig).nonce();
-    }
-
-    /// @dev Checks if the service multisig liveness ratio passes the defined liveness threshold.
-    /// @notice The formula for calculating the ratio is the following:
-    ///         currentNonce - service multisig nonce at time now (block.timestamp);
-    ///         lastNonce - service multisig nonce at the previous checkpoint or staking time (tsStart);
-    ///         ratio = (currentNonce - lastNonce) / (block.timestamp - tsStart).
-    /// @param curNonces Current service multisig set of a single nonce.
-    /// @param lastNonces Last service multisig set of a single nonce.
+    /// @dev Checks the ratio pass based on external activity checker implementation.
+    /// @param multisig Multisig address.
+    /// @param lastNonces Last checked service multisig nonces.
     /// @param ts Time difference between current and last timestamps.
-    /// @return ratioPass True, if the liveness ratio passes the check.
-    function _isRatioPass(
-        uint256[] memory curNonces,
+    /// @return ratioPass True, if the defined nonce ratio passes the check.
+    /// @return currentNonces Current multisig nonces.
+    function _checkRatioPass(
+        address multisig,
         uint256[] memory lastNonces,
         uint256 ts
-    ) internal view virtual returns (bool ratioPass)
+    ) internal view returns (bool ratioPass, uint256[] memory currentNonces)
     {
-        // If the checkpoint was called in the exact same block, the ratio is zero
-        // If the current nonce is not greater than the last nonce, the ratio is zero
-        if (ts > 0 && curNonces[0] > lastNonces[0]) {
-            uint256 ratio = ((curNonces[0] - lastNonces[0]) * 1e18) / ts;
-            ratioPass = (ratio >= livenessRatio);
+        // Get current service multisig nonce
+        // This is a low level call since it must never revert
+        (bool success, bytes memory returnData) = activityChecker.staticcall(abi.encodeWithSelector(
+            IActivityChecker.getMultisigNonces.selector, multisig));
+
+        // If the function call was successful, check the return value
+        // The return data length must be the exact number of full slots
+        if (success && returnData.length > 63 && (returnData.length % 32 == 0)) {
+            // Parse nonces
+            currentNonces = abi.decode(returnData, (uint256[]));
+
+            // Get the ratio pass activity check
+            (success, returnData) = activityChecker.staticcall(abi.encodeWithSelector(
+                IActivityChecker.isRatioPass.selector, currentNonces, lastNonces, ts));
+
+            // The return data must match the size of bool
+            if (success && returnData.length == 32) {
+                ratioPass = abi.decode(returnData, (bool));
+            }
         }
     }
 
@@ -462,11 +531,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 // Get current service Id
                 serviceIds[i] = setServiceIds[i];
 
+                // TODO Check if storage is needed
                 // Get the service info
                 ServiceInfo storage sInfo = mapServiceInfo[serviceIds[i]];
-
-                // Get current service multisig nonce
-                serviceNonces[i] = _getMultisigNonces(sInfo.multisig);
 
                 // Calculate the liveness nonce ratio
                 // Get the last service checkpoint: staking start time or the global checkpoint timestamp
@@ -480,7 +547,9 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 // Calculate the liveness ratio in 1e18 value
                 // This subtraction is always positive or zero, as the last checkpoint is at most block.timestamp
                 ts = block.timestamp - serviceCheckpoint;
-                bool ratioPass = _isRatioPass(serviceNonces[i], sInfo.nonces, ts);
+
+                bool ratioPass;
+                (ratioPass, serviceNonces[i]) = _checkRatioPass(sInfo.multisig, sInfo.nonces, ts);
 
                 // Record the reward for the service if it has provided enough transactions
                 if (ratioPass) {
@@ -630,6 +699,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
         // If service Ids are returned, then the checkpoint takes place
         if (serviceIds.length > 0) {
+            uint256 eCounter = epochCounter;
             numServices = 0;
             // Record service inactivities and updated current service nonces
             for (uint256 i = 0; i < serviceIds.length; ++i) {
@@ -649,6 +719,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                         evictServiceIds[i] = curServiceId;
                         // Increase number of evicted services
                         numServices++;
+                    } else {
+                        emit ServiceInactivityWarning(eCounter, curServiceId, serviceInactivity[i]);
                     }
                 } else {
                     // Otherwise, set it back to zero
@@ -661,14 +733,16 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
                 _evict(evictServiceIds, serviceInactivity, numServices);
             }
 
+            // Record the actual epoch length
+            uint256 epochLength = block.timestamp - tsCheckpoint;
             // Record the current timestamp such that next calculations start from this point of time
             tsCheckpoint = block.timestamp;
 
             // Increase the epoch counter
-            uint256 eCounter = epochCounter;
             epochCounter = eCounter + 1;
 
-            emit Checkpoint(eCounter, lastAvailableRewards, finalEligibleServiceIds, finalEligibleServiceRewards);
+            emit Checkpoint(eCounter, lastAvailableRewards, finalEligibleServiceIds, finalEligibleServiceRewards,
+                epochLength);
         }
 
         return (serviceIds, serviceNonces, finalEligibleServiceIds, finalEligibleServiceRewards, evictServiceIds);
@@ -676,7 +750,8 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
 
     /// @dev Unstakes the service.
     /// @param serviceId Service Id.
-    function unstake(uint256 serviceId) external {
+    /// @return reward Staking reward.
+    function unstake(uint256 serviceId) external returns (uint256 reward) {
         ServiceInfo storage sInfo = mapServiceInfo[serviceId];
         // Check for the service ownership
         if (msg.sender != sInfo.owner) {
@@ -718,7 +793,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         // Get the unstaked service data
-        uint256 reward = sInfo.reward;
+        reward = sInfo.reward;
         uint256[] memory nonces = sInfo.nonces;
         address multisig = sInfo.multisig;
 
@@ -744,10 +819,41 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         emit ServiceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward);
     }
 
+    /// @dev Claims rewards for the service.
+    /// @param serviceId Service Id.
+    /// @return reward Staking reward.
+    function claim(uint256 serviceId) external returns (uint256 reward) {
+        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+        // Check for the service ownership
+        if (msg.sender != sInfo.owner) {
+            revert OwnerOnly(msg.sender, sInfo.owner);
+        }
+
+        // Call the checkpoint
+        checkpoint();
+
+        // Get the claimed service data
+        reward = sInfo.reward;
+
+        // Check for the zero reward, or for the reentrancy attack
+        if (reward == 0) {
+            revert ZeroValue();
+        }
+
+        // Zero the reward field
+        sInfo.reward = 0;
+
+        // Transfer accumulated rewards to the service multisig
+        address multisig = sInfo.multisig;
+        _withdraw(multisig, reward);
+
+        emit RewardClaimed(epochCounter, serviceId, msg.sender, multisig, sInfo.nonces, reward);
+    }
+
     /// @dev Calculates service staking reward during the last checkpoint period.
     /// @param serviceId Service Id.
     /// @return reward Service reward.
-    function calculateServiceStakingLastReward(uint256 serviceId) public view returns (uint256 reward) {
+    function calculateStakingLastReward(uint256 serviceId) public view returns (uint256 reward) {
         // Calculate overall staking rewards
         (uint256 lastAvailableRewards, uint256 numServices, uint256 totalRewards, uint256[] memory eligibleServiceIds,
             uint256[] memory eligibleServiceRewards, , , ) = _calculateStakingRewards();
@@ -770,24 +876,24 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     /// @dev Calculates overall service staking reward at current timestamp.
     /// @param serviceId Service Id.
     /// @return reward Service reward.
-    function calculateServiceStakingReward(uint256 serviceId) external view returns (uint256 reward) {
+    function calculateStakingReward(uint256 serviceId) external view returns (uint256 reward) {
         // Get current service reward
         ServiceInfo memory sInfo = mapServiceInfo[serviceId];
         reward = sInfo.reward;
 
         // Add pending reward
-        reward += calculateServiceStakingLastReward(serviceId);
+        reward += calculateStakingLastReward(serviceId);
     }
 
     /// @dev Gets the service staking state.
     /// @param serviceId.
     /// @return stakingState Staking state of the service.
-    function getServiceStakingState(uint256 serviceId) external view returns (ServiceStakingState stakingState) {
+    function getStakingState(uint256 serviceId) external view returns (StakingState stakingState) {
         ServiceInfo memory sInfo = mapServiceInfo[serviceId];
         if (sInfo.inactivity > maxInactivityDuration) {
-            stakingState = ServiceStakingState.Evicted;
+            stakingState = StakingState.Evicted;
         } else if (sInfo.tsStart > 0) {
-            stakingState = ServiceStakingState.Staked;
+            stakingState = StakingState.Staked;
         }
     }
 
