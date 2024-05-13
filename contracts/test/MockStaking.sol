@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-/// @title MockServiceStaking - Smart contract for mocking some of the staking service functionality
-contract MockServiceStaking {
+/// @title MockStaking - Smart contract for mocking some of the staking service functionality
+contract MockStaking {
     uint256 public serviceId;
     uint256 public rewardsPerSecond;
     address public token;

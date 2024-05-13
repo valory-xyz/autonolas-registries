@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-interface IServiceStaking {
+// Staking instance interface
+interface IStaking {
     /// @dev Gets rewards per second in a service staking contract.
     /// @return Rewards per second.
     function rewardsPerSecond() external view returns (uint256);
@@ -27,11 +28,11 @@ error WrongArrayLength(uint256 numValues1, uint256 numValues2);
 /// @param owner Required sender address as an owner.
 error OwnerOnly(address sender, address owner);
 
-/// @title ServiceStakingVerifier - Smart contract for service staking contracts verification
+/// @title StakingVerifier - Smart contract for service staking contracts verification
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-contract ServiceStakingVerifier {
+contract StakingVerifier {
     event OwnerUpdated(address indexed owner);
     event SetImplementationsCheck(bool setCheck);
     event ImplementationsWhitelistUpdated(address[] implementations, bool[] statuses, bool setCheck);
@@ -49,7 +50,7 @@ contract ServiceStakingVerifier {
     // Mapping implementation address => whitelisting status
     mapping(address => bool) public mapImplementations;
 
-    /// @dev ServiceStakingVerifier constructor.
+    /// @dev StakingVerifier constructor.
     /// @param _olas OLAS token address.
     /// @param _rewardsPerSecondLimit Rewards per second limit.
     constructor(address _olas, uint256 _rewardsPerSecondLimit) {
@@ -139,13 +140,14 @@ contract ServiceStakingVerifier {
 
     /// @dev Verifies a service staking implementation contract.
     /// @param implementation Service staking implementation contract address.
-    /// @return success True, if verification is successful.
-    function verifyImplementation(address implementation) external view returns (bool success){
-        success = true;
+    /// @return True, if verification is successful.
+    function verifyImplementation(address implementation) external view returns (bool){
         // Check the operator whitelisting status, if the whitelisting check is set
         if (implementationsCheck) {
-            success = mapImplementations[implementation];
+            return mapImplementations[implementation];
         }
+
+        return true;
     }
 
     /// @dev Verifies a service staking proxy instance.
@@ -159,12 +161,12 @@ contract ServiceStakingVerifier {
         }
 
         // Check for the staking parameters
-        uint256 rewardsPerSecond = IServiceStaking(instance).rewardsPerSecond();
+        uint256 rewardsPerSecond = IStaking(instance).rewardsPerSecond();
         if (rewardsPerSecond > rewardsPerSecondLimit) {
             return false;
         }
 
-        address token = IServiceStaking(instance).stakingToken();
+        address token = IStaking(instance).stakingToken();
         if (token != olas) {
             return false;
         }

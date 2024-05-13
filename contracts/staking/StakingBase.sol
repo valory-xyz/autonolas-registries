@@ -2,8 +2,8 @@
 pragma solidity ^0.8.23;
 
 import {ERC721TokenReceiver} from "../../lib/solmate/src/tokens/ERC721.sol";
-import {IErrorsRegistries} from "../interfaces/IErrorsRegistries.sol";
 
+// Staking Activity Checker interface
 interface IActivityChecker {
     /// @dev Gets service multisig nonces.
     /// @param multisig Service multisig address.
@@ -84,6 +84,30 @@ interface IService {
         returns (uint256 numAgentIds, AgentParams[] memory agentParams);
 }
 
+/// @dev Only `owner` has a privilege, but the `sender` was provided.
+/// @param sender Sender address.
+/// @param owner Required sender address as an owner.
+error OwnerOnly(address sender, address owner);
+
+/// @dev Provided zero address.
+error ZeroAddress();
+
+/// @dev Provided zero value.
+error ZeroValue();
+
+/// @dev Agent Id is not correctly provided for the current routine.
+/// @param agentId Component Id.
+error WrongAgentId(uint256 agentId);
+
+/// @dev Wrong state of a service.
+/// @param state Service state.
+/// @param serviceId Service Id.
+error WrongServiceState(uint256 state, uint256 serviceId);
+
+/// @dev Multisig is not whitelisted.
+/// @param multisig Address of a multisig implementation.
+error UnauthorizedMultisig(address multisig);
+
 /// @dev The contract is already initialized.
 error AlreadyInitialized();
 
@@ -133,12 +157,12 @@ struct ServiceInfo {
     uint256 inactivity;
 }
 
-/// @title ServiceStakingBase - Base abstract smart contract for staking a service by its owner
+/// @title StakingBase - Base abstract smart contract for staking a service by its owner
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
-    enum ServiceStakingState {
+abstract contract StakingBase is ERC721TokenReceiver {
+    enum StakingState {
         Unstaked,
         Staked,
         Evicted
@@ -237,7 +261,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     // Set of currently staking serviceIds
     uint256[] public setServiceIds;
 
-    /// @dev ServiceStakingBase initialization.
+    /// @dev StakingBase initialization.
     /// @param _stakingParams Service staking parameters.
     function _initialize(
         StakingParams memory _stakingParams
@@ -301,7 +325,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         // Check for the multisig proxy bytecode hash value
-        if (_stakingParams.proxyHash == bytes32(0)) {
+        if (_stakingParams.proxyHash == 0) {
             revert ZeroValue();
         }
 
@@ -379,7 +403,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
         }
 
         // Check the configuration hash, if applicable
-        if (configHash != bytes32(0) && configHash != service.configHash) {
+        if (configHash != 0 && configHash != service.configHash) {
             revert WrongServiceConfiguration(serviceId);
         }
         // Check the threshold, if applicable
@@ -829,7 +853,7 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     /// @dev Calculates service staking reward during the last checkpoint period.
     /// @param serviceId Service Id.
     /// @return reward Service reward.
-    function calculateServiceStakingLastReward(uint256 serviceId) public view returns (uint256 reward) {
+    function calculateStakingLastReward(uint256 serviceId) public view returns (uint256 reward) {
         // Calculate overall staking rewards
         (uint256 lastAvailableRewards, uint256 numServices, uint256 totalRewards, uint256[] memory eligibleServiceIds,
             uint256[] memory eligibleServiceRewards, , , ) = _calculateStakingRewards();
@@ -852,24 +876,24 @@ abstract contract ServiceStakingBase is ERC721TokenReceiver, IErrorsRegistries {
     /// @dev Calculates overall service staking reward at current timestamp.
     /// @param serviceId Service Id.
     /// @return reward Service reward.
-    function calculateServiceStakingReward(uint256 serviceId) external view returns (uint256 reward) {
+    function calculateStakingReward(uint256 serviceId) external view returns (uint256 reward) {
         // Get current service reward
         ServiceInfo memory sInfo = mapServiceInfo[serviceId];
         reward = sInfo.reward;
 
         // Add pending reward
-        reward += calculateServiceStakingLastReward(serviceId);
+        reward += calculateStakingLastReward(serviceId);
     }
 
     /// @dev Gets the service staking state.
     /// @param serviceId.
     /// @return stakingState Staking state of the service.
-    function getServiceStakingState(uint256 serviceId) external view returns (ServiceStakingState stakingState) {
+    function getStakingState(uint256 serviceId) external view returns (StakingState stakingState) {
         ServiceInfo memory sInfo = mapServiceInfo[serviceId];
         if (sInfo.inactivity > maxInactivityDuration) {
-            stakingState = ServiceStakingState.Evicted;
+            stakingState = StakingState.Evicted;
         } else if (sInfo.tsStart > 0) {
-            stakingState = ServiceStakingState.Staked;
+            stakingState = StakingState.Staked;
         }
     }
 
