@@ -95,6 +95,10 @@ error ZeroAddress();
 /// @dev Provided zero value.
 error ZeroValue();
 
+/// @dev The deployed activity checker must be a contract.
+/// @param activityChecker Activity checker address.
+error ContractOnly(address activityChecker);
+
 /// @dev Agent Id is not correctly provided for the current routine.
 /// @param agentId Component Id.
 error WrongAgentId(uint256 agentId);
@@ -296,7 +300,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
         // Check for the Activity Checker to be the contract
         if (_stakingParams.activityChecker.code.length == 0) {
-            revert ZeroValue();
+            revert ContractOnly(_stakingParams.activityChecker);
         }
 
         // Assign all the required parameters
