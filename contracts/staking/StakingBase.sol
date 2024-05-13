@@ -221,6 +221,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
     // Contract version
     string public constant VERSION = "0.1.0";
     // Staking parameters for initialization
+    // Metadata staking information
+    bytes32 public metadataHash;
     // Maximum number of staking services
     uint256 public maxNumServices;
     // Rewards per second
@@ -304,6 +306,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
 
         // Assign all the required parameters
+        metadataHash = _stakingParams.metadataHash; 
         maxNumServices = _stakingParams.maxNumServices;
         rewardsPerSecond = _stakingParams.rewardsPerSecond;
         minStakingDeposit = _stakingParams.minStakingDeposit;
