@@ -29,12 +29,12 @@ async function main() {
     console.log("21. EOA to deploy ServiceStakingFactory");
     const ServiceStakingFactory = await ethers.getContractFactory("ServiceStakingFactory");
     console.log("You are signing the following transaction: ServiceStakingFactory.connect(EOA).deploy(serviceRegistryAddress)");
-    const serviceStakingFactory = await ServiceStakingFactory.connect(EOA).deploy();
-    const result = await serviceStakingFactory.deployed();
+    const stakingFactory = await ServiceStakingFactory.connect(EOA).deploy();
+    const result = await stakingFactory.deployed();
 
     // Transaction details
     console.log("Contract deployment: ServiceStakingFactory");
-    console.log("Contract address:", serviceStakingFactory.address);
+    console.log("Contract address:", stakingFactory.address);
     console.log("Transaction:", result.deployTransaction.hash);
 
     // If on goerli, wait for half a minute for the transaction completion
@@ -43,13 +43,13 @@ async function main() {
     }
 
     // Writing updated parameters back to the JSON file
-    parsedData.serviceStakingFactoryAddress = serviceStakingFactory.address;
+    parsedData.stakingFactoryAddress = stakingFactory.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
 
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --network " + providerName + " " + serviceStakingFactory.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --network " + providerName + " " + stakingFactory.address, { encoding: "utf-8" });
     }
 }
 
