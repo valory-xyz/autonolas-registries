@@ -219,7 +219,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     event Withdraw(address indexed to, uint256 amount);
 
     // Contract version
-    string public constant VERSION = "0.1.0";
+    string public constant VERSION = "0.2.0";
     // Staking parameters for initialization
     // Metadata staking information
     bytes32 public metadataHash;
@@ -306,7 +306,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
 
         // Assign all the required parameters
-        metadataHash = _stakingParams.metadataHash; 
+        metadataHash = _stakingParams.metadataHash;
         maxNumServices = _stakingParams.maxNumServices;
         rewardsPerSecond = _stakingParams.rewardsPerSecond;
         minStakingDeposit = _stakingParams.minStakingDeposit;
