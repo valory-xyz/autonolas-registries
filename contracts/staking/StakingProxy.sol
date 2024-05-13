@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import "../interfaces/IErrorsRegistries.sol";
-
 /// @dev Zero implementation address.
 error ZeroImplementationAddress();
 
@@ -16,15 +14,15 @@ error ZeroImplementationAddress();
 * The fallback() implementation for all the delegatecall-s is inspired by the Gnosis Safe set of contracts.
 */
 
-/// @title ServiceStakingProxy - Smart contract for service staking proxy
+/// @title StakingProxy - Smart contract for service staking proxy
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-contract ServiceStakingProxy {
+contract StakingProxy {
     // Code position in storage is keccak256("SERVICE_STAKING_PROXY") = "0x9e5e169c1098011e4e5940a3ec1797686b2a8294a9b77a4c676b121bdc0ebb5e"
     bytes32 public constant SERVICE_STAKING_PROXY = 0x9e5e169c1098011e4e5940a3ec1797686b2a8294a9b77a4c676b121bdc0ebb5e;
 
-    /// @dev ServiceStakingProxy constructor.
+    /// @dev StakingProxy constructor.
     /// @param implementation Service staking implementation address.
     constructor(address implementation) {
         // Check for the zero address, since the delegatecall works even with the zero one

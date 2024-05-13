@@ -19,12 +19,12 @@ async function main() {
             console.log("set ALCHEMY_API_KEY_MATIC env variable");
         }
         networkURL += process.env.ALCHEMY_API_KEY_MATIC;
-    } else if (providerName === "polygonMumbai") {
-        if (!process.env.ALCHEMY_API_KEY_MUMBAI) {
-            console.log("set ALCHEMY_API_KEY_MUMBAI env variable");
+    } else if (providerName === "polygonAmoy") {
+        if (!process.env.ALCHEMY_API_KEY_AMOY) {
+            console.log("set ALCHEMY_API_KEY_AMOY env variable");
             return;
         }
-        networkURL += process.env.ALCHEMY_API_KEY_MUMBAI;
+        networkURL += process.env.ALCHEMY_API_KEY_AMOY;
     }
 
     const provider = new ethers.providers.JsonRpcProvider(networkURL);

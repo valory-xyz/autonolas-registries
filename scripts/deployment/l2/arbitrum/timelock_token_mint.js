@@ -80,11 +80,11 @@ const main = async () => {
     // console.log("l2CallValue", l2CallValue);
     const L1ToL2MessageGasParams = await l1ToL2MessageGasEstimate.estimateAll(
         {
-            from: await mockTimelock.address,
-            to: await erc20Token.address,
-            l2CallValue: l2CallValue,
-            excessFeeRefundAddress: await EOAarbitrumSepolia.address,
-            callValueRefundAddress: await EOAarbitrumSepolia.address,
+            from: mockTimelock.address,
+            to: erc20Token.address,
+            l2CallValue,
+            excessFeeRefundAddress: EOAarbitrumSepolia.address,
+            callValueRefundAddress: EOAarbitrumSepolia.address,
             data: calldata,
         },
         await getBaseFee(sepoliaProvider),

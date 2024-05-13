@@ -12,9 +12,8 @@ require("@nomicfoundation/hardhat-toolbox");
 
 const ALCHEMY_API_KEY_MAINNET = process.env.ALCHEMY_API_KEY_MAINNET;
 const ALCHEMY_API_KEY_MATIC = process.env.ALCHEMY_API_KEY_MATIC;
-const ALCHEMY_API_KEY_GOERLI = process.env.ALCHEMY_API_KEY_GOERLI;
 const ALCHEMY_API_KEY_SEPOLIA = process.env.ALCHEMY_API_KEY_SEPOLIA;
-const ALCHEMY_API_KEY_MUMBAI = process.env.ALCHEMY_API_KEY_MUMBAI;
+const ALCHEMY_API_KEY_AMOY = process.env.ALCHEMY_API_KEY_AMOY;
 let TESTNET_MNEMONIC = process.env.TESTNET_MNEMONIC;
 
 const accounts = {
@@ -78,23 +77,20 @@ module.exports = {
             accounts: accounts,
             chainId: 42220,
         },
-        goerli: {
-            url: "https://eth-goerli.g.alchemy.com/v2/" + ALCHEMY_API_KEY_GOERLI,
-            chainId: 5,
-            accounts: accounts,
-        },
         sepolia: {
             url: "https://eth-sepolia.g.alchemy.com/v2/" + ALCHEMY_API_KEY_SEPOLIA,
             accounts: accounts,
             chainId: 11155111,
         },
-        polygonMumbai: {
-            url: "https://polygon-mumbai.g.alchemy.com/v2/" + ALCHEMY_API_KEY_MUMBAI,
+        polygonAmoy: {
+            url: "https://polygon-amoy.g.alchemy.com/v2/" + ALCHEMY_API_KEY_AMOY,
             accounts: accounts,
+            chainId: 80002
         },
         chiado: {
             url: "https://rpc.chiadochain.net",
             accounts: accounts,
+            chainId: 10200
         },
         arbitrumSepolia: {
             url: "https://sepolia-rollup.arbitrum.io/rpc",
@@ -122,6 +118,14 @@ module.exports = {
     },
     etherscan: {
         customChains: [
+            {
+                network: "polygonAmoy",
+                chainId: 80002,
+                urls: {
+                    apiURL: "https://api-amoy.polygonscan.com/api",
+                    browserURL: "https://amoy.polygonscan.com/"
+                }
+            },
             {
                 network: "chiado",
                 chainId: 10200,
@@ -203,9 +207,8 @@ module.exports = {
             optimistic: OPSCAN_API_KEY,
             base: BASESCAN_API_KEY,
             celo: CELOSCAN_API_KEY,
-            goerli: ETHERSCAN_API_KEY,
             sepolia: ETHERSCAN_API_KEY,
-            polygonMumbai: POLYGONSCAN_API_KEY,
+            polygonAmoy: POLYGONSCAN_API_KEY,
             chiado: GNOSISSCAN_API_KEY,
             arbitrumSepolia: ARBISCAN_API_KEY,
             optimisticSepolia: OPSCAN_API_KEY,

@@ -12,9 +12,7 @@ async function main() {
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
     const gasPriceInGwei = parsedData.gasPriceInGwei;
-    const serviceRegistryAddress = parsedData.serviceRegistryAddress;
-    const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
-    const operatorWhitelistAddress = parsedData.operatorWhitelistAddress;
+    const baseURI = parsedData.baseURI;
 
     let networkURL = parsedData.networkURL;
     if (providerName === "polygon") {
@@ -43,33 +41,29 @@ async function main() {
     const deployer = await EOA.getAddress();
     console.log("EOA is:", deployer);
 
-    // Gas pricing
-    const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
-
     // Transaction signing and execution
-    console.log("4. EOA to deploy ServiceManagerToken");
-    const ServiceManagerToken = await ethers.getContractFactory("ServiceManagerToken");
-    console.log("You are signing the following transaction: ServiceManagerToken.connect(EOA).deploy()");
-    const serviceManagerToken = await ServiceManagerToken.connect(EOA).deploy(serviceRegistryAddress,
-        serviceRegistryTokenUtilityAddress, operatorWhitelistAddress, { gasPrice });
-    const result = await serviceManagerToken.deployed();
+    console.log("23. EOA to deploy HashCheckpoint");
+    const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
+    const HashCheckpoint = await ethers.getContractFactory("HashCheckpoint");
+    console.log("You are signing the following transaction: HashCheckpoint.connect(EOA).deploy()");
+    const hashCheckpoint = await HashCheckpoint.connect(EOA).deploy(baseURI, { gasPrice });
+    const result = await hashCheckpoint.deployed();
 
     // Transaction details
-    console.log("Contract deployment: ServiceManagerToken");
-    console.log("Contract address:", serviceManagerToken.address);
+    console.log("Contract deployment: ServiceRegistryL2");
+    console.log("Contract address:", hashCheckpoint.address);
     console.log("Transaction:", result.deployTransaction.hash);
-
     // Wait half a minute for the transaction completion
     await new Promise(r => setTimeout(r, 30000));
 
     // Writing updated parameters back to the JSON file
-    parsedData.serviceManagerTokenAddress = serviceManagerToken.address;
+    parsedData.hashCheckpoint = hashCheckpoint.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
 
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_04_service_manager_token.js --network " + providerName + " " + serviceManagerToken.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --contract contracts/utils/HashCheckpoint.sol:HashCheckpoint --constructor-args scripts/deployment/l2/verify_23_hash_checkpoint.js --network " + providerName + " " + hashCheckpoint.address, { encoding: "utf-8" });
     }
 }
 
