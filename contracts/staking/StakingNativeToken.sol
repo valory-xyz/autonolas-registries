@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import {ServiceStakingBase} from "./ServiceStakingBase.sol";
+import {StakingBase} from "./StakingBase.sol";
 
 /// @dev Failure of a transfer.
 /// @param token Address of a token.
@@ -10,12 +10,12 @@ import {ServiceStakingBase} from "./ServiceStakingBase.sol";
 /// @param value Value.
 error TransferFailed(address token, address from, address to, uint256 value);
 
-/// @title ServiceStakingNativeToken - Smart contract for staking a service with the service having a native network token as the deposit
+/// @title StakingNativeToken - Smart contract for staking a service with the service having a native network token as the deposit
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-contract ServiceStakingNativeToken is ServiceStakingBase {
-    /// @dev ServiceStakingNativeToken initialization.
+contract StakingNativeToken is StakingBase {
+    /// @dev StakingNativeToken initialization.
     /// @param _stakingParams Service staking parameters.
     function initialize(StakingParams memory _stakingParams) external {
         _initialize(_stakingParams);

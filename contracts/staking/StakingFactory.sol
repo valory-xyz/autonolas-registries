@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import {ServiceStakingProxy} from "./ServiceStakingProxy.sol";
+import {StakingProxy} from "./StakingProxy.sol";
 
-interface IVerifier {
+// Staking verifier interface
+interface IStakingVerifier {
     /// @dev Verifies a service staking implementation contract.
     /// @param implementation Service staking implementation contract address.
     /// @return success True, if verification is successful.
@@ -49,17 +50,21 @@ error UnverifiedImplementation(address implementation);
 /// @param instance Proxy instance address.
 error UnverifiedProxy(address instance);
 
+// Instance params struct
 struct InstanceParams {
+    // Implementation of a created proxy instance
     address implementation;
+    // Instance deployer
     address deployer;
-    bool isActive;
+    // Instance status flag
+    bool isEnabled;
 }
 
-/// @title ServiceStakingFactory - Smart contract for service staking factory
+/// @title StakingFactory - Smart contract for service staking factory
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-contract ServiceStakingFactory {
+contract StakingFactory {
     event OwnerUpdated(address indexed owner);
     event VerifierUpdated(address indexed verifier);
     event InstanceCreated(address indexed sender, address indexed instance, address indexed implementation);
@@ -75,7 +80,7 @@ contract ServiceStakingFactory {
     // Mapping of staking service proxy instances => InstanceParams struct
     mapping(address => InstanceParams) public mapInstanceParams;
 
-    /// @dev ServiceStakingFactory constructor.
+    /// @dev StakingFactory constructor.
     /// @param _verifier Verifier contract address (can be zero).
     constructor(address _verifier) {
         owner = msg.sender;
@@ -120,7 +125,7 @@ contract ServiceStakingFactory {
         bytes32 salt = keccak256(abi.encodePacked(block.chainid, localNonce));
 
         // Get the deployment data based on the proxy bytecode and the implementation address
-        bytes memory deploymentData = abi.encodePacked(type(ServiceStakingProxy).creationCode,
+        bytes memory deploymentData = abi.encodePacked(type(StakingProxy).creationCode,
             uint256(uint160(implementation)));
 
         // Get the hash forming the contract address
@@ -142,7 +147,7 @@ contract ServiceStakingFactory {
     /// @dev Creates a service staking contract instance.
     /// @param implementation Service staking blanc implementation address.
     /// @param initPayload Initialization payload.
-    function createServiceStakingInstance(
+    function createStakingInstance(
         address implementation,
         bytes memory initPayload
     ) external returns (address payable instance) {
@@ -163,7 +168,7 @@ contract ServiceStakingFactory {
 
         // Provide additional checks, if needed
         address localVerifier = verifier;
-        if (localVerifier != address(0) && !IVerifier(localVerifier).verifyImplementation(implementation)) {
+        if (localVerifier != address(0) && !IStakingVerifier(localVerifier).verifyImplementation(implementation)) {
             revert UnverifiedImplementation(implementation);
         }
 
@@ -171,7 +176,7 @@ contract ServiceStakingFactory {
         // Get salt based on chain Id and nonce values
         bytes32 salt = keccak256(abi.encodePacked(block.chainid, localNonce));
         // Get the deployment data based on the proxy bytecode and the implementation address
-        bytes memory deploymentData = abi.encodePacked(type(ServiceStakingProxy).creationCode,
+        bytes memory deploymentData = abi.encodePacked(type(StakingProxy).creationCode,
             uint256(uint160(implementation)));
 
         // solhint-disable-next-line no-inline-assembly
@@ -199,7 +204,7 @@ contract ServiceStakingFactory {
         }
 
         // Check that the created proxy instance does not violate defined limits
-        if (localVerifier != address(0) && !IVerifier(localVerifier).verifyInstance(instance, implementation)) {
+        if (localVerifier != address(0) && !IStakingVerifier(localVerifier).verifyInstance(instance, implementation)) {
             revert UnverifiedProxy(instance);
         }
 
@@ -212,10 +217,10 @@ contract ServiceStakingFactory {
         emit InstanceCreated(msg.sender, instance, implementation);
     }
 
-    /// @dev Sets the instance activity flag.
+    /// @dev Sets the instance status flag.
     /// @param instance Proxy instance address.
-    /// @param isActive Activity flag.
-    function setInstanceActivity(address instance, bool isActive) external {
+    /// @param isEnabled Activity flag.
+    function setInstanceStatus(address instance, bool isEnabled) external {
         // Get proxy instance params
         InstanceParams storage instanceParams = mapInstanceParams[instance];
         address deployer = instanceParams.deployer;
@@ -225,7 +230,7 @@ contract ServiceStakingFactory {
             revert OwnerOnly(msg.sender, deployer);
         }
 
-        instanceParams.isActive = isActive;
+        instanceParams.isEnabled = isEnabled;
     }
     
     /// @dev Verifies a service staking contract instance.
@@ -242,14 +247,14 @@ contract ServiceStakingFactory {
         }
 
         // Check for the instance being active
-        if (!instanceParams.isActive) {
+        if (!instanceParams.isEnabled) {
             return false;
         }
 
         // Provide additional checks, if needed
         address localVerifier = verifier;
         if (localVerifier != address (0)) {
-            success = IVerifier(localVerifier).verifyInstance(instance, implementation);
+            success = IStakingVerifier(localVerifier).verifyInstance(instance, implementation);
         } else {
             success = true;
         }

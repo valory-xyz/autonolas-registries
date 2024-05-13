@@ -2,10 +2,10 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("ServiceStaking", function () {
-    let serviceStaking;
-    let serviceStakingFactory;
-    let serviceStakingVerifier;
+describe("Staking", function () {
+    let staking;
+    let stakingFactory;
+    let stakingVerifier;
     let token;
     let signers;
     let deployer;
@@ -16,54 +16,54 @@ describe("ServiceStaking", function () {
         signers = await ethers.getSigners();
         deployer = signers[0];
 
-        const ServiceStaking = await ethers.getContractFactory("MockServiceStaking");
-        serviceStaking = await ServiceStaking.deploy();
-        await serviceStaking.deployed();
+        const Staking = await ethers.getContractFactory("MockStaking");
+        staking = await Staking.deploy();
+        await staking.deployed();
 
         const Token = await ethers.getContractFactory("ERC20Token");
         token = await Token.deploy();
         await token.deployed();
 
-        const ServiceStakingVerifier = await ethers.getContractFactory("ServiceStakingVerifier");
-        serviceStakingVerifier = await ServiceStakingVerifier.deploy(token.address, rewardsPerSecondLimit);
-        await serviceStakingVerifier.deployed();
+        const StakingVerifier = await ethers.getContractFactory("StakingVerifier");
+        stakingVerifier = await StakingVerifier.deploy(token.address, rewardsPerSecondLimit);
+        await stakingVerifier.deployed();
 
-        const ServiceStakingFactory = await ethers.getContractFactory("ServiceStakingFactory");
-        serviceStakingFactory = await ServiceStakingFactory.deploy(AddressZero);
-        await serviceStakingFactory.deployed();
+        const StakingFactory = await ethers.getContractFactory("StakingFactory");
+        stakingFactory = await StakingFactory.deploy(AddressZero);
+        await stakingFactory.deployed();
     });
 
     context("Initialization", function () {
         it("Should not allow the zero values and addresses when deploying contracts", async function () {
             await expect(
-                serviceStakingFactory.createServiceStakingInstance(AddressZero, "0x")
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "ZeroAddress");
+                stakingFactory.createStakingInstance(AddressZero, "0x")
+            ).to.be.revertedWithCustomError(stakingFactory, "ZeroAddress");
 
             await expect(
-                serviceStakingFactory.createServiceStakingInstance(signers[1].address, "0x")
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "ContractOnly");
+                stakingFactory.createStakingInstance(signers[1].address, "0x")
+            ).to.be.revertedWithCustomError(stakingFactory, "ContractOnly");
 
             await expect(
-                serviceStakingFactory.createServiceStakingInstance(serviceStaking.address, "0x")
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "IncorrectDataLength");
+                stakingFactory.createStakingInstance(staking.address, "0x")
+            ).to.be.revertedWithCustomError(stakingFactory, "IncorrectDataLength");
         });
 
         it("Should fail when initialization parameters are not correctly specified", async function () {
             await expect(
-                serviceStakingFactory.createServiceStakingInstance(serviceStaking.address, "0x1234567890")
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "InitializationFailed");
+                stakingFactory.createStakingInstance(staking.address, "0x1234567890")
+            ).to.be.revertedWithCustomError(stakingFactory, "InitializationFailed");
         });
 
         it("Should fail when deploying verifier with incorrect parameters", async function () {
-            const ServiceStakingVerifier = await ethers.getContractFactory("ServiceStakingVerifier");
+            const StakingVerifier = await ethers.getContractFactory("StakingVerifier");
 
             await expect(
-                ServiceStakingVerifier.deploy(AddressZero, 0)
-            ).to.be.revertedWithCustomError(ServiceStakingVerifier, "ZeroAddress");
+                StakingVerifier.deploy(AddressZero, 0)
+            ).to.be.revertedWithCustomError(StakingVerifier, "ZeroAddress");
 
             await expect(
-                ServiceStakingVerifier.deploy(token.address, 0)
-            ).to.be.revertedWithCustomError(ServiceStakingVerifier, "ZeroValue");
+                StakingVerifier.deploy(token.address, 0)
+            ).to.be.revertedWithCustomError(StakingVerifier, "ZeroValue");
         });
         
         it("Changing owner in staking factory", async function () {
@@ -71,21 +71,21 @@ describe("ServiceStaking", function () {
 
             // Trying to change owner from a non-owner account address
             await expect(
-                serviceStakingFactory.connect(account).changeOwner(account.address)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "OwnerOnly");
+                stakingFactory.connect(account).changeOwner(account.address)
+            ).to.be.revertedWithCustomError(stakingFactory, "OwnerOnly");
 
             // Trying to change owner for the zero address
             await expect(
-                serviceStakingFactory.connect(deployer).changeOwner(AddressZero)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "ZeroAddress");
+                stakingFactory.connect(deployer).changeOwner(AddressZero)
+            ).to.be.revertedWithCustomError(stakingFactory, "ZeroAddress");
 
             // Changing the owner
-            await serviceStakingFactory.connect(deployer).changeOwner(account.address);
+            await stakingFactory.connect(deployer).changeOwner(account.address);
 
             // Trying to change owner from the previous owner address
             await expect(
-                serviceStakingFactory.connect(deployer).changeOwner(deployer.address)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "OwnerOnly");
+                stakingFactory.connect(deployer).changeOwner(deployer.address)
+            ).to.be.revertedWithCustomError(stakingFactory, "OwnerOnly");
         });
 
         it("Changing owner in verifier", async function () {
@@ -93,52 +93,52 @@ describe("ServiceStaking", function () {
 
             // Trying to change owner from a non-owner account address
             await expect(
-                serviceStakingVerifier.connect(account).changeOwner(account.address)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "OwnerOnly");
+                stakingVerifier.connect(account).changeOwner(account.address)
+            ).to.be.revertedWithCustomError(stakingFactory, "OwnerOnly");
 
             // Trying to change owner for the zero address
             await expect(
-                serviceStakingVerifier.connect(deployer).changeOwner(AddressZero)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "ZeroAddress");
+                stakingVerifier.connect(deployer).changeOwner(AddressZero)
+            ).to.be.revertedWithCustomError(stakingFactory, "ZeroAddress");
 
             // Changing the owner
-            await serviceStakingVerifier.connect(deployer).changeOwner(account.address);
+            await stakingVerifier.connect(deployer).changeOwner(account.address);
 
             // Trying to change owner from the previous owner address
             await expect(
-                serviceStakingVerifier.connect(deployer).changeOwner(deployer.address)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "OwnerOnly");
+                stakingVerifier.connect(deployer).changeOwner(deployer.address)
+            ).to.be.revertedWithCustomError(stakingFactory, "OwnerOnly");
         });
     });
 
     context("Deployment", function () {
         it("Try to deploy with the same implementation", async function () {
-            const initPayload = serviceStaking.interface.encodeFunctionData("initialize", [token.address]);
+            const initPayload = staking.interface.encodeFunctionData("initialize", [token.address]);
             const instances = new Array(2);
 
             // Create a first instance
-            instances[0] = await serviceStakingFactory.callStatic.createServiceStakingInstance(serviceStaking.address,
+            instances[0] = await stakingFactory.callStatic.createStakingInstance(staking.address,
                 initPayload);
-            await serviceStakingFactory.createServiceStakingInstance(serviceStaking.address, initPayload);
+            await stakingFactory.createStakingInstance(staking.address, initPayload);
 
             // Create a second instance
-            instances[1] = await serviceStakingFactory.callStatic.createServiceStakingInstance(serviceStaking.address,
+            instances[1] = await stakingFactory.callStatic.createStakingInstance(staking.address,
                 initPayload);
-            await serviceStakingFactory.createServiceStakingInstance(serviceStaking.address, initPayload);
+            await stakingFactory.createStakingInstance(staking.address, initPayload);
 
             // Make sure instances have different addresses
             expect(instances[0]).to.not.equal(instances[1]);
 
             // Check the service staking proxy implementation
-            const proxy = await ethers.getContractAt("ServiceStakingProxy", instances[0]);
+            const proxy = await ethers.getContractAt("StakingProxy", instances[0]);
             const implementation = await proxy.getImplementation();
-            expect(implementation).to.equal(serviceStaking.address);
+            expect(implementation).to.equal(staking.address);
 
             // Verify instance by just comparing the implementation
-            await serviceStakingFactory.verifyInstance(instances[0]);
+            await stakingFactory.verifyInstance(instances[0]);
 
             // Try the implementation that does not exist
-            const res = await serviceStakingFactory.verifyInstance(deployer.address);
+            const res = await stakingFactory.verifyInstance(deployer.address);
             expect(res).to.be.false;
         });
     });
@@ -146,135 +146,135 @@ describe("ServiceStaking", function () {
     context("Verifier", function () {
         it("Implementation with the verifier set", async function () {
             // Set the verifier
-            await serviceStakingFactory.changeVerifier(serviceStakingVerifier.address);
+            await stakingFactory.changeVerifier(stakingVerifier.address);
 
             // Create the service staking contract instance
-            const initPayload = serviceStaking.interface.encodeFunctionData("initialize", [token.address]);
-            const instance = await serviceStakingFactory.callStatic.createServiceStakingInstance(
-                serviceStaking.address, initPayload);
-            const instanceAddress = await serviceStakingFactory.getProxyAddress(serviceStaking.address);
+            const initPayload = staking.interface.encodeFunctionData("initialize", [token.address]);
+            const instance = await stakingFactory.callStatic.createStakingInstance(
+                staking.address, initPayload);
+            const instanceAddress = await stakingFactory.getProxyAddress(staking.address);
             expect(instanceAddress).to.equal(instance);
-            await serviceStakingFactory.createServiceStakingInstance(serviceStaking.address, initPayload);
+            await stakingFactory.createStakingInstance(staking.address, initPayload);
 
             // Check the parameter by the verifier
-            const proxy = await ethers.getContractAt("MockServiceStaking", instance);
-            let success = await serviceStakingFactory.verifyInstance(instance);
+            const proxy = await ethers.getContractAt("MockStaking", instance);
+            let success = await stakingFactory.verifyInstance(instance);
             expect(success).to.be.true;
 
             // Try to check the instance without implementation
-            success = await serviceStakingFactory.callStatic.verifyInstance(AddressZero);
+            success = await stakingFactory.callStatic.verifyInstance(AddressZero);
             expect(success).to.be.false;
 
             // Check the instance when the parameter is changed
             await proxy.changeRewardsPerSecond();
-            success = await serviceStakingFactory.verifyInstance(instance);
+            success = await stakingFactory.verifyInstance(instance);
             expect(success).to.be.false;
 
             // Set the implementations check
-            await serviceStakingVerifier.setImplementationsCheck(true);
+            await stakingVerifier.setImplementationsCheck(true);
 
             // Verify with a non whitelisted instance by the verifier contract itself
-            success = await serviceStakingVerifier.verifyInstance(instance, AddressZero);
+            success = await stakingVerifier.verifyInstance(instance, AddressZero);
             expect(success).to.be.false;
 
             // Set verifier back to the zero address (no verification by the verifier)
-            await serviceStakingFactory.changeVerifier(AddressZero);
+            await stakingFactory.changeVerifier(AddressZero);
 
             // Verify again without a verifier and it must pass
-            success = await serviceStakingFactory.verifyInstance(instance);
+            success = await stakingFactory.verifyInstance(instance);
             expect(success).to.be.true;
 
             // Set the instance inactive
-            await serviceStakingFactory.setInstanceActivity(instance, false);
+            await stakingFactory.setInstanceStatus(instance, false);
             // The verification is going to fail
-            success = await serviceStakingFactory.verifyInstance(instance);
+            success = await stakingFactory.verifyInstance(instance);
             expect(success).to.be.false;
         });
 
         it("Should fail when setting verification implementations with incorrect parameters", async function () {
             // Try to set verifier not by the owner
             await expect(
-                serviceStakingFactory.connect(signers[1]).changeVerifier(serviceStakingVerifier.address)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "OwnerOnly");
+                stakingFactory.connect(signers[1]).changeVerifier(stakingVerifier.address)
+            ).to.be.revertedWithCustomError(stakingFactory, "OwnerOnly");
 
             // Try to set implementations check not by the owner
             await expect(
-                serviceStakingVerifier.connect(signers[1]).setImplementationsCheck(true)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "OwnerOnly");
+                stakingVerifier.connect(signers[1]).setImplementationsCheck(true)
+            ).to.be.revertedWithCustomError(stakingFactory, "OwnerOnly");
 
             // Try to set implementation statuses not by the owner
             await expect(
-                serviceStakingVerifier.connect(signers[1]).setImplementationsStatuses([], [], true)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "OwnerOnly");
+                stakingVerifier.connect(signers[1]).setImplementationsStatuses([], [], true)
+            ).to.be.revertedWithCustomError(stakingFactory, "OwnerOnly");
 
             // Try to set implementation statuses with the wrong number of parameters
             await expect(
-                serviceStakingVerifier.setImplementationsStatuses([], [], true)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "WrongArrayLength");
+                stakingVerifier.setImplementationsStatuses([], [], true)
+            ).to.be.revertedWithCustomError(stakingVerifier, "WrongArrayLength");
 
             await expect(
-                serviceStakingVerifier.setImplementationsStatuses([AddressZero], [], true)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "WrongArrayLength");
+                stakingVerifier.setImplementationsStatuses([AddressZero], [], true)
+            ).to.be.revertedWithCustomError(stakingVerifier, "WrongArrayLength");
 
             await expect(
-                serviceStakingVerifier.setImplementationsStatuses([], [true], true)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "WrongArrayLength");
+                stakingVerifier.setImplementationsStatuses([], [true], true)
+            ).to.be.revertedWithCustomError(stakingVerifier, "WrongArrayLength");
 
             await expect(
-                serviceStakingVerifier.setImplementationsStatuses([AddressZero], [true], true)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "ZeroAddress");
+                stakingVerifier.setImplementationsStatuses([AddressZero], [true], true)
+            ).to.be.revertedWithCustomError(stakingVerifier, "ZeroAddress");
 
             // Try to change the staking param limits not by the owner
             await expect(
-                serviceStakingVerifier.connect(signers[1]).changeStakingLimits(0)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "OwnerOnly");
+                stakingVerifier.connect(signers[1]).changeStakingLimits(0)
+            ).to.be.revertedWithCustomError(stakingVerifier, "OwnerOnly");
 
             // Try to change the staking param limits with the zero value
             await expect(
-                serviceStakingVerifier.changeStakingLimits(0)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "ZeroValue");
+                stakingVerifier.changeStakingLimits(0)
+            ).to.be.revertedWithCustomError(stakingVerifier, "ZeroValue");
 
             // Try to set instance activity not by instance deployer
             await expect(
-                serviceStakingFactory.setInstanceActivity(AddressZero, true)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "OwnerOnly");
+                stakingFactory.setInstanceStatus(AddressZero, true)
+            ).to.be.revertedWithCustomError(stakingFactory, "OwnerOnly");
         });
 
         it("Setting verification implementations", async function () {
             // Set the verifier
-            await serviceStakingFactory.changeVerifier(serviceStakingVerifier.address);
+            await stakingFactory.changeVerifier(stakingVerifier.address);
 
             // Set the implementations check
-            await serviceStakingVerifier.setImplementationsCheck(true);
+            await stakingVerifier.setImplementationsCheck(true);
 
             // Try to create the service staking contract instance with the non-whitelisted implementation
-            let initPayload = serviceStaking.interface.encodeFunctionData("initialize", [token.address]);
+            let initPayload = staking.interface.encodeFunctionData("initialize", [token.address]);
             await expect(
-                serviceStakingFactory.createServiceStakingInstance(serviceStaking.address, initPayload)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "UnverifiedImplementation");
+                stakingFactory.createStakingInstance(staking.address, initPayload)
+            ).to.be.revertedWithCustomError(stakingFactory, "UnverifiedImplementation");
 
             // Whitelist implementation
-            await serviceStakingVerifier.setImplementationsStatuses([serviceStaking.address], [true], true);
+            await stakingVerifier.setImplementationsStatuses([staking.address], [true], true);
 
             // Try to create the service staking contract instance with the wrong service parameter (token)
             const Token = await ethers.getContractFactory("ERC20Token");
             const badToken = await Token.deploy();
             await badToken.deployed();
-            initPayload = serviceStaking.interface.encodeFunctionData("initialize", [badToken.address]);
+            initPayload = staking.interface.encodeFunctionData("initialize", [badToken.address]);
             await expect(
-                serviceStakingFactory.createServiceStakingInstance(serviceStaking.address, initPayload)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "UnverifiedProxy");
+                stakingFactory.createStakingInstance(staking.address, initPayload)
+            ).to.be.revertedWithCustomError(stakingFactory, "UnverifiedProxy");
 
-            initPayload = serviceStaking.interface.encodeFunctionData("initialize", [token.address]);
-            await serviceStakingFactory.createServiceStakingInstance(serviceStaking.address, initPayload);
+            initPayload = staking.interface.encodeFunctionData("initialize", [token.address]);
+            await stakingFactory.createStakingInstance(staking.address, initPayload);
 
             // Change rewards per second limit parameter
-            await serviceStakingVerifier.changeStakingLimits(1);
+            await stakingVerifier.changeStakingLimits(1);
 
             // Now the initialization will fail since the limit is too low
             await expect(
-                serviceStakingFactory.createServiceStakingInstance(serviceStaking.address, initPayload)
-            ).to.be.revertedWithCustomError(serviceStakingFactory, "UnverifiedProxy");
+                stakingFactory.createStakingInstance(staking.address, initPayload)
+            ).to.be.revertedWithCustomError(stakingFactory, "UnverifiedProxy");
         });
     });
 });
