@@ -1,12 +1,11 @@
       | Contract                                                                                                                 |   CodeLine |
 ----------------------------------------------------------------------------------------------------------------------------------------------
-    1 | ServiceStakingBase.sol                                                                                                   |        474 |
-    2 | ServiceStakingFactory.sol                                                                                                |         99 |
-    3 | ServiceStakingNativeToken.sol                                                                                            |         32 |
-    4 | ServiceStakingProxy.sol                                                                                                  |         31 |
-    5 | ServiceStakingToken.sol                                                                                                  |         71 |
-    6 | ServiceStakingVerifier.sol                                                                                               |         30 |
-    7 | contracts/interfaces/IErrorsRegistries.sol                                                                               |         28 |
-    8 | contracts/interfaces/IToken.sol                                                                                          |         11 |
+    1 | StakingActivityChecker.sol                                                                                               |         29 |
+    2 | StakingBase.sol                                                                                                          |        502 |
+    3 | StakingFactory.sol                                                                                                       |        134 |
+    4 | StakingNativeToken.sol                                                                                                   |         22 |
+    5 | StakingProxy.sol                                                                                                         |         30 |
+    6 | StakingToken.sol                                                                                                         |         58 |
+    7 | StakingVerifier.sol                                                                                                      |         96 |
 ----------------------------------------------------------------------------------------------------------------------------------------------
-    8 | All Registries contract                                                                                                  |        776 |
+    7 | All Registries contract                                                                                                  |        871 |
