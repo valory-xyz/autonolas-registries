@@ -59,7 +59,7 @@ function generateReport() {
         contractNumber++;
     });
 
-        // Manually specified contracts in contracts/ directory
+    // Manually specified contracts in contracts/ directory
     const contractsInContractsDir = [
         "utils/SafeTransferLib.sol",
     ];
