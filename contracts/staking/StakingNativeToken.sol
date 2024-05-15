@@ -30,8 +30,8 @@ contract StakingNativeToken is StakingBase {
         balance -= amount;
 
         // Transfer the amount
-        (bool result, ) = to.call{value: amount}("");
-        if (!result) {
+        (bool success, ) = to.call{value: amount}("");
+        if (!success) {
             revert TransferFailed(address(0), address(this), to, amount);
         }
     }

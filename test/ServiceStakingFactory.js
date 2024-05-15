@@ -2,7 +2,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("Staking", function () {
+describe("StakingFactory", function () {
     let staking;
     let stakingFactory;
     let stakingVerifier;

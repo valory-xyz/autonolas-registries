@@ -186,6 +186,12 @@ describe("Staking", function () {
 
     context("Initialization", function () {
         it("Should not allow the zero values and addresses when deploying contracts", async function () {
+            // Activity checker
+            const StakingActivityChecker = await ethers.getContractFactory("StakingActivityChecker");
+            await expect(
+                StakingActivityChecker.deploy(0)
+            ).to.be.revertedWithCustomError(stakingImplementation, "ZeroValue");
+
             const defaultTestServiceParams = {
                 metadataHash: HashZero,
                 maxNumServices: 0,
@@ -287,6 +293,13 @@ describe("Staking", function () {
             await expect(
                 stakingFactory.createStakingInstance(stakingImplementation.address, initPayload)
             ).to.be.revertedWithCustomError(stakingImplementation, "ZeroAddress");
+
+            testServiceParams.activityChecker = deployer.address;
+            initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
+                [testServiceParams]);
+            await expect(
+                stakingFactory.createStakingInstance(stakingImplementation.address, initPayload)
+            ).to.be.revertedWithCustomError(stakingImplementation, "ContractOnly");
 
             testServiceParams.activityChecker = stakingActivityChecker.address;
             initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
