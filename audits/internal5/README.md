@@ -71,12 +71,12 @@ function createStakingInstance() {
 ```
 
 #### Low priority isssue
-No events:
+1. No events:
 ```sh
 StakingVerifier.changeStakingLimits should emit an event for: 
 	- rewardsPerSecondLimit = _rewardsPerSecondLimit 
 ```
-abi.encodeWithSelector vs abi.encodeCall()
+2. abi.encodeWithSelector vs abi.encodeCall()
 ```sh
 Example of more safe way:
         bytes memory data = abi.encodeCall(
@@ -91,7 +91,7 @@ for
 (success, returnData) = activityChecker.staticcall(abi.encodeWithSelector(
                 IActivityChecker.isRatioPass.selector, currentNonces, lastNonces, ts));
 ```
-Shadow variable. Check it, please.
+3. Shadow variable. Check it, please.
 ```
 StakingToken._checkTokenStakingDeposit(uint256,uint256,uint32[]).agentIds (StakingToken-flatten.sol#1329) shadows:
 	- StakingBase.agentIds (StakingToken-flatten.sol#495) (state variable)
@@ -99,18 +99,26 @@ Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#local-v
 ```
 
 #### best practices
-magic numbers: 63, 32 
+1. magic numbers: 63, 32 
 ```
 if (success && returnData.length > 63 && (returnData.length % 32 == 0)) {
     rewrite magic numbers: 63, 32 as constant.
 ```
+2. Upgrade solidity 0.8.23 to 0.8.25
+```
+Only for those L2 evm-chains where this is applicable (EVM version is cancun).
+``` 
 
 #### Notes && question
-Will it work correctly StakingNativeToken with proxy pattern? Test it, please.
+1. StakingVerifier -> verifyInstance ->  IStaking(instance).stakingToken()
+```sh
+How will this work for StakingNativeToken? Bug?
+```
+2. Will it work correctly StakingNativeToken with proxy pattern? Test it, please.
 ```sh
 StakingFactory -> Proxy -> StakingNativeToken -> receive()
 ```
-What happens if you send ETH to StakingToken by mistake? Locked? Issue?
+3. What happens if you send ETH to StakingToken by mistake? Locked? Issue?
 ```sh
 StakingToken locked ETH.
 ```
