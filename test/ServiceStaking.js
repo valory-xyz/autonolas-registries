@@ -18,7 +18,7 @@ describe("Staking", function () {
     let safeNonceLib;
     let stakingFactory;
     let stakingImplementation;
-    let staking;
+    let stakingNativeToken;
     let stakingTokenImplementation;
     let stakingToken;
     let stakingActivityChecker;
