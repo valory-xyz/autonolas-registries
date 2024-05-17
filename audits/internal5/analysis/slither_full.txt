@@ -1,0 +1,523 @@
+OK with this warnings:
+Warning: This contract has a payable fallback function, but no receive ether function. Consider adding a receive ether function.
+  --> StakingFactory-flatten.sol:23:1:
+   |
+23 | contract StakingProxy {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+Note: The payable fallback function is defined here.
+  --> StakingFactory-flatten.sol:42:5:
+   |
+42 |     fallback() external payable {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+Warning: This contract has a payable fallback function, but no receive ether function. Consider adding a receive ether function.
+  --> StakingProxy-flatten.sol:23:1:
+   |
+23 | contract StakingProxy {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+Note: The payable fallback function is defined here.
+  --> StakingProxy-flatten.sol:42:5:
+   |
+42 |     fallback() external payable {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Good point.
+StakingVerifier.changeStakingLimits(uint256) (StakingVerifier-flatten.sol#181-193) should emit an event for: 
+	- rewardsPerSecondLimit = _rewardsPerSecondLimit (StakingVerifier-flatten.sol#192) 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#missing-events-arithmetic
+
+Ignore.
+Parameter StakingVerifier.changeStakingLimits(uint256)._rewardsPerSecondLimit (StakingVerifier-flatten.sol#181) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+INFO:Detectors:
+
+False positive. StakingBase._initialize is protected.
+Function StakingNativeToken.initialize(StakingBase.StakingParams) (StakingNativeToken-flatten.sol#1180-1182) is an unprotected initializer.
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/unprotected_initialize.md
+
+False positive. StakingBase._initialize is protected.
+Manipulated call found: (success,returnData) = activityChecker.staticcall(abi.encodeWithSelector(IActivityChecker.getMultisigNonces.selector,multisig)) (StakingNativeToken-flatten.sol#713-714) in StakingBase._checkRatioPass(address,uint256[],uint256) (StakingNativeToken-flatten.sol#705-731)
+Only the destination could be manipulated
+	The destination could be manipulated through StakingNativeToken.initialize(StakingBase.StakingParams) (StakingNativeToken-flatten.sol#1180-1182)
+Manipulated call found: (success,returnData) = activityChecker.staticcall(abi.encodeWithSelector(IActivityChecker.isRatioPass.selector,currentNonces,lastNonces,ts)) (StakingNativeToken-flatten.sol#723-724) in StakingBase._checkRatioPass(address,uint256[],uint256) (StakingNativeToken-flatten.sol#705-731)
+Both destination and calldata could be manipulated
+	The call could be fully manipulated (arbitrary call) through StakingNativeToken.initialize(StakingBase.StakingParams) (StakingNativeToken-flatten.sol#1180-1182)
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/arbitrary_call.md
+
+False positive.
+StakingBase._checkRatioPass(address,uint256[],uint256) (StakingNativeToken-flatten.sol#705-731) uses a dangerous strict equality:
+	- success && returnData.length == 32 (StakingNativeToken-flatten.sol#727)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+
+Uninitialized variables. False positive.
+StakingBase.unstake(uint256).idx (StakingNativeToken-flatten.sol#1020) is a local variable never initialized
+StakingBase.checkpoint().finalEligibleServiceRewards (StakingNativeToken-flatten.sol#881) is a local variable never initialized
+StakingBase._evict(uint256[],uint256[],uint256).sCounter (StakingNativeToken-flatten.sol#828) is a local variable never initialized
+StakingBase.checkpoint().finalEligibleServiceIds (StakingNativeToken-flatten.sol#880) is a local variable never initialized
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#uninitialized-local-variables
+
+False positive.
+StakingBase unstake parameter from is not related to msg.sender IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (StakingNativeToken-flatten.sol#1050)
+Reference: https://ventral.digital/posts/2022/8/18/sznsdaos-bountyboard-unauthorized-transferfrom-vulnerability
+
+False positive.
+Function StakingBase._checkRatioPass(address,uint256[],uint256) (StakingNativeToken-flatten.sol#705-731) contains a low level call to a custom address
+Function StakingNativeToken._withdraw(address,uint256) (StakingNativeToken-flatten.sol#1188-1197) contains a low level call to a custom address
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/call_forward_to_protected.md
+
+Fix it.
+Reentrancy in StakingBase.stake(uint256) (StakingNativeToken-flatten.sol#616-697):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (StakingNativeToken-flatten.sol#694)
+	Event emitted after the call(s):
+	- ServiceStaked(epochCounter,serviceId,msg.sender,service.multisig,nonces) (StakingNativeToken-flatten.sol#696)
+Reentrancy in StakingBase.unstake(uint256) (StakingNativeToken-flatten.sol#992-1058):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (StakingNativeToken-flatten.sol#1050)
+	Event emitted after the call(s):
+	- ServiceUnstaked(epochCounter,serviceId,msg.sender,multisig,nonces,reward) (StakingNativeToken-flatten.sol#1057)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+False positive.
+StakingBase._checkRatioPass(address,uint256[],uint256) (StakingNativeToken-flatten.sol#705-731) uses timestamp for comparisons
+	Dangerous comparisons:
+	- success && returnData.length > 63 && (returnData.length % 32 == 0) (StakingNativeToken-flatten.sol#718)
+	- success && returnData.length == 32 (StakingNativeToken-flatten.sol#727)
+StakingBase._calculateStakingRewards() (StakingNativeToken-flatten.sol#742-804) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp - tsCheckpointLast >= livenessPeriod && lastAvailableRewards > 0 (StakingNativeToken-flatten.sol#756)
+	- ts > serviceCheckpoint (StakingNativeToken-flatten.sol#781)
+StakingBase.checkpoint() (StakingNativeToken-flatten.sol#865-987) uses timestamp for comparisons
+	Dangerous comparisons:
+	- serviceInactivity[i_scope_1] > maxInactivityDuration (StakingNativeToken-flatten.sol#955)
+StakingBase.unstake(uint256) (StakingNativeToken-flatten.sol#992-1058) uses timestamp for comparisons
+	Dangerous comparisons:
+	- ts <= minStakingDuration && availableRewards > 0 (StakingNativeToken-flatten.sol#1005)
+StakingBase.getStakingState(uint256) (StakingNativeToken-flatten.sol#1129-1136) uses timestamp for comparisons
+	Dangerous comparisons:
+	- sInfo.inactivity > maxInactivityDuration (StakingNativeToken-flatten.sol#1131)
+	- sInfo.tsStart > 0 (StakingNativeToken-flatten.sol#1133)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+
+OK by design.
+StakingBase.stake(uint256) (StakingNativeToken-flatten.sol#616-697) has a high cyclomatic complexity (13).
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cyclomatic-complexity
+
+False positive.
+ERC721._burn(uint256) (StakingNativeToken-flatten.sol#174-189) is never used and should be removed
+ERC721._mint(address,uint256) (StakingNativeToken-flatten.sol#159-172) is never used and should be removed
+ERC721._safeMint(address,uint256) (StakingNativeToken-flatten.sol#195-204) is never used and should be removed
+ERC721._safeMint(address,uint256,bytes) (StakingNativeToken-flatten.sol#206-219) is never used and should be removed
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dead-code
+
+
+OK by design.
+Low level call in StakingBase._checkRatioPass(address,uint256[],uint256) (StakingNativeToken-flatten.sol#705-731):
+	- (success,returnData) = activityChecker.staticcall(abi.encodeWithSelector(IActivityChecker.getMultisigNonces.selector,multisig)) (StakingNativeToken-flatten.sol#713-714)
+	- (success,returnData) = activityChecker.staticcall(abi.encodeWithSelector(IActivityChecker.isRatioPass.selector,currentNonces,lastNonces,ts)) (StakingNativeToken-flatten.sol#723-724)
+Low level call in StakingNativeToken._withdraw(address,uint256) (StakingNativeToken-flatten.sol#1188-1197):
+	- (success) = to.call{value: amount}() (StakingNativeToken-flatten.sol#1193)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+
+
+Variable ERC721._ownerOf (StakingNativeToken-flatten.sol#33) is not in mixedCase
+Variable ERC721._balanceOf (StakingNativeToken-flatten.sol#35) is not in mixedCase
+Parameter StakingNativeToken.initialize(StakingBase.StakingParams)._stakingParams (StakingNativeToken-flatten.sol#1180) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+
+OK by design.
+ERC721 (StakingNativeToken-flatten.sol#8-220) does not implement functions:
+	- ERC721.tokenURI(uint256) (StakingNativeToken-flatten.sol#27)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unimplemented-functions
+
+Fix it.
+Function StakingBase._checkRatioPass(address,uint256[],uint256) (StakingNativeToken-flatten.sol#705-731) contains magic numbers: 63, 32
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/magic_number.md
+
+False positive.
+Function StakingBase._initialize(StakingBase.StakingParams) (StakingBase-flatten.sol#503-581) is an unprotected initializer.
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/unprotected_initialize.md
+
+False positive.
+StakingBase._checkRatioPass(address,uint256[],uint256) (StakingBase-flatten.sol#705-731) uses a dangerous strict equality:
+	- success && returnData.length == 32 (StakingBase-flatten.sol#727)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+
+False positive.
+StakingBase.checkpoint().finalEligibleServiceRewards (StakingBase-flatten.sol#881) is a local variable never initialized
+StakingBase._evict(uint256[],uint256[],uint256).sCounter (StakingBase-flatten.sol#828) is a local variable never initialized
+StakingBase.checkpoint().finalEligibleServiceIds (StakingBase-flatten.sol#880) is a local variable never initialized
+StakingBase.unstake(uint256).idx (StakingBase-flatten.sol#1020) is a local variable never initialized
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#uninitialized-local-variables
+
+False positive.
+StakingBase unstake parameter from is not related to msg.sender IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (StakingBase-flatten.sol#1050)
+Reference: https://ventral.digital/posts/2022/8/18/sznsdaos-bountyboard-unauthorized-transferfrom-vulnerability
+
+False positive.
+Function StakingBase._checkRatioPass(address,uint256[],uint256) (StakingBase-flatten.sol#705-731) contains a low level call to a custom address
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/call_forward_to_protected.md
+
+False positive.
+Reentrancy in StakingBase.stake(uint256) (StakingBase-flatten.sol#616-697):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (StakingBase-flatten.sol#694)
+	Event emitted after the call(s):
+	- ServiceStaked(epochCounter,serviceId,msg.sender,service.multisig,nonces) (StakingBase-flatten.sol#696)
+Reentrancy in StakingBase.unstake(uint256) (StakingBase-flatten.sol#992-1058):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (StakingBase-flatten.sol#1050)
+	Event emitted after the call(s):
+	- ServiceUnstaked(epochCounter,serviceId,msg.sender,multisig,nonces,reward) (StakingBase-flatten.sol#1057)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+False positive.
+StakingBase._checkRatioPass(address,uint256[],uint256) (StakingBase-flatten.sol#705-731) uses timestamp for comparisons
+	Dangerous comparisons:
+	- success && returnData.length > 63 && (returnData.length % 32 == 0) (StakingBase-flatten.sol#718)
+	- success && returnData.length == 32 (StakingBase-flatten.sol#727)
+StakingBase._calculateStakingRewards() (StakingBase-flatten.sol#742-804) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp - tsCheckpointLast >= livenessPeriod && lastAvailableRewards > 0 (StakingBase-flatten.sol#756)
+	- ts > serviceCheckpoint (StakingBase-flatten.sol#781)
+StakingBase.checkpoint() (StakingBase-flatten.sol#865-987) uses timestamp for comparisons
+	Dangerous comparisons:
+	- serviceInactivity[i_scope_1] > maxInactivityDuration (StakingBase-flatten.sol#955)
+StakingBase.unstake(uint256) (StakingBase-flatten.sol#992-1058) uses timestamp for comparisons
+	Dangerous comparisons:
+	- ts <= minStakingDuration && availableRewards > 0 (StakingBase-flatten.sol#1005)
+StakingBase.getStakingState(uint256) (StakingBase-flatten.sol#1129-1136) uses timestamp for comparisons
+	Dangerous comparisons:
+	- sInfo.inactivity > maxInactivityDuration (StakingBase-flatten.sol#1131)
+	- sInfo.tsStart > 0 (StakingBase-flatten.sol#1133)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+
+Look carefully.
+StakingBase.stake(uint256) (StakingBase-flatten.sol#616-697) has a high cyclomatic complexity (13).
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cyclomatic-complexity
+
+False positive.
+ERC721._burn(uint256) (StakingBase-flatten.sol#174-189) is never used and should be removed
+ERC721._mint(address,uint256) (StakingBase-flatten.sol#159-172) is never used and should be removed
+ERC721._safeMint(address,uint256) (StakingBase-flatten.sol#195-204) is never used and should be removed
+ERC721._safeMint(address,uint256,bytes) (StakingBase-flatten.sol#206-219) is never used and should be removed
+StakingBase._initialize(StakingBase.StakingParams) (StakingBase-flatten.sol#503-581) is never used and should be removed
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dead-code
+
+
+False positive.
+Low level call in StakingBase._checkRatioPass(address,uint256[],uint256) (StakingBase-flatten.sol#705-731):
+	- (success,returnData) = activityChecker.staticcall(abi.encodeWithSelector(IActivityChecker.getMultisigNonces.selector,multisig)) (StakingBase-flatten.sol#713-714)
+	- (success,returnData) = activityChecker.staticcall(abi.encodeWithSelector(IActivityChecker.isRatioPass.selector,currentNonces,lastNonces,ts)) (StakingBase-flatten.sol#723-724)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+
+Ignore.
+Variable ERC721._ownerOf (StakingBase-flatten.sol#33) is not in mixedCase
+Variable ERC721._balanceOf (StakingBase-flatten.sol#35) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+
+False positive.
+ERC721 (StakingBase-flatten.sol#8-220) does not implement functions:
+	- ERC721.tokenURI(uint256) (StakingBase-flatten.sol#27)
+StakingBase (StakingBase-flatten.sol#399-1163) does not implement functions:
+	- StakingBase._withdraw(address,uint256) (StakingBase-flatten.sol#610)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unimplemented-functions
+
+False positive.
+Function StakingBase._checkRatioPass(address,uint256[],uint256) (StakingBase-flatten.sol#705-731) contains magic numbers: 63, 32
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/magic_number.md
+INFO:Detectors:
+StakingBase.balance (StakingBase-flatten.sol#489) should be constant 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#state-variables-that-could-be-declared-constant
+
+Probably OK.
+In a function StakingBase.stake(uint256) (StakingBase-flatten.sol#616-697) variable StakingBase.agentIds (StakingBase-flatten.sol#495) is read multiple times
+In a function StakingBase.checkpoint() (StakingBase-flatten.sol#865-987) variable StakingBase.mapServiceInfo (StakingBase-flatten.sol#497) is read multiple times
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/multiple_storage_read.md
+
+Look carefully.
+Function StakingProxy.constructor(address) (StakingFactory-flatten.sol#29-39) is a strange setter. Nothing is set in constructor or set in a function without using function parameters
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/strange_setter.md
+
+False positive.
+Potential vulnerable to readonly-reentrancy function (if read in other function) StakingFactory.getProxyAddress(address) (StakingFactory-flatten.sol#202-204):
+	State variables read that were written after the external call(s):
+	- StakingFactory.nonce (StakingFactory-flatten.sol#134) was read at getProxyAddressWithNonce(implementation,nonce) (StakingFactory-flatten.sol#203)
+		 This variable was written at (after external call):
+			- nonce = localNonce + 1 (StakingFactory-flatten.sol#274)
+
+False positive.
+Potential vulnerable to readonly-reentrancy function (if read in other function) StakingFactory.verifyInstance(address) (StakingFactory-flatten.sol#298-320):
+	State variables read that were written after the external call(s):
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#140) was read at instanceParams = mapInstanceParams[instance] (StakingFactory-flatten.sol#300)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#272)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#140) was read at implementation = instanceParams.implementation (StakingFactory-flatten.sol#301)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#272)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#140) was read at implementation == address(0) (StakingFactory-flatten.sol#304)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#272)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#140) was read at false (StakingFactory-flatten.sol#305)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#272)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#140) was read at END_IF (StakingFactory-flatten.sol#304-306)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#272)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#140) was read at ! instanceParams.isEnabled (StakingFactory-flatten.sol#309)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#272)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#140) was read at false (StakingFactory-flatten.sol#310)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#272)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#140) was read at END_IF (StakingFactory-flatten.sol#309-311)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#272)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#140) was read at localVerifier = verifier (StakingFactory-flatten.sol#314)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#272)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#140) was read at localVerifier != address(0) (StakingFactory-flatten.sol#315)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#272)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#140) was read at success = IStakingVerifier(localVerifier).verifyInstance(instance,implementation) (StakingFactory-flatten.sol#316)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#272)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#140) was read at success = true (StakingFactory-flatten.sol#318)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#272)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#140) was read at END_IF (StakingFactory-flatten.sol#315-319)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#272)
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/readonly_reentrancy.md
+
+False positive.
+Manipulated call found: (success,returnData) = instance.call(initPayload) (StakingFactory-flatten.sol#251) in StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#209-277)
+Both destination and calldata could be manipulated
+	The call could be fully manipulated (arbitrary call) through StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#209-277)
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/arbitrary_call.md
+
+For discussion.
+Contract locking ether found:
+	Contract StakingProxy (StakingFactory-flatten.sol#23-61) has payable functions:
+	 - StakingProxy.fallback() (StakingFactory-flatten.sol#42-53)
+	But does not have a function to withdraw the ether
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#contracts-that-lock-ether
+
+Fix it.
+Reentrancy in StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#209-277):
+	External calls:
+	- (success,returnData) = instance.call(initPayload) (StakingFactory-flatten.sol#251)
+	State variables written after the call(s):
+	- nonce = localNonce + 1 (StakingFactory-flatten.sol#274)
+	StakingFactory.nonce (StakingFactory-flatten.sol#134) can be used in cross function reentrancies:
+	- StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#209-277)
+	- StakingFactory.getProxyAddress(address) (StakingFactory-flatten.sol#202-204)
+	- StakingFactory.nonce (StakingFactory-flatten.sol#134)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
+
+False positive.
+Dubious typecast in StakingFactory.getProxyAddressWithNonce(address,uint256) (StakingFactory-flatten.sol#182-198):
+	uint256 => uint160 casting occurs in address(uint160(uint256(hash))) (StakingFactory-flatten.sol#197)
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/dubious_typecast.md
+
+False positive, zero address is possible.
+StakingFactory.constructor(address)._verifier (StakingFactory-flatten.sol#144) lacks a zero-check on :
+		- verifier = _verifier (StakingFactory-flatten.sol#146)
+StakingFactory.changeVerifier(address).newVerifier (StakingFactory-flatten.sol#168) lacks a zero-check on :
+		- verifier = newVerifier (StakingFactory-flatten.sol#174)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#missing-zero-address-validation
+
+Fix it.
+Reentrancy in StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#209-277):
+	External calls:
+	- (success,returnData) = instance.call(initPayload) (StakingFactory-flatten.sol#251)
+	State variables written after the call(s):
+	- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#272)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-2
+
+IMO ok.
+Reentrancy in StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#209-277):
+	External calls:
+	- (success,returnData) = instance.call(initPayload) (StakingFactory-flatten.sol#251)
+	Event emitted after the call(s):
+	- InstanceCreated(msg.sender,instance,implementation) (StakingFactory-flatten.sol#276)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+Fix it.
+Setter function StakingFactory.setInstanceStatus(address,bool) (StakingFactory-flatten.sol#282-293) does not emit an event
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/event_setter.md
+
+False positive.
+StakingProxy.constructor(address) (StakingFactory-flatten.sol#29-39) uses assembly
+	- INLINE ASM (StakingFactory-flatten.sol#36-38)
+StakingProxy.fallback() (StakingFactory-flatten.sol#42-53) uses assembly
+	- INLINE ASM (StakingFactory-flatten.sol#43-52)
+StakingProxy.getImplementation() (StakingFactory-flatten.sol#56-60) uses assembly
+	- INLINE ASM (StakingFactory-flatten.sol#57-59)
+StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#209-277) uses assembly
+	- INLINE ASM (StakingFactory-flatten.sol#242-244)
+	- INLINE ASM (StakingFactory-flatten.sol#256-259)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#assembly-usage
+
+False positive.
+Low level call in StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#209-277):
+	- (success,returnData) = instance.call(initPayload) (StakingFactory-flatten.sol#251)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+
+False positive.
+StakingFactory.getProxyAddressWithNonce(address,uint256) (StakingFactory-flatten.sol#182-198) uses literals with too many digits:
+	- deploymentData = abi.encodePacked(type()(StakingProxy).creationCode,uint256(uint160(implementation))) (StakingFactory-flatten.sol#187-188)
+StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#209-277) uses literals with too many digits:
+	- deploymentData = abi.encodePacked(type()(StakingProxy).creationCode,uint256(uint160(implementation))) (StakingFactory-flatten.sol#238-239)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#too-many-digits
+
+False positive.
+Function StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#209-277) contains magic number: 32
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/magic_number.md
+
+False positive. In assembly.
+Function StakingProxy.constructor(address) (StakingProxy-flatten.sol#29-39) is a strange setter. Nothing is set in constructor or set in a function without using function parameters
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/strange_setter.md
+
+False positive.
+Contract locking ether found:
+	Contract StakingProxy (StakingProxy-flatten.sol#23-61) has payable functions:
+	 - StakingProxy.fallback() (StakingProxy-flatten.sol#42-53)
+	But does not have a function to withdraw the ether
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#contracts-that-lock-ether
+
+False positive.
+StakingProxy.constructor(address) (StakingProxy-flatten.sol#29-39) uses assembly
+	- INLINE ASM (StakingProxy-flatten.sol#36-38)
+StakingProxy.fallback() (StakingProxy-flatten.sol#42-53) uses assembly
+	- INLINE ASM (StakingProxy-flatten.sol#43-52)
+StakingProxy.getImplementation() (StakingProxy-flatten.sol#56-60) uses assembly
+	- INLINE ASM (StakingProxy-flatten.sol#57-59)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#assembly-usage
+
+False positive.
+Function StakingToken.initialize(StakingBase.StakingParams,address,address) (StakingToken-flatten.sol#1309-1324) is a non-protected setter stakingToken is written
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/unprotected_setter.md
+
+False positive.
+Function StakingToken.initialize(StakingBase.StakingParams,address,address) (StakingToken-flatten.sol#1309-1324) is an unprotected initializer.
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/unprotected_initialize.md
+
+See above.
+Manipulated call found: (success,returnData) = activityChecker.staticcall(abi.encodeWithSelector(IActivityChecker.getMultisigNonces.selector,multisig)) (StakingToken-flatten.sol#713-714) in StakingBase._checkRatioPass(address,uint256[],uint256) (StakingToken-flatten.sol#705-731)
+Only the destination could be manipulated
+	The destination could be manipulated through StakingToken.initialize(StakingBase.StakingParams,address,address) (StakingToken-flatten.sol#1309-1324)
+Manipulated call found: (success,returnData) = activityChecker.staticcall(abi.encodeWithSelector(IActivityChecker.isRatioPass.selector,currentNonces,lastNonces,ts)) (StakingToken-flatten.sol#723-724) in StakingBase._checkRatioPass(address,uint256[],uint256) (StakingToken-flatten.sol#705-731)
+Both destination and calldata could be manipulated
+	The call could be fully manipulated (arbitrary call) through StakingToken.initialize(StakingBase.StakingParams,address,address) (StakingToken-flatten.sol#1309-1324)
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/arbitrary_call.md
+
+See above.
+StakingBase._checkRatioPass(address,uint256[],uint256) (StakingToken-flatten.sol#705-731) uses a dangerous strict equality:
+	- success && returnData.length == 32 (StakingToken-flatten.sol#727)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+
+Unused variables:
+StakingBase.checkpoint().finalEligibleServiceRewards (StakingToken-flatten.sol#881) is a local variable never initialized
+StakingBase.unstake(uint256).idx (StakingToken-flatten.sol#1020) is a local variable never initialized
+StakingBase.checkpoint().finalEligibleServiceIds (StakingToken-flatten.sol#880) is a local variable never initialized
+StakingBase._evict(uint256[],uint256[],uint256).sCounter (StakingToken-flatten.sol#828) is a local variable never initialized
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#uninitialized-local-variables
+
+See above.
+StakingBase unstake parameter from is not related to msg.sender IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (StakingToken-flatten.sol#1050)
+Reference: https://ventral.digital/posts/2022/8/18/sznsdaos-bountyboard-unauthorized-transferfrom-vulnerability
+
+See above.
+Function StakingBase._checkRatioPass(address,uint256[],uint256) (StakingToken-flatten.sol#705-731) contains a low level call to a custom address
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/call_forward_to_protected.md
+
+Fix it.
+StakingToken._checkTokenStakingDeposit(uint256,uint256,uint32[]).agentIds (StakingToken-flatten.sol#1329) shadows:
+	- StakingBase.agentIds (StakingToken-flatten.sol#495) (state variable)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#local-variable-shadowing
+
+See above.
+Reentrancy in StakingBase.stake(uint256) (StakingToken-flatten.sol#616-697):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (StakingToken-flatten.sol#694)
+	Event emitted after the call(s):
+	- ServiceStaked(epochCounter,serviceId,msg.sender,service.multisig,nonces) (StakingToken-flatten.sol#696)
+Reentrancy in StakingBase.unstake(uint256) (StakingToken-flatten.sol#992-1058):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (StakingToken-flatten.sol#1050)
+	Event emitted after the call(s):
+	- ServiceUnstaked(epochCounter,serviceId,msg.sender,multisig,nonces,reward) (StakingToken-flatten.sol#1057)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+False positive.
+StakingBase._checkRatioPass(address,uint256[],uint256) (StakingToken-flatten.sol#705-731) uses timestamp for comparisons
+	Dangerous comparisons:
+	- success && returnData.length > 63 && (returnData.length % 32 == 0) (StakingToken-flatten.sol#718)
+	- success && returnData.length == 32 (StakingToken-flatten.sol#727)
+StakingBase._calculateStakingRewards() (StakingToken-flatten.sol#742-804) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp - tsCheckpointLast >= livenessPeriod && lastAvailableRewards > 0 (StakingToken-flatten.sol#756)
+	- ts > serviceCheckpoint (StakingToken-flatten.sol#781)
+StakingBase.checkpoint() (StakingToken-flatten.sol#865-987) uses timestamp for comparisons
+	Dangerous comparisons:
+	- serviceInactivity[i_scope_1] > maxInactivityDuration (StakingToken-flatten.sol#955)
+StakingBase.unstake(uint256) (StakingToken-flatten.sol#992-1058) uses timestamp for comparisons
+	Dangerous comparisons:
+	- ts <= minStakingDuration && availableRewards > 0 (StakingToken-flatten.sol#1005)
+StakingBase.getStakingState(uint256) (StakingToken-flatten.sol#1129-1136) uses timestamp for comparisons
+	Dangerous comparisons:
+	- sInfo.inactivity > maxInactivityDuration (StakingToken-flatten.sol#1131)
+	- sInfo.tsStart > 0 (StakingToken-flatten.sol#1133)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+
+False positive.
+SafeTransferLib.safeTransferFrom(address,address,address,uint256) (StakingToken-flatten.sol#1185-1216) uses assembly
+	- INLINE ASM (StakingToken-flatten.sol#1189-1211)
+SafeTransferLib.safeTransfer(address,address,uint256) (StakingToken-flatten.sol#1227-1257) uses assembly
+	- INLINE ASM (StakingToken-flatten.sol#1231-1252)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#assembly-usage
+
+OK by design.
+StakingBase.stake(uint256) (StakingToken-flatten.sol#616-697) has a high cyclomatic complexity (13).
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cyclomatic-complexity
+
+False positive.
+ERC721._burn(uint256) (StakingToken-flatten.sol#174-189) is never used and should be removed
+ERC721._mint(address,uint256) (StakingToken-flatten.sol#159-172) is never used and should be removed
+ERC721._safeMint(address,uint256) (StakingToken-flatten.sol#195-204) is never used and should be removed
+ERC721._safeMint(address,uint256,bytes) (StakingToken-flatten.sol#206-219) is never used and should be removed
+StakingBase._checkTokenStakingDeposit(uint256,uint256,uint32[]) (StakingToken-flatten.sol#586-605) is never used and should be removed
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dead-code
+
+See above.
+Low level call in StakingBase._checkRatioPass(address,uint256[],uint256) (StakingToken-flatten.sol#705-731):
+	- (success,returnData) = activityChecker.staticcall(abi.encodeWithSelector(IActivityChecker.getMultisigNonces.selector,multisig)) (StakingToken-flatten.sol#713-714)
+	- (success,returnData) = activityChecker.staticcall(abi.encodeWithSelector(IActivityChecker.isRatioPass.selector,currentNonces,lastNonces,ts)) (StakingToken-flatten.sol#723-724)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+
+False positive.
+Variable ERC721._ownerOf (StakingToken-flatten.sol#33) is not in mixedCase
+Variable ERC721._balanceOf (StakingToken-flatten.sol#35) is not in mixedCase
+Parameter StakingToken.initialize(StakingBase.StakingParams,address,address)._stakingParams (StakingToken-flatten.sol#1310) is not in mixedCase
+Parameter StakingToken.initialize(StakingBase.StakingParams,address,address)._serviceRegistryTokenUtility (StakingToken-flatten.sol#1311) is not in mixedCase
+Parameter StakingToken.initialize(StakingBase.StakingParams,address,address)._stakingToken (StakingToken-flatten.sol#1312) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+
+False positive.
+SafeTransferLib.safeTransferFrom(address,address,address,uint256) (StakingToken-flatten.sol#1185-1216) uses literals with too many digits:
+	- mstore(uint256,uint256)(0,0x23b872dd00000000000000000000000000000000000000000000000000000000) (StakingToken-flatten.sol#1194)
+SafeTransferLib.safeTransfer(address,address,uint256) (StakingToken-flatten.sol#1227-1257) uses literals with too many digits:
+	- mstore(uint256,uint256)(0,0xa9059cbb00000000000000000000000000000000000000000000000000000000) (StakingToken-flatten.sol#1236)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#too-many-digits
+
+False positive.
+ERC721 (StakingToken-flatten.sol#8-220) does not implement functions:
+	- ERC721.tokenURI(uint256) (StakingToken-flatten.sol#27)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unimplemented-functions
+
+False positive.
+Function SafeTransferLib.safeTransferFrom(address,address,address,uint256) (StakingToken-flatten.sol#1185-1216) contains magic numbers: 4, 36, 68
+Function SafeTransferLib.safeTransfer(address,address,uint256) (StakingToken-flatten.sol#1227-1257) contains magic numbers: 4, 36
+Function StakingBase._checkRatioPass(address,uint256[],uint256) (StakingToken-flatten.sol#705-731) contains magic numbers: 63, 32
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/magic_number.md
+

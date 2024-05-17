@@ -13,6 +13,9 @@ contracts is located in this folder: [internal audit 3](https://github.com/valor
 An internal audit with a focus on Service Staking
 contracts is located in this folder: [internal audit 4](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal4).
 
+An internal audit with a focus on PooA Staking
+contracts is located in this folder: [internal audit 5](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal5).
+
 ### External audit
 
 Following the initial contracts [audit report](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/Valory%20Review%20Final.pdf),
