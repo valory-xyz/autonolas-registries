@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.25;
 
 // Staking instance interface
 interface IStaking {
@@ -36,6 +36,7 @@ contract StakingVerifier {
     event OwnerUpdated(address indexed owner);
     event SetImplementationsCheck(bool setCheck);
     event ImplementationsWhitelistUpdated(address[] implementations, bool[] statuses, bool setCheck);
+    event StakingLimitsUpdated(uint256 rewardsPerSecondLimit);
 
     // OLAS token address
     address public immutable olas;
@@ -161,14 +162,28 @@ contract StakingVerifier {
         }
 
         // Check for the staking parameters
+        // This is a must have parameter for all staking contracts
         uint256 rewardsPerSecond = IStaking(instance).rewardsPerSecond();
         if (rewardsPerSecond > rewardsPerSecondLimit) {
             return false;
         }
 
-        address token = IStaking(instance).stakingToken();
-        if (token != olas) {
-            return false;
+        // Check staking token
+        // This is an optional check since there could be staking contracts with native tokens
+        bytes memory tokenData = abi.encodeCall(IStaking.stakingToken, ());
+        (bool success, bytes memory returnData) = instance.staticcall(tokenData);
+
+        // Check the returnData is the call was successful
+        if (success) {
+            // The returned size must be 32 to fit one address
+            if (returnData.length == 32) {
+                address token = abi.decode(returnData, (address));
+                if (token != olas) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
         }
 
         return true;
@@ -188,5 +203,7 @@ contract StakingVerifier {
         }
 
         rewardsPerSecondLimit = _rewardsPerSecondLimit;
+
+        emit StakingLimitsUpdated(_rewardsPerSecondLimit);
     }
 }

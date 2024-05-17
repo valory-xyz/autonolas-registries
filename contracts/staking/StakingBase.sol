@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.25;
 
 import {ERC721TokenReceiver} from "../../lib/solmate/src/tokens/ERC721.sol";
 
@@ -479,8 +479,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
     {
         // Get current service multisig nonce
         // This is a low level call since it must never revert
-        (bool success, bytes memory returnData) = activityChecker.staticcall(abi.encodeWithSelector(
-            IActivityChecker.getMultisigNonces.selector, multisig));
+        bytes memory activityData = abi.encodeCall(IActivityChecker.getMultisigNonces, multisig);
+        (bool success, bytes memory returnData) = activityChecker.staticcall(activityData);
 
         // If the function call was successful, check the return value
         // The return data length must be the exact number of full slots
@@ -489,8 +489,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
             currentNonces = abi.decode(returnData, (uint256[]));
 
             // Get the ratio pass activity check
-            (success, returnData) = activityChecker.staticcall(abi.encodeWithSelector(
-                IActivityChecker.isRatioPass.selector, currentNonces, lastNonces, ts));
+            activityData = abi.encodeCall(IActivityChecker.isRatioPass, (currentNonces, lastNonces, ts));
+            (success, returnData) = activityChecker.staticcall(activityData);
 
             // The return data must match the size of bool
             if (success && returnData.length == 32) {
@@ -816,6 +816,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
 
         // Transfer the service back to the owner
+        // Note that the reentrancy is not possible due to the ServiceInfo struct being deleted
         IService(serviceRegistry).safeTransferFrom(address(this), msg.sender, serviceId);
 
         // Transfer accumulated rewards to the service multisig
@@ -842,7 +843,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Get the claimed service data
         reward = sInfo.reward;
 
-        // Check for the zero reward, or for the reentrancy attack
+        // Check for the zero reward
         if (reward == 0) {
             revert ZeroValue();
         }
@@ -851,6 +852,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         sInfo.reward = 0;
 
         // Transfer accumulated rewards to the service multisig
+        // Note that the reentrancy is not possible since the reward is set to zero
         address multisig = sInfo.multisig;
         _withdraw(multisig, reward);
 

@@ -63,12 +63,15 @@ function stake(uint256 serviceId) external { - CEI
             );
 }
 ```
+[x] the function is re-entrance proof due to the struct being deleted
+
 2. It is better to add protection against reentrancy explicitly. StakingFactor
 ```
 function createStakingInstance() {
     reentrancy via implementation. 
 }
 ```
+[x] fixed
 
 #### Low priority isssue
 1. No events:
@@ -76,6 +79,8 @@ function createStakingInstance() {
 StakingVerifier.changeStakingLimits should emit an event for: 
 	- rewardsPerSecondLimit = _rewardsPerSecondLimit 
 ```
+[x] fixed
+
 2. abi.encodeWithSelector vs abi.encodeCall()
 ```sh
 Example of more safe way:
@@ -91,12 +96,15 @@ for
 (success, returnData) = activityChecker.staticcall(abi.encodeWithSelector(
                 IActivityChecker.isRatioPass.selector, currentNonces, lastNonces, ts));
 ```
+[x] fixed
+
 3. Shadow variable. Check it, please.
 ```
 StakingToken._checkTokenStakingDeposit(uint256,uint256,uint32[]).agentIds (StakingToken-flatten.sol#1329) shadows:
 	- StakingBase.agentIds (StakingToken-flatten.sol#495) (state variable)
 Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#local-variable-shadowing
 ```
+[x] fixed
 
 #### best practices
 1. magic numbers: 63, 32 
@@ -104,21 +112,29 @@ Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#local-v
 if (success && returnData.length > 63 && (returnData.length % 32 == 0)) {
     rewrite magic numbers: 63, 32 as constant.
 ```
+[x] noted
+
 2. Upgrade solidity 0.8.23 to 0.8.25
 ```
 Only for those L2 evm-chains where this is applicable (EVM version is cancun).
 ``` 
+[x] fixed
 
 #### Notes && question
 1. StakingVerifier -> verifyInstance ->  IStaking(instance).stakingToken()
 ```sh
 How will this work for StakingNativeToken? Bug?
 ```
+[x] fixed
+
 2. Will it work correctly StakingNativeToken with proxy pattern? Test it, please.
 ```sh
 StakingFactory -> Proxy -> StakingNativeToken -> receive()
 ```
+[x] tested with all the implementations, not an issue
+
 3. What happens if you send ETH to StakingToken by mistake? Locked? Issue?
 ```sh
 StakingToken locked ETH.
 ```
+[x] tested, not an issue

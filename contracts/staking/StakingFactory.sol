@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.25;
 
 import {StakingProxy} from "./StakingProxy.sol";
 
@@ -50,6 +50,9 @@ error UnverifiedImplementation(address implementation);
 /// @param instance Proxy instance address.
 error UnverifiedProxy(address instance);
 
+/// @dev Caught reentrancy violation.
+error ReentrancyGuard();
+
 // Instance params struct
 struct InstanceParams {
     // Implementation of a created proxy instance
@@ -77,6 +80,9 @@ contract StakingFactory {
     address public owner;
     // Verifier address
     address public verifier;
+    // Reentrancy lock
+    uint256 internal _locked = 1;
+
     // Mapping of staking service proxy instances => InstanceParams struct
     mapping(address => InstanceParams) public mapInstanceParams;
 
@@ -151,6 +157,12 @@ contract StakingFactory {
         address implementation,
         bytes memory initPayload
     ) external returns (address payable instance) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Check for the zero implementation address
         if (implementation == address(0)) {
             revert ZeroAddress();
@@ -215,6 +227,8 @@ contract StakingFactory {
         nonce = localNonce + 1;
 
         emit InstanceCreated(msg.sender, instance, implementation);
+
+        _locked = 1;
     }
 
     /// @dev Sets the instance status flag.
