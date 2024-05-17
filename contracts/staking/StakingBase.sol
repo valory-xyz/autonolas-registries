@@ -188,6 +188,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
         uint256 maxNumInactivityPeriods;
         // Liveness period
         uint256 livenessPeriod;
+        // Time for emissions
+        uint256 timeForEmissions;
         // Number of agent instances in the service
         uint256 numAgentInstances;
         // Optional agent Ids requirement
@@ -234,6 +236,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
     uint256 public maxNumInactivityPeriods;
     // Liveness period
     uint256 public livenessPeriod;
+    // Time for emissions
+    uint256 public timeForEmissions;
     // Number of agent instances in the service
     uint256 public numAgentInstances;
     // Optional service multisig threshold requirement
@@ -258,6 +262,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
     uint256 public balance;
     // Token / ETH available rewards
     uint256 public availableRewards;
+    // Calculated emissions amount
+    uint256 public emissionsAmount;
     // Timestamp of the last checkpoint
     uint256 public tsCheckpoint;
     // Optional agent Ids requirement
@@ -280,8 +286,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Initial checks
         if (_stakingParams.metadataHash == 0 || _stakingParams.maxNumServices == 0 ||
             _stakingParams.rewardsPerSecond == 0 || _stakingParams.livenessPeriod == 0 ||
-            _stakingParams.numAgentInstances == 0 || _stakingParams.minNumStakingPeriods == 0 ||
-            _stakingParams.maxNumInactivityPeriods == 0) {
+            _stakingParams.numAgentInstances == 0 || _stakingParams.timeForEmissions == 0 ||
+            _stakingParams.minNumStakingPeriods == 0 || _stakingParams.maxNumInactivityPeriods == 0) {
             revert ZeroValue();
         }
 
@@ -312,6 +318,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         minStakingDeposit = _stakingParams.minStakingDeposit;
         maxNumInactivityPeriods = _stakingParams.maxNumInactivityPeriods;
         livenessPeriod = _stakingParams.livenessPeriod;
+        timeForEmissions = _stakingParams.timeForEmissions;
         numAgentInstances = _stakingParams.numAgentInstances;
         serviceRegistry = _stakingParams.serviceRegistry;
         activityChecker = _stakingParams.activityChecker;
@@ -344,6 +351,10 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
         // Calculate max allowed inactivity duration
         maxInactivityDuration = _stakingParams.maxNumInactivityPeriods * livenessPeriod;
+
+        // Calculate emissions amount
+        emissionsAmount = _stakingParams.rewardsPerSecond * _stakingParams.maxNumServices *
+            _stakingParams.timeForEmissions;
 
         // Set the checkpoint timestamp to be the deployment one
         tsCheckpoint = block.timestamp;

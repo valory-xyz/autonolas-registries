@@ -3,9 +3,13 @@ pragma solidity ^0.8.25;
 
 // Staking instance interface
 interface IStaking {
-    /// @dev Gets rewards per second in a service staking contract.
+    /// @dev Gets rewards per second.
     /// @return Rewards per second.
     function rewardsPerSecond() external view returns (uint256);
+
+    /// @dev Gets maximum number of services.
+    /// @return Maximum number of services.
+    function maxNumServices() external view returns (uint256);
 
     /// @dev Gets service staking token.
     /// @return Service staking token address.
@@ -36,13 +40,17 @@ contract StakingVerifier {
     event OwnerUpdated(address indexed owner);
     event SetImplementationsCheck(bool setCheck);
     event ImplementationsWhitelistUpdated(address[] implementations, bool[] statuses, bool setCheck);
-    event StakingLimitsUpdated(uint256 rewardsPerSecondLimit);
+    event StakingLimitsUpdated(uint256 rewardsPerSecondLimit, uint256 timeForEmissionsLimit);
 
     // OLAS token address
     address public immutable olas;
 
     // Rewards per second limit
     uint256 public rewardsPerSecondLimit;
+    // Time for emissions limit
+    uint256 public timeForEmissionsLimit;
+    // Emissions per service limit
+    uint256 public emissionsPerServiceLimit;
     // Contract owner address
     address public owner;
     // Flag to check for the implementation address whitelisting status
@@ -54,14 +62,15 @@ contract StakingVerifier {
     /// @dev StakingVerifier constructor.
     /// @param _olas OLAS token address.
     /// @param _rewardsPerSecondLimit Rewards per second limit.
-    constructor(address _olas, uint256 _rewardsPerSecondLimit) {
+    /// @param _timeForEmissionsLimit Time for emissions limit.
+    constructor(address _olas, uint256 _rewardsPerSecondLimit, uint256 _timeForEmissionsLimit) {
         // Zero address check
         if (_olas == address(0)) {
             revert ZeroAddress();
         }
 
-        // Zero value check
-        if (_rewardsPerSecondLimit == 0) {
+        // Zero values check
+        if (_rewardsPerSecondLimit == 0 || _timeForEmissionsLimit == 0) {
             revert ZeroValue();
         }
 
@@ -186,24 +195,36 @@ contract StakingVerifier {
             }
         }
 
+        // Return min(maxTime * numServices * rewardsPerSecond, maxRewards)
         return true;
     }
 
     /// @dev Changes staking parameter limits.
     /// @param _rewardsPerSecondLimit Rewards per second limit.
-    function changeStakingLimits(uint256 _rewardsPerSecondLimit) external {
+    /// @param _timeForEmissionsLimit Time for emissions limit.
+    function changeStakingLimits(uint256 _rewardsPerSecondLimit, uint256 _timeForEmissionsLimit) external {
         // Check the contract ownership
         if (owner != msg.sender) {
             revert OwnerOnly(owner, msg.sender);
         }
 
-        // Zero value check
-        if (_rewardsPerSecondLimit == 0) {
+        // Zero values check
+        if (_rewardsPerSecondLimit == 0 || _timeForEmissionsLimit == 0) {
             revert ZeroValue();
         }
 
         rewardsPerSecondLimit = _rewardsPerSecondLimit;
+        timeForEmissionsLimit = _timeForEmissionsLimit;
+        emissionsPerServiceLimit = _rewardsPerSecondLimit * _timeForEmissionsLimit;
 
-        emit StakingLimitsUpdated(_rewardsPerSecondLimit);
+        emit StakingLimitsUpdated(_rewardsPerSecondLimit, _timeForEmissionsLimit);
+    }
+
+    /// @dev Gets emissions amount limit for a specific staking proxy instance.
+    /// @param instance Staking proxy instance address.
+    /// @return Emissions amount limit.
+    function getEmissionsAmountLimit(address instance) external view returns (uint256) {
+        uint256 maxNumServices = IStaking(instance).maxNumServices();
+        return maxNumServices * emissionsPerServiceLimit;
     }
 }

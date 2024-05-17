@@ -1,4 +1,4 @@
-pragma solidity =0.8.23;
+pragma solidity =0.8.25;
 
 import {IService} from "../contracts/interfaces/IService.sol";
 import "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
@@ -70,6 +70,8 @@ contract BaseSetup is Test {
     uint256 internal maxNumInactivityPeriods = 3;
     // Liveness period
     uint256 internal livenessPeriod = 1 days;
+    // Time for emissions
+    uint256 internal timeForEmissions = 1 weeks;
     // Liveness ratio in the format of 1e18
     uint256 internal livenessRatio = 0.0001 ether; // One nonce in 3 hours
     // Number of agent instances in the service
@@ -115,7 +117,7 @@ contract BaseSetup is Test {
         bytes32 multisigProxyHash = keccak256(address(gnosisSafeProxy).code);
 
         // Deploy service staking verifier
-        stakingVerifier = new StakingVerifier(address(token), rewardsPerSecond);
+        stakingVerifier = new StakingVerifier(address(token), rewardsPerSecond, timeForEmissions);
 
         // Deploy service staking factory
         stakingFactory = new StakingFactory(address(0));
@@ -126,8 +128,8 @@ contract BaseSetup is Test {
         // Deploy service staking native token and arbitrary ERC20 token
         StakingBase.StakingParams memory stakingParams = StakingBase.StakingParams(
             bytes32(uint256(uint160(address(msg.sender)))), maxNumServices, rewardsPerSecond, minStakingDeposit,
-            minNumStakingPeriods, maxNumInactivityPeriods, livenessPeriod, numAgentInstances, emptyArray, 0, bytes32(0),
-            multisigProxyHash, address(serviceRegistry), address(stakingActivityChecker));
+            minNumStakingPeriods, maxNumInactivityPeriods, livenessPeriod, timeForEmissions, numAgentInstances,
+            emptyArray, 0, bytes32(0), multisigProxyHash, address(serviceRegistry), address(stakingActivityChecker));
         stakingNativeTokenImplementation = new StakingNativeToken();
         stakingTokenImplementation = new StakingToken();
 

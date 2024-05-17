@@ -3,6 +3,13 @@ pragma solidity ^0.8.25;
 
 import {StakingProxy} from "./StakingProxy.sol";
 
+// Staking interface
+interface IStaking {
+    /// @dev Gets emissions amount.
+    /// @return Emissions amount.
+    function emissionsAmount() external view returns (uint256);
+}
+
 // Staking verifier interface
 interface IStakingVerifier {
     /// @dev Verifies a service staking implementation contract.
@@ -15,6 +22,11 @@ interface IStakingVerifier {
     /// @param implementation Service staking implementation.
     /// @return True, if verification is successful.
     function verifyInstance(address instance, address implementation) external view returns (bool);
+
+    /// @dev Gets emissions amount limit for a specific staking proxy instance.
+    /// @param instance Staking proxy instance address.
+    /// @return Emissions amount limit.
+    function getEmissionsAmountLimit(address instance) external view returns (uint256);
 }
 
 /// @dev Only `owner` has a privilege, but the `sender` was provided.
@@ -249,8 +261,8 @@ contract StakingFactory {
     
     /// @dev Verifies a service staking contract instance.
     /// @param instance Service staking proxy instance.
-    /// @return success True, if verification is successful.
-    function verifyInstance(address instance) external view returns (bool success) {
+    /// @return True, if verification is successful.
+    function verifyInstance(address instance) public view returns (bool) {
         // Get proxy instance params
         InstanceParams storage instanceParams = mapInstanceParams[instance];
         address implementation = instanceParams.implementation;
@@ -267,10 +279,34 @@ contract StakingFactory {
 
         // Provide additional checks, if needed
         address localVerifier = verifier;
-        if (localVerifier != address (0)) {
-            success = IStakingVerifier(localVerifier).verifyInstance(instance, implementation);
-        } else {
-            success = true;
+        if (localVerifier != address(0)) {
+            return IStakingVerifier(localVerifier).verifyInstance(instance, implementation);
+        }
+
+        return true;
+    }
+
+    /// @dev Verifies staking proxy instance and gets emissions amount.
+    /// @param instance Staking proxy instance.
+    /// @return amount Emissions amount.
+    function verifyInstanceAndGetEmissionsAmount(address instance) external view returns (uint256 amount) {
+        // Verify the proxy instance
+        bool success = verifyInstance(instance);
+
+        if (success) {
+            // Get the proxy instance emissions amount
+            amount = IStaking(instance).emissionsAmount();
+
+            // If there is a verifier, adjust the amount
+            address localVerifier = verifier;
+            if (localVerifier != address(0)) {
+                // Get the max possible emissions amount
+                uint256 maxEmissions = IStakingVerifier(localVerifier).getEmissionsAmountLimit(instance);
+                // Limit excessive emissions amount
+                if (amount > maxEmissions) {
+                    amount = maxEmissions;
+                }
+            }
         }
     }
 }

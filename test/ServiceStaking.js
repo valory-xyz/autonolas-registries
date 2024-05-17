@@ -49,6 +49,7 @@ describe("Staking", function () {
         minNumStakingPeriods: 3,
         maxNumInactivityPeriods: 3,
         livenessPeriod: livenessPeriod, // Ten seconds
+        timeForEmissions: 100,
         numAgentInstances: 1,
         agentIds: [],
         threshold: 0,
@@ -200,6 +201,7 @@ describe("Staking", function () {
                 minNumStakingPeriods: 0,
                 maxNumInactivityPeriods: 0,
                 livenessPeriod: 0,
+                timeForEmissions: 0,
                 numAgentInstances: 0,
                 agentIds: [],
                 threshold: 0,
@@ -253,6 +255,13 @@ describe("Staking", function () {
             ).to.be.revertedWithCustomError(stakingImplementation, "ZeroValue");
 
             testServiceParams.numAgentInstances = 1;
+            initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
+                [testServiceParams]);
+            await expect(
+                stakingFactory.createStakingInstance(stakingImplementation.address, initPayload)
+            ).to.be.revertedWithCustomError(stakingImplementation, "ZeroValue");
+
+            testServiceParams.timeForEmissions = 1;
             initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
                 [testServiceParams]);
             await expect(
@@ -387,6 +396,13 @@ describe("Staking", function () {
             ).to.be.revertedWithCustomError(stakingTokenImplementation, "ZeroValue");
 
             testServiceParams.numAgentInstances = 1;
+            initPayload = stakingTokenImplementation.interface.encodeFunctionData("initialize",
+                [testServiceParams, AddressZero, AddressZero]);
+            await expect(
+                stakingFactory.createStakingInstance(stakingTokenImplementation.address, initPayload)
+            ).to.be.revertedWithCustomError(stakingTokenImplementation, "ZeroValue");
+
+            testServiceParams.timeForEmissions = 1;
             initPayload = stakingTokenImplementation.interface.encodeFunctionData("initialize",
                 [testServiceParams, AddressZero, AddressZero]);
             await expect(
