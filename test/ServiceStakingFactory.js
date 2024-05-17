@@ -11,6 +11,7 @@ describe("StakingFactory", function () {
     let deployer;
     const AddressZero = ethers.constants.AddressZero;
     const rewardsPerSecondLimit = "1" + "0".repeat(15);
+    const timeForEmissionsLimit = 100;
 
     beforeEach(async function () {
         signers = await ethers.getSigners();
@@ -25,7 +26,7 @@ describe("StakingFactory", function () {
         await token.deployed();
 
         const StakingVerifier = await ethers.getContractFactory("StakingVerifier");
-        stakingVerifier = await StakingVerifier.deploy(token.address, rewardsPerSecondLimit);
+        stakingVerifier = await StakingVerifier.deploy(token.address, rewardsPerSecondLimit, timeForEmissionsLimit);
         await stakingVerifier.deployed();
 
         const StakingFactory = await ethers.getContractFactory("StakingFactory");
@@ -58,11 +59,15 @@ describe("StakingFactory", function () {
             const StakingVerifier = await ethers.getContractFactory("StakingVerifier");
 
             await expect(
-                StakingVerifier.deploy(AddressZero, 0)
+                StakingVerifier.deploy(AddressZero, 0, 0)
             ).to.be.revertedWithCustomError(StakingVerifier, "ZeroAddress");
 
             await expect(
-                StakingVerifier.deploy(token.address, 0)
+                StakingVerifier.deploy(token.address, 0, 0)
+            ).to.be.revertedWithCustomError(StakingVerifier, "ZeroValue");
+
+            await expect(
+                StakingVerifier.deploy(token.address, 100, 0)
             ).to.be.revertedWithCustomError(StakingVerifier, "ZeroValue");
         });
         
@@ -226,12 +231,15 @@ describe("StakingFactory", function () {
 
             // Try to change the staking param limits not by the owner
             await expect(
-                stakingVerifier.connect(signers[1]).changeStakingLimits(0)
+                stakingVerifier.connect(signers[1]).changeStakingLimits(0, 0)
             ).to.be.revertedWithCustomError(stakingVerifier, "OwnerOnly");
 
             // Try to change the staking param limits with the zero value
             await expect(
-                stakingVerifier.changeStakingLimits(0)
+                stakingVerifier.changeStakingLimits(0, 0)
+            ).to.be.revertedWithCustomError(stakingVerifier, "ZeroValue");
+            await expect(
+                stakingVerifier.changeStakingLimits(100, 0)
             ).to.be.revertedWithCustomError(stakingVerifier, "ZeroValue");
 
             // Try to set instance activity not by instance deployer
@@ -269,7 +277,7 @@ describe("StakingFactory", function () {
             await stakingFactory.createStakingInstance(staking.address, initPayload);
 
             // Change rewards per second limit parameter
-            await stakingVerifier.changeStakingLimits(1);
+            await stakingVerifier.changeStakingLimits(1, timeForEmissionsLimit);
 
             // Now the initialization will fail since the limit is too low
             await expect(
