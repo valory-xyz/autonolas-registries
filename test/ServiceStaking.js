@@ -49,6 +49,7 @@ describe("Staking", function () {
         minNumStakingPeriods: 3,
         maxNumInactivityPeriods: 3,
         livenessPeriod: livenessPeriod, // Ten seconds
+        timeForEmissions: 100,
         numAgentInstances: 1,
         agentIds: [],
         threshold: 0,
@@ -200,6 +201,7 @@ describe("Staking", function () {
                 minNumStakingPeriods: 0,
                 maxNumInactivityPeriods: 0,
                 livenessPeriod: 0,
+                timeForEmissions: 0,
                 numAgentInstances: 0,
                 agentIds: [],
                 threshold: 0,
@@ -253,6 +255,13 @@ describe("Staking", function () {
             ).to.be.revertedWithCustomError(stakingImplementation, "ZeroValue");
 
             testServiceParams.numAgentInstances = 1;
+            initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
+                [testServiceParams]);
+            await expect(
+                stakingFactory.createStakingInstance(stakingImplementation.address, initPayload)
+            ).to.be.revertedWithCustomError(stakingImplementation, "ZeroValue");
+
+            testServiceParams.timeForEmissions = 1;
             initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
                 [testServiceParams]);
             await expect(
@@ -387,6 +396,13 @@ describe("Staking", function () {
             ).to.be.revertedWithCustomError(stakingTokenImplementation, "ZeroValue");
 
             testServiceParams.numAgentInstances = 1;
+            initPayload = stakingTokenImplementation.interface.encodeFunctionData("initialize",
+                [testServiceParams, AddressZero, AddressZero]);
+            await expect(
+                stakingFactory.createStakingInstance(stakingTokenImplementation.address, initPayload)
+            ).to.be.revertedWithCustomError(stakingTokenImplementation, "ZeroValue");
+
+            testServiceParams.timeForEmissions = 1;
             initPayload = stakingTokenImplementation.interface.encodeFunctionData("initialize",
                 [testServiceParams, AddressZero, AddressZero]);
             await expect(
@@ -1582,12 +1598,17 @@ describe("Staking", function () {
             // Increase the time for the liveness period
             await helpers.time.increase(livenessPeriod);
 
+            // Try to call claim without calling a single checkpoint
+            await expect(
+                stakingNativeToken.claim(serviceId)
+            ).to.be.revertedWithCustomError(stakingNativeToken, "ZeroValue");
+
             let reward = await stakingNativeToken.calculateStakingReward(serviceId);
-            let claimReward = await stakingNativeToken.callStatic.claim(serviceId);
+            let claimReward = await stakingNativeToken.callStatic.checkpointAndClaim(serviceId);
             expect(reward).to.equal(claimReward);
 
             // Call claim (calls checkpoint as well)
-            await stakingNativeToken.claim(serviceId);
+            await stakingNativeToken.checkpointAndClaim(serviceId);
 
             // Try to claim again right away
             await expect(
@@ -1605,12 +1626,12 @@ describe("Staking", function () {
 
             // Check that the reward during unstake now is the same as the claimed reward
             reward = await stakingNativeToken.calculateStakingReward(serviceId);
-            claimReward = await stakingNativeToken.callStatic.claim(serviceId);
+            claimReward = await stakingNativeToken.callStatic.checkpointAndClaim(serviceId);
             expect(reward).to.equal(claimReward);
 
             // Claim the reward
             let balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
-            await stakingNativeToken.claim(serviceId);
+            await stakingNativeToken.checkpointAndClaim(serviceId);
             let balanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
 
             // The balance before and after the unstake call must be different
@@ -1709,7 +1730,7 @@ describe("Staking", function () {
             expect(reward).to.gt(0);
 
             // Try to perform a reentrancy attack during claim
-            await attacker.claim(serviceId);
+            await attacker.checkpointAndClaim(serviceId);
             // Receive funds by attacker and call claim() right away
             nonce = await multisig.nonce();
             txHashData = await safeContracts.buildContractCall(attacker, "getThreshold", [], nonce, 0, 0);

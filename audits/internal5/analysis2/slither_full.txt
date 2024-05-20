@@ -1,0 +1,349 @@
+False positive.
+INFO:Detectors:
+Manipulated call found: (success,returnData) = instance.staticcall(tokenData) (StakingVerifier-flatten.sol#198) in StakingVerifier.verifyInstance(address,address) (StakingVerifier-flatten.sol#175-215)
+Only the destination could be manipulated
+	The destination could be manipulated through StakingVerifier.verifyInstance(address,address) (StakingVerifier-flatten.sol#175-215)
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/arbitrary_call.md
+
+False positive.
+INFO:Detectors:
+Function StakingVerifier.verifyInstance(address,address) (StakingVerifier-flatten.sol#175-215) contains a low level call to a custom address
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/call_forward_to_protected.md
+
+To discussed.
+INFO:Detectors:
+StakingVerifier.verifyInstance(address,address).instance (StakingVerifier-flatten.sol#175) lacks a zero-check on :
+		- (success,returnData) = instance.staticcall(tokenData) (StakingVerifier-flatten.sol#198)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#missing-zero-address-validation
+
+False positive.
+INFO:Detectors:
+Low level call in StakingVerifier.verifyInstance(address,address) (StakingVerifier-flatten.sol#175-215):
+	- (success,returnData) = instance.staticcall(tokenData) (StakingVerifier-flatten.sol#198)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+
+Ignore.
+INFO:Detectors:
+Parameter StakingVerifier.changeStakingLimits(uint256,uint256,uint256)._rewardsPerSecondLimit (StakingVerifier-flatten.sol#222) is not in mixedCase
+Parameter StakingVerifier.changeStakingLimits(uint256,uint256,uint256)._timeForEmissionsLimit (StakingVerifier-flatten.sol#223) is not in mixedCase
+Parameter StakingVerifier.changeStakingLimits(uint256,uint256,uint256)._numServicesLimit (StakingVerifier-flatten.sol#224) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+
+Ignore.
+INFO:Detectors:
+Function StakingVerifier.verifyInstance(address,address) (StakingVerifier-flatten.sol#175-215) contains magic number: 32
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/magic_number.md
+
+To discussed.
+INFO:Detectors:
+StakingVerifier.numServicesLimit (StakingVerifier-flatten.sol#55) should be immutable 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#state-variables-that-could-be-declared-immutable
+
+False positive.
+INFO:Detectors:
+Function StakingBase._initialize(StakingBase.StakingParams) (StakingBase-flatten.sol#509-592) is an unprotected initializer.
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/unprotected_initialize.md
+
+False positive.
+INFO:Detectors:
+StakingBase._checkRatioPass(address,uint256[],uint256) (StakingBase-flatten.sol#629-655) uses a dangerous strict equality:
+	- success && returnData.length == 32 (StakingBase-flatten.sol#651)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+
+False positive.
+INFO:Detectors:
+StakingBase._evict(uint256[],uint256[],uint256).sCounter (StakingBase-flatten.sol#678) is a local variable never initialized
+StakingBase.unstake(uint256).idx (StakingBase-flatten.sol#1064) is a local variable never initialized
+StakingBase.checkpoint().finalEligibleServiceRewards (StakingBase-flatten.sol#838) is a local variable never initialized
+StakingBase.checkpoint().finalEligibleServiceIds (StakingBase-flatten.sol#837) is a local variable never initialized
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#uninitialized-local-variables
+
+False positive.
+INFO:Detectors:
+StakingBase unstake parameter from is not related to msg.sender IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (StakingBase-flatten.sol#1095)
+Reference: https://ventral.digital/posts/2022/8/18/sznsdaos-bountyboard-unauthorized-transferfrom-vulnerability
+
+False positive.
+INFO:Detectors:
+Reentrancy in StakingBase.stake(uint256) (StakingBase-flatten.sol#950-1031):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(msg.sender,address(this),serviceId) (StakingBase-flatten.sol#1028)
+	Event emitted after the call(s):
+	- ServiceStaked(epochCounter,serviceId,msg.sender,service.multisig,nonces) (StakingBase-flatten.sol#1030)
+Reentrancy in StakingBase.unstake(uint256) (StakingBase-flatten.sol#1036-1103):
+	External calls:
+	- IService(serviceRegistry).safeTransferFrom(address(this),msg.sender,serviceId) (StakingBase-flatten.sol#1095)
+	Event emitted after the call(s):
+	- ServiceUnstaked(epochCounter,serviceId,msg.sender,multisig,nonces,reward) (StakingBase-flatten.sol#1102)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+False positive.
+INFO:Detectors:
+StakingBase._checkRatioPass(address,uint256[],uint256) (StakingBase-flatten.sol#629-655) uses timestamp for comparisons
+	Dangerous comparisons:
+	- success && returnData.length > 63 && (returnData.length % 32 == 0) (StakingBase-flatten.sol#642)
+	- success && returnData.length == 32 (StakingBase-flatten.sol#651)
+StakingBase._calculateStakingRewards() (StakingBase-flatten.sol#753-814) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp - tsCheckpointLast >= livenessPeriod && lastAvailableRewards > 0 (StakingBase-flatten.sol#767)
+	- ts > serviceCheckpoint (StakingBase-flatten.sol#791)
+StakingBase.checkpoint() (StakingBase-flatten.sol#822-944) uses timestamp for comparisons
+	Dangerous comparisons:
+	- serviceInactivity[i_scope_1] > maxInactivityDuration (StakingBase-flatten.sol#912)
+StakingBase.unstake(uint256) (StakingBase-flatten.sol#1036-1103) uses timestamp for comparisons
+	Dangerous comparisons:
+	- ts <= minStakingDuration && availableRewards > 0 (StakingBase-flatten.sol#1049)
+StakingBase.getStakingState(uint256) (StakingBase-flatten.sol#1159-1166) uses timestamp for comparisons
+	Dangerous comparisons:
+	- sInfo.inactivity > maxInactivityDuration (StakingBase-flatten.sol#1161)
+	- sInfo.tsStart > 0 (StakingBase-flatten.sol#1163)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+
+Ignore.
+INFO:Detectors:
+StakingBase.stake(uint256) (StakingBase-flatten.sol#950-1031) has a high cyclomatic complexity (13).
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cyclomatic-complexity
+
+False positive.
+INFO:Detectors:
+ERC721._burn(uint256) (StakingBase-flatten.sol#174-189) is never used and should be removed
+ERC721._mint(address,uint256) (StakingBase-flatten.sol#159-172) is never used and should be removed
+ERC721._safeMint(address,uint256) (StakingBase-flatten.sol#195-204) is never used and should be removed
+ERC721._safeMint(address,uint256,bytes) (StakingBase-flatten.sol#206-219) is never used and should be removed
+StakingBase._initialize(StakingBase.StakingParams) (StakingBase-flatten.sol#509-592) is never used and should be removed
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dead-code
+
+False positive.
+INFO:Detectors:
+Low level call in StakingBase._checkRatioPass(address,uint256[],uint256) (StakingBase-flatten.sol#629-655):
+	- (success,returnData) = activityChecker.staticcall(activityData) (StakingBase-flatten.sol#638)
+	- (success,returnData) = activityChecker.staticcall(activityData) (StakingBase-flatten.sol#648)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+
+Ignore.
+INFO:Detectors:
+Variable ERC721._ownerOf (StakingBase-flatten.sol#33) is not in mixedCase
+Variable ERC721._balanceOf (StakingBase-flatten.sol#35) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+
+False positive.
+INFO:Detectors:
+ERC721 (StakingBase-flatten.sol#8-220) does not implement functions:
+	- ERC721.tokenURI(uint256) (StakingBase-flatten.sol#27)
+StakingBase (StakingBase-flatten.sol#399-1193) does not implement functions:
+	- StakingBase._withdraw(address,uint256) (StakingBase-flatten.sol#621)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unimplemented-functions
+
+Ignore.
+INFO:Detectors:
+Function StakingBase._checkRatioPass(address,uint256[],uint256) (StakingBase-flatten.sol#629-655) contains magic numbers: 63, 32
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/magic_number.md
+
+False positive.
+INFO:Detectors:
+StakingBase.balance (StakingBase-flatten.sol#493) should be constant 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#state-variables-that-could-be-declared-constant
+
+Ignore.
+INFO:Detectors:
+In a function StakingBase.checkpoint() (StakingBase-flatten.sol#822-944) variable StakingBase.mapServiceInfo (StakingBase-flatten.sol#503) is read multiple times
+In a function StakingBase.stake(uint256) (StakingBase-flatten.sol#950-1031) variable StakingBase.agentIds (StakingBase-flatten.sol#501) is read multiple times
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/multiple_storage_read.md
+
+False positive.
+False positive.
+INFO:Detectors:
+Function StakingProxy.constructor(address) (StakingFactory-flatten.sol#29-39) is a strange setter. Nothing is set in constructor or set in a function without using function parameters
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/strange_setter.md
+
+False positive.
+INFO:Detectors:
+Potential vulnerable to readonly-reentrancy function (if read in other function) StakingFactory.getProxyAddress(address) (StakingFactory-flatten.sol#219-221):
+	State variables read that were written after the external call(s):
+	- StakingFactory.nonce (StakingFactory-flatten.sol#148) was read at getProxyAddressWithNonce(implementation,nonce) (StakingFactory-flatten.sol#220)
+		 This variable was written at (after external call):
+			- nonce = localNonce + 1 (StakingFactory-flatten.sol#297)
+Potential vulnerable to readonly-reentrancy function (if read in other function) StakingFactory.verifyInstance(address) (StakingFactory-flatten.sol#323-345):
+	State variables read that were written after the external call(s):
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at instanceParams = mapInstanceParams[instance] (StakingFactory-flatten.sol#325)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at implementation = instanceParams.implementation (StakingFactory-flatten.sol#326)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at implementation == address(0) (StakingFactory-flatten.sol#329)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at false (StakingFactory-flatten.sol#330)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at END_IF (StakingFactory-flatten.sol#329-331)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at ! instanceParams.isEnabled (StakingFactory-flatten.sol#334)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at false (StakingFactory-flatten.sol#335)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at END_IF (StakingFactory-flatten.sol#334-336)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at localVerifier = verifier (StakingFactory-flatten.sol#339)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at localVerifier != address(0) (StakingFactory-flatten.sol#340)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at IStakingVerifier(localVerifier).verifyInstance(instance,implementation) (StakingFactory-flatten.sol#341)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at END_IF (StakingFactory-flatten.sol#340-342)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at true (StakingFactory-flatten.sol#344)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+Potential vulnerable to readonly-reentrancy function (if read in other function) StakingFactory.verifyInstanceAndGetEmissionsAmount(address) (StakingFactory-flatten.sol#350-369):
+	State variables read that were written after the external call(s):
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at success = verifyInstance(instance) (StakingFactory-flatten.sol#352)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at success (StakingFactory-flatten.sol#354)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at amount = IStaking(instance).emissionsAmount() (StakingFactory-flatten.sol#356)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at localVerifier = verifier (StakingFactory-flatten.sol#359)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at localVerifier != address(0) (StakingFactory-flatten.sol#360)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at maxEmissions = IStakingVerifier(localVerifier).getEmissionsAmountLimit(instance) (StakingFactory-flatten.sol#362)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at amount > maxEmissions (StakingFactory-flatten.sol#364)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at amount = maxEmissions (StakingFactory-flatten.sol#365)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at END_IF (StakingFactory-flatten.sol#364-366)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at END_IF (StakingFactory-flatten.sol#360-367)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+	- StakingFactory.mapInstanceParams (StakingFactory-flatten.sol#157) was read at END_IF (StakingFactory-flatten.sol#354-368)
+		 This variable was written at (after external call):
+			- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/readonly_reentrancy.md
+
+False positive.
+INFO:Detectors:
+Manipulated call found: (success,returnData) = instance.call(initPayload) (StakingFactory-flatten.sol#274) in StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#226-302)
+Both destination and calldata could be manipulated
+	The call could be fully manipulated (arbitrary call) through StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#226-302)
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/arbitrary_call.md
+
+False positive.
+INFO:Detectors:
+Contract locking ether found:
+	Contract StakingProxy (StakingFactory-flatten.sol#23-61) has payable functions:
+	 - StakingProxy.fallback() (StakingFactory-flatten.sol#42-53)
+	But does not have a function to withdraw the ether
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#contracts-that-lock-ether
+
+False positive.
+INFO:Detectors:
+Reentrancy in StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#226-302):
+	External calls:
+	- (success,returnData) = instance.call(initPayload) (StakingFactory-flatten.sol#274)
+	State variables written after the call(s):
+	- _locked = 1 (StakingFactory-flatten.sol#301)
+	StakingFactory._locked (StakingFactory-flatten.sol#154) can be used in cross function reentrancies:
+	- StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#226-302)
+	- nonce = localNonce + 1 (StakingFactory-flatten.sol#297)
+	StakingFactory.nonce (StakingFactory-flatten.sol#148) can be used in cross function reentrancies:
+	- StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#226-302)
+	- StakingFactory.getProxyAddress(address) (StakingFactory-flatten.sol#219-221)
+	- StakingFactory.nonce (StakingFactory-flatten.sol#148)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
+
+False positive.
+INFO:Detectors:
+Dubious typecast in StakingFactory.getProxyAddressWithNonce(address,uint256) (StakingFactory-flatten.sol#199-215):
+	uint256 => uint160 casting occurs in address(uint160(uint256(hash))) (StakingFactory-flatten.sol#214)
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/dubious_typecast.md
+
+False positive.
+INFO:Detectors:
+StakingFactory.constructor(address)._verifier (StakingFactory-flatten.sol#161) lacks a zero-check on :
+		- verifier = _verifier (StakingFactory-flatten.sol#163)
+StakingFactory.changeVerifier(address).newVerifier (StakingFactory-flatten.sol#185) lacks a zero-check on :
+		- verifier = newVerifier (StakingFactory-flatten.sol#191)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#missing-zero-address-validation
+
+False positive.
+INFO:Detectors:
+Reentrancy in StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#226-302):
+	External calls:
+	- (success,returnData) = instance.call(initPayload) (StakingFactory-flatten.sol#274)
+	State variables written after the call(s):
+	- mapInstanceParams[instance] = instanceParams (StakingFactory-flatten.sol#295)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-2
+
+False positive.
+INFO:Detectors:
+Reentrancy in StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#226-302):
+	External calls:
+	- (success,returnData) = instance.call(initPayload) (StakingFactory-flatten.sol#274)
+	Event emitted after the call(s):
+	- InstanceCreated(msg.sender,instance,implementation) (StakingFactory-flatten.sol#299)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+To report.
+INFO:Detectors:
+Setter function StakingFactory.setInstanceStatus(address,bool) (StakingFactory-flatten.sol#307-318) does not emit an event
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/event_setter.md
+
+False positive.
+INFO:Detectors:
+StakingProxy.constructor(address) (StakingFactory-flatten.sol#29-39) uses assembly
+	- INLINE ASM (StakingFactory-flatten.sol#36-38)
+StakingProxy.fallback() (StakingFactory-flatten.sol#42-53) uses assembly
+	- INLINE ASM (StakingFactory-flatten.sol#43-52)
+StakingProxy.getImplementation() (StakingFactory-flatten.sol#56-60) uses assembly
+	- INLINE ASM (StakingFactory-flatten.sol#57-59)
+StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#226-302) uses assembly
+	- INLINE ASM (StakingFactory-flatten.sol#265-267)
+	- INLINE ASM (StakingFactory-flatten.sol#279-282)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#assembly-usage
+
+False positive.
+INFO:Detectors:
+Low level call in StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#226-302):
+	- (success,returnData) = instance.call(initPayload) (StakingFactory-flatten.sol#274)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+
+Ignore.
+INFO:Detectors:
+Variable StakingFactory._locked (StakingFactory-flatten.sol#154) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+
+Ignore.
+INFO:Detectors:
+StakingFactory.getProxyAddressWithNonce(address,uint256) (StakingFactory-flatten.sol#199-215) uses literals with too many digits:
+	- deploymentData = abi.encodePacked(type()(StakingProxy).creationCode,uint256(uint160(implementation))) (StakingFactory-flatten.sol#204-205)
+StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#226-302) uses literals with too many digits:
+	- deploymentData = abi.encodePacked(type()(StakingProxy).creationCode,uint256(uint160(implementation))) (StakingFactory-flatten.sol#261-262)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#too-many-digits
+
+Ignore.
+INFO:Detectors:
+Function StakingFactory.createStakingInstance(address,bytes) (StakingFactory-flatten.sol#226-302) contains magic number: 32
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/magic_number.md
+
+

@@ -1,0 +1,100 @@
+'solc --version' running
+'solc ./StakingVerifier-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal5/analysis2/contracts' running
+'solc --version' running
+'solc ./StakingBase-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal5/analysis2/contracts' running
+'solc --version' running
+'solc ./StakingFactory-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal5/analysis2/contracts' running
+Compilation warnings/errors on ./StakingFactory-flatten.sol:
+Warning: This contract has a payable fallback function, but no receive ether function. Consider adding a receive ether function.
+  --> StakingFactory-flatten.sol:23:1:
+   |
+23 | contract StakingProxy {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+Note: The payable fallback function is defined here.
+  --> StakingFactory-flatten.sol:42:5:
+   |
+42 |     fallback() external payable {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+
+'solc --version' running
+'solc ./StakingActivityChecker-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal5/analysis2/contracts' running
+INFO:Printers:Inheritance
+Child_Contract -> Immediate_Base_Contracts [Not_Immediate_Base_Contracts]
++ IStaking
+
++ StakingVerifier
+
+
+Base_Contract -> Immediate_Child_Contracts
+ [Not_Immediate_Child_Contracts]
+
++ IStaking
+
++ StakingVerifier
+
+INFO:Printers:Inheritance
+Child_Contract -> Immediate_Base_Contracts [Not_Immediate_Base_Contracts]
++ ERC721
+
++ ERC721TokenReceiver
+
++ IActivityChecker
+
++ IService
+
++ StakingBase
+ -> ERC721TokenReceiver
+
+
+Base_Contract -> Immediate_Child_Contracts
+ [Not_Immediate_Child_Contracts]
+
++ ERC721
+
++ ERC721TokenReceiver
+ -> StakingBase
+
++ IActivityChecker
+
++ IService
+
++ StakingBase
+
+INFO:Printers:Inheritance
+Child_Contract -> Immediate_Base_Contracts [Not_Immediate_Base_Contracts]
++ StakingProxy
+
++ IStaking
+
++ IStakingVerifier
+
++ StakingFactory
+
+
+Base_Contract -> Immediate_Child_Contracts
+ [Not_Immediate_Child_Contracts]
+
++ StakingProxy
+
++ IStaking
+
++ IStakingVerifier
+
++ StakingFactory
+
+INFO:Printers:Inheritance
+Child_Contract -> Immediate_Base_Contracts [Not_Immediate_Base_Contracts]
++ IMultisig
+
++ StakingActivityChecker
+
+
+Base_Contract -> Immediate_Child_Contracts
+ [Not_Immediate_Child_Contracts]
+
++ IMultisig
+
++ StakingActivityChecker
+
+INFO:Slither:. analyzed (13 contracts)
