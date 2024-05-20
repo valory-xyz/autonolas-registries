@@ -1,0 +1,137 @@
+'solc --version' running
+'solc ./StakingVerifier-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal5/analysis2/contracts' running
+'solc --version' running
+'solc ./StakingBase-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal5/analysis2/contracts' running
+'solc --version' running
+'solc ./StakingFactory-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal5/analysis2/contracts' running
+Compilation warnings/errors on ./StakingFactory-flatten.sol:
+Warning: This contract has a payable fallback function, but no receive ether function. Consider adding a receive ether function.
+  --> StakingFactory-flatten.sol:23:1:
+   |
+23 | contract StakingProxy {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+Note: The payable fallback function is defined here.
+  --> StakingFactory-flatten.sol:42:5:
+   |
+42 |     fallback() external payable {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+
+'solc --version' running
+'solc ./StakingActivityChecker-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal5/analysis2/contracts' running
+INFO:Printers:
++ Contract IStaking (Most derived contract)
+  - From IStaking
+    - maxNumServices() (external)
+    - rewardsPerSecond() (external)
+    - stakingToken() (external)
+
++ Contract StakingVerifier (Most derived contract)
+  - From StakingVerifier
+    - changeOwner(address) (external)
+    - changeStakingLimits(uint256,uint256,uint256) (external)
+    - constructor(address,uint256,uint256,uint256) (public)
+    - getEmissionsAmountLimit(address) (external)
+    - setImplementationsCheck(bool) (external)
+    - setImplementationsStatuses(address[],bool[],bool) (external)
+    - verifyImplementation(address) (external)
+    - verifyInstance(address,address) (external)
+
+INFO:Printers:
++ Contract ERC721 (Most derived contract)
+  - From ERC721
+    - _burn(uint256) (internal)
+    - _mint(address,uint256) (internal)
+    - _safeMint(address,uint256) (internal)
+    - _safeMint(address,uint256,bytes) (internal)
+    - approve(address,uint256) (public)
+    - balanceOf(address) (public)
+    - constructor(string,string) (internal)
+    - ownerOf(uint256) (public)
+    - safeTransferFrom(address,address,uint256) (public)
+    - safeTransferFrom(address,address,uint256,bytes) (public)
+    - setApprovalForAll(address,bool) (public)
+    - supportsInterface(bytes4) (public)
+    - tokenURI(uint256) (public)
+    - transferFrom(address,address,uint256) (public)
+
++ Contract ERC721TokenReceiver
+  - From ERC721TokenReceiver
+    - onERC721Received(address,address,uint256,bytes) (external)
+
++ Contract IActivityChecker (Most derived contract)
+  - From IActivityChecker
+    - getMultisigNonces(address) (external)
+    - isRatioPass(uint256[],uint256[],uint256) (external)
+
++ Contract IService (Most derived contract)
+  - From IService
+    - getAgentParams(uint256) (external)
+    - getService(uint256) (external)
+    - safeTransferFrom(address,address,uint256) (external)
+
++ Contract StakingBase (Most derived contract)
+  - From ERC721TokenReceiver
+    - onERC721Received(address,address,uint256,bytes) (external)
+  - From StakingBase
+    - _calculateStakingRewards() (internal)
+    - _checkRatioPass(address,uint256[],uint256) (internal)
+    - _checkTokenStakingDeposit(uint256,uint256,uint32[]) (internal)
+    - _claim(uint256,bool) (internal)
+    - _evict(uint256[],uint256[],uint256) (internal)
+    - _initialize(StakingBase.StakingParams) (internal)
+    - _withdraw(address,uint256) (internal)
+    - calculateStakingLastReward(uint256) (public)
+    - calculateStakingReward(uint256) (external)
+    - checkpoint() (public)
+    - checkpointAndClaim(uint256) (external)
+    - claim(uint256) (external)
+    - getAgentIds() (external)
+    - getNextRewardCheckpointTimestamp() (external)
+    - getServiceIds() (public)
+    - getServiceInfo(uint256) (external)
+    - getStakingState(uint256) (external)
+    - stake(uint256) (external)
+    - unstake(uint256) (external)
+
+INFO:Printers:
++ Contract StakingProxy (Upgradeable Proxy) (Most derived contract)
+  - From StakingProxy
+    - constructor(address) (public)
+    - fallback() (external)
+    - getImplementation() (external)
+
++ Contract IStaking (Most derived contract)
+  - From IStaking
+    - emissionsAmount() (external)
+
++ Contract IStakingVerifier (Most derived contract)
+  - From IStakingVerifier
+    - getEmissionsAmountLimit(address) (external)
+    - verifyImplementation(address) (external)
+    - verifyInstance(address,address) (external)
+
++ Contract StakingFactory (Most derived contract)
+  - From StakingFactory
+    - changeOwner(address) (external)
+    - changeVerifier(address) (external)
+    - constructor(address) (public)
+    - createStakingInstance(address,bytes) (external)
+    - getProxyAddress(address) (external)
+    - getProxyAddressWithNonce(address,uint256) (public)
+    - setInstanceStatus(address,bool) (external)
+    - verifyInstance(address) (public)
+    - verifyInstanceAndGetEmissionsAmount(address) (external)
+
+INFO:Printers:
++ Contract IMultisig (Most derived contract)
+  - From IMultisig
+    - nonce() (external)
+
++ Contract StakingActivityChecker (Most derived contract)
+  - From StakingActivityChecker
+    - constructor(uint256) (public)
+    - getMultisigNonces(address) (external)
+    - isRatioPass(uint256[],uint256[],uint256) (external)
+
+INFO:Slither:. analyzed (13 contracts)
