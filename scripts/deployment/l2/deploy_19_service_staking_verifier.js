@@ -14,6 +14,8 @@ async function main() {
     const gasPriceInGwei = parsedData.gasPriceInGwei;
     const olasAddress = parsedData.olasAddress;
     const rewardsPerSecondLimit = parsedData.rewardsPerSecondLimit;
+    const timeForEmissionsLimit = parsedData.timeForEmissionsLimit;
+    const numServicesLimit = parsedData.numServicesLimit;
 
     let networkURL = parsedData.networkURL;
     if (providerName === "polygon") {
@@ -48,7 +50,7 @@ async function main() {
     console.log("You are signing the following transaction: StakingVerifier.connect(EOA).deploy()");
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
     const stakingVerifier = await StakingVerifier.connect(EOA).deploy(olasAddress, rewardsPerSecondLimit,
-        { gasPrice });
+        timeForEmissionsLimit, numServicesLimit, { gasPrice });
     const result = await stakingVerifier.deployed();
 
     // Transaction details
