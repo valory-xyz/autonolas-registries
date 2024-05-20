@@ -117,7 +117,7 @@ contract BaseSetup is Test {
         bytes32 multisigProxyHash = keccak256(address(gnosisSafeProxy).code);
 
         // Deploy service staking verifier
-        stakingVerifier = new StakingVerifier(address(token), rewardsPerSecond, timeForEmissions);
+        stakingVerifier = new StakingVerifier(address(token), rewardsPerSecond, timeForEmissions, maxNumServices);
 
         // Deploy service staking factory
         stakingFactory = new StakingFactory(address(0));
