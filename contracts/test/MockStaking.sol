@@ -5,11 +5,13 @@ pragma solidity ^0.8.23;
 contract MockStaking {
     uint256 public serviceId;
     uint256 public rewardsPerSecond;
+    uint256 public maxNumServices;
     address public token;
 
     function initialize(address _token) external {
         serviceId = 2;
         rewardsPerSecond = 0.0001 ether;
+        maxNumServices = 10;
         token = _token;
     }
 

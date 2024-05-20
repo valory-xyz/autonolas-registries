@@ -24,9 +24,8 @@ interface IStakingVerifier {
     function verifyInstance(address instance, address implementation) external view returns (bool);
 
     /// @dev Gets emissions amount limit for a specific staking proxy instance.
-    /// @param instance Staking proxy instance address.
     /// @return Emissions amount limit.
-    function getEmissionsAmountLimit(address instance) external view returns (uint256);
+    function getEmissionsAmountLimit(address) external view returns (uint256);
 }
 
 /// @dev Only `owner` has a privilege, but the `sender` was provided.
