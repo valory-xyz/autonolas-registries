@@ -82,6 +82,7 @@ contract StakingFactory {
     event OwnerUpdated(address indexed owner);
     event VerifierUpdated(address indexed verifier);
     event InstanceCreated(address indexed sender, address indexed instance, address indexed implementation);
+    event InstanceStatusChanged(address indexed instance, bool isEnabled);
 
     // Minimum data length that contains at least a selector (4 bytes or 32 bits)
     uint256 public constant SELECTOR_DATA_LENGTH = 4;
@@ -256,6 +257,8 @@ contract StakingFactory {
         }
 
         instanceParams.isEnabled = isEnabled;
+
+        emit InstanceStatusChanged(instance, isEnabled);
     }
     
     /// @dev Verifies a service staking contract instance.

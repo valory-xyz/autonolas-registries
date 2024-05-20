@@ -32,6 +32,10 @@ error WrongArrayLength(uint256 numValues1, uint256 numValues2);
 /// @param owner Required sender address as an owner.
 error OwnerOnly(address sender, address owner);
 
+/// @dev The deployed implementation must be a contract.
+/// @param implementation Implementation address.
+error ContractOnly(address implementation);
+
 /// @title StakingVerifier - Smart contract for service staking contracts verification
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
@@ -40,7 +44,8 @@ contract StakingVerifier {
     event OwnerUpdated(address indexed owner);
     event SetImplementationsCheck(bool setCheck);
     event ImplementationsWhitelistUpdated(address[] implementations, bool[] statuses, bool setCheck);
-    event StakingLimitsUpdated(uint256 rewardsPerSecondLimit, uint256 timeForEmissionsLimit, uint256 _numServicesLimit);
+    event StakingLimitsUpdated(uint256 rewardsPerSecondLimit, uint256 timeForEmissionsLimit, uint256 _numServicesLimit,
+        uint256 emissionsLimit);
 
     // OLAS token address
     address public immutable olas;
@@ -83,6 +88,7 @@ contract StakingVerifier {
         rewardsPerSecondLimit = _rewardsPerSecondLimit;
         timeForEmissionsLimit = _timeForEmissionsLimit;
         numServicesLimit = _numServicesLimit;
+        emissionsLimit = _rewardsPerSecondLimit * _timeForEmissionsLimit * _numServicesLimit;
     }
 
     /// @dev Changes the owner address.
@@ -176,6 +182,11 @@ contract StakingVerifier {
             return false;
         }
 
+        // Check that instance is the contract when it is not checked against the implementation
+        if (instance.code.length == 0) {
+            return false;
+        }
+
         // Check for the staking parameters
         // This is a must have parameter for all staking contracts
         uint256 rewardsPerSecond = IStaking(instance).rewardsPerSecond();
@@ -208,7 +219,6 @@ contract StakingVerifier {
             }
         }
 
-        // Return min(maxTime * numServices * rewardsPerSecond, maxRewards)
         return true;
     }
 
@@ -236,13 +246,13 @@ contract StakingVerifier {
         numServicesLimit = _numServicesLimit;
         emissionsLimit = _rewardsPerSecondLimit * _timeForEmissionsLimit * _numServicesLimit;
 
-        emit StakingLimitsUpdated(_rewardsPerSecondLimit, _timeForEmissionsLimit, _numServicesLimit);
+        emit StakingLimitsUpdated(_rewardsPerSecondLimit, _timeForEmissionsLimit, _numServicesLimit, emissionsLimit);
     }
 
     /// @dev Gets emissions amount limit for a specific staking proxy instance.
     /// @notice The address field is reserved for the proxy instance, if needed in the next verifier version.
     /// @return Emissions amount limit.
     function getEmissionsAmountLimit(address) external view returns (uint256) {
-            return emissionsLimit;
+        return emissionsLimit;
     }
 }

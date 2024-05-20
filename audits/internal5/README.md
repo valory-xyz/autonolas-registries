@@ -167,15 +167,21 @@ function changeStakingLimits(
         uint256 _numServicesLimit
         not changed numServicesLimit
 ```
+[x] fixed
+
 2. emissionsLimit missing in constructor
 ```
 emissionsLimit = _rewardsPerSecondLimit * _timeForEmissionsLimit * _numServicesLimit; // missing in constructor
 ```
+[x] fixed
+
 #### Medium/low issue
 1. Emit missing.
 ```
 emissionsLimit not in StakingLimitsUpdated(_rewardsPerSecondLimit, _timeForEmissionsLimit, _numServicesLimit);
 ```
+[x] fixed
+
 2. Emit missing.
 ```
 contract StakingFactory
@@ -183,6 +189,8 @@ function setInstanceStatus(address instance, bool isEnabled) external {
     // no emit
 }
 ```
+[x] fixed
+
 3. Check for isContract() and zero-address for params? I guarantee this will raise questions at the external audit.
 ```
 contract StakingVerifier:
@@ -190,9 +198,14 @@ function verifyInstance(address instance, address implementation) {
 ...
 }
 ```
+[x] fixed
+
 4. Wrong comments. Return bool by code, return min(?!) by comments
 ```
 function verifyInstance(address instance, address implementation) external view returns (bool) {
     // Return min(maxTime * numServices * rewardsPerSecond, maxRewards)
 ```
+[x] fixed
+
 5. StakingVerifier.numServicesLimit immutable?
+[x] this is a tunable parameter

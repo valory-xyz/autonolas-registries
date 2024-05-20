@@ -181,6 +181,10 @@ describe("StakingFactory", function () {
             success = await stakingFactory.verifyInstance(instance);
             expect(success).to.be.false;
 
+            // Verify with an instance being a non contract
+            success = await stakingVerifier.verifyInstance(AddressZero, AddressZero);
+            expect(success).to.be.false;
+
             // Set the implementations check
             await stakingVerifier.setImplementationsCheck(true);
 
