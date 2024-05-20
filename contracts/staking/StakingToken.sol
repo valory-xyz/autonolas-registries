@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.25;
 
 import {StakingBase} from "./StakingBase.sol";
 import {SafeTransferLib} from "../utils/SafeTransferLib.sol";
@@ -70,8 +70,8 @@ contract StakingToken is StakingBase {
 
     /// @dev Checks token staking deposit.
     /// @param serviceId Service Id.
-    /// @param agentIds Service agent Ids.
-    function _checkTokenStakingDeposit(uint256 serviceId, uint256, uint32[] memory agentIds) internal view override {
+    /// @param serviceAgentIds Service agent Ids.
+    function _checkTokenStakingDeposit(uint256 serviceId, uint256, uint32[] memory serviceAgentIds) internal view override {
         // Get the service staking token and deposit
         (address token, uint96 stakingDeposit) =
             IServiceTokenUtility(serviceRegistryTokenUtility).mapServiceIdTokenDeposit(serviceId);
@@ -89,8 +89,8 @@ contract StakingToken is StakingBase {
         }
 
         // Check agent Id bonds to be not smaller than the minimum required deposit
-        for (uint256 i = 0; i < agentIds.length; ++i) {
-            uint256 bond = IServiceTokenUtility(serviceRegistryTokenUtility).getAgentBond(serviceId, agentIds[i]);
+        for (uint256 i = 0; i < serviceAgentIds.length; ++i) {
+            uint256 bond = IServiceTokenUtility(serviceRegistryTokenUtility).getAgentBond(serviceId, serviceAgentIds[i]);
             if (bond < minDeposit) {
                 revert ValueLowerThan(bond, minDeposit);
             }

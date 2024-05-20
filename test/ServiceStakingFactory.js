@@ -11,6 +11,8 @@ describe("StakingFactory", function () {
     let deployer;
     const AddressZero = ethers.constants.AddressZero;
     const rewardsPerSecondLimit = "1" + "0".repeat(15);
+    const timeForEmissionsLimit = 100;
+    const numServicesLimit = 100;
 
     beforeEach(async function () {
         signers = await ethers.getSigners();
@@ -25,7 +27,8 @@ describe("StakingFactory", function () {
         await token.deployed();
 
         const StakingVerifier = await ethers.getContractFactory("StakingVerifier");
-        stakingVerifier = await StakingVerifier.deploy(token.address, rewardsPerSecondLimit);
+        stakingVerifier = await StakingVerifier.deploy(token.address, rewardsPerSecondLimit, timeForEmissionsLimit,
+            numServicesLimit);
         await stakingVerifier.deployed();
 
         const StakingFactory = await ethers.getContractFactory("StakingFactory");
@@ -58,11 +61,19 @@ describe("StakingFactory", function () {
             const StakingVerifier = await ethers.getContractFactory("StakingVerifier");
 
             await expect(
-                StakingVerifier.deploy(AddressZero, 0)
+                StakingVerifier.deploy(AddressZero, 0, 0, 0)
             ).to.be.revertedWithCustomError(StakingVerifier, "ZeroAddress");
 
             await expect(
-                StakingVerifier.deploy(token.address, 0)
+                StakingVerifier.deploy(token.address, 0, 0, 0)
+            ).to.be.revertedWithCustomError(StakingVerifier, "ZeroValue");
+
+            await expect(
+                StakingVerifier.deploy(token.address, rewardsPerSecondLimit, 0, 0)
+            ).to.be.revertedWithCustomError(StakingVerifier, "ZeroValue");
+
+            await expect(
+                StakingVerifier.deploy(token.address, rewardsPerSecondLimit, timeForEmissionsLimit, 0)
             ).to.be.revertedWithCustomError(StakingVerifier, "ZeroValue");
         });
         
@@ -170,6 +181,10 @@ describe("StakingFactory", function () {
             success = await stakingFactory.verifyInstance(instance);
             expect(success).to.be.false;
 
+            // Verify with an instance being a non contract
+            success = await stakingVerifier.verifyInstance(AddressZero, AddressZero);
+            expect(success).to.be.false;
+
             // Set the implementations check
             await stakingVerifier.setImplementationsCheck(true);
 
@@ -226,12 +241,18 @@ describe("StakingFactory", function () {
 
             // Try to change the staking param limits not by the owner
             await expect(
-                stakingVerifier.connect(signers[1]).changeStakingLimits(0)
+                stakingVerifier.connect(signers[1]).changeStakingLimits(0, 0, 0)
             ).to.be.revertedWithCustomError(stakingVerifier, "OwnerOnly");
 
             // Try to change the staking param limits with the zero value
             await expect(
-                stakingVerifier.changeStakingLimits(0)
+                stakingVerifier.changeStakingLimits(0, 0, 0)
+            ).to.be.revertedWithCustomError(stakingVerifier, "ZeroValue");
+            await expect(
+                stakingVerifier.changeStakingLimits(rewardsPerSecondLimit, 0, 0)
+            ).to.be.revertedWithCustomError(stakingVerifier, "ZeroValue");
+            await expect(
+                stakingVerifier.changeStakingLimits(rewardsPerSecondLimit, timeForEmissionsLimit, 0)
             ).to.be.revertedWithCustomError(stakingVerifier, "ZeroValue");
 
             // Try to set instance activity not by instance deployer
@@ -269,12 +290,54 @@ describe("StakingFactory", function () {
             await stakingFactory.createStakingInstance(staking.address, initPayload);
 
             // Change rewards per second limit parameter
-            await stakingVerifier.changeStakingLimits(1);
+            await stakingVerifier.changeStakingLimits(1, timeForEmissionsLimit, numServicesLimit);
 
-            // Now the initialization will fail since the limit is too low
+            // Now the initialization will fail since the rewards per second limit is too low
             await expect(
                 stakingFactory.createStakingInstance(staking.address, initPayload)
             ).to.be.revertedWithCustomError(stakingFactory, "UnverifiedProxy");
+
+            // Change number of services limit
+            await stakingVerifier.changeStakingLimits(rewardsPerSecondLimit, timeForEmissionsLimit, 1);
+
+            // Now the initialization will fail since the services number limit is too low
+            await expect(
+                stakingFactory.createStakingInstance(staking.address, initPayload)
+            ).to.be.revertedWithCustomError(stakingFactory, "UnverifiedProxy");
+
+            // Change verifier staking limits to default
+            await stakingVerifier.changeStakingLimits(rewardsPerSecondLimit, timeForEmissionsLimit, numServicesLimit);
+
+            // Calculate proxy address
+            const proxyAddress = await stakingFactory.getProxyAddress(staking.address);
+            // Create a proxy
+            await stakingFactory.createStakingInstance(staking.address, initPayload);
+
+            // Get the emissions amount
+            let amount = await stakingFactory.verifyInstanceAndGetEmissionsAmount(proxyAddress);
+            expect(amount).to.gt(0);
+
+            const proxyInstance = await ethers.getContractAt("MockStaking", proxyAddress);
+
+            // Change the emissions time
+            await proxyInstance.setTimeForEmissions(timeForEmissionsLimit * 100000000);
+            // Limit the emissions amount
+            amount = await stakingFactory.verifyInstanceAndGetEmissionsAmount(proxyAddress);
+            expect(amount).to.gt(0);
+
+            // Change the number of services to be bigger than the limit
+            await proxyInstance.setNumServices(numServicesLimit * 100);
+
+            // The verification is not going to pass now
+            amount = await stakingFactory.verifyInstanceAndGetEmissionsAmount(proxyAddress);
+            expect(amount).to.equal(0);
+
+            // Remove the verifier
+            await stakingFactory.changeVerifier(AddressZero);
+
+            // Emissions amount is now set without limits check
+            amount = await stakingFactory.verifyInstanceAndGetEmissionsAmount(proxyAddress);
+            expect(amount).to.gt(0);
         });
     });
 });
