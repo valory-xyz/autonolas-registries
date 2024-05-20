@@ -13,10 +13,10 @@ interface IServiceStaking {
     /// @return Reward amount.
     function unstake(uint256 serviceId) external returns (uint256);
 
-    /// @dev Claims the service reward.
+    /// @dev Checkpoints and claims rewards for the service.
     /// @param serviceId Service Id.
-    /// @return Reward amount.
-    function claim(uint256 serviceId) external returns (uint256);
+    /// @return Staking reward.
+    function checkpointAndClaim(uint256 serviceId) external returns (uint256);
 
     /// @return All staking service Ids (including evicted ones during within a current epoch).
     /// @return All staking updated nonces (including evicted ones during within a current epoch).
@@ -62,7 +62,7 @@ contract ReentrancyStakingAttacker is ERC721TokenReceiver {
     /// @dev Failing receive.
     receive() external payable {
         if (attack) {
-            IServiceStaking(serviceStaking).claim(localServiceId);
+            IServiceStaking(serviceStaking).checkpointAndClaim(localServiceId);
         } else {
             revert();
         }
@@ -94,9 +94,9 @@ contract ReentrancyStakingAttacker is ERC721TokenReceiver {
     }
 
     /// @dev Claim the reward.
-    function claim(uint256 serviceId) external {
+    function checkpointAndClaim(uint256 serviceId) external {
         localServiceId = serviceId;
-        IServiceStaking(serviceStaking).claim(serviceId);
+        IServiceStaking(serviceStaking).checkpointAndClaim(serviceId);
     }
 
     /// @dev Stake the service.

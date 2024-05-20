@@ -51,8 +51,7 @@ contract StakingActivityChecker {
         uint256[] memory curNonces,
         uint256[] memory lastNonces,
         uint256 ts
-    ) external view virtual returns (bool ratioPass)
-    {
+    ) external view virtual returns (bool ratioPass) {
         // If the checkpoint was called in the exact same block, the ratio is zero
         // If the current nonce is not greater than the last nonce, the ratio is zero
         if (ts > 0 && curNonces[0] > lastNonces[0]) {

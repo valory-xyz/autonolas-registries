@@ -389,93 +389,6 @@ abstract contract StakingBase is ERC721TokenReceiver {
     /// @param amount Amount to withdraw.
     function _withdraw(address to, uint256 amount) internal virtual;
 
-    /// @dev Stakes the service.
-    /// @notice Each service must be staked for a minimum of maxInactivityDuration time, or until the funds are not zero.
-    ///         maxInactivityDuration = maxNumInactivityPeriods * livenessPeriod
-    /// @param serviceId Service Id.
-    function stake(uint256 serviceId) external {
-        // Check if there available rewards
-        if (availableRewards == 0) {
-            revert NoRewardsAvailable();
-        }
-
-        // Check if the evicted service has not yet unstaked
-        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
-        // tsStart being greater than zero means that the service was not yet unstaked: still staking or evicted
-        if (sInfo.tsStart > 0) {
-            revert ServiceNotUnstaked(serviceId);
-        }
-
-        // Check for the maximum number of staking services
-        uint256 numStakingServices = setServiceIds.length;
-        if (numStakingServices == maxNumServices) {
-            revert MaxNumServicesReached(maxNumServices);
-        }
-
-        // Check the service conditions for staking
-        IService.Service memory service = IService(serviceRegistry).getService(serviceId);
-
-        // Check the number of agent instances
-        if (numAgentInstances != service.maxNumAgentInstances) {
-            revert WrongServiceConfiguration(serviceId);
-        }
-
-        // Check the configuration hash, if applicable
-        if (configHash != 0 && configHash != service.configHash) {
-            revert WrongServiceConfiguration(serviceId);
-        }
-        // Check the threshold, if applicable
-        if (threshold > 0 && threshold != service.threshold) {
-            revert WrongServiceConfiguration(serviceId);
-        }
-        // The service must be deployed
-        if (service.state != IService.ServiceState.Deployed) {
-            revert WrongServiceState(uint256(service.state), serviceId);
-        }
-
-        // Check that the multisig address corresponds to the authorized multisig proxy bytecode hash
-        bytes32 multisigProxyHash = keccak256(service.multisig.code);
-        if (proxyHash != multisigProxyHash) {
-            revert UnauthorizedMultisig(service.multisig);
-        }
-
-        // Check the agent Ids requirement, if applicable
-        uint256 size = agentIds.length;
-        if (size > 0) {
-            uint256 numAgents = service.agentIds.length;
-
-            if (size != numAgents) {
-                revert WrongServiceConfiguration(serviceId);
-            }
-            for (uint256 i = 0; i < numAgents; ++i) {
-                // Check that the agent Ids
-                if (agentIds[i] != service.agentIds[i]) {
-                    revert WrongAgentId(agentIds[i]);
-                }
-            }
-        }
-
-        // Check service staking deposit and token, if applicable
-        _checkTokenStakingDeposit(serviceId, service.securityDeposit, service.agentIds);
-
-        // ServiceInfo struct will be an empty one since otherwise the safeTransferFrom above would fail
-        sInfo.multisig = service.multisig;
-        sInfo.owner = msg.sender;
-        // This function might revert if it's incorrectly implemented, however this is not a protocol's responsibility
-        // It is safe to revert in this place
-        uint256[] memory nonces = IActivityChecker(activityChecker).getMultisigNonces(service.multisig);
-        sInfo.nonces = nonces;
-        sInfo.tsStart = block.timestamp;
-
-        // Add the service Id to the set of staked services
-        setServiceIds.push(serviceId);
-
-        // Transfer the service for staking
-        IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
-
-        emit ServiceStaked(epochCounter, serviceId, msg.sender, service.multisig, nonces);
-    }
-
     /// @dev Checks the ratio pass based on external activity checker implementation.
     /// @param multisig Multisig address.
     /// @param lastNonces Last checked service multisig nonces.
@@ -510,79 +423,6 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
     }
 
-    /// @dev Calculates staking rewards for all services at current timestamp.
-    /// @param lastAvailableRewards Available amount of rewards.
-    /// @param numServices Number of services eligible for the reward that passed the liveness check.
-    /// @param totalRewards Total calculated rewards.
-    /// @param eligibleServiceIds Service Ids eligible for rewards.
-    /// @param eligibleServiceRewards Corresponding rewards for eligible service Ids.
-    /// @param serviceIds All the staking service Ids.
-    /// @param serviceNonces Current service nonces.
-    /// @param serviceInactivity Service inactivity records.
-    function _calculateStakingRewards() internal view returns (
-        uint256 lastAvailableRewards,
-        uint256 numServices,
-        uint256 totalRewards,
-        uint256[] memory eligibleServiceIds,
-        uint256[] memory eligibleServiceRewards,
-        uint256[] memory serviceIds,
-        uint256[][] memory serviceNonces,
-        uint256[] memory serviceInactivity
-    )
-    {
-        // Check the last checkpoint timestamp and the liveness period, also check for available rewards to be not zero
-        uint256 tsCheckpointLast = tsCheckpoint;
-        lastAvailableRewards = availableRewards;
-        if (block.timestamp - tsCheckpointLast >= livenessPeriod && lastAvailableRewards > 0) {
-            // Get the service Ids set length
-            uint256 size = setServiceIds.length;
-
-            // Get necessary arrays
-            serviceIds = new uint256[](size);
-            eligibleServiceIds = new uint256[](size);
-            eligibleServiceRewards = new uint256[](size);
-            serviceNonces = new uint256[][](size);
-            serviceInactivity = new uint256[](size);
-
-            // Calculate each staked service reward eligibility
-            for (uint256 i = 0; i < size; ++i) {
-                // Get current service Id
-                serviceIds[i] = setServiceIds[i];
-
-                // TODO Check if storage is needed
-                // Get the service info
-                ServiceInfo storage sInfo = mapServiceInfo[serviceIds[i]];
-
-                // Calculate the liveness nonce ratio
-                // Get the last service checkpoint: staking start time or the global checkpoint timestamp
-                uint256 serviceCheckpoint = tsCheckpointLast;
-                uint256 ts = sInfo.tsStart;
-                // Adjust the service checkpoint time if the service was staking less than the current staking period
-                if (ts > serviceCheckpoint) {
-                    serviceCheckpoint = ts;
-                }
-
-                // Calculate the liveness ratio in 1e18 value
-                // This subtraction is always positive or zero, as the last checkpoint is at most block.timestamp
-                ts = block.timestamp - serviceCheckpoint;
-
-                bool ratioPass;
-                (ratioPass, serviceNonces[i]) = _checkRatioPass(sInfo.multisig, sInfo.nonces, ts);
-
-                // Record the reward for the service if it has provided enough transactions
-                if (ratioPass) {
-                    // Calculate the reward up until now and record its value for the corresponding service
-                    eligibleServiceRewards[numServices] = rewardsPerSecond * ts;
-                    totalRewards += eligibleServiceRewards[numServices];
-                    eligibleServiceIds[numServices] = serviceIds[i];
-                    ++numServices;
-                } else {
-                    serviceInactivity[i] = ts;
-                }
-            }
-        }
-    }
-
     /// @dev Evicts services due to their extended inactivity.
     /// @param evictServiceIds Service Ids to be evicted.
     /// @param serviceInactivity Corresponding service inactivity records.
@@ -591,8 +431,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         uint256[] memory evictServiceIds,
         uint256[] memory serviceInactivity,
         uint256 numEvictServices
-    ) internal
-    {
+    ) internal {
         // Get the total number of staked services
         // All the passed arrays have the length of the number of staked services
         uint256 totalNumServices = evictServiceIds.length;
@@ -634,6 +473,113 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
 
         emit ServicesEvicted(epochCounter, serviceIds, owners, multisigs, inactivity);
+    }
+
+    /// @dev Claims rewards for the service.
+    /// @param serviceId Service Id.
+    /// @param execCheckPoint Checkpoint execution flag.
+    /// @return reward Staking reward.
+    function _claim(uint256 serviceId, bool execCheckPoint) internal returns (uint256 reward) {
+        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+        // Check for the service ownership
+        if (msg.sender != sInfo.owner) {
+            revert OwnerOnly(msg.sender, sInfo.owner);
+        }
+
+        // Call the checkpoint, if required
+        if (execCheckPoint) {
+            checkpoint();
+        }
+
+        // Get the claimed service data
+        reward = sInfo.reward;
+
+        // Check for the zero reward
+        if (reward == 0) {
+            revert ZeroValue();
+        }
+
+        // Zero the reward field
+        sInfo.reward = 0;
+
+        // Transfer accumulated rewards to the service multisig
+        // Note that the reentrancy is not possible since the reward is set to zero
+        address multisig = sInfo.multisig;
+        _withdraw(multisig, reward);
+
+        emit RewardClaimed(epochCounter, serviceId, msg.sender, multisig, sInfo.nonces, reward);
+    }
+
+    /// @dev Calculates staking rewards for all services at current timestamp.
+    /// @param lastAvailableRewards Available amount of rewards.
+    /// @param numServices Number of services eligible for the reward that passed the liveness check.
+    /// @param totalRewards Total calculated rewards.
+    /// @param eligibleServiceIds Service Ids eligible for rewards.
+    /// @param eligibleServiceRewards Corresponding rewards for eligible service Ids.
+    /// @param serviceIds All the staking service Ids.
+    /// @param serviceNonces Current service nonces.
+    /// @param serviceInactivity Service inactivity records.
+    function _calculateStakingRewards() internal view returns (
+        uint256 lastAvailableRewards,
+        uint256 numServices,
+        uint256 totalRewards,
+        uint256[] memory eligibleServiceIds,
+        uint256[] memory eligibleServiceRewards,
+        uint256[] memory serviceIds,
+        uint256[][] memory serviceNonces,
+        uint256[] memory serviceInactivity
+    )
+    {
+        // Check the last checkpoint timestamp and the liveness period, also check for available rewards to be not zero
+        uint256 tsCheckpointLast = tsCheckpoint;
+        lastAvailableRewards = availableRewards;
+        if (block.timestamp - tsCheckpointLast >= livenessPeriod && lastAvailableRewards > 0) {
+            // Get the service Ids set length
+            uint256 size = setServiceIds.length;
+
+            // Get necessary arrays
+            serviceIds = new uint256[](size);
+            eligibleServiceIds = new uint256[](size);
+            eligibleServiceRewards = new uint256[](size);
+            serviceNonces = new uint256[][](size);
+            serviceInactivity = new uint256[](size);
+
+            // Calculate each staked service reward eligibility
+            for (uint256 i = 0; i < size; ++i) {
+                // Get current service Id
+                serviceIds[i] = setServiceIds[i];
+
+                // Get the service info
+                ServiceInfo storage sInfo = mapServiceInfo[serviceIds[i]];
+
+                // Calculate the liveness nonce ratio
+                // Get the last service checkpoint: staking start time or the global checkpoint timestamp
+                uint256 serviceCheckpoint = tsCheckpointLast;
+                uint256 ts = sInfo.tsStart;
+                // Adjust the service checkpoint time if the service was staking less than the current staking period
+                if (ts > serviceCheckpoint) {
+                    serviceCheckpoint = ts;
+                }
+
+                // Calculate the liveness ratio in 1e18 value
+                // This subtraction is always positive or zero, as the last checkpoint is at most block.timestamp
+                ts = block.timestamp - serviceCheckpoint;
+
+                bool ratioPass;
+                (ratioPass, serviceNonces[i]) = _checkRatioPass(sInfo.multisig, sInfo.nonces, ts);
+
+                // Record the reward for the service if it has provided enough transactions
+                if (ratioPass) {
+                    // Calculate the reward up until now and record its value for the corresponding service
+                    eligibleServiceRewards[numServices] = rewardsPerSecond * ts;
+                    totalRewards += eligibleServiceRewards[numServices];
+                    eligibleServiceIds[numServices] = serviceIds[i];
+                    ++numServices;
+                } else {
+                    serviceInactivity[i] = ts;
+                }
+            }
+        }
     }
 
     /// @dev Checkpoint to allocate rewards up until a current time.
@@ -766,6 +712,93 @@ abstract contract StakingBase is ERC721TokenReceiver {
         return (serviceIds, serviceNonces, finalEligibleServiceIds, finalEligibleServiceRewards, evictServiceIds);
     }
 
+    /// @dev Stakes the service.
+    /// @notice Each service must be staked for a minimum of maxInactivityDuration time, or until the funds are not zero.
+    ///         maxInactivityDuration = maxNumInactivityPeriods * livenessPeriod
+    /// @param serviceId Service Id.
+    function stake(uint256 serviceId) external {
+        // Check if there available rewards
+        if (availableRewards == 0) {
+            revert NoRewardsAvailable();
+        }
+
+        // Check if the evicted service has not yet unstaked
+        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+        // tsStart being greater than zero means that the service was not yet unstaked: still staking or evicted
+        if (sInfo.tsStart > 0) {
+            revert ServiceNotUnstaked(serviceId);
+        }
+
+        // Check for the maximum number of staking services
+        uint256 numStakingServices = setServiceIds.length;
+        if (numStakingServices == maxNumServices) {
+            revert MaxNumServicesReached(maxNumServices);
+        }
+
+        // Check the service conditions for staking
+        IService.Service memory service = IService(serviceRegistry).getService(serviceId);
+
+        // Check the number of agent instances
+        if (numAgentInstances != service.maxNumAgentInstances) {
+            revert WrongServiceConfiguration(serviceId);
+        }
+
+        // Check the configuration hash, if applicable
+        if (configHash != 0 && configHash != service.configHash) {
+            revert WrongServiceConfiguration(serviceId);
+        }
+        // Check the threshold, if applicable
+        if (threshold > 0 && threshold != service.threshold) {
+            revert WrongServiceConfiguration(serviceId);
+        }
+        // The service must be deployed
+        if (service.state != IService.ServiceState.Deployed) {
+            revert WrongServiceState(uint256(service.state), serviceId);
+        }
+
+        // Check that the multisig address corresponds to the authorized multisig proxy bytecode hash
+        bytes32 multisigProxyHash = keccak256(service.multisig.code);
+        if (proxyHash != multisigProxyHash) {
+            revert UnauthorizedMultisig(service.multisig);
+        }
+
+        // Check the agent Ids requirement, if applicable
+        uint256 size = agentIds.length;
+        if (size > 0) {
+            uint256 numAgents = service.agentIds.length;
+
+            if (size != numAgents) {
+                revert WrongServiceConfiguration(serviceId);
+            }
+            for (uint256 i = 0; i < numAgents; ++i) {
+                // Check that the agent Ids
+                if (agentIds[i] != service.agentIds[i]) {
+                    revert WrongAgentId(agentIds[i]);
+                }
+            }
+        }
+
+        // Check service staking deposit and token, if applicable
+        _checkTokenStakingDeposit(serviceId, service.securityDeposit, service.agentIds);
+
+        // ServiceInfo struct will be an empty one since otherwise the safeTransferFrom above would fail
+        sInfo.multisig = service.multisig;
+        sInfo.owner = msg.sender;
+        // This function might revert if it's incorrectly implemented, however this is not a protocol's responsibility
+        // It is safe to revert in this place
+        uint256[] memory nonces = IActivityChecker(activityChecker).getMultisigNonces(service.multisig);
+        sInfo.nonces = nonces;
+        sInfo.tsStart = block.timestamp;
+
+        // Add the service Id to the set of staked services
+        setServiceIds.push(serviceId);
+
+        // Transfer the service for staking
+        IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
+
+        emit ServiceStaked(epochCounter, serviceId, msg.sender, service.multisig, nonces);
+    }
+
     /// @dev Unstakes the service.
     /// @param serviceId Service Id.
     /// @return reward Staking reward.
@@ -838,39 +871,23 @@ abstract contract StakingBase is ERC721TokenReceiver {
         emit ServiceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward);
     }
 
-    /// @dev Claims rewards for the service.
+    /// @dev Claims rewards for the service without an additional checkpoint call.
     /// @param serviceId Service Id.
-    /// @return reward Staking reward.
-    function claim(uint256 serviceId) external returns (uint256 reward) {
-        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
-        // Check for the service ownership
-        if (msg.sender != sInfo.owner) {
-            revert OwnerOnly(msg.sender, sInfo.owner);
-        }
+    /// @return Staking reward.
+    function claim(uint256 serviceId) external returns (uint256) {
+        return _claim(serviceId, false);
+    }
 
-        // Call the checkpoint
-        checkpoint();
-
-        // Get the claimed service data
-        reward = sInfo.reward;
-
-        // Check for the zero reward
-        if (reward == 0) {
-            revert ZeroValue();
-        }
-
-        // Zero the reward field
-        sInfo.reward = 0;
-
-        // Transfer accumulated rewards to the service multisig
-        // Note that the reentrancy is not possible since the reward is set to zero
-        address multisig = sInfo.multisig;
-        _withdraw(multisig, reward);
-
-        emit RewardClaimed(epochCounter, serviceId, msg.sender, multisig, sInfo.nonces, reward);
+    /// @dev Checkpoints and claims rewards for the service.
+    /// @param serviceId Service Id.
+    /// @return Staking reward.
+    function checkpointAndClaim(uint256 serviceId) external returns (uint256) {
+        return _claim(serviceId, true);
     }
 
     /// @dev Calculates service staking reward during the last checkpoint period.
+    /// @notice Call this function if `calculateStakingLastReward()` returns a nonzero value in order to checkpoint
+    ///         and get the full reward.
     /// @param serviceId Service Id.
     /// @return reward Service reward.
     function calculateStakingLastReward(uint256 serviceId) public view returns (uint256 reward) {
