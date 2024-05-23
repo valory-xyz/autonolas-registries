@@ -46,7 +46,7 @@ async function main() {
 
     // Get StakingFactory contract instance
     const stakingFactory = await ethers.getContractAt("StakingFactory", stakingFactoryAddress);
-    // Get StakingToken omplementation contract instance
+    // Get StakingToken implementation contract instance
     const stakingToken = await ethers.getContractAt("StakingToken", stakingTokenAddress);
 
     // Transaction signing and execution
@@ -54,8 +54,8 @@ async function main() {
     console.log("You are signing the following transaction: StakingFactory.connect(EOA).createStakingInstance()");
     const initPayload = stakingToken.interface.encodeFunctionData("initialize", [stakingParams,
         serviceRegistryTokenUtilityAddress, olasAddress]);
-    const stakingTokenInstanceAddress = await stakingFactory.callStatic.createStakingInstance(
-        stakingTokenAddress, initPayload);
+    const stakingTokenInstanceAddress = await stakingFactory.callStatic.createStakingInstance(stakingTokenAddress,
+        initPayload);
     const result = await stakingFactory.createStakingInstance(stakingTokenAddress, initPayload);
 
     // Transaction details
