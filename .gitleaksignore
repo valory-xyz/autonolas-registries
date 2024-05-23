@@ -244,3 +244,4 @@ fd1b410bcd5b22b15fe21e1fd7ce04f557153aaa:scripts/deployment/l2/globals_arbitrum_
 e76bff01c1f5da8eb68258af9dfa5c5c90b7b041:scripts/deployment/l2/globals_arbitrum_sepolia.json:generic-api-key:1
 e76bff01c1f5da8eb68258af9dfa5c5c90b7b041:scripts/deployment/l2/globals_arbitrum_sepolia.json:generic-api-key:2
 81411216a478ffcba4aa138a3e9f93ddda8027bd:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:1
+81411216a478ffcba4aa138a3e9f93ddda8027bd:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:2
