@@ -18,16 +18,18 @@ In order to generalize `components` / `agents` / `services`, they are referred s
 
 A graphical overview of the whole on-chain architecture is available here:
 
-![architecture](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/On-chain_architecture_v6.png?raw=true)
+![architecture](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/On-chain_architecture_v6.png)
 
 An overview of the design, details on how securing services with ETH or a custom ERC20 token, how service owners can opt for a set of authorized operators,
-as well as how DAOs can manage their autonomous services are provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/AgentServicesFunctionality.pdf?raw=true).
+as well as how DAOs can manage their autonomous services are provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/AgentServicesFunctionality.pdf).
 
 We have a core periphery architecture for both the components/agents and services. The core contracts are ERC721s primarily accessed via the peripheral manager contracts.
 
 An overview of the state machine governing service management and usage is provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/FSM.md).
 
 A more detailed set of registries definitions are provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/definitions.md).
+
+An overview of the registries contracts related to staking can be found [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/StakingSmartContracts.pdf). Details on Olas staking are provided [here](https://staking.olas.network/poaa-whitepaper.pdf).
 
 
 - Abstract contracts:
@@ -38,7 +40,7 @@ A more detailed set of registries definitions are provided [here](https://github
 - Core contracts:
   - [AgentRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/AgentRegistry.sol)
   - [ComponentRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ComponentRegistry.sol)
-  - ServiceRegistry [L1](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistry.sol),
+  - ServiceRegistry [L1](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistry.sol)
     [L2](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistryL2.sol)
   - [ServiceRegistryTokenUtility](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistryTokenUtility.sol)
 - Periphery contracts:
@@ -48,9 +50,16 @@ A more detailed set of registries definitions are provided [here](https://github
 - Utility contracts:
   - [OperatorSignedHashes](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/utils/OperatorSignedHashes.sol)
   - [OperatorWhitelist](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/utils/OperatorWhitelist.sol)
-- Staking contracts:
-  - [ServiceStakingNativeToken.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/ServiceStakingNativeToken.sol)
-  - [ServiceStakingToken.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/ServiceStakingToken.sol)
+
+- Staking related contracts:
+  - [StakingBase.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingBase.sol)
+  - [StakingNativeToken.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingNativeToken.sol)
+  - [StakingToken.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingToken.sol)
+  - [StakingFactory.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingFactory.sol)
+  - [StakingProxy.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingProxy.sol)
+  - [StakingVerifier.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingVerifier.sol)
+  - [StakingActivityChecker.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingActivityChecker.sol)
+
 
 In order to deploy a service, its registered agent instances form a consensus mechanism via the means of multisigs using the generic multisig interface.
 One of the most well-known multisigs is Gnosis Safe. The Gnosis interface implementation of a generic multisig interface is provided here:
@@ -159,7 +168,7 @@ If you want to use custom contracts in the registry image, read [here](https://g
 
 ### Audits
 The audit is provided as development matures. The latest audit report can be found here: [audits](https://github.com/valory-xyz/autonolas-registries/blob/main/audits).
-A list of known vulnerabilities can be found here: [Vulnerabilities list](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/Vulnerabilities_list_registries.pdf?raw=true)
+A list of known vulnerabilities can be found here: [Vulnerabilities list](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/Vulnerabilities_list_registries.pdf)
 
 ## Deployed Protocol
 The list of contract addresses for different chains and their full contract configuration can be found [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/configuration.json).
@@ -182,7 +191,7 @@ NOTE: whilst the snapshot does maintain the exact dependency structure between c
 
 ## Protocol-owned-services
 A specific service can be owned by a DAO-governed protocol. In order to construct a DAO proposal for the service (re-)deployment,
-the following step-by-step guide is advised to be observed [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/DAO_service_deloyment_FSM?raw=true).
+the following step-by-step guide is advised to be observed [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/DAO_service_deloyment_FSM.pdf).
 
 ## Integrations on non-EVM blockchains
 ### Solana
