@@ -1,12 +1,12 @@
       | Contract                                                                                                                 |   CodeLine |
 ----------------------------------------------------------------------------------------------------------------------------------------------
-    1 | StakingActivityChecker.sol                                                                                               |         29 |
-    2 | StakingBase.sol                                                                                                          |        502 |
-    3 | StakingFactory.sol                                                                                                       |        134 |
+    1 | StakingActivityChecker.sol                                                                                               |         28 |
+    2 | StakingBase.sol                                                                                                          |        518 |
+    3 | StakingFactory.sol                                                                                                       |        159 |
     4 | StakingNativeToken.sol                                                                                                   |         22 |
     5 | StakingProxy.sol                                                                                                         |         30 |
     6 | StakingToken.sol                                                                                                         |         58 |
-    7 | StakingVerifier.sol                                                                                                      |         96 |
+    7 | StakingVerifier.sol                                                                                                      |        133 |
     8 | contracts/utils/SafeTransferLib.sol                                                                                      |         41 |
 ----------------------------------------------------------------------------------------------------------------------------------------------
-    8 | All Registries contract                                                                                                  |        912 |
+    8 | All Registries contract                                                                                                  |        989 |
