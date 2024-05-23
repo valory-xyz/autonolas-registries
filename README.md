@@ -40,7 +40,7 @@ An overview of the registries contracts related to staking can be found [here](h
 - Core contracts:
   - [AgentRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/AgentRegistry.sol)
   - [ComponentRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ComponentRegistry.sol)
-  - ServiceRegistry [L1](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistry.sol),
+  - ServiceRegistry [L1](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistry.sol)
     [L2](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistryL2.sol)
   - [ServiceRegistryTokenUtility](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistryTokenUtility.sol)
 - Periphery contracts:
@@ -53,8 +53,8 @@ An overview of the registries contracts related to staking can be found [here](h
 
 - Staking related contracts:
   - [StakingBase.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingBase.sol)
-  - [ServiceStakingNativeToken.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/ServiceStakingNativeToken.sol)
-  - [ServiceStakingToken.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/ServiceStakingToken.sol)
+  - [StakingNativeToken.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingNativeToken.sol)
+  - [StakingToken.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingToken.sol)
   - [StakingFactory.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingFactory.sol)
   - [StakingProxy.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingProxy.sol)
   - [StakingVerifier.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingVerifier.sol)
