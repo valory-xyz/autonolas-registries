@@ -46,8 +46,7 @@ async function main() {
     const StakingFactory = await ethers.getContractFactory("StakingFactory");
     console.log("You are signing the following transaction: StakingFactory.connect(EOA).deploy()");
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
-    const stakingFactory = await StakingFactory.connect(EOA).deploy(stakingVerifierAddress,
-        { gasPrice });
+    const stakingFactory = await StakingFactory.connect(EOA).deploy(stakingVerifierAddress, { gasPrice });
     const result = await stakingFactory.deployed();
 
     // Transaction details
