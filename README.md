@@ -29,6 +29,8 @@ An overview of the state machine governing service management and usage is provi
 
 A more detailed set of registries definitions are provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/definitions.md).
 
+An overview of the registries contracts related to staking can be found [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/StakingSmartContracts.pdf?raw=true). Details on Olas staking are provided [here](https://staking.olas.network/poaa-whitepaper.pdf).
+
 
 - Abstract contracts:
   - [GenericRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/GenericRegistry.sol)
@@ -48,9 +50,16 @@ A more detailed set of registries definitions are provided [here](https://github
 - Utility contracts:
   - [OperatorSignedHashes](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/utils/OperatorSignedHashes.sol)
   - [OperatorWhitelist](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/utils/OperatorWhitelist.sol)
-- Staking contracts:
+
+- Staking related contracts:
+  - [StakingBase.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingBase.sol)
   - [ServiceStakingNativeToken.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/ServiceStakingNativeToken.sol)
   - [ServiceStakingToken.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/ServiceStakingToken.sol)
+  - [StakingFactory.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingFactory.sol)
+  - [StakingProxy.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingProxy.sol)
+  - [StakingVerifier.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingVerifier.sol)
+  - [StakingActivityChecker.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingActivityChecker.sol)
+
 
 In order to deploy a service, its registered agent instances form a consensus mechanism via the means of multisigs using the generic multisig interface.
 One of the most well-known multisigs is Gnosis Safe. The Gnosis interface implementation of a generic multisig interface is provided here:
