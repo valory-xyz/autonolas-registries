@@ -128,14 +128,16 @@ describe("StakingFactory", function () {
             const instances = new Array(2);
 
             // Create a first instance
-            instances[0] = await stakingFactory.callStatic.createStakingInstance(staking.address,
-                initPayload);
-            await stakingFactory.createStakingInstance(staking.address, initPayload);
+            let tx = await stakingFactory.createStakingInstance(staking.address, initPayload);
+            let res = await tx.wait();
+            // Get staking contract instance address from the event
+            instances[0] = "0x" + res.logs[0].topics[2].slice(26);
 
             // Create a second instance
-            instances[1] = await stakingFactory.callStatic.createStakingInstance(staking.address,
-                initPayload);
-            await stakingFactory.createStakingInstance(staking.address, initPayload);
+            tx = await stakingFactory.createStakingInstance(staking.address, initPayload);
+            res = await tx.wait();
+            // Get staking contract instance address from the event
+            instances[1] = "0x" + res.logs[0].topics[2].slice(26);
 
             // Make sure instances have different addresses
             expect(instances[0]).to.not.equal(instances[1]);
@@ -149,7 +151,7 @@ describe("StakingFactory", function () {
             await stakingFactory.verifyInstance(instances[0]);
 
             // Try the implementation that does not exist
-            const res = await stakingFactory.verifyInstance(deployer.address);
+            res = await stakingFactory.verifyInstance(deployer.address);
             expect(res).to.be.false;
         });
     });
@@ -161,11 +163,13 @@ describe("StakingFactory", function () {
 
             // Create the service staking contract instance
             const initPayload = staking.interface.encodeFunctionData("initialize", [token.address]);
-            const instance = await stakingFactory.callStatic.createStakingInstance(
-                staking.address, initPayload);
+            tx = await stakingFactory.createStakingInstance(staking.address, initPayload);
+            res = await tx.wait();
+            // Get staking contract instance address from the event
+            const instance = "0x" + res.logs[0].topics[2].slice(26);
             const instanceAddress = await stakingFactory.getProxyAddress(staking.address);
-            expect(instanceAddress).to.equal(instance);
-            await stakingFactory.createStakingInstance(staking.address, initPayload);
+            // Check that different blocks give different instance addresses
+            expect(instanceAddress).to.not.equal(instance);
 
             // Check the parameter by the verifier
             const proxy = await ethers.getContractAt("MockStaking", instance);
@@ -309,9 +313,10 @@ describe("StakingFactory", function () {
             await stakingVerifier.changeStakingLimits(rewardsPerSecondLimit, timeForEmissionsLimit, numServicesLimit);
 
             // Calculate proxy address
-            const proxyAddress = await stakingFactory.getProxyAddress(staking.address);
-            // Create a proxy
-            await stakingFactory.createStakingInstance(staking.address, initPayload);
+            tx = await stakingFactory.createStakingInstance(staking.address, initPayload);
+            res = await tx.wait();
+            // Get staking contract instance address from the event
+            const proxyAddress = "0x" + res.logs[0].topics[2].slice(26);
 
             // Get the emissions amount
             let amount = await stakingFactory.verifyInstanceAndGetEmissionsAmount(proxyAddress);

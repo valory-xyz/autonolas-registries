@@ -127,18 +127,20 @@ describe("Staking", function () {
         stakingImplementation = await StakingNativeToken.deploy();
         let initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
             [serviceParams]);
-        const stakingAddress = await stakingFactory.callStatic.createStakingInstance(
-            stakingImplementation.address, initPayload);
-        await stakingFactory.createStakingInstance(stakingImplementation.address, initPayload);
+        let tx = await stakingFactory.createStakingInstance(stakingImplementation.address, initPayload);
+        let res = await tx.wait();
+        // Get staking contract instance address from the event
+        const stakingAddress = "0x" + res.logs[0].topics[2].slice(26);
         stakingNativeToken = await ethers.getContractAt("StakingNativeToken", stakingAddress);
 
         const StakingToken = await ethers.getContractFactory("StakingToken");
         stakingTokenImplementation = await StakingToken.deploy();
         initPayload = stakingTokenImplementation.interface.encodeFunctionData("initialize",
             [serviceParams, serviceRegistryTokenUtility.address, token.address]);
-        const stakingTokenAddress = await stakingFactory.callStatic.createStakingInstance(
-            stakingTokenImplementation.address, initPayload);
-        await stakingFactory.createStakingInstance(stakingTokenImplementation.address, initPayload);
+        tx = await stakingFactory.createStakingInstance(stakingTokenImplementation.address, initPayload);
+        res = await tx.wait();
+        // Get staking contract instance address from the event
+        const stakingTokenAddress = "0x" + res.logs[0].topics[2].slice(26);
         stakingToken = await ethers.getContractAt("StakingToken", stakingTokenAddress);
 
         const SafeNonceLib = await ethers.getContractFactory("SafeNonceLib");
@@ -473,9 +475,9 @@ describe("Staking", function () {
             testServiceParams.maxNumServices = 1;
             let initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
                 [testServiceParams]);
-            const sStakingAddress = await stakingFactory.callStatic.createStakingInstance(
-                stakingImplementation.address, initPayload);
-            await stakingFactory.createStakingInstance(stakingImplementation.address, initPayload);
+            let tx = await stakingFactory.createStakingInstance(stakingImplementation.address, initPayload);
+            let res = await tx.wait();
+            const sStakingAddress = "0x" + res.logs[0].topics[2].slice(26);
             const sStaking = await ethers.getContractAt("StakingNativeToken", sStakingAddress);
 
             // Try to initialize once again
@@ -535,9 +537,9 @@ describe("Staking", function () {
             testServiceParams.configHash = "0x" + "1".repeat(64);
             let initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
                 [testServiceParams]);
-            const sStakingAddress = await stakingFactory.callStatic.createStakingInstance(
-                stakingImplementation.address, initPayload);
-            await stakingFactory.createStakingInstance(stakingImplementation.address, initPayload);
+            let tx = await stakingFactory.createStakingInstance(stakingImplementation.address, initPayload);
+            let res = await tx.wait();
+            const sStakingAddress = "0x" + res.logs[0].topics[2].slice(26);
             const sStaking = await ethers.getContractAt("StakingNativeToken", sStakingAddress);
 
             // Deposit to the contract
@@ -557,9 +559,9 @@ describe("Staking", function () {
             serviceParams.proxyHash = testBytecodeHash;
             let initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
                 [serviceParams]);
-            const sStakingAddress = await stakingFactory.callStatic.createStakingInstance(
-                stakingImplementation.address, initPayload);
-            await stakingFactory.createStakingInstance(stakingImplementation.address, initPayload);
+            let tx = await stakingFactory.createStakingInstance(stakingImplementation.address, initPayload);
+            let res = await tx.wait();
+            const sStakingAddress = "0x" + res.logs[0].topics[2].slice(26);
             const sStaking = await ethers.getContractAt("StakingNativeToken", sStakingAddress);
 
             // Deposit to the contract
@@ -579,9 +581,9 @@ describe("Staking", function () {
             testServiceParams.threshold = 2;
             let initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
                 [testServiceParams]);
-            const sStakingAddress = await stakingFactory.callStatic.createStakingInstance(
-                stakingImplementation.address, initPayload);
-            await stakingFactory.createStakingInstance(stakingImplementation.address, initPayload);
+            let tx = await stakingFactory.createStakingInstance(stakingImplementation.address, initPayload);
+            let res = await tx.wait();
+            const sStakingAddress = "0x" + res.logs[0].topics[2].slice(26);
             const sStaking = await ethers.getContractAt("StakingNativeToken", sStakingAddress);
 
             // Deposit to the contract
@@ -601,9 +603,9 @@ describe("Staking", function () {
             testServiceParams.agentIds = [1];
             let initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
                 [testServiceParams]);
-            const sStakingAddress = await stakingFactory.callStatic.createStakingInstance(
-                stakingImplementation.address, initPayload);
-            await stakingFactory.createStakingInstance(stakingImplementation.address, initPayload);
+            let tx = await stakingFactory.createStakingInstance(stakingImplementation.address, initPayload);
+            let res = await tx.wait();
+            const sStakingAddress = "0x" + res.logs[0].topics[2].slice(26);
             const sStaking = await ethers.getContractAt("StakingNativeToken", sStakingAddress);
 
             // Check agent Ids
@@ -649,9 +651,9 @@ describe("Staking", function () {
             testServiceParams.numAgentInstances = 2;
             let initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
                 [testServiceParams]);
-            const sStakingAddress = await stakingFactory.callStatic.createStakingInstance(
-                stakingImplementation.address, initPayload);
-            await stakingFactory.createStakingInstance(stakingImplementation.address, initPayload);
+            let tx = await stakingFactory.createStakingInstance(stakingImplementation.address, initPayload);
+            let res = await tx.wait();
+            const sStakingAddress = "0x" + res.logs[0].topics[2].slice(26);
             const sStaking = await ethers.getContractAt("StakingNativeToken", sStakingAddress);
 
             // Deposit to the contract
