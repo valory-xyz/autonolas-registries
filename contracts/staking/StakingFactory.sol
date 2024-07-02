@@ -134,6 +134,9 @@ contract StakingFactory {
         emit VerifierUpdated(newVerifier);
     }
 
+    /// @dev Gets contract salt for create2() based on the provided nonce.
+    /// @param localNonce Provided nonce.
+    /// @return Contract salt.
     function _getSalt(uint256 localNonce) internal view returns (bytes32) {
         return keccak256(abi.encode(
             block.chainid,

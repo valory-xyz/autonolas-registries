@@ -823,9 +823,9 @@ abstract contract StakingBase is ERC721TokenReceiver {
         (uint256[] memory serviceIds, , , , uint256[] memory evictServiceIds) = checkpoint();
 
         // If the checkpoint was not successful, the serviceIds set is not returned and needs to be allocated
-        if (serviceIds.length == 0) {
+        // If there are any evicted service Ids, the serviceIds set is outdated and needs to be updated
+        if (serviceIds.length == 0 || evictServiceIds.length > 0) {
             serviceIds = getServiceIds();
-            evictServiceIds = new uint256[](serviceIds.length);
         }
 
         // Get the service index in the set of services
@@ -833,11 +833,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
         uint256 idx;
         bool inSet;
         for (; idx < serviceIds.length; ++idx) {
-            // Service is still in a global staking set if it is found in the services set,
-            // and is not present in the evicted set
-            if (evictServiceIds[idx] == serviceId) {
-                break;
-            } else if (serviceIds[idx] == serviceId) {
+            // Service is still in a global staking set if it is found in the services set
+            if (serviceIds[idx] == serviceId) {
                 inSet = true;
                 break;
             }
@@ -855,7 +852,12 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Update the set of staked service Ids
         // If the index was not found, the service was evicted and is not part of staked services set
         if (inSet) {
-            setServiceIds[idx] = setServiceIds[setServiceIds.length - 1];
+            // This operation is safe as if the service Id is in set, the set length is at least bigger than one
+            uint256 numServicesInSet = setServiceIds.length - 1;
+            // Shuffle the last element in set with the removed one, if it is not the last element in the set
+            if (numServicesInSet > 0) {
+                setServiceIds[idx] = setServiceIds[numServicesInSet];
+            }
             setServiceIds.pop();
         }
 
