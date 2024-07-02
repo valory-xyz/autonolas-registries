@@ -399,8 +399,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         address multisig,
         uint256[] memory lastNonces,
         uint256 ts
-    ) internal view returns (bool ratioPass, uint256[] memory currentNonces)
-    {
+    ) internal view returns (bool ratioPass, uint256[] memory currentNonces) {
         // Get current service multisig nonce
         // This is a low level call since it must never revert
         bytes memory activityData = abi.encodeCall(IActivityChecker.getMultisigNonces, multisig);
@@ -528,15 +527,16 @@ abstract contract StakingBase is ERC721TokenReceiver {
         uint256[] memory serviceIds,
         uint256[][] memory serviceNonces,
         uint256[] memory serviceInactivity
-    )
-    {
+    ) {
         // Check the last checkpoint timestamp and the liveness period, also check for available rewards to be not zero
         uint256 tsCheckpointLast = tsCheckpoint;
         lastAvailableRewards = availableRewards;
-        if (block.timestamp - tsCheckpointLast >= livenessPeriod && lastAvailableRewards > 0) {
-            // Get the service Ids set length
-            uint256 size = setServiceIds.length;
 
+        // Get the service Ids set length
+        uint256 size = setServiceIds.length;
+
+        // Carry out rewards calculation logic
+        if (size > 0 && block.timestamp - tsCheckpointLast >= livenessPeriod && lastAvailableRewards > 0) {
             // Get necessary arrays
             serviceIds = new uint256[](size);
             eligibleServiceIds = new uint256[](size);
@@ -594,8 +594,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         uint256[] memory,
         uint256[] memory,
         uint256[] memory evictServiceIds
-    )
-    {
+    ) {
         // Calculate staking rewards
         (uint256 lastAvailableRewards, uint256 numServices, uint256 totalRewards,
             uint256[] memory eligibleServiceIds, uint256[] memory eligibleServiceRewards,
@@ -717,6 +716,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     ///         maxInactivityDuration = maxNumInactivityPeriods * livenessPeriod
     /// @param serviceId Service Id.
     function stake(uint256 serviceId) external {
+        // Checkpoint to finalize any unaccounted rewards, if any
         checkpoint();
 
         // Check if there available rewards

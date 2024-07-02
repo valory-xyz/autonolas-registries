@@ -1236,7 +1236,7 @@ describe("Staking", function () {
                 const service = await serviceRegistry.getService(serviceId + i);
                 const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
 
-                // Make transactions by the service multisig, except for the service Id == 3
+                // Make transactions by the service multisig
                 const nonce = await multisig.nonce();
                 const txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
                 const signMessageData = await safeContracts.safeSignMessage(agentInstances[i], multisig, txHashData, 0);
