@@ -1721,11 +1721,6 @@ describe("Staking", function () {
             const reward = await stakingNativeToken.calculateStakingReward(serviceId);
             expect(reward).to.equal(0);
 
-            // Try to unstake the service with the re-entrancy will fail
-            await expect(
-                attacker.unstake(serviceId)
-            ).to.be.reverted;
-
             // Unsetting the attack will allow to unstake the service
             await attacker.setAttack(false);
             const balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));

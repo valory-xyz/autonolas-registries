@@ -71,6 +71,12 @@ interface IService {
     /// @param id Service Id.
     function safeTransferFrom(address from, address to, uint256 id) external;
 
+    /// @dev Transfers the service that was previously approved to this contract address.
+    /// @param from Account address to transfer from.
+    /// @param to Account address to transfer to.
+    /// @param id Service Id.
+    function transferFrom(address from, address to, uint256 id) external;
+
     /// @dev Gets the service instance.
     /// @param serviceId Service Id.
     /// @return service Corresponding Service struct.
@@ -865,7 +871,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
         // Transfer the service back to the owner
         // Note that the reentrancy is not possible due to the ServiceInfo struct being deleted
-        IService(serviceRegistry).safeTransferFrom(address(this), msg.sender, serviceId);
+        IService(serviceRegistry).transferFrom(address(this), msg.sender, serviceId);
 
         // Transfer accumulated rewards to the service multisig
         if (reward > 0) {

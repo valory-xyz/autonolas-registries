@@ -31,7 +31,11 @@ A more detailed set of registries definitions are provided [here](https://github
 
 An overview of the registries contracts related to staking can be found [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/StakingSmartContracts.pdf). Details on Olas staking are provided [here](https://staking.olas.network/poaa-whitepaper.pdf).
 
+Note that by default the contracts do not work with:
+- Fee on transfer tokens;
+- Balance changes outside of transfers tokens.
 
+The following list represents registries contracts:
 - Abstract contracts:
   - [GenericRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/GenericRegistry.sol)
   - [UnitRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/UnitRegistry.sol)
