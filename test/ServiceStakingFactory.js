@@ -163,8 +163,8 @@ describe("StakingFactory", function () {
 
             // Create the service staking contract instance
             const initPayload = staking.interface.encodeFunctionData("initialize", [token.address]);
-            tx = await stakingFactory.createStakingInstance(staking.address, initPayload);
-            res = await tx.wait();
+            let tx = await stakingFactory.createStakingInstance(staking.address, initPayload);
+            let res = await tx.wait();
             // Get staking contract instance address from the event
             const instance = "0x" + res.logs[0].topics[2].slice(26);
             const instanceAddress = await stakingFactory.getProxyAddress(staking.address);
@@ -313,8 +313,8 @@ describe("StakingFactory", function () {
             await stakingVerifier.changeStakingLimits(rewardsPerSecondLimit, timeForEmissionsLimit, numServicesLimit);
 
             // Calculate proxy address
-            tx = await stakingFactory.createStakingInstance(staking.address, initPayload);
-            res = await tx.wait();
+            let tx = await stakingFactory.createStakingInstance(staking.address, initPayload);
+            let res = await tx.wait();
             // Get staking contract instance address from the event
             const proxyAddress = "0x" + res.logs[0].topics[2].slice(26);
 
