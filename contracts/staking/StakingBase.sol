@@ -809,6 +809,9 @@ abstract contract StakingBase is ERC721TokenReceiver {
             revert OwnerOnly(msg.sender, sInfo.owner);
         }
 
+        // Call the checkpoint
+        (uint256[] memory serviceIds, , , , uint256[] memory evictServiceIds) = checkpoint();
+
         // Get the staking start time
         // Note that if the service info exists, the service is staked or evicted, and thus start time is always valid
         uint256 tsStart = sInfo.tsStart;
@@ -818,9 +821,6 @@ abstract contract StakingBase is ERC721TokenReceiver {
         if (ts <= minStakingDuration && availableRewards > 0) {
             revert NotEnoughTimeStaked(serviceId, ts, minStakingDuration);
         }
-
-        // Call the checkpoint
-        (uint256[] memory serviceIds, , , , uint256[] memory evictServiceIds) = checkpoint();
 
         // If the checkpoint was not successful, the serviceIds set is not returned and needs to be allocated
         // If there are any evicted service Ids, the serviceIds set is outdated and needs to be updated
