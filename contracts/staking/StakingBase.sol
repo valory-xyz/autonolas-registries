@@ -217,7 +217,9 @@ abstract contract StakingBase is ERC721TokenReceiver {
     event Checkpoint(uint256 indexed epoch, uint256 availableRewards, uint256[] serviceIds, uint256[] rewards,
         uint256 epochLength);
     event ServiceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
-        uint256[] nonces, uint256 reward);
+        uint256[] nonces, uint256 reward, uint256 availableRewards);
+    event ServiceForceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
+        uint256[] nonces, uint256 reward, uint256 availableRewards);
     event RewardClaimed(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
         uint256[] nonces, uint256 reward);
     event ServiceInactivityWarning(uint256 epoch, uint256 indexed serviceId, uint256 serviceInactivity);
@@ -809,8 +811,9 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
     /// @dev Unstakes the service.
     /// @param serviceId Service Id.
+
     /// @return reward Staking reward.
-    function unstake(uint256 serviceId) external returns (uint256 reward) {
+    function _unstake(uint256 serviceId, bool enforced) internal returns (uint256 reward) {
         ServiceInfo storage sInfo = mapServiceInfo[serviceId];
         // Check for the service ownership
         if (msg.sender != sInfo.owner) {
@@ -820,13 +823,14 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Call the checkpoint
         (uint256[] memory serviceIds, , , , uint256[] memory evictServiceIds) = checkpoint();
 
-        // Get the staking start time
-        // Note that if the service info exists, the service is staked or evicted, and thus start time is always valid
-        uint256 tsStart = sInfo.tsStart;
+        // Get the service reward
+        reward = sInfo.reward;
 
+        uint256 lastAvailableRewards = availableRewards;
+        // Note that if the service info exists, the service is staked or evicted, and thus start time is always valid
         // Check that the service has staked long enough, or if there are no rewards left
-        uint256 ts = block.timestamp - tsStart;
-        if (ts <= minStakingDuration && availableRewards > 0) {
+        uint256 ts = block.timestamp - sInfo.tsStart;
+        if (ts <= minStakingDuration && lastAvailableRewards > 0) {
             revert NotEnoughTimeStaked(serviceId, ts, minStakingDuration);
         }
 
@@ -849,7 +853,6 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
 
         // Get the unstaked service data
-        reward = sInfo.reward;
         uint256[] memory nonces = sInfo.nonces;
         address multisig = sInfo.multisig;
 
@@ -875,10 +878,30 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
         // Transfer accumulated rewards to the service multisig
         if (reward > 0) {
-            _withdraw(multisig, reward);
+            // Check if the reward is enforced to be returned to the staking pool
+            // Note that if available rewards were zero right after the checkpoint, it is fine to let the force unstaked
+            // service go and not wait until the minimum staking period of time, as the reward is not taken from the pool
+            if (enforced) {
+                lastAvailableRewards += reward;
+                availableRewards = lastAvailableRewards;
+            } else {
+                _withdraw(multisig, reward);
+            }
         }
 
-        emit ServiceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward);
+        if (enforced) {
+            emit ServiceForceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward, lastAvailableRewards);
+        } else {
+            emit ServiceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward, lastAvailableRewards);
+        }
+    }
+
+    function unstake(uint256 serviceId) external returns (uint256) {
+        return _unstake(serviceId, false);
+    }
+
+    function forceUnstake(uint256 serviceId) external returns (uint256) {
+        return _unstake(serviceId, true);
     }
 
     /// @dev Claims rewards for the service without an additional checkpoint call.
