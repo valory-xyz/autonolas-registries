@@ -1212,6 +1212,41 @@ describe("Staking", function () {
             snapshot.restore();
         });
 
+        it("Fail to stake a second service when there are no available rewards", async function () {
+            // Take a snapshot of the current state of the blockchain
+            const snapshot = await helpers.takeSnapshot();
+
+            // Deposit to the contract
+            await deployer.sendTransaction({to: stakingNativeToken.address, value: serviceParams.rewardsPerSecond});
+
+            for (let i = 0; i < 2; i++) {
+                // Approve services
+                await serviceRegistry.approve(stakingNativeToken.address, serviceId + i);
+
+                // Stake the service
+                if (i == 0) {
+                    await stakingNativeToken.stake(serviceId + i);
+                } else {
+                    await expect(
+                        stakingNativeToken.stake(serviceId + i)
+                    ).to.be.revertedWithCustomError(stakingNativeToken, "NoRewardsAvailable");
+                }
+
+                // Get the service multisig contract
+                const service = await serviceRegistry.getService(serviceId + i);
+                const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);
+
+                // Make transactions by the service multisig, except for the service Id == 3
+                const nonce = await multisig.nonce();
+                const txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
+                const signMessageData = await safeContracts.safeSignMessage(agentInstances[i], multisig, txHashData, 0);
+                await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+            }
+
+            // Restore a previous state of blockchain
+            snapshot.restore();
+        });
+
         it("Stake and unstake to drain the full balance by several services", async function () {
             // Take a snapshot of the current state of the blockchain
             const snapshot = await helpers.takeSnapshot();
@@ -1231,7 +1266,9 @@ describe("Staking", function () {
 
                 // Stake the service
                 await stakingNativeToken.stake(serviceId + i);
+            }
 
+            for (let i = 0; i < 3; i++) {
                 // Get the service multisig contract
                 const service = await serviceRegistry.getService(serviceId + i);
                 const multisig = await ethers.getContractAt("GnosisSafe", service.multisig);

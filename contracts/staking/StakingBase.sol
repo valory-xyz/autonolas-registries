@@ -717,6 +717,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
     ///         maxInactivityDuration = maxNumInactivityPeriods * livenessPeriod
     /// @param serviceId Service Id.
     function stake(uint256 serviceId) external {
+        checkpoint();
+
         // Check if there available rewards
         if (availableRewards == 0) {
             revert NoRewardsAvailable();
