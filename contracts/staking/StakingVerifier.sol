@@ -14,6 +14,14 @@ interface IStaking {
     /// @dev Gets service staking token.
     /// @return Service staking token address.
     function stakingToken() external view returns (address);
+
+    /// @dev Gets service registry address.
+    /// @return Service registry address.
+    function serviceRegistry() external view returns(address);
+
+    /// @dev Gets service registry token utility address.
+    /// @return Service registry token utility address.
+    function serviceRegistryTokenUtility() external view returns(address);
 }
 
 /// @dev Provided zero address.
@@ -49,6 +57,10 @@ contract StakingVerifier {
 
     // OLAS token address
     address public immutable olas;
+    // Service registry address
+    address public immutable serviceRegistry;
+    // Service registry token utility
+    address public immutable serviceRegistryTokenUtility;
 
     // Rewards per second limit
     uint256 public rewardsPerSecondLimit;
@@ -68,13 +80,21 @@ contract StakingVerifier {
 
     /// @dev StakingVerifier constructor.
     /// @param _olas OLAS token address.
+    /// @param _serviceRegistry Service registry address.
+    /// @param _serviceRegistryTokenUtility Service registry token utility address.
     /// @param _rewardsPerSecondLimit Rewards per second limit.
     /// @param _timeForEmissionsLimit Time for emissions limit.
     /// @param _numServicesLimit Limit for the number of services.
-    constructor(address _olas, uint256 _rewardsPerSecondLimit, uint256 _timeForEmissionsLimit,
-        uint256 _numServicesLimit) {
+    constructor(
+        address _olas,
+        address _serviceRegistry,
+        address _serviceRegistryTokenUtility,
+        uint256 _rewardsPerSecondLimit,
+        uint256 _timeForEmissionsLimit,
+        uint256 _numServicesLimit
+    ) {
         // Zero address check
-        if (_olas == address(0)) {
+        if (_olas == address(0) || _serviceRegistry == address(0)) {
             revert ZeroAddress();
         }
 
@@ -85,6 +105,8 @@ contract StakingVerifier {
 
         owner = msg.sender;
         olas = _olas;
+        serviceRegistry = _serviceRegistry;
+        serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
         rewardsPerSecondLimit = _rewardsPerSecondLimit;
         timeForEmissionsLimit = _timeForEmissionsLimit;
         numServicesLimit = _numServicesLimit;
@@ -187,6 +209,22 @@ contract StakingVerifier {
             return false;
         }
 
+        // Check service registry
+        // This is a mandatory check since all the services were created by a service registry contract
+        bytes memory registryData = abi.encodeCall(IStaking.serviceRegistry, ());
+        (bool success, bytes memory returnData) = instance.staticcall(registryData);
+
+        // Check the returnData if the call was successful
+        // The returned size must be 32 to fit one address
+        if (success && returnData.length == 32) {
+            address registry = abi.decode(returnData, (address));
+            if (registry != serviceRegistry) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
         // Check for the staking parameters
         // This is a must have parameter for all staking contracts
         uint256 rewardsPerSecond = IStaking(instance).rewardsPerSecond();
@@ -201,15 +239,28 @@ contract StakingVerifier {
             return false;
         }
 
-        // Check staking token
-        // This is an optional check since there could be staking contracts with native tokens
-        bytes memory tokenData = abi.encodeCall(IStaking.stakingToken, ());
-        (bool success, bytes memory returnData) = instance.staticcall(tokenData);
+        // Check service registry token utility and staking token, if applicable
+        if (serviceRegistryTokenUtility != address(0)) {
+            registryData = abi.encodeCall(IStaking.serviceRegistryTokenUtility, ());
+            (success, returnData) = instance.staticcall(registryData);
 
-        // Check the returnData is the call was successful
-        if (success) {
+            // Check the returnData if the call was successful
             // The returned size must be 32 to fit one address
-            if (returnData.length == 32) {
+            if (success && returnData.length == 32) {
+                address registry = abi.decode(returnData, (address));
+                if (registry != serviceRegistryTokenUtility) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+
+            bytes memory tokenData = abi.encodeCall(IStaking.stakingToken, ());
+            (success, returnData) = instance.staticcall(tokenData);
+
+            // Check the returnData if the call was successful
+            if (success && returnData.length == 32) {
+                // The returned size must be 32 to fit one address
                 address token = abi.decode(returnData, (address));
                 if (token != olas) {
                     return false;
