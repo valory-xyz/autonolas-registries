@@ -239,8 +239,27 @@ contract StakingVerifier {
             return false;
         }
 
-        // Check service registry token utility and staking token, if applicable
-        if (serviceRegistryTokenUtility != address(0)) {
+        address token;
+        // Check staking token
+        // This is an optional check since there could be staking contracts with native tokens
+        bytes memory tokenData = abi.encodeCall(IStaking.stakingToken, ());
+        (success, returnData) = instance.staticcall(tokenData);
+
+        // Check the returnData is the call was successful
+        if (success) {
+            // The returned size must be 32 to fit one address
+            if (returnData.length == 32) {
+                token = abi.decode(returnData, (address));
+                if (token != olas) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+
+        // Check service registry token utility if the staking token non zero
+        if (token != address(0) && serviceRegistryTokenUtility != address(0)) {
             registryData = abi.encodeCall(IStaking.serviceRegistryTokenUtility, ());
             (success, returnData) = instance.staticcall(registryData);
 
@@ -249,20 +268,6 @@ contract StakingVerifier {
             if (success && returnData.length == 32) {
                 address registry = abi.decode(returnData, (address));
                 if (registry != serviceRegistryTokenUtility) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-
-            bytes memory tokenData = abi.encodeCall(IStaking.stakingToken, ());
-            (success, returnData) = instance.staticcall(tokenData);
-
-            // Check the returnData if the call was successful
-            if (success && returnData.length == 32) {
-                // The returned size must be 32 to fit one address
-                address token = abi.decode(returnData, (address));
-                if (token != olas) {
                     return false;
                 }
             } else {

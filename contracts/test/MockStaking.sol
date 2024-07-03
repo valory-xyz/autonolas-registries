@@ -9,14 +9,18 @@ contract MockStaking {
     uint256 public maxNumServices;
     uint256 public emissionsAmount;
     address public token;
+    address public serviceRegistry;
+    address public serviceRegistryTokenUtility;
 
-    function initialize(address _token) external {
+    function initialize(address _token, address _serviceRegistry, address _serviceRegistryTokenUtility) external {
         serviceId = 2;
         rewardsPerSecond = 0.0001 ether;
         timeForEmissions = 100;
         maxNumServices = 10;
         emissionsAmount = rewardsPerSecond * maxNumServices * timeForEmissions;
         token = _token;
+        serviceRegistry = _serviceRegistry;
+        serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
     }
 
     function stakingToken() external view returns (address) {
