@@ -169,7 +169,7 @@ describe("StakingFactory", function () {
 
             // Create the service staking contract instance
             const initPayload = staking.interface.encodeFunctionData("initialize", [token.address, signers[1].address,
-                 signers[2].address]);
+                signers[2].address]);
             let tx = await stakingFactory.createStakingInstance(staking.address, initPayload);
             let res = await tx.wait();
             // Get staking contract instance address from the event
