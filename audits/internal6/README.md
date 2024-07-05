@@ -22,7 +22,10 @@ Please pay attention if possible.
 
 #### Issue
 ```
-Pay attention calculation for evict.
+Pay attention calculation for checkpoint().
+serviceNonce - not needed to return
+serviceIds - update before return
+evictServiceIds - update before return
 ```
 
 #### Checking the corrections made after C4A
