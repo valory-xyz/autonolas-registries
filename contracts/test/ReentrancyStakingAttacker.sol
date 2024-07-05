@@ -18,14 +18,12 @@ interface IServiceStaking {
     /// @return Staking reward.
     function checkpointAndClaim(uint256 serviceId) external returns (uint256);
 
-    /// @return All staking service Ids (including evicted ones during within a current epoch).
-    /// @return All staking updated nonces (including evicted ones during within a current epoch).
+    /// @return Staking service Ids (excluding evicted ones during within a current epoch).
     /// @return Set of eligible service Ids.
     /// @return Corresponding set of eligible service rewards.
     /// @return evictServiceIds Evicted service Ids.
     function checkpoint() external returns (
         uint256[] memory,
-        uint256[][] memory,
         uint256[] memory,
         uint256[] memory,
         uint256[] memory evictServiceIds
