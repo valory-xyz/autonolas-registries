@@ -20,6 +20,11 @@ Hardhat coverage has been performed before the audit and can be found here:
 ```
 Please pay attention if possible.
 
+#### Issue
+```
+Pay attention calculation for evict.
+```
+
 #### Checking the corrections made after C4A
 62. Adding staking instance as nominee before it is created #62
 https://github.com/code-423n4/2024-05-olas-findings/issues/62
@@ -105,3 +110,4 @@ contracts/staking/StakingProxy.sol
 It is necessary to carry out tests with the option to move this function to implementation.
 Perhaps this will solve the problem with proxy recognition on the side gnosisscan.
 ```
+
