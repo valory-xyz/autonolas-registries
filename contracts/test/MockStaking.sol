@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.25;
 
 /// @title MockStaking - Smart contract for mocking some of the staking service functionality
 contract MockStaking {
@@ -11,6 +11,7 @@ contract MockStaking {
     address public token;
     address public serviceRegistry;
     address public serviceRegistryTokenUtility;
+    bool public nativeToken;
 
     function initialize(address _token, address _serviceRegistry, address _serviceRegistryTokenUtility) external {
         serviceId = 2;
@@ -20,10 +21,21 @@ contract MockStaking {
         emissionsAmount = rewardsPerSecond * maxNumServices * timeForEmissions;
         token = _token;
         serviceRegistry = _serviceRegistry;
-        serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
+        if (_serviceRegistryTokenUtility == address(0)) {
+            nativeToken = true;
+        } else {
+            serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
+        }
+    }
+
+    function setNativeToken(bool isNative) external {
+        nativeToken = isNative;
     }
 
     function stakingToken() external view returns (address) {
+        if (nativeToken) {
+            revert();
+        }
         return token;
     }
 
