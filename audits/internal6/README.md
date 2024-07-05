@@ -93,3 +93,15 @@ Details:
 https://github.com/code-423n4/2023-11-panoptic-findings/issues/154
 ```
 
+#### Etherscan/gnosisscan issue
+```
+contracts/staking/StakingProxy.sol
+    /// @dev Gets the implementation address.
+    function getImplementation() external view returns (address implementation) {
+        assembly {
+            implementation := sload(SERVICE_STAKING_PROXY)
+        }
+    }
+It is necessary to carry out tests with the option to move this function to implementation.
+Perhaps this will solve the problem with proxy recognition on the side gnosisscan.
+```
