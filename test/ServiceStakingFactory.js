@@ -363,7 +363,7 @@ describe("StakingFactory", function () {
             await stakingFactory.removeInstance(proxyAddress);
 
             // The verification now fails
-            success = await stakingFactory.verifyInstance(proxyAddress);
+            const success = await stakingFactory.verifyInstance(proxyAddress);
             expect(success).to.be.false;
         });
 
