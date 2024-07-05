@@ -54,9 +54,11 @@ async function main() {
     console.log("You are signing the following transaction: StakingFactory.connect(EOA).createStakingInstance()");
     const initPayload = stakingToken.interface.encodeFunctionData("initialize", [stakingParams,
         serviceRegistryTokenUtilityAddress, olasAddress]);
-    const stakingTokenInstanceAddress = await stakingFactory.callStatic.createStakingInstance(stakingTokenAddress,
-        initPayload);
     const result = await stakingFactory.createStakingInstance(stakingTokenAddress, initPayload);
+    let res = await result.wait();
+    // Get staking contract instance address from the event
+    const stakingTokenInstanceAddress = "0x" + res.logs[0].topics[2].slice(26);
+
 
     // Transaction details
     console.log("Contract deployment: StakingProxy");
