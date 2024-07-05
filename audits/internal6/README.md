@@ -71,6 +71,7 @@ https://github.com/code-423n4/2024-05-olas-findings/issues/107
 ```
 Event Emission for _withdraw in StakingNativeToken
 ```
+[x] fixed in the upstream
 
 #### Notes
 QA Report #108
@@ -100,6 +101,7 @@ or
 Details:
 https://github.com/code-423n4/2023-11-panoptic-findings/issues/154
 ```
+[x] noted
 
 #### Etherscan/gnosisscan issue
 ```
@@ -113,4 +115,4 @@ contracts/staking/StakingProxy.sol
 It is necessary to carry out tests with the option to move this function to implementation.
 Perhaps this will solve the problem with proxy recognition on the side gnosisscan.
 ```
-
+[x] noted
