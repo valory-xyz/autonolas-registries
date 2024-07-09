@@ -253,3 +253,15 @@ e76bff01c1f5da8eb68258af9dfa5c5c90b7b041:scripts/deployment/l2/globals_arbitrum_
 8d0107d153c3fff792bd17283775d670483a8d1c:scripts/deployment/l2/globals_optimistic_sepolia.json:generic-api-key:2
 8d0107d153c3fff792bd17283775d670483a8d1c:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:1
 8d0107d153c3fff792bd17283775d670483a8d1c:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:2
+00d41ef73f2e3633b3e50f23de1c0a7c2bc4c7f2:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:2
+00d41ef73f2e3633b3e50f23de1c0a7c2bc4c7f2:scripts/deployment/l2/globals_arbitrum_sepolia.json:generic-api-key:2
+00d41ef73f2e3633b3e50f23de1c0a7c2bc4c7f2:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:2
+00d41ef73f2e3633b3e50f23de1c0a7c2bc4c7f2:scripts/deployment/l2/globals_polygon_amoy.json:generic-api-key:2
+499d981dfc70bbcc09d99f2a8cde6e94e9372ce2:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:2
+499d981dfc70bbcc09d99f2a8cde6e94e9372ce2:scripts/deployment/l2/globals_optimistic_sepolia.json:generic-api-key:2
+00d41ef73f2e3633b3e50f23de1c0a7c2bc4c7f2:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:1
+00d41ef73f2e3633b3e50f23de1c0a7c2bc4c7f2:scripts/deployment/l2/globals_arbitrum_sepolia.json:generic-api-key:1
+00d41ef73f2e3633b3e50f23de1c0a7c2bc4c7f2:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:1
+00d41ef73f2e3633b3e50f23de1c0a7c2bc4c7f2:scripts/deployment/l2/globals_polygon_amoy.json:generic-api-key:1
+499d981dfc70bbcc09d99f2a8cde6e94e9372ce2:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:1
+499d981dfc70bbcc09d99f2a8cde6e94e9372ce2:scripts/deployment/l2/globals_optimistic_sepolia.json:generic-api-key:1
