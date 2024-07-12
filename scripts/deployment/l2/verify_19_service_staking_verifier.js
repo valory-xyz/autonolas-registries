@@ -6,9 +6,13 @@ const olasAddress = parsedData.olasAddress;
 const rewardsPerSecondLimit = parsedData.rewardsPerSecondLimit;
 const timeForEmissionsLimit = parsedData.timeForEmissionsLimit;
 const numServicesLimit = parsedData.numServicesLimit;
+const serviceRegistryAddress = parsedData.serviceRegistryAddress;
+const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
 
 module.exports = [
     olasAddress,
+    serviceRegistryAddress,
+    serviceRegistryTokenUtilityAddress,
     rewardsPerSecondLimit,
     timeForEmissionsLimit,
     numServicesLimit
