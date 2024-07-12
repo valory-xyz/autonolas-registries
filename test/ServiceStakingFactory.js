@@ -353,6 +353,58 @@ describe("StakingFactory", function () {
             // Emissions amount is now set without limits check
             amount = await stakingFactory.verifyInstanceAndGetEmissionsAmount(proxyAddress);
             expect(amount).to.gt(0);
+
+            // Try to remove instance not by the DAO
+            await expect(
+                stakingFactory.connect(signers[1]).removeInstance(proxyAddress)
+            ).to.be.revertedWithCustomError(stakingFactory, "OwnerOnly");
+
+            // Remove the instance from the factory
+            await stakingFactory.removeInstance(proxyAddress);
+
+            // The verification now fails
+            const success = await stakingFactory.verifyInstance(proxyAddress);
+            expect(success).to.be.false;
+        });
+
+        it("Verify registries", async function () {
+            const StakingVerifier = await ethers.getContractFactory("StakingVerifier");
+
+            // Deploy a verifier with the different service registry address
+            let wrongVerifier = await StakingVerifier.deploy(token.address, signers[2].address, signers[3].address,
+                rewardsPerSecondLimit, timeForEmissionsLimit, numServicesLimit);
+            await wrongVerifier.deployed();
+
+            // Set the new verifier
+            await stakingFactory.changeVerifier(wrongVerifier.address);
+
+            // Get the initialization payload
+            let initPayload = staking.interface.encodeFunctionData("initialize", [token.address, signers[1].address,
+                signers[2].address]);
+
+            // Try to create service staking contract instance with an incorrect service registry
+            await expect (
+                stakingFactory.createStakingInstance(staking.address, initPayload)
+            ).to.be.revertedWithCustomError(stakingFactory, "UnverifiedProxy");
+
+            // Deploy a new verifier with a wrong service registry token utility
+            wrongVerifier = await StakingVerifier.deploy(token.address, signers[1].address, signers[3].address,
+                rewardsPerSecondLimit, timeForEmissionsLimit, numServicesLimit);
+            await wrongVerifier.deployed();
+
+            // Set the new verifier
+            await stakingFactory.changeVerifier(wrongVerifier.address);
+
+            // Try to create service staking contract instance with an incorrect service registry token utility
+            await expect (
+                stakingFactory.createStakingInstance(staking.address, initPayload)
+            ).to.be.revertedWithCustomError(stakingFactory, "UnverifiedProxy");
+
+            // However, staking native token must pass because it does not depend on service registry token utility
+            initPayload = staking.interface.encodeFunctionData("initialize", [token.address, signers[1].address,
+                AddressZero]);
+
+            await stakingFactory.createStakingInstance(staking.address, initPayload);
         });
     });
 });
