@@ -217,7 +217,9 @@ abstract contract StakingBase is ERC721TokenReceiver {
     event Checkpoint(uint256 indexed epoch, uint256 availableRewards, uint256[] serviceIds, uint256[] rewards,
         uint256 epochLength);
     event ServiceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
-        uint256[] nonces, uint256 reward);
+        uint256[] nonces, uint256 reward, uint256 availableRewards);
+    event ServiceForceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
+        uint256[] nonces, uint256 reward, uint256 availableRewards);
     event RewardClaimed(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
         uint256[] nonces, uint256 reward);
     event ServiceInactivityWarning(uint256 epoch, uint256 indexed serviceId, uint256 serviceInactivity);
@@ -432,17 +434,18 @@ abstract contract StakingBase is ERC721TokenReceiver {
     /// @param evictServiceIds Service Ids to be evicted.
     /// @param serviceInactivity Corresponding service inactivity records.
     /// @param numEvictServices Number of services to evict.
+    /// @return finalEvictedServiceIds Actually evicted serviceIds.
     function _evict(
         uint256[] memory evictServiceIds,
         uint256[] memory serviceInactivity,
         uint256 numEvictServices
-    ) internal {
+    ) internal returns (uint256[] memory finalEvictedServiceIds) {
         // Get the total number of staked services
         // All the passed arrays have the length of the number of staked services
         uint256 totalNumServices = evictServiceIds.length;
 
         // Get arrays of exact sizes
-        uint256[] memory serviceIds = new uint256[](numEvictServices);
+        finalEvictedServiceIds = new uint256[](numEvictServices);
         address[] memory owners = new address[](numEvictServices);
         address[] memory multisigs = new address[](numEvictServices);
         uint256[] memory inactivity = new uint256[](numEvictServices);
@@ -454,7 +457,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         for (uint256 i = 0; i < totalNumServices; ++i) {
             if (evictServiceIds[i] > 0) {
                 serviceId = evictServiceIds[i];
-                serviceIds[sCounter] = serviceId;
+                finalEvictedServiceIds[sCounter] = serviceId;
 
                 ServiceInfo storage sInfo = mapServiceInfo[serviceId];
                 owners[sCounter] = sInfo.owner;
@@ -477,7 +480,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
             setServiceIds.pop();
         }
 
-        emit ServicesEvicted(epochCounter, serviceIds, owners, multisigs, inactivity);
+        emit ServicesEvicted(epochCounter, finalEvictedServiceIds, owners, multisigs, inactivity);
     }
 
     /// @dev Claims rewards for the service.
@@ -588,15 +591,94 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
     }
 
+    /// @dev Unstakes the service.
+    /// @param serviceId Service Id.
+    /// @param enforced Forced unstake flag: true if enforced without getting a reward, and false otherwise.
+    /// @return reward Staking reward.
+    function _unstake(uint256 serviceId, bool enforced) internal returns (uint256 reward) {
+        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+        // Check for the service ownership
+        if (msg.sender != sInfo.owner) {
+            revert OwnerOnly(msg.sender, sInfo.owner);
+        }
+
+        // Call the checkpoint
+        (uint256[] memory serviceIds, , , ) = checkpoint();
+
+        // Get the service reward
+        reward = sInfo.reward;
+
+        uint256 lastAvailableRewards = availableRewards;
+        // Note that if the service info exists, the service is staked or evicted, and thus start time is always valid
+        // Check that the service has staked long enough, or if there are no rewards left
+        uint256 ts = block.timestamp - sInfo.tsStart;
+        if (ts <= minStakingDuration && lastAvailableRewards > 0) {
+            revert NotEnoughTimeStaked(serviceId, ts, minStakingDuration);
+        }
+
+        // Get the service index in the set of services
+        // The index must always exist as the service is currently staked, otherwise it has no record in the map
+        uint256 idx;
+        bool inSet;
+        for (; idx < serviceIds.length; ++idx) {
+            // Service is still in a global staking set if it is found in the services set
+            if (serviceIds[idx] == serviceId) {
+                inSet = true;
+                break;
+            }
+        }
+
+        // Get the unstaked service data
+        uint256[] memory nonces = sInfo.nonces;
+        address multisig = sInfo.multisig;
+
+        // Clear all the data about the unstaked service
+        // Delete the service info struct
+        delete mapServiceInfo[serviceId];
+
+        // Update the set of staked service Ids
+        // If the index was not found, the service was evicted and is not part of staked services set
+        if (inSet) {
+            // This operation is safe as if the service Id is in set, the set length is at least bigger than one
+            uint256 numServicesInSet = setServiceIds.length - 1;
+            // Shuffle the last element in set with the removed one, if it is not the last element in the set
+            if (numServicesInSet > 0) {
+                setServiceIds[idx] = setServiceIds[numServicesInSet];
+            }
+            setServiceIds.pop();
+        }
+
+        // Transfer the service back to the owner
+        // Note that the reentrancy is not possible due to the ServiceInfo struct being deleted
+        IService(serviceRegistry).transferFrom(address(this), msg.sender, serviceId);
+
+        // Transfer accumulated rewards to the service multisig
+        if (reward > 0) {
+            // Check if the reward is enforced to be returned to availableRewards
+            // Note that if available rewards were zero right after the checkpoint, it is fine to force unstake the
+            // service and not wait until the minimum staking time period, as the reward is not taken from the contract
+            if (enforced) {
+                lastAvailableRewards += reward;
+                availableRewards = lastAvailableRewards;
+            } else {
+                _withdraw(multisig, reward);
+            }
+        }
+
+        if (enforced) {
+            emit ServiceForceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward, lastAvailableRewards);
+        } else {
+            emit ServiceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward, lastAvailableRewards);
+        }
+    }
+
     /// @dev Checkpoint to allocate rewards up until a current time.
-    /// @return All staking service Ids (including evicted ones within a current epoch).
-    /// @return All staking updated nonces (including evicted ones within a current epoch).
+    /// @return Staking service Ids (excluding evicted ones within a current epoch).
     /// @return Set of reward-eligible service Ids.
     /// @return Corresponding set of reward-eligible service rewards.
     /// @return evictServiceIds Evicted service Ids.
     function checkpoint() public returns (
         uint256[] memory,
-        uint256[][] memory,
         uint256[] memory,
         uint256[] memory,
         uint256[] memory evictServiceIds
@@ -697,9 +779,12 @@ abstract contract StakingBase is ERC721TokenReceiver {
                 }
             }
 
-            // Evict inactive services
+            // Evict inactive services and update the final evicted services set
             if (numServices > 0) {
-                _evict(evictServiceIds, serviceInactivity, numServices);
+                evictServiceIds = _evict(evictServiceIds, serviceInactivity, numServices);
+            } else {
+                // No services are evicted
+                delete evictServiceIds;
             }
 
             // Record the actual epoch length
@@ -714,7 +799,13 @@ abstract contract StakingBase is ERC721TokenReceiver {
                 epochLength);
         }
 
-        return (serviceIds, serviceNonces, finalEligibleServiceIds, finalEligibleServiceRewards, evictServiceIds);
+        // If the checkpoint was not successful, the serviceIds set is not returned and needs to be allocated
+        // If there are any evicted service Ids, the serviceIds set is outdated and needs to be updated
+        if (serviceIds.length == 0 || evictServiceIds.length > 0) {
+            serviceIds = getServiceIds();
+        }
+
+        return (serviceIds, finalEligibleServiceIds, finalEligibleServiceRewards, evictServiceIds);
     }
 
     /// @dev Stakes the service.
@@ -807,78 +898,17 @@ abstract contract StakingBase is ERC721TokenReceiver {
         emit ServiceStaked(epochCounter, serviceId, msg.sender, service.multisig, nonces);
     }
 
-    /// @dev Unstakes the service.
+    /// @dev Unstakes the service with collected reward, if available.
     /// @param serviceId Service Id.
     /// @return reward Staking reward.
-    function unstake(uint256 serviceId) external returns (uint256 reward) {
-        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
-        // Check for the service ownership
-        if (msg.sender != sInfo.owner) {
-            revert OwnerOnly(msg.sender, sInfo.owner);
-        }
+    function unstake(uint256 serviceId) external returns (uint256) {
+        return _unstake(serviceId, false);
+    }
 
-        // Call the checkpoint
-        (uint256[] memory serviceIds, , , , uint256[] memory evictServiceIds) = checkpoint();
-
-        // Get the staking start time
-        // Note that if the service info exists, the service is staked or evicted, and thus start time is always valid
-        uint256 tsStart = sInfo.tsStart;
-
-        // Check that the service has staked long enough, or if there are no rewards left
-        uint256 ts = block.timestamp - tsStart;
-        if (ts <= minStakingDuration && availableRewards > 0) {
-            revert NotEnoughTimeStaked(serviceId, ts, minStakingDuration);
-        }
-
-        // If the checkpoint was not successful, the serviceIds set is not returned and needs to be allocated
-        // If there are any evicted service Ids, the serviceIds set is outdated and needs to be updated
-        if (serviceIds.length == 0 || evictServiceIds.length > 0) {
-            serviceIds = getServiceIds();
-        }
-
-        // Get the service index in the set of services
-        // The index must always exist as the service is currently staked, otherwise it has no record in the map
-        uint256 idx;
-        bool inSet;
-        for (; idx < serviceIds.length; ++idx) {
-            // Service is still in a global staking set if it is found in the services set
-            if (serviceIds[idx] == serviceId) {
-                inSet = true;
-                break;
-            }
-        }
-
-        // Get the unstaked service data
-        reward = sInfo.reward;
-        uint256[] memory nonces = sInfo.nonces;
-        address multisig = sInfo.multisig;
-
-        // Clear all the data about the unstaked service
-        // Delete the service info struct
-        delete mapServiceInfo[serviceId];
-
-        // Update the set of staked service Ids
-        // If the index was not found, the service was evicted and is not part of staked services set
-        if (inSet) {
-            // This operation is safe as if the service Id is in set, the set length is at least bigger than one
-            uint256 numServicesInSet = setServiceIds.length - 1;
-            // Shuffle the last element in set with the removed one, if it is not the last element in the set
-            if (numServicesInSet > 0) {
-                setServiceIds[idx] = setServiceIds[numServicesInSet];
-            }
-            setServiceIds.pop();
-        }
-
-        // Transfer the service back to the owner
-        // Note that the reentrancy is not possible due to the ServiceInfo struct being deleted
-        IService(serviceRegistry).transferFrom(address(this), msg.sender, serviceId);
-
-        // Transfer accumulated rewards to the service multisig
-        if (reward > 0) {
-            _withdraw(multisig, reward);
-        }
-
-        emit ServiceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward);
+    /// @dev Unstakes the service without a reward.
+    /// @param serviceId Service Id.
+    function forcedUnstake(uint256 serviceId) external {
+        _unstake(serviceId, true);
     }
 
     /// @dev Claims rewards for the service without an additional checkpoint call.
@@ -895,11 +925,10 @@ abstract contract StakingBase is ERC721TokenReceiver {
         return _claim(serviceId, true);
     }
 
-    /// @dev Calculates service staking reward during the last checkpoint period.
-    /// @notice Call this function if `calculateStakingLastReward()` returns a nonzero value in order to checkpoint
-    ///         and get the full reward.
+    /// @dev Calculates service staking reward starting from the last checkpoint period.
+    /// @notice If this function returns a nonzero value, call checkpoint in order to get the full reward.
     /// @param serviceId Service Id.
-    /// @return reward Service reward.
+    /// @return reward Service reward for the on-going epoch.
     function calculateStakingLastReward(uint256 serviceId) public view returns (uint256 reward) {
         // Calculate overall staking rewards
         (uint256 lastAvailableRewards, uint256 numServices, uint256 totalRewards, uint256[] memory eligibleServiceIds,
