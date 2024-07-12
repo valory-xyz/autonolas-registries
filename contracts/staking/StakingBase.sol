@@ -654,9 +654,9 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
         // Transfer accumulated rewards to the service multisig
         if (reward > 0) {
-            // Check if the reward is enforced to be returned to the staking pool
-            // Note that if available rewards were zero right after the checkpoint, it is fine to let the force unstaked
-            // service go and not wait until the minimum staking period of time, as the reward is not taken from the pool
+            // Check if the reward is enforced to be returned to availableRewards
+            // Note that if available rewards were zero right after the checkpoint, it is fine to force unstake the
+            // service and not wait until the minimum staking time period, as the reward is not taken from the contract
             if (enforced) {
                 lastAvailableRewards += reward;
                 availableRewards = lastAvailableRewards;

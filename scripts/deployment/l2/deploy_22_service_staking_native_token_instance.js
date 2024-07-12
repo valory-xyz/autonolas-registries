@@ -11,6 +11,7 @@ async function main() {
     const useLedger = parsedData.useLedger;
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
+    const gasPriceInGwei = parsedData.gasPriceInGwei;
     const stakingParams = parsedData.stakingParams;
     const stakingNativeTokenAddress = parsedData.stakingNativeTokenAddress;
     const stakingFactoryAddress = parsedData.stakingFactoryAddress;
@@ -50,10 +51,12 @@ async function main() {
     // Transaction signing and execution
     console.log("22. EOA to deploy StakingNativeTokenInstance via the StakingFactory");
     console.log("You are signing the following transaction: StakingFactory.connect(EOA).createStakingInstance()");
+    const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
     const initPayload = stakingNativeToken.interface.encodeFunctionData("initialize", [stakingParams]);
-    const stakingNativeTokenInstanceAddress = await stakingFactory.callStatic.createStakingInstance(
-        stakingNativeTokenAddress, initPayload);
-    const result = await stakingFactory.createStakingInstance(stakingNativeTokenAddress, initPayload);
+    const result = await stakingFactory.createStakingInstance(stakingNativeTokenAddress, initPayload, { gasPrice });
+    let res = await result.wait();
+    // Get staking contract instance address from the event
+    const stakingNativeTokenInstanceAddress = "0x" + res.logs[0].topics[2].slice(26);
 
     // Transaction details
     console.log("Contract deployment: StakingProxy");
