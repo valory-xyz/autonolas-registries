@@ -2358,8 +2358,8 @@ describe("ServiceRegistry", function () {
                     [[1, regBond]], 1);
 
                 // Activate registration and register an agent instance
-                serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit});
-                serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstance], [agentId], {value: regBond});
+                await serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit});
+                await serviceRegistry.connect(serviceManager).registerAgents(operator, serviceId, [agentInstance], [agentId], {value: regBond});
 
                 // Try to slash in a non deployed service state
                 await expect(

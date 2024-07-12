@@ -83,6 +83,7 @@ contract StakingFactory {
     event VerifierUpdated(address indexed verifier);
     event InstanceCreated(address indexed sender, address indexed instance, address indexed implementation);
     event InstanceStatusChanged(address indexed instance, bool isEnabled);
+    event InstanceRemoved(address indexed instance);
 
     // Minimum data length that contains at least a selector (4 bytes or 32 bits)
     uint256 public constant SELECTOR_DATA_LENGTH = 4;
@@ -134,13 +135,26 @@ contract StakingFactory {
         emit VerifierUpdated(newVerifier);
     }
 
+    /// @dev Gets contract salt for create2() based on the provided nonce.
+    /// @param localNonce Provided nonce.
+    /// @return Contract salt.
+    function _getSalt(uint256 localNonce) internal view returns (bytes32) {
+        return keccak256(abi.encode(
+            block.chainid,
+            localNonce,
+            msg.sender,
+            blockhash(block.number - 1),
+            block.timestamp
+        ));
+    }
+
     /// @dev Calculates a new proxy address based on the deployment data and provided nonce.
     /// @notice New address = first 20 bytes of keccak256(0xff + address(this) + s + keccak256(deploymentData)).
     /// @param implementation Implementation contract address.
     /// @param localNonce Nonce.
     function getProxyAddressWithNonce(address implementation, uint256 localNonce) public view returns (address) {
-        // Get salt based on chain Id and nonce values
-        bytes32 salt = keccak256(abi.encodePacked(block.chainid, localNonce));
+        // Get salt based on chain Id, nonce and other values
+        bytes32 salt = _getSalt(localNonce);
 
         // Get the deployment data based on the proxy bytecode and the implementation address
         bytes memory deploymentData = abi.encodePacked(type(StakingProxy).creationCode,
@@ -197,8 +211,8 @@ contract StakingFactory {
         }
 
         uint256 localNonce = nonce;
-        // Get salt based on chain Id and nonce values
-        bytes32 salt = keccak256(abi.encodePacked(block.chainid, localNonce));
+        // Get salt based on chain Id, nonce and other values
+        bytes32 salt = _getSalt(localNonce);
         // Get the deployment data based on the proxy bytecode and the implementation address
         bytes memory deploymentData = abi.encodePacked(type(StakingProxy).creationCode,
             uint256(uint160(implementation)));
@@ -259,6 +273,28 @@ contract StakingFactory {
         instanceParams.isEnabled = isEnabled;
 
         emit InstanceStatusChanged(instance, isEnabled);
+    }
+
+    /// @dev Removes staking instance.
+    /// @param instance Proxy instance address.
+    function removeInstance(address instance) external {
+        // Check for the contract ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Get the deployer address
+        address deployer = mapInstanceParams[instance].deployer;
+
+        // Check for the instance deployer
+        if (deployer == address(0)) {
+            revert ZeroAddress();
+        }
+
+        // Remove instance
+        delete mapInstanceParams[instance];
+
+        emit InstanceRemoved(instance);
     }
     
     /// @dev Verifies a service staking contract instance.
