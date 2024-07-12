@@ -34,6 +34,8 @@ contract StakingNativeToken is StakingBase {
         if (!success) {
             revert TransferFailed(address(0), address(this), to, amount);
         }
+
+        emit Withdraw(to, amount);
     }
 
     receive() external payable {
