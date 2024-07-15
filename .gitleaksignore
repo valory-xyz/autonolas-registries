@@ -273,3 +273,11 @@ e76bff01c1f5da8eb68258af9dfa5c5c90b7b041:scripts/deployment/l2/globals_arbitrum_
 063947c601432d2c7648be845b8b5ec2c7ab9703:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:1
 063947c601432d2c7648be845b8b5ec2c7ab9703:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:1
 063947c601432d2c7648be845b8b5ec2c7ab9703:scripts/deployment/l2/globals_polygon_amoy.json:generic-api-key:1
+a95559714a0e2ce4f52492a6a69da3595e35056b:scripts/deployment/l2/globals_arbitrum_one.json:generic-api-key:1
+a95559714a0e2ce4f52492a6a69da3595e35056b:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:1
+a95559714a0e2ce4f52492a6a69da3595e35056b:scripts/deployment/l2/globals_optimistic_mainnet.json:generic-api-key:1
+a95559714a0e2ce4f52492a6a69da3595e35056b:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:1
+a95559714a0e2ce4f52492a6a69da3595e35056b:scripts/deployment/l2/globals_arbitrum_one.json:generic-api-key:2
+a95559714a0e2ce4f52492a6a69da3595e35056b:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:2
+a95559714a0e2ce4f52492a6a69da3595e35056b:scripts/deployment/l2/globals_optimistic_mainnet.json:generic-api-key:2
+a95559714a0e2ce4f52492a6a69da3595e35056b:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:2
