@@ -18,7 +18,9 @@ Hardhat coverage has been performed before the audit and can be found here:
   StakingToken.sol                  |      100 |       80 |      100 |    95.83 |             95 |
   StakingVerifier.sol               |       90 |    87.93 |      100 |    93.75 |... 257,271,274 |
 ```
-Please pay attention if possible.
+Please pay attention if possible. <br>
+[x] Noted. Missing 100% is not an obvious problem.
+
 
 #### Issue
 ```
@@ -27,6 +29,7 @@ serviceNonce - not needed to return
 serviceIds - update before return
 evictServiceIds - update before return
 ```
+[x] fixed
 
 #### Checking the corrections made after C4A
 62. Adding staking instance as nominee before it is created #62
@@ -115,4 +118,8 @@ contracts/staking/StakingProxy.sol
 It is necessary to carry out tests with the option to move this function to implementation.
 Perhaps this will solve the problem with proxy recognition on the side gnosisscan.
 ```
-[x] noted
+[x] noted. No code base replacement required.
+
+### Catch up on changes. 15.07.24
+https://github.com/valory-xyz/autonolas-registries/compare/v1.2.2-pre-internal-audit...v1.2.2-pre-audit <br>
+The changes to the codebase appear to be correct.
