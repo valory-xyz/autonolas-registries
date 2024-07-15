@@ -287,3 +287,9 @@ cd83fb443a1513890a1da1be0389a2b853dcb93d:scripts/deployment/l2/globals_polygon_m
 cd83fb443a1513890a1da1be0389a2b853dcb93d:scripts/deployment/l2/globals_arbitrum_one.json:generic-api-key:2
 cd83fb443a1513890a1da1be0389a2b853dcb93d:scripts/deployment/l2/globals_optimistic_mainnet.json:generic-api-key:2
 cd83fb443a1513890a1da1be0389a2b853dcb93d:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:2
+8a01b571ac0a4138882dacf81572de4753f37f1e:scripts/deployment/l2/globals_arbitrum_one.json:generic-api-key:1
+8a01b571ac0a4138882dacf81572de4753f37f1e:scripts/deployment/l2/globals_optimistic_mainnet.json:generic-api-key:1
+8a01b571ac0a4138882dacf81572de4753f37f1e:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:1
+8a01b571ac0a4138882dacf81572de4753f37f1e:scripts/deployment/l2/globals_arbitrum_one.json:generic-api-key:2
+8a01b571ac0a4138882dacf81572de4753f37f1e:scripts/deployment/l2/globals_optimistic_mainnet.json:generic-api-key:2
+8a01b571ac0a4138882dacf81572de4753f37f1e:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:2
