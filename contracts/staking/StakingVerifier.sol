@@ -303,7 +303,7 @@ contract StakingVerifier {
         }
 
         // Zero values check
-        if (_rewardsPerSecondLimit == 0 || _timeForEmissionsLimit == 0 || _numServicesLimit == 0) {
+        if (_rewardsPerSecondLimit == 0 || _timeForEmissionsLimit == 0 || _numServicesLimit == 0 || _depositFactor == 0) {
             revert ZeroValue();
         }
 
