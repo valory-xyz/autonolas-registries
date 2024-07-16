@@ -90,7 +90,7 @@ contract StakingVerifier {
     /// @param _rewardsPerSecondLimit Rewards per second limit.
     /// @param _timeForEmissionsLimit Time for emissions limit.
     /// @param _numServicesLimit Limit for the number of services.
-    /// @param _depositFactor Deposit factor in 1e18 form.
+    /// @param _depositFactor Deposit factor in 1e18 format.
     constructor(
         address _olas,
         address _serviceRegistry,
@@ -290,7 +290,7 @@ contract StakingVerifier {
     /// @param _rewardsPerSecondLimit Rewards per second limit.
     /// @param _timeForEmissionsLimit Time for emissions limit.
     /// @param _numServicesLimit Limit for the number of services.
-    /// @param _depositFactor Deposit factor in 1e18 form.
+    /// @param _depositFactor Deposit factor in 1e18 format.
     function changeStakingLimits(
         uint256 _rewardsPerSecondLimit,
         uint256 _timeForEmissionsLimit,
