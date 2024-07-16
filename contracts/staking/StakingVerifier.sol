@@ -22,6 +22,9 @@ interface IStaking {
     /// @dev Gets service registry token utility address.
     /// @return Service registry token utility address.
     function serviceRegistryTokenUtility() external view returns(address);
+
+    /// @dev Minimum service staking deposit value required for staking.
+    function minStakingDeposit() external view returns(uint256);
 }
 
 /// @dev Provided zero address.
@@ -52,8 +55,8 @@ contract StakingVerifier {
     event OwnerUpdated(address indexed owner);
     event SetImplementationsCheck(bool setCheck);
     event ImplementationsWhitelistUpdated(address[] implementations, bool[] statuses, bool setCheck);
-    event StakingLimitsUpdated(uint256 rewardsPerSecondLimit, uint256 timeForEmissionsLimit, uint256 _numServicesLimit,
-        uint256 emissionsLimit);
+    event StakingLimitsUpdated(uint256 rewardsPerSecondLimit, uint256 timeForEmissionsLimit, uint256 numServicesLimit,
+        uint256 emissionsLimit, uint256 depositFactor);
 
     // OLAS token address
     address public immutable olas;
@@ -70,6 +73,8 @@ contract StakingVerifier {
     uint256 public numServicesLimit;
     // Emissions per service limit
     uint256 public emissionsLimit;
+    // Deposit factor
+    uint256 public depositFactor;
     // Contract owner address
     address public owner;
     // Flag to check for the implementation address whitelisting status
@@ -85,13 +90,15 @@ contract StakingVerifier {
     /// @param _rewardsPerSecondLimit Rewards per second limit.
     /// @param _timeForEmissionsLimit Time for emissions limit.
     /// @param _numServicesLimit Limit for the number of services.
+    /// @param _depositFactor Deposit factor in 1e18 form.
     constructor(
         address _olas,
         address _serviceRegistry,
         address _serviceRegistryTokenUtility,
         uint256 _rewardsPerSecondLimit,
         uint256 _timeForEmissionsLimit,
-        uint256 _numServicesLimit
+        uint256 _numServicesLimit,
+        uint256 _depositFactor
     ) {
         // Zero address check
         if (_olas == address(0) || _serviceRegistry == address(0)) {
@@ -99,7 +106,7 @@ contract StakingVerifier {
         }
 
         // Zero values check
-        if (_rewardsPerSecondLimit == 0 || _timeForEmissionsLimit == 0 || _numServicesLimit == 0) {
+        if (_rewardsPerSecondLimit == 0 || _timeForEmissionsLimit == 0 || _numServicesLimit == 0 || _depositFactor == 0) {
             revert ZeroValue();
         }
 
@@ -111,6 +118,7 @@ contract StakingVerifier {
         timeForEmissionsLimit = _timeForEmissionsLimit;
         numServicesLimit = _numServicesLimit;
         emissionsLimit = _rewardsPerSecondLimit * _timeForEmissionsLimit * _numServicesLimit;
+        depositFactor = _depositFactor;
     }
 
     /// @dev Changes the owner address.
@@ -282,10 +290,12 @@ contract StakingVerifier {
     /// @param _rewardsPerSecondLimit Rewards per second limit.
     /// @param _timeForEmissionsLimit Time for emissions limit.
     /// @param _numServicesLimit Limit for the number of services.
+    /// @param _depositFactor Deposit factor in 1e18 form.
     function changeStakingLimits(
         uint256 _rewardsPerSecondLimit,
         uint256 _timeForEmissionsLimit,
-        uint256 _numServicesLimit
+        uint256 _numServicesLimit,
+        uint256 _depositFactor
     ) external {
         // Check the contract ownership
         if (owner != msg.sender) {
@@ -300,15 +310,27 @@ contract StakingVerifier {
         rewardsPerSecondLimit = _rewardsPerSecondLimit;
         timeForEmissionsLimit = _timeForEmissionsLimit;
         numServicesLimit = _numServicesLimit;
-        emissionsLimit = _rewardsPerSecondLimit * _timeForEmissionsLimit * _numServicesLimit;
+        uint256 _emissionsLimit = _rewardsPerSecondLimit * _timeForEmissionsLimit * _numServicesLimit;
+        emissionsLimit = _emissionsLimit;
+        depositFactor = _depositFactor;
 
-        emit StakingLimitsUpdated(_rewardsPerSecondLimit, _timeForEmissionsLimit, _numServicesLimit, emissionsLimit);
+        emit StakingLimitsUpdated(_rewardsPerSecondLimit, _timeForEmissionsLimit, _numServicesLimit, _emissionsLimit,
+            _depositFactor);
     }
 
     /// @dev Gets emissions amount limit for a specific staking proxy instance.
-    /// @notice The address field is reserved for the proxy instance, if needed in the next verifier version.
-    /// @return Emissions amount limit.
-    function getEmissionsAmountLimit(address) external view returns (uint256) {
-        return emissionsLimit;
+    /// @param instance Staking proxy instance.
+    /// @return amount Emissions amount limit.
+    function getEmissionsAmountLimit(address instance) external view returns (uint256 amount) {
+        // Amount is equal to emissionsLimit by default
+        amount = emissionsLimit;
+
+        // Calculate depositLimit = minStakingDeposit(instance) * depositFactor
+        uint256 depositLimit = (IStaking(instance).minStakingDeposit() * depositFactor) / 1e18;
+
+        // Amount is bound by the deposit limit value
+        if (amount > depositLimit) {
+            amount = depositLimit;
+        }
     }
 }
