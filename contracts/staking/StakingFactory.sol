@@ -332,18 +332,14 @@ contract StakingFactory {
         bool success = verifyInstance(instance);
 
         if (success) {
-            // Get the proxy instance emissions amount
-            amount = IStaking(instance).emissionsAmount();
-
-            // If there is a verifier, adjust the amount
+            // If there is a verifier, get the emissions amount
             address localVerifier = verifier;
             if (localVerifier != address(0)) {
                 // Get the max possible emissions amount
-                uint256 maxEmissions = IStakingVerifier(localVerifier).getEmissionsAmountLimit(instance);
-                // Limit excessive emissions amount
-                if (amount > maxEmissions) {
-                    amount = maxEmissions;
-                }
+                amount = IStakingVerifier(localVerifier).getEmissionsAmountLimit(instance);
+            } else {
+                // Get the proxy instance emissions amount
+                amount = IStaking(instance).emissionsAmount();
             }
         }
     }

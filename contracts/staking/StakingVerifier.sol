@@ -11,6 +11,14 @@ interface IStaking {
     /// @return Maximum number of services.
     function maxNumServices() external view returns (uint256);
 
+    /// @dev Gets time for emissions.
+    /// @return Time for emissions.
+    function timeForEmissions() external view returns (uint256);
+
+    /// @dev Gets emissions amount.
+    /// @return Emissions amount.
+    function emissionsAmount() external view returns (uint256);
+
     /// @dev Gets service staking token.
     /// @return Service staking token address.
     function stakingToken() external view returns (address);
@@ -24,6 +32,7 @@ interface IStaking {
     function serviceRegistryTokenUtility() external view returns(address);
 
     /// @dev Minimum service staking deposit value required for staking.
+    /// @return Minimum service staking deposit.
     function minStakingDeposit() external view returns(uint256);
 }
 
@@ -56,8 +65,10 @@ contract StakingVerifier {
     event SetImplementationsCheck(bool setCheck);
     event ImplementationsWhitelistUpdated(address[] implementations, bool[] statuses, bool setCheck);
     event StakingLimitsUpdated(uint256 rewardsPerSecondLimit, uint256 timeForEmissionsLimit, uint256 numServicesLimit,
-        uint256 emissionsLimit, uint256 depositFactor);
+        uint256 apyLimit);
 
+    // One year constant
+    uint256 public constant ONE_YEAR = 1 days * 365;
     // OLAS token address
     address public immutable olas;
     // Service registry address
@@ -71,10 +82,8 @@ contract StakingVerifier {
     uint256 public timeForEmissionsLimit;
     // Limit for the number of services
     uint256 public numServicesLimit;
-    // Emissions per service limit
-    uint256 public emissionsLimit;
-    // Deposit factor
-    uint256 public depositFactor;
+    // APY limit in 1e18 format
+    uint256 public apyLimit;
     // Contract owner address
     address public owner;
     // Flag to check for the implementation address whitelisting status
@@ -90,7 +99,7 @@ contract StakingVerifier {
     /// @param _rewardsPerSecondLimit Rewards per second limit.
     /// @param _timeForEmissionsLimit Time for emissions limit.
     /// @param _numServicesLimit Limit for the number of services.
-    /// @param _depositFactor Deposit factor in 1e18 format.
+    /// @param _apyLimit APY limit in 1e18 format.
     constructor(
         address _olas,
         address _serviceRegistry,
@@ -98,7 +107,7 @@ contract StakingVerifier {
         uint256 _rewardsPerSecondLimit,
         uint256 _timeForEmissionsLimit,
         uint256 _numServicesLimit,
-        uint256 _depositFactor
+        uint256 _apyLimit
     ) {
         // Zero address check
         if (_olas == address(0) || _serviceRegistry == address(0)) {
@@ -106,7 +115,7 @@ contract StakingVerifier {
         }
 
         // Zero values check
-        if (_rewardsPerSecondLimit == 0 || _timeForEmissionsLimit == 0 || _numServicesLimit == 0 || _depositFactor == 0) {
+        if (_rewardsPerSecondLimit == 0 || _timeForEmissionsLimit == 0 || _numServicesLimit == 0 || _apyLimit == 0) {
             revert ZeroValue();
         }
 
@@ -117,8 +126,7 @@ contract StakingVerifier {
         rewardsPerSecondLimit = _rewardsPerSecondLimit;
         timeForEmissionsLimit = _timeForEmissionsLimit;
         numServicesLimit = _numServicesLimit;
-        emissionsLimit = _rewardsPerSecondLimit * _timeForEmissionsLimit * _numServicesLimit;
-        depositFactor = _depositFactor;
+        apyLimit = _apyLimit;
     }
 
     /// @dev Changes the owner address.
@@ -234,9 +242,17 @@ contract StakingVerifier {
         }
 
         // Check for the staking parameters
+        // Check for rewards per second
         // This is a must have parameter for all staking contracts
         uint256 rewardsPerSecond = IStaking(instance).rewardsPerSecond();
         if (rewardsPerSecond > rewardsPerSecondLimit) {
+            return false;
+        }
+
+        // Check for time for emissions
+        // This is a must have parameter for all staking contracts
+        uint256 timeForEmissions = IStaking(instance).timeForEmissions();
+        if (timeForEmissions > timeForEmissionsLimit) {
             return false;
         }
 
@@ -290,12 +306,12 @@ contract StakingVerifier {
     /// @param _rewardsPerSecondLimit Rewards per second limit.
     /// @param _timeForEmissionsLimit Time for emissions limit.
     /// @param _numServicesLimit Limit for the number of services.
-    /// @param _depositFactor Deposit factor in 1e18 format.
+    /// @param _apyLimit APY limit in 1e18 format.
     function changeStakingLimits(
         uint256 _rewardsPerSecondLimit,
         uint256 _timeForEmissionsLimit,
         uint256 _numServicesLimit,
-        uint256 _depositFactor
+        uint256 _apyLimit
     ) external {
         // Check the contract ownership
         if (owner != msg.sender) {
@@ -303,34 +319,40 @@ contract StakingVerifier {
         }
 
         // Zero values check
-        if (_rewardsPerSecondLimit == 0 || _timeForEmissionsLimit == 0 || _numServicesLimit == 0 || _depositFactor == 0) {
+        if (_rewardsPerSecondLimit == 0 || _timeForEmissionsLimit == 0 || _numServicesLimit == 0 || _apyLimit == 0) {
             revert ZeroValue();
         }
 
         rewardsPerSecondLimit = _rewardsPerSecondLimit;
         timeForEmissionsLimit = _timeForEmissionsLimit;
         numServicesLimit = _numServicesLimit;
-        uint256 _emissionsLimit = _rewardsPerSecondLimit * _timeForEmissionsLimit * _numServicesLimit;
-        emissionsLimit = _emissionsLimit;
-        depositFactor = _depositFactor;
+        apyLimit = _apyLimit;
 
-        emit StakingLimitsUpdated(_rewardsPerSecondLimit, _timeForEmissionsLimit, _numServicesLimit, _emissionsLimit,
-            _depositFactor);
+        emit StakingLimitsUpdated(_rewardsPerSecondLimit, _timeForEmissionsLimit, _numServicesLimit, _apyLimit);
     }
 
     /// @dev Gets emissions amount limit for a specific staking proxy instance.
     /// @param instance Staking proxy instance.
     /// @return amount Emissions amount limit.
     function getEmissionsAmountLimit(address instance) external view returns (uint256 amount) {
-        // Amount is equal to emissionsLimit by default
-        amount = emissionsLimit;
+        // Get instance rewards per second value
+        uint256 rewardsPerSecond = IStaking(instance).rewardsPerSecond();
+        // Calculate rewards per year
+        uint256 rewardsPerYear = IStaking(instance).rewardsPerSecond() * ONE_YEAR;
+        // Get instance min staking deposit
+        uint256 minStakingDeposit = IStaking(instance).minStakingDeposit();
+        // Calculate current APY in 1e18 format
+        uint256 apy = (rewardsPerYear * 1e18) / minStakingDeposit;
 
-        // Calculate depositLimit = minStakingDeposit(instance) * depositFactor
-        uint256 depositLimit = (IStaking(instance).minStakingDeposit() * depositFactor) / 1e18;
-
-        // Amount is bound by the deposit limit value
-        if (amount > depositLimit) {
-            amount = depositLimit;
+        // Compare APY with the limit
+        if (apy > apyLimit) {
+            // Adjust rewards per second
+            rewardsPerSecond = (rewardsPerSecond * apyLimit) / apy;
+            // Calculate updated emissions amount
+            amount = rewardsPerSecond * IStaking(instance).maxNumServices() * IStaking(instance).timeForEmissions();
+        } else {
+            // Get calculated emissions amount from the instance
+            amount = IStaking(instance).emissionsAmount();
         }
     }
 }
