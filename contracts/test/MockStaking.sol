@@ -8,6 +8,7 @@ contract MockStaking {
     uint256 public timeForEmissions;
     uint256 public maxNumServices;
     uint256 public emissionsAmount;
+    uint256 public minStakingDeposit;
     address public token;
     address public serviceRegistry;
     address public serviceRegistryTokenUtility;
@@ -15,10 +16,11 @@ contract MockStaking {
 
     function initialize(address _token, address _serviceRegistry, address _serviceRegistryTokenUtility) external {
         serviceId = 2;
-        rewardsPerSecond = 0.0001 ether;
+        rewardsPerSecond = 0.00001 ether;
         timeForEmissions = 100;
         maxNumServices = 10;
         emissionsAmount = rewardsPerSecond * maxNumServices * timeForEmissions;
+        minStakingDeposit = 10 ether;
         token = _token;
         serviceRegistry = _serviceRegistry;
         if (_serviceRegistryTokenUtility == address(0)) {
@@ -47,6 +49,10 @@ contract MockStaking {
     function setTimeForEmissions(uint256 time) external {
         timeForEmissions = time;
         emissionsAmount = rewardsPerSecond * maxNumServices * timeForEmissions;
+    }
+
+    function setStakingDeposit(uint256 stakingDeposit) external {
+        minStakingDeposit = stakingDeposit;
     }
 
     function stake(uint256) external {}

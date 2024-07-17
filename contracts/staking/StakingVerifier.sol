@@ -332,6 +332,7 @@ contract StakingVerifier {
             revert ZeroValue();
         }
 
+        minStakingDepositLimit = _minStakingDepositLimit;
         timeForEmissionsLimit = _timeForEmissionsLimit;
         numServicesLimit = _numServicesLimit;
         apyLimit = _apyLimit;

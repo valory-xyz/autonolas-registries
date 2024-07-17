@@ -328,10 +328,12 @@ contract StakingFactory {
     /// @param instance Staking proxy instance.
     /// @return amount Emissions amount.
     function verifyInstanceAndGetEmissionsAmount(address instance) external view returns (uint256 amount) {
-        // Verify the proxy instance
-        bool success = verifyInstance(instance);
+        // Verify the proxy instance by checking its corresponding implementation
+        // If the implementation exists, the proxy instance has been created by this factory and verified initially
+        address implementation = mapInstanceParams[instance].implementation;
 
-        if (success) {
+        // Check that the implementation corresponds to the proxy instance
+        if (implementation != address(0)) {
             // If there is a verifier, get the emissions amount
             address localVerifier = verifier;
             if (localVerifier != address(0)) {
