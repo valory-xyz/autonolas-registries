@@ -76,8 +76,8 @@ contract StakingVerifier {
     // Service registry token utility
     address public immutable serviceRegistryTokenUtility;
 
-    // Rewards per second limit
-    uint256 public rewardsPerSecondLimit;
+    // Minimum staking deposit limit
+    uint256 public minStakingDepositLimit;
     // Time for emissions limit
     uint256 public timeForEmissionsLimit;
     // Limit for the number of services
@@ -96,7 +96,7 @@ contract StakingVerifier {
     /// @param _olas OLAS token address.
     /// @param _serviceRegistry Service registry address.
     /// @param _serviceRegistryTokenUtility Service registry token utility address.
-    /// @param _rewardsPerSecondLimit Rewards per second limit.
+    /// @param _minStakingDepositLimit Minimum staking deposit limit.
     /// @param _timeForEmissionsLimit Time for emissions limit.
     /// @param _numServicesLimit Limit for the number of services.
     /// @param _apyLimit APY limit in 1e18 format.
@@ -104,7 +104,7 @@ contract StakingVerifier {
         address _olas,
         address _serviceRegistry,
         address _serviceRegistryTokenUtility,
-        uint256 _rewardsPerSecondLimit,
+        uint256 _minStakingDepositLimit,
         uint256 _timeForEmissionsLimit,
         uint256 _numServicesLimit,
         uint256 _apyLimit
@@ -115,7 +115,7 @@ contract StakingVerifier {
         }
 
         // Zero values check
-        if (_rewardsPerSecondLimit == 0 || _timeForEmissionsLimit == 0 || _numServicesLimit == 0 || _apyLimit == 0) {
+        if (_minStakingDepositLimit == 0 || _timeForEmissionsLimit == 0 || _numServicesLimit == 0 || _apyLimit == 0) {
             revert ZeroValue();
         }
 
@@ -123,7 +123,7 @@ contract StakingVerifier {
         olas = _olas;
         serviceRegistry = _serviceRegistry;
         serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
-        rewardsPerSecondLimit = _rewardsPerSecondLimit;
+        minStakingDepositLimit = _minStakingDepositLimit;
         timeForEmissionsLimit = _timeForEmissionsLimit;
         numServicesLimit = _numServicesLimit;
         apyLimit = _apyLimit;
@@ -241,11 +241,20 @@ contract StakingVerifier {
             return false;
         }
 
-        // Check for the staking parameters
-        // Check for rewards per second
-        // This is a must have parameter for all staking contracts
-        uint256 rewardsPerSecond = IStaking(instance).rewardsPerSecond();
-        if (rewardsPerSecond > rewardsPerSecondLimit) {
+        // Check for minimum staking deposit
+        // Get instance min staking deposit
+        uint256 minStakingDeposit = IStaking(instance).minStakingDeposit();
+        if (minStakingDeposit > minStakingDepositLimit) {
+            return false;
+        }
+        
+        // Calculate rewards per year
+        uint256 rewardsPerYear = IStaking(instance).rewardsPerSecond() * ONE_YEAR;
+        // Calculate current APY in 1e18 format
+        uint256 apy = (rewardsPerYear * 1e18) / minStakingDeposit;
+
+        // Compare APY with the limit
+        if (apy > apyLimit) {
             return false;
         }
 
@@ -303,12 +312,12 @@ contract StakingVerifier {
     }
 
     /// @dev Changes staking parameter limits.
-    /// @param _rewardsPerSecondLimit Rewards per second limit.
+    /// @param _minStakingDepositLimit Minimum staking deposit limit.
     /// @param _timeForEmissionsLimit Time for emissions limit.
     /// @param _numServicesLimit Limit for the number of services.
     /// @param _apyLimit APY limit in 1e18 format.
     function changeStakingLimits(
-        uint256 _rewardsPerSecondLimit,
+        uint256 _minStakingDepositLimit,
         uint256 _timeForEmissionsLimit,
         uint256 _numServicesLimit,
         uint256 _apyLimit
@@ -319,40 +328,22 @@ contract StakingVerifier {
         }
 
         // Zero values check
-        if (_rewardsPerSecondLimit == 0 || _timeForEmissionsLimit == 0 || _numServicesLimit == 0 || _apyLimit == 0) {
+        if (_minStakingDepositLimit == 0 || _timeForEmissionsLimit == 0 || _numServicesLimit == 0 || _apyLimit == 0) {
             revert ZeroValue();
         }
 
-        rewardsPerSecondLimit = _rewardsPerSecondLimit;
         timeForEmissionsLimit = _timeForEmissionsLimit;
         numServicesLimit = _numServicesLimit;
         apyLimit = _apyLimit;
 
-        emit StakingLimitsUpdated(_rewardsPerSecondLimit, _timeForEmissionsLimit, _numServicesLimit, _apyLimit);
+        emit StakingLimitsUpdated(_minStakingDepositLimit, _timeForEmissionsLimit, _numServicesLimit, _apyLimit);
     }
 
     /// @dev Gets emissions amount limit for a specific staking proxy instance.
     /// @param instance Staking proxy instance.
     /// @return amount Emissions amount limit.
     function getEmissionsAmountLimit(address instance) external view returns (uint256 amount) {
-        // Get instance rewards per second value
-        uint256 rewardsPerSecond = IStaking(instance).rewardsPerSecond();
-        // Calculate rewards per year
-        uint256 rewardsPerYear = IStaking(instance).rewardsPerSecond() * ONE_YEAR;
-        // Get instance min staking deposit
-        uint256 minStakingDeposit = IStaking(instance).minStakingDeposit();
-        // Calculate current APY in 1e18 format
-        uint256 apy = (rewardsPerYear * 1e18) / minStakingDeposit;
-
-        // Compare APY with the limit
-        if (apy > apyLimit) {
-            // Adjust rewards per second
-            rewardsPerSecond = (rewardsPerSecond * apyLimit) / apy;
-            // Calculate updated emissions amount
-            amount = rewardsPerSecond * IStaking(instance).maxNumServices() * IStaking(instance).timeForEmissions();
-        } else {
-            // Get calculated emissions amount from the instance
-            amount = IStaking(instance).emissionsAmount();
-        }
+        // Get calculated emissions amount from the instance
+        amount = IStaking(instance).emissionsAmount();
     }
 }
