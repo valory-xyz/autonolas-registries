@@ -64,7 +64,7 @@ contract StakingVerifier {
     event OwnerUpdated(address indexed owner);
     event SetImplementationsCheck(bool setCheck);
     event ImplementationsWhitelistUpdated(address[] implementations, bool[] statuses, bool setCheck);
-    event StakingLimitsUpdated(uint256 rewardsPerSecondLimit, uint256 timeForEmissionsLimit, uint256 numServicesLimit,
+    event StakingLimitsUpdated(uint256 minStakingDepositLimit, uint256 timeForEmissionsLimit, uint256 numServicesLimit,
         uint256 apyLimit);
 
     // One year constant
@@ -247,7 +247,7 @@ contract StakingVerifier {
         if (minStakingDeposit > minStakingDepositLimit) {
             return false;
         }
-        
+
         // Calculate rewards per year
         uint256 rewardsPerYear = IStaking(instance).rewardsPerSecond() * ONE_YEAR;
         // Calculate current APY in 1e18 format
