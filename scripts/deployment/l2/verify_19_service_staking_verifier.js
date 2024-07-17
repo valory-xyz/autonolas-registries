@@ -6,6 +6,7 @@ const olasAddress = parsedData.olasAddress;
 const minStakingDepositLimit = parsedData.minStakingDepositLimit;
 const timeForEmissionsLimit = parsedData.timeForEmissionsLimit;
 const numServicesLimit = parsedData.numServicesLimit;
+const apyLimit = parsedData.apyLimit;
 const serviceRegistryAddress = parsedData.serviceRegistryAddress;
 const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
 
@@ -15,5 +16,6 @@ module.exports = [
     serviceRegistryTokenUtilityAddress,
     minStakingDepositLimit,
     timeForEmissionsLimit,
-    numServicesLimit
+    numServicesLimit,
+    apyLimit
 ];

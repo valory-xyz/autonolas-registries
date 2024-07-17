@@ -16,6 +16,7 @@ async function main() {
     const minStakingDepositLimit = parsedData.minStakingDepositLimit;
     const timeForEmissionsLimit = parsedData.timeForEmissionsLimit;
     const numServicesLimit = parsedData.numServicesLimit;
+    const apyLimit = parsedData.apyLimit;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
 
@@ -52,7 +53,7 @@ async function main() {
     console.log("You are signing the following transaction: StakingVerifier.connect(EOA).deploy()");
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
     const stakingVerifier = await StakingVerifier.connect(EOA).deploy(olasAddress, serviceRegistryAddress,
-        serviceRegistryTokenUtilityAddress, minStakingDepositLimit, timeForEmissionsLimit, numServicesLimit, { gasPrice });
+        serviceRegistryTokenUtilityAddress, minStakingDepositLimit, timeForEmissionsLimit, numServicesLimit, apyLimit, { gasPrice });
     const result = await stakingVerifier.deployed();
 
     // Transaction details
