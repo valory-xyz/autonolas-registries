@@ -116,3 +116,89 @@ It is necessary to carry out tests with the option to move this function to impl
 Perhaps this will solve the problem with proxy recognition on the side gnosisscan.
 ```
 [x] noted
+
+#### Notes: StakingVerifier (commit 261c597388426e4e3a412123f50ee4dbe5e9fa8f)
+```
+  some of the code just follows the same path ("fake if/elese") - since the path can't be changed it just wastes gas.
+  StakingFactory:
+  
+ /// @dev Verifies a service staking contract instance.
+    /// @param instance Service staking proxy instance.
+    /// @return True, if verification is successful.
+    function verifyInstance(address instance) public view returns (bool) {
+        // Get proxy instance params
+        InstanceParams storage instanceParams = mapInstanceParams[instance];
+        address implementation = instanceParams.implementation;
+
+        // Check that the implementation corresponds to the proxy instance
+        if (implementation == address(0)) {
+            return false;
+        }
+
+        // Check for the instance being active
+        if (!instanceParams.isEnabled) {
+            return false;
+        }
+
+        // Provide additional checks, if needed
+        address localVerifier = verifier;
+        if (localVerifier != address(0)) {
+            return IStakingVerifier(localVerifier).verifyInstance(instance, implementation);
+        }
+
+        return true;
+    }
+
+    /// @dev Verifies staking proxy instance and gets emissions amount.
+    /// @param instance Staking proxy instance.
+    /// @return amount Emissions amount.
+    function verifyInstanceAndGetEmissionsAmount(address instance) external view returns (uint256 amount) {
+        // Verify the proxy instance
+        bool success = verifyInstance(instance);
+
+        if (success) {
+            // If there is a verifier, get the emissions amount
+            address localVerifier = verifier;
+            if (localVerifier != address(0)) {
+                // Get the max possible emissions amount
+                amount = IStakingVerifier(localVerifier).getEmissionsAmountLimit(instance);
+            } else {
+                // Get the proxy instance emissions amount
+                amount = IStaking(instance).emissionsAmount();
+            }
+        }
+    }
+	
+	verifyInstanceAndGetEmissionsAmount:
+	1. verifyInstance(instance)
+	1.1. if localVerifier != address(0) 
+	1.2. IStakingVerifier(localVerifier).verifyInstance(instance, implementation);
+	1.3. verifyInstance(address instance, address implementation) external view returns (bool)
+	      if (apy > apyLimit) {
+            return false;
+        } and etc
+	if success (apy checking is success!) then
+	2. if (localVerifier != address(0)) {
+	2.1. amount = IStakingVerifier(localVerifier).getEmissionsAmountLimit(instance);
+	     getEmissionsAmountLimit(instance)
+		 ->
+		 amount = IStaking(instance).emissionsAmount();
+		 
+    so,
+	if (success) {
+            // If there is a verifier, get the emissions amount
+            address localVerifier = verifier;
+            if (localVerifier != address(0)) {
+                // Get the max possible emissions amount
+                amount = IStakingVerifier(localVerifier).getEmissionsAmountLimit(instance);
+            } else {
+                // Get the proxy instance emissions amount
+                amount = IStaking(instance).emissionsAmount();
+            }
+        }
+	always equal:
+	if (success) {
+	   amount = IStaking(instance).emissionsAmount();
+	}
+    because the current code always produces this result.
+```
