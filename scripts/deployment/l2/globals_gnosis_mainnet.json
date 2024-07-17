@@ -26,9 +26,10 @@
   "stakingTokenAddress":"",
   "livenessRatio":"700000000000000",
   "stakingActivityCheckerAddress":"",
-  "rewardsPerSecondLimit":"1000000000000000",
+  "minStakingDepositLimit":"1000000000000000000000",
   "timeForEmissionsLimit":"2592000",
   "numServicesLimit":"100",
+  "apyLimit":"1000000000000000000",
   "stakingVerifierAddress":"",
   "stakingFactoryAddress":"",
   "stakingParams":

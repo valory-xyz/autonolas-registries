@@ -242,7 +242,7 @@ contract StakingVerifier {
         }
 
         // Check for minimum staking deposit
-        // Get instance min staking deposit
+        // This lets the verifier limit the max stake per slot for risk mitigation
         uint256 minStakingDeposit = IStaking(instance).minStakingDeposit();
         if (minStakingDeposit > minStakingDepositLimit) {
             return false;
@@ -253,13 +253,15 @@ contract StakingVerifier {
         // Calculate current APY in 1e18 format
         uint256 apy = (rewardsPerYear * 1e18) / minStakingDeposit;
 
-        // Compare APY with the limit
+        // Check for APY
+        // This lets the verifier limit the max APY a staking contract offers
+        // The DAO can this way express an upper bound on the APY staking contracts can offer
         if (apy > apyLimit) {
             return false;
         }
 
         // Check for time for emissions
-        // This is a must have parameter for all staking contracts
+        // This lets the verifier enforce an upper bound on the emissions length for risk mitigation
         uint256 timeForEmissions = IStaking(instance).timeForEmissions();
         if (timeForEmissions > timeForEmissionsLimit) {
             return false;
