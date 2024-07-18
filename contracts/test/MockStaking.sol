@@ -16,7 +16,7 @@ contract MockStaking {
 
     function initialize(address _token, address _serviceRegistry, address _serviceRegistryTokenUtility) external {
         serviceId = 2;
-        rewardsPerSecond = 0.00001 ether;
+        rewardsPerSecond = 549768518519;
         timeForEmissions = 100;
         maxNumServices = 10;
         emissionsAmount = rewardsPerSecond * maxNumServices * timeForEmissions;

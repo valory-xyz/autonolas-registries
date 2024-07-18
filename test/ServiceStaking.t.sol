@@ -61,11 +61,11 @@ contract BaseSetup is Test {
     // Maximum number of staking services
     uint256 internal maxNumServices = 10;
     // Rewards per second
-    uint256 internal rewardsPerSecond = 0.00001 ether;
+    uint256 internal rewardsPerSecond = 549768518519;
     // Minimum service staking deposit value required for staking
     uint256 internal minStakingDeposit = regDeposit;
     // APY limit
-    uint256 internal apyLimit = 200 ether;
+    uint256 internal apyLimit = 2 ether;
     // Min number of staking periods before the service can be unstaked
     uint256 internal minNumStakingPeriods = 3;
     // Max number of accumulated inactivity periods after which the service is evicted

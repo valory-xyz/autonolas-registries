@@ -13,7 +13,7 @@ describe("StakingFactory", function () {
     const minStakingDepositLimit = ethers.utils.parseEther("10");
     const timeForEmissionsLimit = 100;
     const numServicesLimit = 100;
-    const apyLimit = ethers.utils.parseEther("200");
+    const apyLimit = ethers.utils.parseEther("2");
 
     beforeEach(async function () {
         signers = await ethers.getSigners();
