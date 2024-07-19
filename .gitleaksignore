@@ -331,3 +331,13 @@ f6aa0cc9dcfba03dacec45e0ea0af309a72f3600:scripts/deployment/l2/globals_polygon_m
 578186433aa4d339c457ec828f3d59c7ff72d2eb:scripts/deployment/l2/globals_optimistic_sepolia.json:generic-api-key:2
 578186433aa4d339c457ec828f3d59c7ff72d2eb:scripts/deployment/l2/globals_polygon_amoy.json:generic-api-key:2
 578186433aa4d339c457ec828f3d59c7ff72d2eb:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:2
+3e78625ee6d5d0170ceaab9c2c34e42ede4d20e8:scripts/deployment/l2/globals_arbitrum_one.json:generic-api-key:1
+3e78625ee6d5d0170ceaab9c2c34e42ede4d20e8:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:1
+3e78625ee6d5d0170ceaab9c2c34e42ede4d20e8:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:1
+3e78625ee6d5d0170ceaab9c2c34e42ede4d20e8:scripts/deployment/l2/globals_ethereum_mainnet.json:generic-api-key:9
+3e78625ee6d5d0170ceaab9c2c34e42ede4d20e8:scripts/deployment/l2/globals_gnosis_mainnet.json:generic-api-key:26
+3e78625ee6d5d0170ceaab9c2c34e42ede4d20e8:scripts/deployment/l2/globals_optimistic_mainnet.json:generic-api-key:1
+e7371f2b30aef2f0c9407340176848ed3fd8d9aa:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:1
+e7371f2b30aef2f0c9407340176848ed3fd8d9aa:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:1
+e7371f2b30aef2f0c9407340176848ed3fd8d9aa:scripts/deployment/l2/globals_ethereum_mainnet.json:generic-api-key:13
+e7371f2b30aef2f0c9407340176848ed3fd8d9aa:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:1
