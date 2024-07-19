@@ -50,8 +50,8 @@ contract BaseSetup is Test {
     uint256 internal largeApproval = 1_000_000_000 ether;
     uint256 internal oneYear = 365 * 24 * 3600;
     uint32 internal threshold = 1;
-    uint96 internal regBond = 1000;
-    uint256 internal regDeposit = 1000;
+    uint96 internal regBond = 10 ether;
+    uint256 internal regDeposit = 10 ether;
     uint256 internal numDays = 10;
 
     bytes32 internal unitHash = 0x9999999999999999999999999999999999999999999999999999999999999999;
@@ -61,9 +61,11 @@ contract BaseSetup is Test {
     // Maximum number of staking services
     uint256 internal maxNumServices = 10;
     // Rewards per second
-    uint256 internal rewardsPerSecond = 0.0001 ether;
+    uint256 internal rewardsPerSecond = 549768518519;
     // Minimum service staking deposit value required for staking
     uint256 internal minStakingDeposit = regDeposit;
+    // APY limit
+    uint256 internal apyLimit = 2 ether;
     // Min number of staking periods before the service can be unstaked
     uint256 internal minNumStakingPeriods = 3;
     // Max number of accumulated inactivity periods after which the service is evicted
@@ -118,7 +120,7 @@ contract BaseSetup is Test {
 
         // Deploy service staking verifier
         stakingVerifier = new StakingVerifier(address(token), address(serviceRegistry),
-            address(serviceRegistryTokenUtility), rewardsPerSecond, timeForEmissions, maxNumServices);
+            address(serviceRegistryTokenUtility), minStakingDeposit, timeForEmissions, maxNumServices, apyLimit);
 
         // Deploy service staking factory
         stakingFactory = new StakingFactory(address(0));

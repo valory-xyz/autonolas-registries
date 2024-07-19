@@ -177,6 +177,9 @@ contract StakingFactory {
     }
 
     /// @dev Creates a service staking contract instance.
+    /// @notice Once the staking instance is created and verified, it is considered valid for its lifetime, or until
+    ///         deliberately restricted / removed. If the DAO changes staking parameters, the outdated staking
+    ///         parameters of instances are respected as they were validated before that.
     /// @param implementation Service staking blanc implementation address.
     /// @param initPayload Initialization payload.
     function createStakingInstance(
@@ -296,29 +299,22 @@ contract StakingFactory {
 
         emit InstanceRemoved(instance);
     }
-    
+
     /// @dev Verifies a service staking contract instance.
     /// @param instance Service staking proxy instance.
     /// @return True, if verification is successful.
-    function verifyInstance(address instance) public view returns (bool) {
-        // Get proxy instance params
+    function verifyInstance(address instance) external view returns (bool) {
         InstanceParams storage instanceParams = mapInstanceParams[instance];
-        address implementation = instanceParams.implementation;
 
-        // Check that the implementation corresponds to the proxy instance
-        if (implementation == address(0)) {
-            return false;
-        }
-
-        // Check for the instance being active
-        if (!instanceParams.isEnabled) {
+        bool isEnabled = instanceParams.isEnabled;
+        if (!isEnabled) {
             return false;
         }
 
         // Provide additional checks, if needed
         address localVerifier = verifier;
         if (localVerifier != address(0)) {
-            return IStakingVerifier(localVerifier).verifyInstance(instance, implementation);
+            return IStakingVerifier(localVerifier).verifyInstance(instance, instanceParams.implementation);
         }
 
         return true;
@@ -328,22 +324,21 @@ contract StakingFactory {
     /// @param instance Staking proxy instance.
     /// @return amount Emissions amount.
     function verifyInstanceAndGetEmissionsAmount(address instance) external view returns (uint256 amount) {
-        // Verify the proxy instance
-        bool success = verifyInstance(instance);
+        // Check if the proxy instance is enabled, since this proves that
+        // the proxy instance has been created by this factory and verified at the creation time
+        // An already verified proxy instance should not be re-verified
+        // DAO governance might have changed verification rules in the mean-time which would render the instance unusable
+        bool isEnabled = mapInstanceParams[instance].isEnabled;
 
-        if (success) {
-            // Get the proxy instance emissions amount
-            amount = IStaking(instance).emissionsAmount();
-
-            // If there is a verifier, adjust the amount
+        if (isEnabled) {
+            // If there is a verifier, get the emissions amount
             address localVerifier = verifier;
             if (localVerifier != address(0)) {
                 // Get the max possible emissions amount
-                uint256 maxEmissions = IStakingVerifier(localVerifier).getEmissionsAmountLimit(instance);
-                // Limit excessive emissions amount
-                if (amount > maxEmissions) {
-                    amount = maxEmissions;
-                }
+                amount = IStakingVerifier(localVerifier).getEmissionsAmountLimit(instance);
+            } else {
+                // Get the proxy instance emissions amount
+                amount = IStaking(instance).emissionsAmount();
             }
         }
     }
