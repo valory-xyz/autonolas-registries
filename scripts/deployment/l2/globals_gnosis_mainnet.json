@@ -29,7 +29,7 @@
   "minStakingDepositLimit":"1000000000000000000000",
   "timeForEmissionsLimit":"2592000",
   "numServicesLimit":"100",
-  "apyLimit":"1000000000000000000",
+  "apyLimit":"3000000000000000000",
   "stakingVerifierAddress":"",
   "stakingFactoryAddress":"",
   "stakingParams":
