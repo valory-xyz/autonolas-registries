@@ -14,7 +14,18 @@ async function main() {
     const gasPriceInGwei = parsedData.gasPriceInGwei;
 
     let networkURL = parsedData.networkURL;
-    if (providerName === "polygon") {
+    if (providerName === "mainnet") {
+        if (!process.env.ALCHEMY_API_KEY_MAINNET) {
+            console.log("set ALCHEMY_API_KEY_MAINNET env variable");
+        }
+        networkURL += process.env.ALCHEMY_API_KEY_MAINNET;
+    } else if (providerName === "sepolia") {
+        if (!process.env.ALCHEMY_API_KEY_SEPOLIA) {
+            console.log("set ALCHEMY_API_KEY_SEPOLIA env variable");
+            return;
+        }
+        networkURL += process.env.ALCHEMY_API_KEY_SEPOLIA;
+    } else if (providerName === "polygon") {
         if (!process.env.ALCHEMY_API_KEY_MATIC) {
             console.log("set ALCHEMY_API_KEY_MATIC env variable");
         }
