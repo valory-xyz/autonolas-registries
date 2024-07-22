@@ -348,3 +348,9 @@ e7371f2b30aef2f0c9407340176848ed3fd8d9aa:scripts/deployment/l2/globals_polygon_m
 e7371f2b30aef2f0c9407340176848ed3fd8d9aa:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:2
 e7371f2b30aef2f0c9407340176848ed3fd8d9aa:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:2
 e7371f2b30aef2f0c9407340176848ed3fd8d9aa:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:2
+209f03140cf62e2b496feb2de9a3dd5813fa321f:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:1
+209f03140cf62e2b496feb2de9a3dd5813fa321f:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:1
+209f03140cf62e2b496feb2de9a3dd5813fa321f:scripts/deployment/l2/globals_optimistic_mainnet.json:generic-api-key:1
+209f03140cf62e2b496feb2de9a3dd5813fa321f:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:2
+209f03140cf62e2b496feb2de9a3dd5813fa321f:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:2
+209f03140cf62e2b496feb2de9a3dd5813fa321f:scripts/deployment/l2/globals_optimistic_mainnet.json:generic-api-key:2

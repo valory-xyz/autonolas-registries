@@ -139,6 +139,21 @@
         "name": "OperatorWhitelist",
         "artifact": "abis/0.8.23/OperatorWhitelist.json",
         "address": "0x526E064cB694E8f5B7DB299158e17F33055B3943"
+      },
+      {
+        "name": "StakingToken",
+        "artifact": "abis/0.8.25/StakingToken.json",
+        "address": "0x4aba1Cf7a39a51D75cBa789f5f21cf4882162519"
+      },
+      {
+        "name": "StakingVerifier",
+        "artifact": "abis/0.8.25/StakingVerifier.json",
+        "address": "0x8Bc0a5c5B1612A16983B01ecd7ae130E728390CB"
+      },
+      {
+        "name": "StakingFactory",
+        "artifact": "abis/0.8.25/StakingFactory.json",
+        "address": "0x46C0D07F55d4F9B5Eed2Fc9680B5953e5fd7b461"
       }
     ]
   },
@@ -216,6 +231,21 @@
         "name": "GnosisSafeSameAddressMultisig",
         "artifact": "abis/0.8.21/GnosisSafeSameAddressMultisig.json",
         "address": "0x6e7f594f680f7aBad18b7a63de50F0FeE47dfD06"
+      },
+      {
+        "name": "StakingToken",
+        "artifact": "abis/0.8.25/StakingToken.json",
+        "address": "0xEa00be6690a871827fAfD705440D20dd75e67AB1"
+      },
+      {
+        "name": "StakingVerifier",
+        "artifact": "abis/0.8.25/StakingVerifier.json",
+        "address": "0x1D59DadE4FAeA7771eC7221420012d413175404C"
+      },
+      {
+        "name": "StakingFactory",
+        "artifact": "abis/0.8.25/StakingFactory.json",
+        "address": "0xb0228CA253A88Bc8eb4ca70BCAC8f87b381f4700"
       }
     ]
   },
@@ -288,6 +318,21 @@
         "name": "GnosisSafeSameAddressMultisig",
         "artifact": "abis/0.8.23/GnosisSafeSameAddressMultisig.json",
         "address": "0xBb7e1D6Cb6F243D6bdE81CE92a9f2aFF7Fbe7eac"
+      },
+      {
+        "name": "StakingToken",
+        "artifact": "abis/0.8.25/StakingToken.json",
+        "address": "0x04b0007b2aFb398015B76e5f22993a1fddF83644"
+      },
+      {
+        "name": "StakingVerifier",
+        "artifact": "abis/0.8.25/StakingVerifier.json",
+        "address": "0x7Fd1F4b764fA41d19fe3f63C85d12bf64d2bbf68"
+      },
+      {
+        "name": "StakingFactory",
+        "artifact": "abis/0.8.25/StakingFactory.json",
+        "address": "0xEB5638eefE289691EcE01943f768EDBF96258a80"
       }
     ]
   },
@@ -360,6 +405,21 @@
         "name": "GnosisSafeSameAddressMultisig",
         "artifact": "abis/0.8.23/GnosisSafeSameAddressMultisig.json",
         "address": "0xb09CcF0Dbf0C178806Aaee28956c74bd66d21f73"
+      },
+      {
+        "name": "StakingToken",
+        "artifact": "abis/0.8.25/StakingToken.json",
+        "address": "0x63C2c53c09dE534Dd3bc0b7771bf976070936bAC"
+      },
+      {
+        "name": "StakingVerifier",
+        "artifact": "abis/0.8.25/StakingVerifier.json",
+        "address": "0x526E064cB694E8f5B7DB299158e17F33055B3943"
+      },
+      {
+        "name": "StakingFactory",
+        "artifact": "abis/0.8.25/StakingFactory.json",
+        "address": "0xa45E64d13A30a51b91ae0eb182e88a40e9b18eD8"
       }
     ]
   },
@@ -432,6 +492,21 @@
         "name": "GnosisSafeSameAddressMultisig",
         "artifact": "abis/0.8.23/GnosisSafeSameAddressMultisig.json",
         "address": "0xFbBEc0C8b13B38a9aC0499694A69a10204c5E2aB"
+      },
+      {
+        "name": "StakingToken",
+        "artifact": "abis/0.8.25/StakingToken.json",
+        "address": "0xEB5638eefE289691EcE01943f768EDBF96258a80"
+      },
+      {
+        "name": "StakingVerifier",
+        "artifact": "abis/0.8.25/StakingVerifier.json",
+        "address": "0x10c5525F77F13b28f42c5626240c001c2D57CAd4"
+      },
+      {
+        "name": "StakingFactory",
+        "artifact": "abis/0.8.25/StakingFactory.json",
+        "address": "0x1cEe30D08943EB58EFF84DD1AB44a6ee6FEff63a"
       }
     ]
   },
@@ -504,6 +579,21 @@
         "name": "GnosisSafeSameAddressMultisig",
         "artifact": "abis/0.8.23/GnosisSafeSameAddressMultisig.json",
         "address": "0xBb7e1D6Cb6F243D6bdE81CE92a9f2aFF7Fbe7eac"
+      },
+      {
+        "name": "StakingToken",
+        "artifact": "abis/0.8.25/StakingToken.json",
+        "address": "0xe1E1B286EbE95b39F785d8069f2248ae9C41b7a9"
+      },
+      {
+        "name": "StakingVerifier",
+        "artifact": "abis/0.8.25/StakingVerifier.json",
+        "address": "0xc40C79C275F3fA1F3f4c723755C81ED2D53A8D81"
+      },
+      {
+        "name": "StakingFactory",
+        "artifact": "abis/0.8.25/StakingFactory.json",
+        "address": "0x1c2cD884127b080F940b7546c1e9aaf525b1FA55"
       }
     ]
   },
