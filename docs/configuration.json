@@ -47,6 +47,21 @@
         "name": "GnosisSafeSameAddressMultisig",
         "artifact": "abis/0.8.21/GnosisSafeSameAddressMultisig.json",
         "address": "0xfa517d01DaA100cB1932FA4345F68874f7E7eF46"
+      },
+      {
+        "name": "StakingToken",
+        "artifact": "abis/0.8.25/StakingToken.json",
+        "address": "0x0Dc23eEf3bC64CF3cbd8f9329B57AE4C4f28d5d2"
+      },
+      {
+        "name": "StakingVerifier",
+        "artifact": "abis/0.8.25/StakingVerifier.json",
+        "address": "0x4503b79d468e81Ad2d4bd6Db991810da269bA777"
+      },
+      {
+        "name": "StakingFactory",
+        "artifact": "abis/0.8.25/StakingFactory.json",
+        "address": "0xEBdde456EA288b49f7D5975E7659bA1Ccf607efc"
       }
     ]
   },
