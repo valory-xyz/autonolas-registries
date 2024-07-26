@@ -12,21 +12,10 @@ async function main() {
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
     const gasPriceInGwei = parsedData.gasPriceInGwei;
-    const livenessRatio = parsedData.livenessRatio;
+    const baseURI = parsedData.baseURI;
 
     let networkURL = parsedData.networkURL;
-    if (providerName === "mainnet") {
-        if (!process.env.ALCHEMY_API_KEY_MAINNET) {
-            console.log("set ALCHEMY_API_KEY_MAINNET env variable");
-        }
-        networkURL += process.env.ALCHEMY_API_KEY_MAINNET;
-    } else if (providerName === "sepolia") {
-        if (!process.env.ALCHEMY_API_KEY_SEPOLIA) {
-            console.log("set ALCHEMY_API_KEY_SEPOLIA env variable");
-            return;
-        }
-        networkURL += process.env.ALCHEMY_API_KEY_SEPOLIA;
-    } else if (providerName === "polygon") {
+    if (providerName === "polygon") {
         if (!process.env.ALCHEMY_API_KEY_MATIC) {
             console.log("set ALCHEMY_API_KEY_MATIC env variable");
         }
@@ -53,29 +42,28 @@ async function main() {
     console.log("EOA is:", deployer);
 
     // Transaction signing and execution
-    console.log("18. EOA to deploy StakingActivityChecker");
+    console.log("23. EOA to deploy HashCheckpoint");
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
-    const StakingActivityChecker = await ethers.getContractFactory("StakingActivityChecker");
-    console.log("You are signing the following transaction: StakingActivityChecker.connect(EOA).deploy()");
-    const stakingActivityChecker = await StakingActivityChecker.connect(EOA).deploy(livenessRatio,
-        { gasPrice });
-    const result = await stakingActivityChecker.deployed();
+    const HashCheckpoint = await ethers.getContractFactory("HashCheckpoint");
+    console.log("You are signing the following transaction: HashCheckpoint.connect(EOA).deploy()");
+    const hashCheckpoint = await HashCheckpoint.connect(EOA).deploy(baseURI, { gasPrice });
+    const result = await hashCheckpoint.deployed();
 
     // Transaction details
-    console.log("Contract deployment: StakingActivityChecker");
-    console.log("Contract address:", stakingActivityChecker.address);
+    console.log("Contract deployment: ServiceRegistryL2");
+    console.log("Contract address:", hashCheckpoint.address);
     console.log("Transaction:", result.deployTransaction.hash);
     // Wait half a minute for the transaction completion
     await new Promise(r => setTimeout(r, 30000));
 
     // Writing updated parameters back to the JSON file
-    parsedData.stakingActivityCheckerAddress = stakingActivityChecker.address;
+    parsedData.hashCheckpoint = hashCheckpoint.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
 
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_18_service_staking_activity_checker.js --network " + providerName + " " + stakingActivityChecker.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --contract contracts/utils/HashCheckpoint.sol:HashCheckpoint --constructor-args scripts/deployment/l2/verify_20_hash_checkpoint.js --network " + providerName + " " + hashCheckpoint.address, { encoding: "utf-8" });
     }
 }
 
