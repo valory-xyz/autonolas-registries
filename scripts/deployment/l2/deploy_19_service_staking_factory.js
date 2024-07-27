@@ -75,7 +75,7 @@ async function main() {
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_20_service_staking_factory.js --network " + providerName + " " + stakingFactory.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_19_service_staking_factory.js --network " + providerName + " " + stakingFactory.address, { encoding: "utf-8" });
     }
 }
 

@@ -11,30 +11,10 @@
   "multisigProxyHash130": "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000",
   "stakingNativeTokenAddress":"",
   "stakingTokenAddress":"0x0Dc23eEf3bC64CF3cbd8f9329B57AE4C4f28d5d2",
-  "livenessRatio":"700000000000000",
-  "stakingActivityCheckerAddress":"",
   "minStakingDepositLimit":"1000000000000000000000",
   "timeForEmissionsLimit":"2592000",
   "numServicesLimit":"100",
   "apyLimit":"3000000000000000000",
   "stakingVerifierAddress":"0x4503b79d468e81Ad2d4bd6Db991810da269bA777",
-  "stakingFactoryAddress":"0xEBdde456EA288b49f7D5975E7659bA1Ccf607efc",
-  "stakingParams":
-    {
-      "metadataHash":"",
-      "maxNumServices":"100",
-      "rewardsPerSecond":"1000000000000000",
-      "minStakingDeposit":"50000000000000000000",
-      "minNumStakingPeriods":"3",
-      "maxNumInactivityPeriods":"3",
-      "livenessPeriod":"86400",
-      "timeForEmissions":"2592000",
-      "numAgentInstances":"1",
-      "agentIds":["12"],
-      "threshold":"0",
-      "configHash":"0x0000000000000000000000000000000000000000000000000000000000000000",
-      "proxyHash":"0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000",
-      "serviceRegistry":"0x9338b5153AE39BB89f50468E608eD9d764B755fD",
-      "activityChecker":""},
-  "stakingTokenInstanceAddress":""
+  "stakingFactoryAddress":"0xEBdde456EA288b49f7D5975E7659bA1Ccf607efc"
 }
