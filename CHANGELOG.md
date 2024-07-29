@@ -22,7 +22,7 @@ The format is based on [Common Changelog](https://common-changelog.org).
 [1.0.0]: https://github.com/valory-xyz/autonolas-registries/releases/tag/v1.0.0
 
 
-## [1.2.2] - 2024-01-23
+## [1.2.2] - 2024-07-29
 
 ### Changed
 
