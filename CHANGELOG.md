@@ -27,10 +27,10 @@ The format is based on [Common Changelog](https://common-changelog.org).
 ### Changed
 
 - Introducing Service Staking according to [PoAA Whitepaper](https://staking.olas.network/poaa-whitepaper.pdf)
-- Refactored `StakingBase.sol` for revised service staking ([#166](https://github.com/valory-xyz/autonolas-registries/pull/141)), with the subsequent internal audit ([#167](https://github.com/valory-xyz/autonolas-registries/pull/167)), and complete [C4R audit competition](https://github.com/code-423n4/2024-05-olas-findings)
+- Refactored `StakingBase.sol` for revised service staking ([#166](https://github.com/valory-xyz/autonolas-registries/pull/166)), with the subsequent internal audit ([#167](https://github.com/valory-xyz/autonolas-registries/pull/167))
 - Created `StakingFactory.sol`, `StakingProxy.sol`, `StakingActivityChecker.sol` and  `StakingVerifier.sol`
+- Participated in a complete [C4R audit competition](https://github.com/code-423n4/2024-05-olas-findings) and addressed findings
 - Deployed `StakingToken.sol`, `StakingFactory.sol`, and  `StakingVerifier.sol` ([#191](https://github.com/valory-xyz/autonolas-registries/pull/191))
-- Updated documentation
 
 ## [1.1.10] - 2024-03-01
 
