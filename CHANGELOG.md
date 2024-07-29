@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+[1.2.2]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.10...v1.2.2
 [1.1.10]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.9...v1.1.10
 [1.1.9]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.8...v1.1.9
 [1.1.8]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.7...v1.1.8
@@ -20,6 +21,16 @@ The format is based on [Common Changelog](https://common-changelog.org).
 [1.0.1]: https://github.com/valory-xyz/autonolas-registries/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/valory-xyz/autonolas-registries/releases/tag/v1.0.0
 
+
+## [1.2.2] - 2024-01-23
+
+### Changed
+
+- Introducing Service Staking according to [PoAA Whitepaper](https://staking.olas.network/poaa-whitepaper.pdf)
+- Refactored `StakingBase.sol` for revised service staking ([#166](https://github.com/valory-xyz/autonolas-registries/pull/141)), with the subsequent internal audit ([#167](https://github.com/valory-xyz/autonolas-registries/pull/167)), and complete [C4R audit competition](https://github.com/code-423n4/2024-05-olas-findings)
+- Created `StakingFactory.sol`, `StakingProxy.sol`, `StakingActivityChecker.sol` and  `StakingVerifier.sol`
+- Deployed `StakingToken.sol`, `StakingFactory.sol`, and  `StakingVerifier.sol` ([#191](https://github.com/valory-xyz/autonolas-registries/pull/191))
+- Updated documentation
 
 ## [1.1.10] - 2024-03-01
 
