@@ -24,4 +24,10 @@ contracts is located in this folder: [internal audit 6](https://github.com/valor
 Following the initial contracts [audit report](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/Valory%20Review%20Final.pdf),
 the recommendations are addressed here: [feedback](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/Addressing%20Initial%20ApeWorX%20Recommentations.pdf).
 
-The final audit reports [v1](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/Valory_Agent_Registries_Smart_Contract_Audit_by_Solidity_Finance.pdf), [v2](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/Valory_Agent_Registries_Smart_Contract_Audit_by_Solidity_Finance-1.pdf), [v3](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/Valory_Agent_Registries_Smart_Contract_Audit_by_Solidity_Finance-2.pdf), and  [v4](https://sourcehat.com/audits/ValoryAgentRegistries/).
+Final audit reports are listed in their historical order:
+- [v1](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/Valory_Agent_Registries_Smart_Contract_Audit_by_Solidity_Finance.pdf);
+- [v2](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/Valory_Agent_Registries_Smart_Contract_Audit_by_Solidity_Finance-1.pdf);
+- [v3](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/Valory_Agent_Registries_Smart_Contract_Audit_by_Solidity_Finance-2.pdf);
+- [v4](https://sourcehat.com/audits/ValoryAgentRegistries/);
+- [v5](https://code4rena.com/reports/2023-12-autonolas);
+- [v6](https://code4rena.com/reports/2024-05-olas).
