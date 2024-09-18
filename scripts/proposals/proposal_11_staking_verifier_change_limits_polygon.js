@@ -31,22 +31,24 @@ async function main() {
     const fxRootABI = parsedFile["abi"];
     const fxRoot = new ethers.Contract(fxRootAddress, fxRootABI, mainnetProvider);
 
-    // serviceRegistry address on polygon
-    const serviceRegistryAddress = parsedData.serviceRegistryAddress;
-    const serviceRegistryJSON = "artifacts/contracts/ServiceRegistryL2.sol/ServiceRegistryL2.json";
-    contractFromJSON = fs.readFileSync(serviceRegistryJSON, "utf8");
+    // StakingVerifier address on polygon
+    const stakingVerifierAddress = parsedData.stakingVerifierAddress;
+    const stakingVerifierJSON = "artifacts/contracts/staking/StakingVerifier.sol/StakingVerifier.json";
+    contractFromJSON = fs.readFileSync(stakingVerifierJSON, "utf8");
     parsedFile = JSON.parse(contractFromJSON);
-    const serviceRegistryABI = parsedFile["abi"];
-    const serviceRegistry = new ethers.Contract(serviceRegistryAddress, serviceRegistryABI, polygonProvider);
+    const stakingVerifierABI = parsedFile["abi"];
+    const stakingVerifier = new ethers.Contract(stakingVerifierAddress, stakingVerifierABI, polygonProvider);
 
     // FxGovernorTunnel address on polygon
     const fxGovernorTunnelAddress = parsedData.bridgeMediatorAddress;
 
     // Proposal preparation
-    console.log("Proposal 1. Change drainer for polygon ServiceRegistryL2\n");
-    const rawPayload = serviceRegistry.interface.encodeFunctionData("changeDrainer", [fxGovernorTunnelAddress]);
+    console.log("Proposal 11. Change staking limits for polygon StakingVerifier\n");
+    const rawPayload = stakingVerifier.interface.encodeFunctionData("changeStakingLimits",
+        [parsedData.minStakingDepositLimit, parsedData.timeForEmissionsLimit, parsedData.numServicesLimit,
+            parsedData.apyLimit]);
     // Pack the second part of data
-    const target = serviceRegistryAddress;
+    const target = stakingVerifierAddress;
     const value = 0;
     const payload = ethers.utils.arrayify(rawPayload);
     const data = ethers.utils.solidityPack(

@@ -4,7 +4,7 @@ const { ethers } = require("ethers");
 
 async function main() {
     const fs = require("fs");
-    // Polygon mainnet globals file
+    // Mainnet globals file
     const globalsFile = "globals.json";
     const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
     const parsedData = JSON.parse(dataFromJSON);
