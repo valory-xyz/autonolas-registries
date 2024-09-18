@@ -49,7 +49,7 @@ async function main() {
     // Timelock contract across the bridge must change the manager address
     const rawPayload = stakingVerifier.interface.encodeFunctionData("changeStakingLimits",
         [parsedData.minStakingDepositLimit, parsedData.timeForEmissionsLimit, parsedData.numServicesLimit,
-        parsedData.apyLimit]);
+            parsedData.apyLimit]);
     // Pack the second part of data
     const target = stakingVerifierAddress;
     const value = 0;
