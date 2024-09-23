@@ -62,7 +62,7 @@ async function main() {
     const RetryablesGasOverrides = {
         gasLimit: {
             base: undefined, // when undefined, the value will be estimated from rpc
-            min: ethers.BigNumber.from(200000), // set a minimum gas limit, using 2M as an example
+            min: ethers.BigNumber.from(2000000), // set a minimum gas limit, using 2M as an example
             percentIncrease: ethers.BigNumber.from(30), // how much to increase the base for buffer
         },
         maxSubmissionFee: {
@@ -93,7 +93,7 @@ async function main() {
         mainnetProvider,
         RetryablesGasOverrides
     );
-    console.log("Current retryable base submission price is:", L1ToL2MessageGasParams.maxSubmissionCost.toString());
+    //console.log("Current retryable base submission price is:", L1ToL2MessageGasParams.maxSubmissionCost.toString());
 
     // For the L2 gas price, we simply query it from the L2 provider, as we would when using L1
     const gasPriceBid = await arbitrumProvider.getGasPrice();
