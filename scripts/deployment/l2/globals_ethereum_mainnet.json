@@ -12,7 +12,7 @@
   "multisigProxyHash130": "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000",
   "stakingNativeTokenAddress":"",
   "stakingTokenAddress":"0x0Dc23eEf3bC64CF3cbd8f9329B57AE4C4f28d5d2",
-  "minStakingDepositLimit":"1000000000000000000000",
+  "minStakingDepositLimit":"10000000000000000000000",
   "timeForEmissionsLimit":"2592000",
   "numServicesLimit":"100",
   "apyLimit":"3000000000000000000",
