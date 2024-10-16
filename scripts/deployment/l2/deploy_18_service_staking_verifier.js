@@ -59,7 +59,7 @@ async function main() {
     console.log("EOA is:", deployer);
 
     // Transaction signing and execution
-    console.log("19. EOA to deploy StakingVerifier");
+    console.log("18. EOA to deploy StakingVerifier");
     const StakingVerifier = await ethers.getContractFactory("StakingVerifier");
     console.log("You are signing the following transaction: StakingVerifier.connect(EOA).deploy()");
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
