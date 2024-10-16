@@ -12,9 +12,17 @@ async function main() {
     const derivationPath = parsedData.derivationPath;
     const providerName = parsedData.providerName;
     const gasPriceInGwei = parsedData.gasPriceInGwei;
-    const baseURI = parsedData.baseURI;
+    const stakingTokenAddress = parsedData.stakingTokenAddress;
+    const stakingNativeTokenAddress = parsedData.stakingNativeTokenAddress;
+    const stakingVerifierAddress = parsedData.stakingVerifierAddress;
 
     let networkURL = parsedData.networkURL;
+    if (providerName === "mainnet") {
+        if (!process.env.ALCHEMY_API_KEY_MAINNET) {
+            console.log("set ALCHEMY_API_KEY_MAINNET env variable");
+        }
+        networkURL += process.env.ALCHEMY_API_KEY_MAINNET;
+    }
     if (providerName === "polygon") {
         if (!process.env.ALCHEMY_API_KEY_MATIC) {
             console.log("set ALCHEMY_API_KEY_MATIC env variable");
@@ -41,30 +49,19 @@ async function main() {
     const deployer = await EOA.getAddress();
     console.log("EOA is:", deployer);
 
-    // Transaction signing and execution
-    console.log("23. EOA to deploy HashCheckpoint");
+    // Get the verifier contracts
+    const stakingVerifier = await ethers.getContractAt("StakingVerifier", stakingVerifierAddress);
+
+    // Gas pricing
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
-    const HashCheckpoint = await ethers.getContractFactory("HashCheckpoint");
-    console.log("You are signing the following transaction: HashCheckpoint.connect(EOA).deploy()");
-    const hashCheckpoint = await HashCheckpoint.connect(EOA).deploy(baseURI, { gasPrice });
-    const result = await hashCheckpoint.deployed();
 
+    // Transaction signing and execution
+    console.log("20. You are signing the following transaction: StakingVerifier.connect(EOA).setImplementationsStatuses()");
+    let result = await stakingVerifier.connect(EOA).setImplementationsStatuses([stakingTokenAddress, stakingNativeTokenAddress],
+        [true, true], true, { gasPrice });
     // Transaction details
-    console.log("Contract deployment: ServiceRegistryL2");
-    console.log("Contract address:", hashCheckpoint.address);
-    console.log("Transaction:", result.deployTransaction.hash);
-    // Wait half a minute for the transaction completion
-    await new Promise(r => setTimeout(r, 30000));
-
-    // Writing updated parameters back to the JSON file
-    parsedData.hashCheckpoint = hashCheckpoint.address;
-    fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
-
-    // Contract verification
-    if (parsedData.contractVerification) {
-        const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --contract contracts/utils/HashCheckpoint.sol:HashCheckpoint --constructor-args scripts/deployment/l2/verify_20_hash_checkpoint.js --network " + providerName + " " + hashCheckpoint.address, { encoding: "utf-8" });
-    }
+    console.log("Contract address:", stakingVerifierAddress);
+    console.log("Transaction:", result.hash);
 }
 
 main()
