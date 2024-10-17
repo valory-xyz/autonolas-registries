@@ -424,3 +424,7 @@ eff9ec09651b73fcbd7270f070b2747e6f408157:scripts/deployment/l2/globals_arbitrum_
 408d8153bc8dc60d952edbb022229c1994906c7e:scripts/deployment/l2/globals_mode_sepolia.json:generic-api-key:2
 08d8153bc8dc60d952edbb022229c1994906c7e:scripts/deployment/l2/globals_mode_sepolia.json:generic-api-key:1
 08d8153bc8dc60d952edbb022229c1994906c7e:scripts/deployment/l2/globals_mode_sepolia.json:generic-api-key:2
+b5ca8da1a582e0e91c3d292f72c91411874756f0:scripts/deployment/l2/globals_mode_mainnet.json:generic-api-key:1
+b5ca8da1a582e0e91c3d292f72c91411874756f0:scripts/deployment/l2/globals_mode_mainnet.json:generic-api-key:2
+c71519f1ffae8a411ee44ee49de26d13ec6a0ce2:scripts/deployment/l2/globals_mode_mainnet.json:generic-api-key:1
+c71519f1ffae8a411ee44ee49de26d13ec6a0ce2:scripts/deployment/l2/globals_mode_mainnet.json:generic-api-key:2
