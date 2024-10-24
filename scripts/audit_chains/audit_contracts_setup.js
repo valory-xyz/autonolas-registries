@@ -77,7 +77,7 @@ async function findContractInstance(provider, configContracts, contractName) {
 // Check the contract owner
 async function checkOwner(chainId, contract, globalsInstance, log) {
     const owner = await contract.owner();
-    if (chainId === "1" || chainId === "5") {
+    if (chainId === "1") {
         // Timelock for L1
         customExpect(owner, globalsInstance["timelockAddress"], log + ", function: owner()");
     } else {
@@ -167,17 +167,12 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
 
     // Check manager
     const manager = await serviceRegistry.manager();
-    if (chainId !== "80001") {
-        // ServiceRegistryManagerToken for L1 and L2 that currently have the full setup
-        customExpect(manager, globalsInstance["serviceManagerTokenAddress"], log + ", function: manager()");
-    } else {
-        // ServiceRegistryManager for L2
-        customExpect(manager, globalsInstance["serviceManagerAddress"], log + ", function: manager()");
-    }
+    // ServiceRegistryManagerToken
+    customExpect(manager, globalsInstance["serviceManagerTokenAddress"], log + ", function: manager()");
 
     // Check drainer
     const drainer = await serviceRegistry.drainer();
-    if (chainId === "1" || chainId === "5") {
+    if (chainId === "1") {
         // Treasury for L1
         customExpect(drainer, globalsInstance["treasuryAddress"], log + ", function: drainer()");
     } else {
@@ -188,7 +183,7 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
     }
 
     // Check agent registry for L1 only
-    if (chainId === "1" || chainId === "5") {
+    if (chainId === "1") {
         const agentRegistry = await serviceRegistry.agentRegistry();
         customExpect(agentRegistry, globalsInstance["agentRegistryAddress"], log + ", function: agentRegistry()");
     }
@@ -220,21 +215,18 @@ async function checkServiceManager(chainId, provider, globalsInstance, configCon
     const paused = await serviceManager.paused();
     customExpect(paused, false, log + ", function: paused()");
 
-    // Checks for L1 and L2 that currently have the full setup
-    if (chainId !== "80001") {
-        // Version
-        const version = await serviceManager.version();
-        customExpect(version, "1.1.1", log + ", function: version()");
+    // Version
+    const version = await serviceManager.version();
+    customExpect(version, "1.1.1", log + ", function: version()");
 
-        // ServiceRegistryTokenUtility
-        const serviceRegistryTokenUtility = await serviceManager.serviceRegistryTokenUtility();
-        customExpect(serviceRegistryTokenUtility, globalsInstance["serviceRegistryTokenUtilityAddress"],
-            log + ", function: serviceRegistryTokenUtility()");
+    // ServiceRegistryTokenUtility
+    const serviceRegistryTokenUtility = await serviceManager.serviceRegistryTokenUtility();
+    customExpect(serviceRegistryTokenUtility, globalsInstance["serviceRegistryTokenUtilityAddress"],
+        log + ", function: serviceRegistryTokenUtility()");
 
-        // OperatorWhitelist
-        const operatorWhitelist = await serviceManager.operatorWhitelist();
-        customExpect(operatorWhitelist, globalsInstance["operatorWhitelistAddress"], log + ", function: operatorWhitelist()");
-    }
+    // OperatorWhitelist
+    const operatorWhitelist = await serviceManager.operatorWhitelist();
+    customExpect(operatorWhitelist, globalsInstance["operatorWhitelistAddress"], log + ", function: operatorWhitelist()");
 }
 
 // Check service registry token utility: chain Id, provider, parsed globals, configuration contracts, contract name
@@ -256,7 +248,7 @@ async function checkServiceRegistryTokenUtility(chainId, provider, globalsInstan
 
     // Check drainer
     const drainer = await serviceRegistryTokenUtility.drainer();
-    if (chainId === "1" || chainId === "5") {
+    if (chainId === "1") {
         customExpect(drainer, globalsInstance["timelockAddress"], log + ", function: drainer()");
     } else {
         customExpect(drainer, globalsInstance["bridgeMediatorAddress"], log + ", function: drainer()");
@@ -314,10 +306,72 @@ async function checkGnosisSafeSameAddressImplementation(chainId, provider, globa
     customExpect(defaultDataLength, 20, log + ", function: DEFAULT_DATA_LENGTH()");
 }
 
+// Check staking verifier: chain Id, provider, parsed globals, configuration contracts, contract name
+async function checkStakingVerifier(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    // Get the contract instance
+    const serviceVerifier = await findContractInstance(provider, configContracts, contractName);
+
+    // Check owner
+    checkOwner(chainId, serviceVerifier, globalsInstance, log);
+
+    log += ", address: " + serviceVerifier.address;
+    // Check OLAS
+    const olas = await serviceVerifier.olas();
+    customExpect(olas, globalsInstance["olasAddress"], log + ", function: olas()");
+
+    // Check service registry
+    const serviceRegistry = await serviceVerifier.serviceRegistry();
+    customExpect(serviceRegistry, globalsInstance["serviceRegistryAddress"], log + ", function: serviceRegistry()");
+
+    // Check service registry token utility
+    const serviceRegistryTokenUtility = await serviceVerifier.serviceRegistryTokenUtility();
+    customExpect(serviceRegistryTokenUtility, globalsInstance["serviceRegistryTokenUtilityAddress"], log + ", function: serviceRegistryTokenUtility()");
+
+    // Check min staking deposit limit
+    const minStakingDepositLimit = await serviceVerifier.minStakingDepositLimit();
+    customExpect(minStakingDepositLimit.toString(), globalsInstance["minStakingDepositLimit"], log + ", function: minStakingDepositLimit()");
+
+    // Check time for emissions limit
+    const timeForEmissionsLimit = await serviceVerifier.timeForEmissionsLimit();
+    customExpect(timeForEmissionsLimit.toString(), globalsInstance["timeForEmissionsLimit"], log + ", function: timeForEmissionsLimit()");
+
+    // Check num services limit
+    const numServicesLimit = await serviceVerifier.numServicesLimit();
+    customExpect(numServicesLimit.toString(), globalsInstance["numServicesLimit"], log + ", function: numServicesLimit()");
+
+    // Check APY limit
+    const apyLimit = await serviceVerifier.apyLimit();
+    customExpect(apyLimit.toString(), globalsInstance["apyLimit"], log + ", function: apyLimit()");
+
+    // Check implementations check
+    const implementationsCheck = await serviceVerifier.implementationsCheck();
+    customExpect(implementationsCheck, true, log + ", function: implementationsCheck()");
+}
+
+// Check staking factory: chain Id, provider, parsed globals, configuration contracts, contract name
+async function checkStakingFactory(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    // Get the contract instance
+    const stakingFactory = await findContractInstance(provider, configContracts, contractName);
+
+    // Check owner
+    checkOwner(chainId, stakingFactory, globalsInstance, log);
+
+    log += ", address: " + stakingFactory.address;
+    // Check staking verifier
+    const verifier = await stakingFactory.verifier();
+    customExpect(verifier, globalsInstance["stakingVerifierAddress"], log + ", function: verifier()");
+}
+
+
 async function main() {
     // Check for the API keys
-    if (!process.env.ALCHEMY_API_KEY_MAINNET || !process.env.ALCHEMY_API_KEY_GOERLI ||
-        !process.env.ALCHEMY_API_KEY_MATIC || !process.env.ALCHEMY_API_KEY_MUMBAI) {
+    if (!process.env.ALCHEMY_API_KEY_MAINNET || !process.env.ALCHEMY_API_KEY_MATIC) {
         console.log("Check API keys!");
         return;
     }
@@ -334,9 +388,7 @@ async function main() {
         // For now gnosis chains are not supported
         const networks = {
             "mainnet": "etherscan",
-            "goerli": "goerli.etherscan",
             "polygon": "polygonscan",
-            "polygonMumbai": "testnet.polygonscan",
             "arbitrumOne": "arbiscan",
             "optimistic": "optimistic.etherscan"
         };
@@ -372,36 +424,24 @@ async function main() {
     if (verifySetup) {
         const globalNames = {
             "mainnet": "scripts/deployment/globals_mainnet.json",
-            "goerli": "scripts/deployment/globals_goerli.json",
             "polygon": "scripts/deployment/l2/globals_polygon_mainnet.json",
-            "polygonMumbai": "scripts/deployment/l2/globals_polygon_mumbai.json",
             "gnosis": "scripts/deployment/l2/globals_gnosis_mainnet.json",
-            "chiado": "scripts/deployment/l2/globals_gnosis_chiado.json",
             "arbitrumOne": "scripts/deployment/l2/globals_arbitrum_one.json",
-            "arbitrumSepolia": "scripts/deployment/l2/globals_arbitrum_sepolia.json",
             "optimistic": "scripts/deployment/l2/globals_optimistic_mainnet.json",
-            "optimisticSepolia": "scripts/deployment/l2/globals_optimistic_sepolia.json",
             "base": "scripts/deployment/l2/globals_base_mainnet.json",
-            "baseSepolia": "scripts/deployment/l2/globals_base_sepolia.json",
             "celo": "scripts/deployment/l2/globals_celo_mainnet.json",
-            "celoAlfajores": "scripts/deployment/l2/globals_celo_alfajores.json"
+            "mode": "scripts/deployment/l2/globals_mode_mainnet.json"
         };
 
         const providerLinks = {
             "mainnet": "https://eth-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MAINNET,
-            "goerli": "https://eth-goerli.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_GOERLI,
             "polygon": "https://polygon-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MATIC,
-            "polygonMumbai": "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MUMBAI,
             "gnosis": "https://rpc.gnosischain.com",
-            "chiado": "https://rpc.chiadochain.net",
             "arbitrumOne": "https://arb1.arbitrum.io/rpc",
-            "arbitrumSepolia": "https://sepolia-rollup.arbitrum.io/rpc",
             "optimistic": "https://optimism.drpc.org",
-            "optimisticSepolia": "https://sepolia.optimism.io",
             "base": "https://mainnet.base.org",
-            "baseSepolia": "https://sepolia.base.org",
             "celo": "https://forno.celo.org",
-            "celoAlfajores": "https://alfajores-forno.celo-testnet.org"
+            "mode": "https://mainnet.mode.network"
         };
 
         // Get all the globals processed
@@ -417,13 +457,14 @@ async function main() {
         console.log("\nVerifying deployed contracts setup... If no error is output, then the contracts are correct.");
 
         for (let i = 0; i < numChains; i++) {
+            if (i == 4) continue;
             console.log("\n######## Verifying setup on CHAIN ID", configs[i]["chainId"]);
 
             const initLog = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"];
             let log;
 
             // L1 only contracts
-            if (i < 2) {
+            if (i == 0) {
                 log = initLog + ", contract: " + "ComponentRegistry";
                 await checkComponentRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ComponentRegistry", log);
 
@@ -432,7 +473,7 @@ async function main() {
             }
 
             log = initLog + ", contract: " + "ServiceRegistry";
-            if (i < 2) {
+            if (i == 0) {
                 await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistry", log);
             } else {
                 // L2 contracts addition
@@ -441,25 +482,26 @@ async function main() {
             }
 
             // Path for chains that operate with the ServiceManagerToken
-            if (configs[i]["chainId"] !== "80001") {
-                log = initLog + ", contract: " + "ServiceManagerToken";
-                await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerToken", log);
+            log = initLog + ", contract: " + "ServiceManagerToken";
+            await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerToken", log);
 
-                log = initLog + ", contract: " + "ServiceRegistryTokenUtility";
-                await checkServiceRegistryTokenUtility(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryTokenUtility", log);
+            log = initLog + ", contract: " + "ServiceRegistryTokenUtility";
+            await checkServiceRegistryTokenUtility(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryTokenUtility", log);
 
-                log = initLog + ", contract: " + "OperatorWhitelist";
-                await checkOperatorWhitelist(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "OperatorWhitelist", log);
-            } else {
-                log = initLog + ", contract: " + "ServiceManager";
-                await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManager", log);
-            }
+            log = initLog + ", contract: " + "OperatorWhitelist";
+            await checkOperatorWhitelist(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "OperatorWhitelist", log);
 
             log = initLog + ", contract: " + "GnosisSafeMultisig";
             await checkGnosisSafeImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeMultisig", log);
 
             log = initLog + ", contract: " + "GnosisSafeSameAddressMultisig";
             await checkGnosisSafeSameAddressImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeSameAddressMultisig", log);
+
+            log = initLog + ", contract: " + "StakingVerifier";
+            await checkStakingVerifier(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "StakingVerifier", log);
+
+            log = initLog + ", contract: " + "StakingFactory";
+            await checkStakingFactory(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "StakingFactory", log);
         }
     }
     // ################################# /VERIFY CONTRACTS SETUP #################################

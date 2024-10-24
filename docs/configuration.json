@@ -66,57 +66,6 @@
     ]
   },
   {
-    "name": "goerli",
-    "chainId": "5",
-    "contracts": [
-      {
-        "name": "ComponentRegistry",
-        "artifact": "abis/0.8.15/ComponentRegistry.json",
-        "address": "0x7Fd1F4b764fA41d19fe3f63C85d12bf64d2bbf68"
-      },
-      {
-        "name": "AgentRegistry",
-        "artifact": "abis/0.8.15/AgentRegistry.json",
-        "address": "0xEB5638eefE289691EcE01943f768EDBF96258a80"
-      },
-      {
-        "name": "RegistriesManager",
-        "artifact": "abis/0.8.15/RegistriesManager.json",
-        "address": "0x10c5525F77F13b28f42c5626240c001c2D57CAd4"
-      },
-      {
-        "name": "ServiceRegistry",
-        "artifact": "abis/0.8.15/ServiceRegistry.json",
-        "address": "0x1cEe30D08943EB58EFF84DD1AB44a6ee6FEff63a"
-      },
-      {
-        "name": "ServiceRegistryTokenUtility",
-        "artifact": "abis/0.8.19/ServiceRegistryTokenUtility.json",
-        "address": "0x6d9b08701Af43D68D991c074A27E4d90Af7f2276"
-      },
-      {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.19/ServiceManagerToken.json",
-        "address": "0x1d333b46dB6e8FFd271b6C2D2B254868BD9A2dbd"
-      },
-      {
-        "name": "GnosisSafeMultisig",
-        "artifact": "abis/0.8.15/GnosisSafeMultisig.json",
-        "address": "0x65dD51b02049ad1B6FF7fa9Ea3322E1D2CAb1176"
-      },
-      {
-        "name": "GnosisSafeSameAddressMultisig",
-        "artifact": "abis/0.8.21/GnosisSafeSameAddressMultisig.json",
-        "address": "0x06467Cb835da623384a22aa902647784C1c9f5Ae"
-      },
-      {
-        "name": "OperatorWhitelist",
-        "artifact": "abis/0.8.19/OperatorWhitelist.json",
-        "address": "0x0338893fB1A1D9Df03F72CC53D8f786487d3D03E"
-      }
-    ]
-  },
-  {
     "name": "polygon",
     "chainId": "137",
     "contracts": [
@@ -173,47 +122,6 @@
     ]
   },
   {
-    "name": "polygonMumbai",
-    "chainId": "80001",
-    "contracts": [
-      {
-        "name": "ServiceRegistryL2",
-        "artifact": "abis/0.8.19/ServiceRegistryL2.json",
-        "address": "0xf805DfF246CC208CD2F08ffaD242b7C32bc93623"
-      },
-      {
-        "name": "ServiceManager",
-        "artifact": "abis/0.8.19/ServiceManager.json",
-        "address": "0x43d28764bB39936185c84906983fB57A8A905a4F"
-      },
-      {
-        "name": "ServiceRegistryTokenUtility",
-        "artifact": "abis/0.8.23/ServiceRegistryTokenUtility.json",
-        "address": "0x131b5551c81e9B3E89E9ACE30A5B3D45144E3e42"
-      },
-      {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.23/ServiceManagerToken.json",
-        "address": "0xE16adc7777B7C2a0d35033bd3504C028AB28EE8b"
-      },
-      {
-        "name": "GnosisSafeMultisig",
-        "artifact": "abis/0.8.19/GnosisSafeMultisig.json",
-        "address": "0x9dEc6B62c197268242A768dc3b153AE7a2701396"
-      },
-      {
-        "name": "GnosisSafeSameAddressMultisig",
-        "artifact": "abis/0.8.19/GnosisSafeSameAddressMultisig.json",
-        "address": "0xd6AA4Ec948d84f6Db8EEf25104CeE0Ecd280C74e"
-      },
-      {
-        "name": "OperatorWhitelist",
-        "artifact": "abis/0.8.23/OperatorWhitelist.json",
-        "address": "0x118173028162C1b7c6Bf8488bd5dA2abd7c30F9D"
-      }
-    ]
-  },
-  {
     "name": "gnosis",
     "chainId": "100",
     "contracts": [
@@ -261,42 +169,6 @@
         "name": "StakingFactory",
         "artifact": "abis/0.8.25/StakingFactory.json",
         "address": "0xb0228CA253A88Bc8eb4ca70BCAC8f87b381f4700"
-      }
-    ]
-  },
-  {
-    "name": "chiado",
-    "chainId": "10200",
-    "contracts": [
-      {
-        "name": "ServiceRegistryL2",
-        "artifact": "abis/0.8.19/ServiceRegistryL2.json",
-        "address": "0x31D3202d8744B16A120117A053459DDFAE93c855"
-      },
-      {
-        "name": "ServiceRegistryTokenUtility",
-        "artifact": "abis/0.8.19/ServiceRegistryTokenUtility.json",
-        "address": "0xc2c7E40674f1C7Bb99eFe5680Efd79842502bED4"
-      },
-      {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.19/ServiceManagerToken.json",
-        "address": "0xc965a32185590Eb5a5fffDba29E96126b7650eDe"
-      },
-      {
-        "name": "OperatorWhitelist",
-        "artifact": "abis/0.8.19/OperatorWhitelist.json",
-        "address": "0x6f7661F52fE1919996d0A4F68D09B344093a349d"
-      },
-      {
-        "name": "GnosisSafeMultisig",
-        "artifact": "abis/0.8.19/GnosisSafeMultisig.json",
-        "address": "0xeB49bE5DF00F74bd240DE4535DDe6Bc89CEfb994"
-      },
-      {
-        "name": "GnosisSafeSameAddressMultisig",
-        "artifact": "abis/0.8.21/GnosisSafeSameAddressMultisig.json",
-        "address": "0xE16adc7777B7C2a0d35033bd3504C028AB28EE8b"
       }
     ]
   },
@@ -352,42 +224,6 @@
     ]
   },
   {
-    "name": "arbitrumSepolia",
-    "chainId": "421614",
-    "contracts": [
-      {
-        "name": "ServiceRegistryL2",
-        "artifact": "abis/0.8.23/ServiceRegistryL2.json",
-        "address": "0x31D3202d8744B16A120117A053459DDFAE93c855"
-      },
-      {
-        "name": "ServiceRegistryTokenUtility",
-        "artifact": "abis/0.8.23/ServiceRegistryTokenUtility.json",
-        "address": "0xeB49bE5DF00F74bd240DE4535DDe6Bc89CEfb994"
-      },
-      {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.23/ServiceManagerToken.json",
-        "address": "0x5BA58970c2Ae16Cf6218783018100aF2dCcFc915"
-      },
-      {
-        "name": "OperatorWhitelist",
-        "artifact": "abis/0.8.23/OperatorWhitelist.json",
-        "address": "0x29086141ecdc310058fc23273F8ef7881d20C2f7"
-      },
-      {
-        "name": "GnosisSafeMultisig",
-        "artifact": "abis/0.8.23/GnosisSafeMultisig.json",
-        "address": "0x19936159B528C66750992C3cBcEd2e71cF4E4824"
-      },
-      {
-        "name": "GnosisSafeSameAddressMultisig",
-        "artifact": "abis/0.8.23/GnosisSafeSameAddressMultisig.json",
-        "address": "0x10100e74b7F706222F8A7C0be9FC7Ae1717Ad8B2"
-      }
-    ]
-  },
-  {
     "name": "optimistic",
     "chainId": "10",
     "contracts": [
@@ -435,42 +271,6 @@
         "name": "StakingFactory",
         "artifact": "abis/0.8.25/StakingFactory.json",
         "address": "0xa45E64d13A30a51b91ae0eb182e88a40e9b18eD8"
-      }
-    ]
-  },
-  {
-    "name": "optimisticSepolia",
-    "chainId": "11155420",
-    "contracts": [
-      {
-        "name": "ServiceRegistryL2",
-        "artifact": "abis/0.8.23/ServiceRegistryL2.json",
-        "address": "0x31D3202d8744B16A120117A053459DDFAE93c855"
-      },
-      {
-        "name": "ServiceRegistryTokenUtility",
-        "artifact": "abis/0.8.23/ServiceRegistryTokenUtility.json",
-        "address": "0xeB49bE5DF00F74bd240DE4535DDe6Bc89CEfb994"
-      },
-      {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.23/ServiceManagerToken.json",
-        "address": "0x5BA58970c2Ae16Cf6218783018100aF2dCcFc915"
-      },
-      {
-        "name": "OperatorWhitelist",
-        "artifact": "abis/0.8.23/OperatorWhitelist.json",
-        "address": "0x29086141ecdc310058fc23273F8ef7881d20C2f7"
-      },
-      {
-        "name": "GnosisSafeMultisig",
-        "artifact": "abis/0.8.23/GnosisSafeMultisig.json",
-        "address": "0x19936159B528C66750992C3cBcEd2e71cF4E4824"
-      },
-      {
-        "name": "GnosisSafeSameAddressMultisig",
-        "artifact": "abis/0.8.23/GnosisSafeSameAddressMultisig.json",
-        "address": "0x10100e74b7F706222F8A7C0be9FC7Ae1717Ad8B2"
       }
     ]
   },
@@ -526,42 +326,6 @@
     ]
   },
   {
-    "name": "baseSepolia",
-    "chainId": "84532",
-    "contracts": [
-      {
-        "name": "ServiceRegistryL2",
-        "artifact": "abis/0.8.23/ServiceRegistryL2.json",
-        "address": "0x31D3202d8744B16A120117A053459DDFAE93c855"
-      },
-      {
-        "name": "ServiceRegistryTokenUtility",
-        "artifact": "abis/0.8.23/ServiceRegistryTokenUtility.json",
-        "address": "0xeB49bE5DF00F74bd240DE4535DDe6Bc89CEfb994"
-      },
-      {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.23/ServiceManagerToken.json",
-        "address": "0x5BA58970c2Ae16Cf6218783018100aF2dCcFc915"
-      },
-      {
-        "name": "OperatorWhitelist",
-        "artifact": "abis/0.8.23/OperatorWhitelist.json",
-        "address": "0x29086141ecdc310058fc23273F8ef7881d20C2f7"
-      },
-      {
-        "name": "GnosisSafeMultisig",
-        "artifact": "abis/0.8.23/GnosisSafeMultisig.json",
-        "address": "0x19936159B528C66750992C3cBcEd2e71cF4E4824"
-      },
-      {
-        "name": "GnosisSafeSameAddressMultisig",
-        "artifact": "abis/0.8.23/GnosisSafeSameAddressMultisig.json",
-        "address": "0x10100e74b7F706222F8A7C0be9FC7Ae1717Ad8B2"
-      }
-    ]
-  },
-  {
     "name": "celo",
     "chainId": "42220",
     "contracts": [
@@ -609,42 +373,6 @@
         "name": "StakingFactory",
         "artifact": "abis/0.8.25/StakingFactory.json",
         "address": "0x1c2cD884127b080F940b7546c1e9aaf525b1FA55"
-      }
-    ]
-  },
-  {
-    "name": "celoAlfajores",
-    "chainId": "44787",
-    "contracts": [
-      {
-        "name": "ServiceRegistryL2",
-        "artifact": "abis/0.8.23/ServiceRegistryL2.json",
-        "address": "0x31D3202d8744B16A120117A053459DDFAE93c855"
-      },
-      {
-        "name": "ServiceRegistryTokenUtility",
-        "artifact": "abis/0.8.23/ServiceRegistryTokenUtility.json",
-        "address": "0xeB49bE5DF00F74bd240DE4535DDe6Bc89CEfb994"
-      },
-      {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.23/ServiceManagerToken.json",
-        "address": "0x5BA58970c2Ae16Cf6218783018100aF2dCcFc915"
-      },
-      {
-        "name": "OperatorWhitelist",
-        "artifact": "abis/0.8.23/OperatorWhitelist.json",
-        "address": "0x29086141ecdc310058fc23273F8ef7881d20C2f7"
-      },
-      {
-        "name": "GnosisSafeMultisig",
-        "artifact": "abis/0.8.23/GnosisSafeMultisig.json",
-        "address": "0x19936159B528C66750992C3cBcEd2e71cF4E4824"
-      },
-      {
-        "name": "GnosisSafeSameAddressMultisig",
-        "artifact": "abis/0.8.23/GnosisSafeSameAddressMultisig.json",
-        "address": "0x10100e74b7F706222F8A7C0be9FC7Ae1717Ad8B2"
       }
     ]
   },
@@ -701,42 +429,6 @@
         "name": "StakingFactory",
         "artifact": "abis/0.8.28/StakingFactory.json",
         "address": "0x75D529FAe220bC8db714F0202193726b46881B76"
-      }
-    ]
-  },
-  {
-    "name": "modeSepolia",
-    "chainId": "919",
-    "contracts": [
-      {
-        "name": "ServiceRegistryL2",
-        "artifact": "abis/0.8.28/ServiceRegistryL2.json",
-        "address": "0x5BA58970c2Ae16Cf6218783018100aF2dCcFc915"
-      },
-      {
-        "name": "ServiceRegistryTokenUtility",
-        "artifact": "abis/0.8.28/ServiceRegistryTokenUtility.json",
-        "address": "0x10100e74b7F706222F8A7C0be9FC7Ae1717Ad8B2"
-      },
-      {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.28/ServiceManagerToken.json",
-        "address": "0x7bedCA17D29e53C8062d10902a6219F8d1E3B9B5"
-      },
-      {
-        "name": "OperatorWhitelist",
-        "artifact": "abis/0.8.28/OperatorWhitelist.json",
-        "address": "0x19936159B528C66750992C3cBcEd2e71cF4E4824"
-      },
-      {
-        "name": "GnosisSafeMultisig",
-        "artifact": "abis/0.8.28/GnosisSafeMultisig.json",
-        "address": "0x0a50009D55Ed5700ac8FF713709d5Ad5fa843896"
-      },
-      {
-        "name": "GnosisSafeSameAddressMultisig",
-        "artifact": "abis/0.8.28/GnosisSafeSameAddressMultisig.json",
-        "address": "0x77290FF625fc576f465D0256F6a12Ce4480a5b8a"
       }
     ]
   }
