@@ -432,3 +432,5 @@ c71519f1ffae8a411ee44ee49de26d13ec6a0ce2:scripts/deployment/l2/globals_mode_main
 00fd9d42b7bbdd4c38082ced0e4e00d538237373:scripts/deployment/globals_mainnet.json:generic-api-key:1
 00fd9d42b7bbdd4c38082ced0e4e00d538237373:scripts/deployment/l2/globals_mode_mainnet.json:generic-api-key:2
 00fd9d42b7bbdd4c38082ced0e4e00d538237373:scripts/deployment/globals_mainnet.json:generic-api-key:2
+cd3b8c411856aa346cdcc75db3b819447990d327:scripts/deployment/l2/globals_mode_mainnet.json:generic-api-key:1
+cd3b8c411856aa346cdcc75db3b819447990d327:scripts/deployment/l2/globals_mode_mainnet.json:generic-api-key:2
