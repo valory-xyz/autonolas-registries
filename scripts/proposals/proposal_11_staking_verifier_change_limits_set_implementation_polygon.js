@@ -43,18 +43,27 @@ async function main() {
     const fxGovernorTunnelAddress = parsedData.bridgeMediatorAddress;
 
     // Proposal preparation
-    console.log("Proposal 11. Change staking limits for polygon StakingVerifier\n");
-    const rawPayload = stakingVerifier.interface.encodeFunctionData("changeStakingLimits",
+    console.log("Proposal 11. Change staking limits on polygon in StakingVerifier and whitelist StakingTokenImplementation in StakingFactory\n");
+    const value = 0;
+    const target = stakingVerifierAddress;
+    let rawPayload = stakingVerifier.interface.encodeFunctionData("changeStakingLimits",
         [parsedData.minStakingDepositLimit, parsedData.timeForEmissionsLimit, parsedData.numServicesLimit,
             parsedData.apyLimit]);
     // Pack the second part of data
-    const target = stakingVerifierAddress;
-    const value = 0;
-    const payload = ethers.utils.arrayify(rawPayload);
-    const data = ethers.utils.solidityPack(
+    let payload = ethers.utils.arrayify(rawPayload);
+    let data = ethers.utils.solidityPack(
         ["address", "uint96", "uint32", "bytes"],
         [target, value, payload.length, payload]
     );
+
+    rawPayload = stakingVerifier.interface.encodeFunctionData("setImplementationsStatuses",
+        [[parsedData.stakingTokenAddress], [true], true]);
+    payload = ethers.utils.arrayify(rawPayload);
+    data += ethers.utils.solidityPack(
+        ["address", "uint96", "uint32", "bytes"],
+        [target, value, payload.length, payload]
+    ).slice(2);
+
 
     // fxChild address polygon mainnet: 0x8397259c983751DAf40400790063935a11afa28a
     // Function to call by fxGovernorTunnelAddress: processMessageFromRoot
@@ -67,7 +76,7 @@ async function main() {
     const targets = [fxRootAddress];
     const values = [0];
     const callDatas = [timelockPayload];
-    const description = "Change Drainer in ServiceRegistryL2 on polygon";
+    const description = "Change staking limits on polygon in StakingVerifier and whitelist StakingTokenImplementation in StakingFactory";
 
     // Proposal details
     console.log("targets:", targets);

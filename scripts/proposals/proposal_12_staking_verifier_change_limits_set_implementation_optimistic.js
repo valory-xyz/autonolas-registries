@@ -46,20 +46,28 @@ async function main() {
     const stakingVerifier = new ethers.Contract(stakingVerifierAddress, stakingVerifierABI, optimisticProvider);
 
     // Timelock contract across the bridge must change staking limits
-    const rawPayload = stakingVerifier.interface.encodeFunctionData("changeStakingLimits",
+    const value = 0;
+    const target = stakingVerifierAddress;
+    let rawPayload = stakingVerifier.interface.encodeFunctionData("changeStakingLimits",
         [parsedData.minStakingDepositLimit, parsedData.timeForEmissionsLimit, parsedData.numServicesLimit,
             parsedData.apyLimit]);
     // Pack the second part of data
-    const target = stakingVerifierAddress;
-    const value = 0;
-    const payload = ethers.utils.arrayify(rawPayload);
-    const data = ethers.utils.solidityPack(
+    let payload = ethers.utils.arrayify(rawPayload);
+    let data = ethers.utils.solidityPack(
         ["address", "uint96", "uint32", "bytes"],
         [target, value, payload.length, payload]
     );
 
+    rawPayload = stakingVerifier.interface.encodeFunctionData("setImplementationsStatuses",
+        [[parsedData.stakingTokenAddress], [true], true]);
+    payload = ethers.utils.arrayify(rawPayload);
+    data += ethers.utils.solidityPack(
+        ["address", "uint96", "uint32", "bytes"],
+        [target, value, payload.length, payload]
+    ).slice(2);
+
     // Proposal preparation
-    console.log("Proposal 12. Change staking limits for optimism StakingVerifier\n");
+    console.log("Proposal 12. Change staking limits on optimism in StakingVerifier and whitelist StakingTokenImplementation in StakingFactory\n");
     // Build the bridge payload
     const messengerPayload = await optimismMessenger.interface.encodeFunctionData("processMessageFromSource", [data]);
     const minGasLimit = "2000000";
@@ -70,7 +78,7 @@ async function main() {
     const targets = [CDMProxyAddress];
     const values = [0];
     const callDatas = [timelockPayload];
-    const description = "Change Manager in StakingVerifier on optimism";
+    const description = "Change staking limits on optimism in StakingVerifier and whitelist StakingTokenImplementation in StakingFactory";
 
     // Proposal details
     console.log("targets:", targets);

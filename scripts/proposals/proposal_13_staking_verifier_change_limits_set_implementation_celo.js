@@ -40,24 +40,32 @@ async function main() {
     const stakingVerifier = new ethers.Contract(stakingVerifierAddress, stakingVerifierABI, celoProvider);
 
     // Timelock contract across the bridge must change staking limits
-    const rawPayload = stakingVerifier.interface.encodeFunctionData("changeStakingLimits",
+    const target = stakingVerifierAddress;
+    const value = 0;
+    let rawPayload = stakingVerifier.interface.encodeFunctionData("changeStakingLimits",
         [parsedData.minStakingDepositLimit, parsedData.timeForEmissionsLimit, parsedData.numServicesLimit,
             parsedData.apyLimit]);
     // Pack the second part of data
-    const target = stakingVerifierAddress;
-    const value = 0;
-    const payload = ethers.utils.arrayify(rawPayload);
-    const data = ethers.utils.solidityPack(
+    let payload = ethers.utils.arrayify(rawPayload);
+    let data = ethers.utils.solidityPack(
         ["address", "uint96", "uint32", "bytes"],
         [target, value, payload.length, payload]
     );
+
+    rawPayload = stakingVerifier.interface.encodeFunctionData("setImplementationsStatuses",
+        [[parsedData.stakingTokenAddress], [true], true]);
+    payload = ethers.utils.arrayify(rawPayload);
+    data += ethers.utils.solidityPack(
+        ["address", "uint96", "uint32", "bytes"],
+        [target, value, payload.length, payload]
+    ).slice(2);
 
     const targetChain = 14; // celo
     const minGasLimit = "2000000";
     const transferCost = await wormholeRelayer["quoteEVMDeliveryPrice(uint16,uint256,uint256)"](targetChain, 0, minGasLimit);
 
     // Proposal preparation
-    console.log("Proposal 13. Change staking limits for celo StakingVerifier\n");
+    console.log("Proposal 13. Change staking limits on celo in StakingVerifier and whitelist StakingTokenImplementation in StakingFactory\n");
     // Build the final payload for the Timelock
     const sendPayloadSelector = "0x4b5ca6f4";
     const timelockPayload = await wormholeRelayer.interface.encodeFunctionData(sendPayloadSelector, [targetChain,
@@ -66,7 +74,7 @@ async function main() {
     const targets = [wormholeRelayerAddress];
     const values = [transferCost.nativePriceQuote.toString()];
     const callDatas = [timelockPayload];
-    const description = "Change Manager in StakingVerifier on celo";
+    const description = "Change staking limits on celo in StakingVerifier and whitelist StakingTokenImplementation in StakingFactory";
 
     // Proposal details
     console.log("targets:", targets);

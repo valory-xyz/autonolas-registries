@@ -49,7 +49,7 @@ async function main() {
     //console.log(l1ToL2MessageGasEstimate);
 
     // Proposal preparation
-    console.log("Proposal 15. Change staking limits for arbitrum StakingVerifier\n");
+    console.log("Proposal 15. Change staking limits on arbitrum in StakingVerifier and whitelist StakingTokenImplementation in StakingFactory\n");
     // To be able to estimate the gas related params to our L1-L2 message, we need to know how many bytes of calldata out
     // retryable ticket will require
     const calldata = stakingVerifier.interface.encodeFunctionData("changeStakingLimits",
@@ -106,10 +106,31 @@ async function main() {
         L1ToL2MessageGasParams.maxSubmissionCost, arbitrumTimelockAddress, AddressZero,
         L1ToL2MessageGasParams.gasLimit, gasPriceBid, calldata]);
 
-    const targets = [inboxAddress];
-    const values = [L1ToL2MessageGasParams.deposit];
-    const callDatas = [timelockCalldata];
-    const description = "Change Manager in StakingVerifier on arbitrum";
+    const calldata2 = stakingVerifier.interface.encodeFunctionData("setImplementationsStatuses",
+        [[parsedData.stakingTokenAddress], [true], true]);
+
+    const L1ToL2MessageGasParams2 = await l1ToL2MessageGasEstimate.estimateAll(
+        {
+            from: timelockAddress,
+            to: stakingVerifierAddress,
+            l2CallValue,
+            excessFeeRefundAddress: arbitrumTimelockAddress,
+            callValueRefundAddress: AddressZero,
+            data: calldata2,
+        },
+        await getBaseFee(mainnetProvider),
+        mainnetProvider,
+        RetryablesGasOverrides
+    );
+
+    const timelockCalldata2 = iface.encodeFunctionData("createRetryableTicket", [stakingVerifierAddress, l2CallValue,
+        L1ToL2MessageGasParams.maxSubmissionCost, arbitrumTimelockAddress, AddressZero,
+        L1ToL2MessageGasParams.gasLimit, gasPriceBid, calldata2]);
+
+    const targets = [inboxAddress, inboxAddress];
+    const values = [L1ToL2MessageGasParams.deposit, L1ToL2MessageGasParams2.deposit];
+    const callDatas = [timelockCalldata, timelockCalldata2];
+    const description = "Change staking limits on arbitrum in StakingVerifier and whitelist StakingTokenImplementation in StakingFactory";
 
     // Proposal details
     console.log("targets:", targets);

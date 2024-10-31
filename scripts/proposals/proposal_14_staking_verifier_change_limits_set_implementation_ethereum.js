@@ -25,16 +25,19 @@ async function main() {
     const stakingVerifier = new ethers.Contract(stakingVerifierAddress, stakingVerifierABI, mainnetProvider);
 
     // Proposal preparation
-    console.log("Proposal 14. Change staking limits for ethereum StakingVerifier\n");
+    console.log("Proposal 14. Change staking limits on mainnet in StakingVerifier and whitelist StakingTokenImplementation in StakingFactory\n");
     // Timelock to change staking limits
     const timelockPayload = stakingVerifier.interface.encodeFunctionData("changeStakingLimits",
         [parsedData.minStakingDepositLimit, parsedData.timeForEmissionsLimit, parsedData.numServicesLimit,
             parsedData.apyLimit]);
 
-    const targets = [stakingVerifierAddress];
-    const values = [0];
-    const callDatas = [timelockPayload];
-    const description = "Change Manager in StakingVerifier on mainnet";
+    const timelockPayload2 = stakingVerifier.interface.encodeFunctionData("setImplementationsStatuses",
+        [[parsedData.stakingTokenAddress], [true], true]);
+
+    const targets = [stakingVerifierAddress, stakingVerifierAddress];
+    const values = [0, 0];
+    const callDatas = [timelockPayload, timelockPayload2];
+    const description = "Change staking limits on mainnet in StakingVerifier and whitelist StakingTokenImplementation in StakingFactory";
 
     // Proposal details
     console.log("targets:", targets);
