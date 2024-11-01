@@ -47,9 +47,8 @@ async function main() {
     const stakingVerifier = new ethers.Contract(stakingVerifierAddress, stakingVerifierABI, gnosisProvider);
 
     // Timelock contract across the bridge must change staking limits
-    const rawPayload = stakingVerifier.interface.encodeFunctionData("changeStakingLimits",
-        [parsedData.minStakingDepositLimit, parsedData.timeForEmissionsLimit, parsedData.numServicesLimit,
-            parsedData.apyLimit]);
+    const rawPayload = stakingVerifier.interface.encodeFunctionData("setImplementationsStatuses",
+        [[parsedData.stakingTokenAddress], [true], true]);
     // Pack the second part of data
     const target = stakingVerifierAddress;
     const value = 0;
@@ -60,7 +59,7 @@ async function main() {
     );
 
     // Proposal preparation
-    console.log("Proposal 10. Change staking limits for gnosis StakingVerifier\n");
+    console.log("Proposal 10. Whitelist StakingTokenImplementation in StakingFactory on gnosis\n");
     const mediatorPayload = await homeMediator.interface.encodeFunctionData("processMessageFromForeign", [data]);
 
     // AMBContractProxyHomeAddress on gnosis mainnet: 0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59
@@ -74,7 +73,7 @@ async function main() {
     const targets = [AMBProxyAddress];
     const values = [0];
     const callDatas = [timelockPayload];
-    const description = "Change Manager in StakingVerifier on gnosis";
+    const description = "Whitelist StakingTokenImplementation in StakingFactory on gnosis";
 
     // Proposal details
     console.log("targets:", targets);
