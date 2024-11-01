@@ -171,8 +171,14 @@ For testing purposes, the hardhat node deployment script is located [here](https
 If you want to use custom contracts in the registry image, read [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/running_with_custom_contracts.md).
 
 ### Audits
-The audit is provided as development matures. The latest audit report can be found here: [audits](https://github.com/valory-xyz/autonolas-registries/blob/main/audits).
-A list of known vulnerabilities can be found here: [Vulnerabilities list](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/Vulnerabilities_list_registries.pdf)
+- The audit is provided as development matures. The latest audit report can be found here: [audits](https://github.com/valory-xyz/autonolas-registries/blob/main/audits).
+- A list of known vulnerabilities can be found here: [Vulnerabilities list](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/Vulnerabilities_list_registries.pdf)
+
+#### Static audit
+The static audit checks all the deployed contracts on-chain info correctness and can be run using the following script:
+```
+node scripts/audit_chains/audit_contracts_setup.js
+```
 
 ## Deployed Protocol
 The list of contract addresses for different chains and their full contract configuration can be found [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/configuration.json).

@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+[1.2.3]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.10...v1.2.2
 [1.1.10]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.9...v1.1.10
 [1.1.9]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.8...v1.1.9
@@ -22,15 +23,19 @@ The format is based on [Common Changelog](https://common-changelog.org).
 [1.0.0]: https://github.com/valory-xyz/autonolas-registries/releases/tag/v1.0.0
 
 
+## [v1.2.3] - 2024-11-01
+- Deploying full light protocol with staking contracts to Mode ([#198](https://github.com/valory-xyz/autonolas-registries/pull/198))
+- Adjusting static audit
+
 ## [1.2.2] - 2024-07-29
 
 ### Changed
 
 - Introducing Service Staking according to [PoAA Whitepaper](https://staking.olas.network/poaa-whitepaper.pdf)
-- Refactored `StakingBase.sol` for revised service staking ([#166](https://github.com/valory-xyz/autonolas-registries/pull/166)), with the subsequent internal audit ([#167](https://github.com/valory-xyz/autonolas-registries/pull/167))
-- Created `StakingFactory.sol`, `StakingProxy.sol`, `StakingActivityChecker.sol` and  `StakingVerifier.sol`
+- Refactored `StakingBase` for revised service staking ([#166](https://github.com/valory-xyz/autonolas-registries/pull/166)), with the subsequent internal audit ([#167](https://github.com/valory-xyz/autonolas-registries/pull/167))
+- Created `StakingFactory`, `StakingProxy`, `StakingActivityChecker` and  `StakingVerifier`
 - Participated in a complete [C4R audit competition](https://github.com/code-423n4/2024-05-olas-findings) and addressed findings
-- Deployed `StakingToken.sol`, `StakingFactory.sol`, and  `StakingVerifier.sol` ([#191](https://github.com/valory-xyz/autonolas-registries/pull/191))
+- Deployed `StakingToken`, `StakingFactory`, and  `StakingVerifier` ([#191](https://github.com/valory-xyz/autonolas-registries/pull/191))
 
 ## [1.1.10] - 2024-03-01
 
@@ -53,12 +58,12 @@ _No bytecode changes_.
 
 ### Changed
 
-- Refactored `ServiceStakingBase.sol` for service staking ([#141](https://github.com/valory-xyz/autonolas-registries/pull/141)) with the subsequent internal audit ([#143](https://github.com/valory-xyz/autonolas-registries/pull/143)) 
-- Refactored `ServiceStakingBase.sol` for internal audit reaction ([#146](https://github.com/valory-xyz/autonolas-registries/pull/146)) 
+- Refactored `ServiceStakingBase` for service staking ([#141](https://github.com/valory-xyz/autonolas-registries/pull/141)) with the subsequent internal audit ([#143](https://github.com/valory-xyz/autonolas-registries/pull/143)) 
+- Refactored `ServiceStakingBase` for internal audit reaction ([#146](https://github.com/valory-xyz/autonolas-registries/pull/146)) 
 - Updated documentation
 
 ## [1.1.7] - 2023-11-24
-- Created `ServiceStakingBase.sol` , `ServiceStakingNativeToken.sol`, `ServiceStakingToken.sol` for service staking. The latest internal audits with a focus on the above contracts is located in ([audit4](https://github.com/valory-xyz/autonolas-registries/tree/main/audits/internal4)) 
+- Created `ServiceStakingBase` , `ServiceStakingNativeToken`, `ServiceStakingToken` for service staking. The latest internal audits with a focus on the above contracts is located in ([audit4](https://github.com/valory-xyz/autonolas-registries/tree/main/audits/internal4)) 
 - Refactored and redeployed `GnosisSafeSameAddressMultisig` contract for checking multisig proxy bytecode hashes ([#126](https://github.com/valory-xyz/autonolas-registries/pull/126))
 - Updated documentation
 - Added tests
