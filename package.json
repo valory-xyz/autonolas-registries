@@ -1,6 +1,6 @@
 {
   "name": "autonolas-registries",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Set of Autonolas registries contracts",
   "main": "index.js",
   "scripts": {
