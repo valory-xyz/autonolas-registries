@@ -26,17 +26,18 @@
     "@nomiclabs/hardhat-etherscan": "^3.1.7",
     "@typechain/ethers-v5": "^11.1.2",
     "@typechain/hardhat": "^9.1.0",
-    "@types/mocha": "^10.0.3",
-    "chai": "^4.3.10",
-    "eslint": "^8.52.0",
+    "@types/mocha": "^10.0.9",
+    "chai": "^4.5.0",
+    "eslint": "^8.57.0",
+    "solhint": "^5.0.3",
     "ethers": "^5.7.2",
-    "hardhat": "^2.22.13",
+    "hardhat": "^2.22.15",
     "hardhat-contract-sizer": "^2.10.0",
     "hardhat-deploy": "^0.11.43",
     "hardhat-deploy-ethers": "^0.3.0-beta.13",
     "hardhat-gas-reporter": "^1.0.9",
-    "hardhat-tracer": "^2.6.0",
-    "solidity-coverage": "^0.8.5"
+    "hardhat-tracer": "^2.8.1",
+    "solidity-coverage": "^0.8.13"
   },
   "dependencies": {
     "@anders-t/ethers-ledger": "^1.0.4",
@@ -46,7 +47,6 @@
     "@ethersproject/wallet": "^5.7.0",
     "eth-permit": "^0.2.3",
     "ethereum-sources-downloader": "^0.1.21",
-    "solhint": "^3.6.2",
     "@arbitrum/sdk": "^v3.3.3"
   }
 }
