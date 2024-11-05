@@ -28,7 +28,7 @@ async function main() {
     let oldMultisig;
     if (providerName === "mainnet") {
         oldMultisig = "0x26Ea2dC7ce1b41d0AD0E0521535655d7a94b684c";
-    } else if (providerName === "goerli") {
+    } else if (providerName === "sepolia") {
         oldMultisig = "0x92499E80f50f06C4078794C179986907e7822Ea1";
     } else {
         console.log("Unknown network provider", providerName);

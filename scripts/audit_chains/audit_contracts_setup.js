@@ -82,9 +82,6 @@ async function checkOwner(chainId, contract, globalsInstance, log) {
         customExpect(owner, globalsInstance["timelockAddress"], log + ", function: owner()");
     } else {
         // BridgeMediator for L2-s
-        // Note that for chiado bridgeMediatorAddress is the one with the mock Timelock (bridgeMediatorMockTimelockAddress)
-        // This is done in such a way because it is easier to test cross-chain transactions, as it's not possible via tenderly.
-        // This can be changed at any time for the bridgeMediator contract with the real Timelock on goerli.
         customExpect(owner, globalsInstance["bridgeMediatorAddress"], log + ", function: owner()");
     }
 }
