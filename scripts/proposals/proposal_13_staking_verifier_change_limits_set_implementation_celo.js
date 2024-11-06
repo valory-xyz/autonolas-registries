@@ -62,7 +62,10 @@ async function main() {
 
     const targetChain = 14; // celo
     const minGasLimit = "2000000";
+    // Get the transfer cost
     const transferCost = await wormholeRelayer["quoteEVMDeliveryPrice(uint16,uint256,uint256)"](targetChain, 0, minGasLimit);
+    // Multiply x10 to avoid cost fluctuations
+    const transferCostFinal = transferCost.nativePriceQuote.mul(10);
 
     // Proposal preparation
     console.log("Proposal 13. Change staking limits on celo in StakingVerifier and whitelist StakingTokenImplementation in StakingFactory\n");
@@ -72,7 +75,7 @@ async function main() {
         wormholeMessengerAddress, data, 0, minGasLimit, targetChain, wormholeMessengerAddress]);
 
     const targets = [wormholeRelayerAddress];
-    const values = [transferCost.nativePriceQuote.toString()];
+    const values = [transferCostFinal.toString()];
     const callDatas = [timelockPayload];
     const description = "Change staking limits on celo in StakingVerifier and whitelist StakingTokenImplementation in StakingFactory";
 

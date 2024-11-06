@@ -37,7 +37,7 @@ async function main() {
     console.log("Contract address:", stakingFactory.address);
     console.log("Transaction:", result.deployTransaction.hash);
 
-    // If on goerli, wait for half a minute for the transaction completion
+    // If on sepolia, wait for half a minute for the transaction completion
     if (providerName === "sepolia") {
         await new Promise(r => setTimeout(r, 30000));
     }

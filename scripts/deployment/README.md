@@ -4,7 +4,7 @@ as described in [deployment.md](https://github.com/valory-xyz/autonolas-registri
 in [deploymentL2.md](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/deploymentL2.md) specifically for L2 networks.
 
 ## Observations
-- There are several files with global parameters based on the corresponding network. In order to work with the configuration, please copy `gobals_network.json` file to file the `gobals.json` one, where `network` is the corresponding network. For example: `cp gobals_goerli.json gobals.json`.
+- There are several files with global parameters based on the corresponding network. In order to work with the configuration, please copy `gobals_network.json` file to file the `gobals.json` one, where `network` is the corresponding network. For example: `cp gobals_mainnet.json gobals.json`.
 - Please note: if you encounter the `Unknown Error 0x6b0c`, then it is likely because the ledger is not connected or logged in.
 - The script to change ownership of the registries to Timelock (`deploy_10_14_change_ownerships.js`) will be done after the DAO members voting.
 
@@ -22,7 +22,7 @@ npx hardhat compile
 command as described in the [main readme](https://github.com/valory-xyz/autonolas-registries/blob/main/README.md).
 
 
-Create a `globals.json` file in the root folder, or copy it from the file with pre-defined parameters (i.e., `scripts/deployment/globals_goerli.json` for the goerli testnet).
+Create a `globals.json` file in the root folder, or copy it from the file with pre-defined parameters (i.e., `scripts/deployment/globals_mainnet.json` for the mainnet).
 
 Parameters of the `globals.json` file:
 - `contractVerification`: a flag for verifying contracts in deployment scripts (`true`) or skipping it (`false`);
