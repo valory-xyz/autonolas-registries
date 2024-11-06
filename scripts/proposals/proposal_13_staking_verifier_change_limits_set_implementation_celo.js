@@ -35,12 +35,20 @@ async function main() {
     const stakingVerifierAddress = parsedData.stakingVerifierAddress;
     const stakingVerifierJSON = "artifacts/contracts/staking/StakingVerifier.sol/StakingVerifier.json";
     contractFromJSON = fs.readFileSync(stakingVerifierJSON, "utf8");
-    const parsedFile = JSON.parse(contractFromJSON);
+    let parsedFile = JSON.parse(contractFromJSON);
     const stakingVerifierABI = parsedFile["abi"];
     const stakingVerifier = new ethers.Contract(stakingVerifierAddress, stakingVerifierABI, celoProvider);
 
+    // ServiceRegistryL2 address on optimism
+    const serviceRegistryAddress = parsedData.serviceRegistryAddress;
+    const serviceRegistryJSON = "artifacts/contracts/ServiceRegistryL2.sol/ServiceRegistryL2.json";
+    contractFromJSON = fs.readFileSync(serviceRegistryJSON, "utf8");
+    parsedFile = JSON.parse(contractFromJSON);
+    const serviceRegistryABI = parsedFile["abi"];
+    const serviceRegistry = new ethers.Contract(serviceRegistryAddress, serviceRegistryABI, celoProvider);
+
     // Timelock contract across the bridge must change staking limits
-    const target = stakingVerifierAddress;
+    let target = stakingVerifierAddress;
     const value = 0;
     let rawPayload = stakingVerifier.interface.encodeFunctionData("changeStakingLimits",
         [parsedData.minStakingDepositLimit, parsedData.timeForEmissionsLimit, parsedData.numServicesLimit,
@@ -54,6 +62,25 @@ async function main() {
 
     rawPayload = stakingVerifier.interface.encodeFunctionData("setImplementationsStatuses",
         [[parsedData.stakingTokenAddress], [true], true]);
+    payload = ethers.utils.arrayify(rawPayload);
+    data += ethers.utils.solidityPack(
+        ["address", "uint96", "uint32", "bytes"],
+        [target, value, payload.length, payload]
+    ).slice(2);
+
+    target = serviceRegistryAddress;
+    const oldMultisigImplementationAddress = "0x63e66d7ad413C01A7b49C7FF4e3Bb765C4E4bd1b";
+    rawPayload = serviceRegistry.interface.encodeFunctionData("changeMultisigPermission",
+        [oldMultisigImplementationAddress, false]);
+    payload = ethers.utils.arrayify(rawPayload);
+    data += ethers.utils.solidityPack(
+        ["address", "uint96", "uint32", "bytes"],
+        [target, value, payload.length, payload]
+    ).slice(2);
+
+    const multisigImplementationAddress = parsedData.gnosisSafeMultisigImplementationAddress;
+    rawPayload = serviceRegistry.interface.encodeFunctionData("changeMultisigPermission",
+        [multisigImplementationAddress, true]);
     payload = ethers.utils.arrayify(rawPayload);
     data += ethers.utils.solidityPack(
         ["address", "uint96", "uint32", "bytes"],

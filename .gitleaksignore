@@ -453,3 +453,6 @@ cd3b8c411856aa346cdcc75db3b819447990d327:scripts/deployment/globals_mainnet.json
 894bdea54c5b2ec7a853abbad0db1e9bff699976:scripts/deployment/l2/globals_optimistic_sepolia.json:generic-api-key:2
 894bdea54c5b2ec7a853abbad0db1e9bff699976:scripts/deployment/l2/wormhole/globals_celo_mainnet.json:generic-api-key:2
 da106fa3b354dc6b8057b9585cbed1b0d4137881:scripts/deployment/l2/globals_optimistic_sepolia.json:generic-api-key:1
+d30a0b62c1d44220764e3571921d1b6d331c0142:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:1
+d30a0b62c1d44220764e3571921d1b6d331c0142:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:1
+d30a0b62c1d44220764e3571921d1b6d331c0142:scripts/deployment/l2/globals_optimistic_mainnet.json:generic-api-key:1
