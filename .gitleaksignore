@@ -456,3 +456,6 @@ da106fa3b354dc6b8057b9585cbed1b0d4137881:scripts/deployment/l2/globals_optimisti
 d30a0b62c1d44220764e3571921d1b6d331c0142:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:1
 d30a0b62c1d44220764e3571921d1b6d331c0142:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:1
 d30a0b62c1d44220764e3571921d1b6d331c0142:scripts/deployment/l2/globals_optimistic_mainnet.json:generic-api-key:1
+c578d645ba3fbdd0b3b4d3d61b0135f80a713870:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:1
+c578d645ba3fbdd0b3b4d3d61b0135f80a713870:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:1
+c578d645ba3fbdd0b3b4d3d61b0135f80a713870:scripts/deployment/l2/globals_optimistic_mainnet.json:generic-api-key:1
