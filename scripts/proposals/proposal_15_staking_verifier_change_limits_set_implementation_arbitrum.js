@@ -67,11 +67,11 @@ async function main() {
         },
         maxSubmissionFee: {
             base: undefined,
-            percentIncrease: ethers.BigNumber.from(30),
+            percentIncrease: ethers.BigNumber.from(1000),
         },
         maxFeePerGas: {
             base: undefined,
-            percentIncrease: ethers.BigNumber.from(30),
+            percentIncrease: ethers.BigNumber.from(1000),
         },
     };
 
@@ -128,7 +128,7 @@ async function main() {
         L1ToL2MessageGasParams.gasLimit, gasPriceBid, calldata2]);
 
     const targets = [inboxAddress, inboxAddress];
-    const values = [L1ToL2MessageGasParams.deposit, L1ToL2MessageGasParams2.deposit];
+    const values = [L1ToL2MessageGasParams.deposit.mul(10), L1ToL2MessageGasParams2.deposit.mul(10)];
     const callDatas = [timelockCalldata, timelockCalldata2];
     const description = "Change staking limits on arbitrum in StakingVerifier and whitelist StakingTokenImplementation in StakingFactory";
 
