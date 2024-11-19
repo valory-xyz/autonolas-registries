@@ -249,7 +249,7 @@
       },
       {
         "name": "GnosisSafeMultisig",
-        "artifact": "abis/0.8.23/GnosisSafeMultisig.json",
+        "artifact": "abis/0.8.28/GnosisSafeMultisig.json",
         "address": "0x5953f21495BD9aF1D78e87bb42AcCAA55C1e896C"
       },
       {
@@ -300,7 +300,7 @@
       },
       {
         "name": "GnosisSafeMultisig",
-        "artifact": "abis/0.8.23/GnosisSafeMultisig.json",
+        "artifact": "abis/0.8.28/GnosisSafeMultisig.json",
         "address": "0x22bE6fDcd3e29851B29b512F714C328A00A96B83"
       },
       {
