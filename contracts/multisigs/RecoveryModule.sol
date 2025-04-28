@@ -38,6 +38,14 @@ interface IMultisig {
     /// @param newOwner New owner address.
     function swapOwner(address prevOwner, address oldOwner, address newOwner) external;
 
+    /// @dev Allows a Module to execute a Safe transaction without any further confirmations.
+    /// @param to Destination address of module transaction.
+    /// @param value Ether value of module transaction.
+    /// @param data Data payload of module transaction.
+    /// @param operation Operation type of module transaction.
+    function execTransactionFromModule(address to, uint256 value, bytes memory data, Operation operation) external
+        returns (bool success);
+
     /// @dev Returns array of owners.
     /// @return Array of Safe owners.
     function getOwners() external view returns (address[] memory);
@@ -162,6 +170,9 @@ contract RecoveryModule {
         msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.Call, multisig, uint256(0), payload));
 
         // Multisend call to execute all the call payloads
-        IMultiSend(multiSend).multiSend(payload);
+        payload = abi.encodeCall(IMultiSend.multiSend, (msPayload));
+
+        // Execute module call
+        IMultisig(multisig).execTransactionFromModule(multisig, 0, payload, IMultisig.Operation.Call);
     }
 }
