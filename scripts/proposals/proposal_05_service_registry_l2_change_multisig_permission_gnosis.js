@@ -23,14 +23,14 @@ async function main() {
     });
     
 
-    // AMBProxy address on mainnet
+    // AMBProxy on mainnet
     const AMBProxyAddress = parsedData.AMBContractProxyForeignAddress;
     const AMBProxyJSON = "abis/bridges/gnosis/EternalStorageProxy.json";
     let contractFromJSON = fs.readFileSync(AMBProxyJSON, "utf8");
     const AMBProxyABI = JSON.parse(contractFromJSON);
     const AMBProxy = new ethers.Contract(AMBProxyAddress, AMBProxyABI, mainnetProvider);
 
-    // Test deployed HomeMediator address on chiado
+    // HomeMediator on gnosis
     const homeMediatorAddress = parsedData.bridgeMediatorAddress;
     const homeMediatorJSON = "abis/bridges/gnosis/HomeMediator.json";
     contractFromJSON = fs.readFileSync(homeMediatorJSON, "utf8");
