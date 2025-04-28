@@ -167,9 +167,9 @@ contract RecoveryModule {
 
         // Swap the first agent instance address with the service owner address using the sentinel address as the previous one
         payload = abi.encodeCall(IMultisig.swapOwner, (SENTINEL_OWNERS, owners[0], msg.sender));
-        msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.Call, multisig, uint256(0), payload));
+        msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.DelegateCall, multisig, uint256(0), payload));
 
-        // Multisend call to execute all the call payloads
+        // Multisend call to execute all the payloads
         payload = abi.encodeCall(IMultiSend.multiSend, (msPayload));
 
         // Execute module call
