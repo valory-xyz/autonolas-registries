@@ -114,6 +114,9 @@ contract RecoveryModule {
         serviceRegistry = _serviceRegistry;
     }
 
+    /// @dev Recovers service multisig access for a specified service Id.
+    /// @notice Only service owner is entitled to recover and become the ultimate multisig owner.
+    /// @param serviceId Service Id.
     function recoverAccess(uint256 serviceId) external {
         // Get service owner
         address serviceOwner = IServiceRegistry(serviceRegistry).ownerOf(serviceId);
