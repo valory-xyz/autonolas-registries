@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+/// @dev Sage multi send interface
 interface IMultiSend {
     /// @dev Sends multiple transactions and reverts all if one fails.
     /// @param transactions Encoded transactions. Each transaction is encoded as a packed bytes of
