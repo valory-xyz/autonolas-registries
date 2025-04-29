@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {GnosisSafeStorage} from "@gnosis.pm/safe-contracts/contracts/examples/libraries/GnosisSafeStorage.sol";
+import "hardhat/console.sol";
+
 /// @dev Sage multi send interface
 interface IMultiSend {
     /// @dev Sends multiple transactions and reverts all if one fails.
@@ -93,12 +96,25 @@ error ZeroAddress();
 /// @param serviceId Service Id.
 error WrongServiceState(uint8 state, uint256 serviceId);
 
+/// @dev Must be `DELEGATECALL` only.
+error DelegatecallOnly();
+
+/// @dev Nonce must be zero.
+error ZeroNonceOnly();
+
+/// @dev Modules must not be initialized.
+error EmptyModulesOnly();
+
+/// @dev Modules must not be duplicated.
+error DuplicateModule();
+
 
 /// @title RecoveryModule - Smart contract for Safe recovery module for scenarios when the access is lost
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-contract RecoveryModule {
+contract RecoveryModule is GnosisSafeStorage {
+    event EnabledModule(address indexed module);
     event AccessRecovered(address indexed sender, uint256 indexed serviceId);
 
     // Resulting threshold is always one
@@ -106,6 +122,8 @@ contract RecoveryModule {
     // Sentinel owners address
     address internal constant SENTINEL_OWNERS = address(0x1);
 
+    // Address of the contract: used to ensure that the contract is only ever `DELEGATECALL`-ed
+    address private immutable self;
     // Multisend contract address
     address public immutable multiSend;
     // Service Registry contract address
@@ -120,8 +138,40 @@ contract RecoveryModule {
             revert ZeroAddress();
         }
 
+        self = address(this);
         multiSend = _multiSend;
         serviceRegistry = _serviceRegistry;
+    }
+
+    /// @dev Enables self address as a module.
+    /// @notice This function must only be called via `DELEGATECALL` when a Safe contract is created.
+    ///         For enabling the module after the safe is created use direct native Safe enableModule() function call.
+    function enableModule() external {
+        // Check that the function is called via `DELEGATECALL`
+        if (address(this) == self) {
+            revert DelegatecallOnly();
+        }
+
+        // Check that the Safe proxy nonce is zero
+        if (nonce > 0) {
+            revert ZeroNonceOnly();
+        }
+
+        // Check that no modules are initialized
+        if (modules[SENTINEL_OWNERS] != SENTINEL_OWNERS) {
+            revert EmptyModulesOnly();
+        }
+
+        // Module cannot be added twice.
+        if (modules[self] != address(0)) {
+            revert DuplicateModule();
+        }
+
+        // Enable the module
+        modules[self] = modules[SENTINEL_OWNERS];
+        modules[SENTINEL_OWNERS] = self;
+
+        emit EnabledModule(self);
     }
 
     /// @dev Recovers service multisig access for a specified service Id.
@@ -156,19 +206,16 @@ contract RecoveryModule {
         // In case of more than one agent instance address, we need to add all of them except for the first one,
         // after that swap the first agent instance with the current service owner, and then update the threshold
         if (numOwners > 1) {
-            // Remove agent instances as original multisig owners from the last one and leave only the first one
-            // Note that the prevOwner is the very first added address as it corresponds to the reverse order of added addresses
-            // The order in the gnosis safe multisig is as follows: SENTINEL_OWNERS => agentInstances[last].address => ... =>
-            // => agentInstances[1].address => serviceOwnerAddress
+            // Remove agent instances as original multisig owners and leave only the last one to swap later
             for (uint256 i = 0; i < numOwners - 1; ++i) {
-                uint256 agentIdx = numOwners - i - 1;
-                payload = abi.encodeCall(IMultisig.removeOwner, (SENTINEL_OWNERS, owners[agentIdx], THRESHOLD));
-                msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.Call, multisig, uint256(0), payload));
+                payload = abi.encodeCall(IMultisig.removeOwner, (SENTINEL_OWNERS, owners[i], THRESHOLD));
+                msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.Call, multisig, uint256(0),
+                    payload.length, payload));
             }
         }
 
         // Swap the first agent instance address with the service owner address using the sentinel address as the previous one
-        payload = abi.encodeCall(IMultisig.swapOwner, (SENTINEL_OWNERS, owners[0], msg.sender));
+        payload = abi.encodeCall(IMultisig.swapOwner, (SENTINEL_OWNERS, owners[numOwners - 1], msg.sender));
         // Concatenate multi send payload with the packed data of (operation, multisig address, value(0), payload length, payload)
         msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.Call, multisig, uint256(0),
             payload.length, payload));
