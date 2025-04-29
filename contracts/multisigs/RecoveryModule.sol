@@ -119,8 +119,8 @@ contract RecoveryModule is GnosisSafeStorage {
 
     // Resulting threshold is always one
     uint256 public constant THRESHOLD = 1;
-    // Sentinel owners address
-    address internal constant SENTINEL_OWNERS = address(0x1);
+    // Sentinel address
+    address internal constant SENTINEL_ADDRESS = address(0x1);
 
     // Address of the contract: used to ensure that the contract is only ever `DELEGATECALL`-ed
     address private immutable self;
@@ -158,7 +158,7 @@ contract RecoveryModule is GnosisSafeStorage {
         }
 
         // Check that no modules are initialized
-        if (modules[SENTINEL_OWNERS] != SENTINEL_OWNERS) {
+        if (modules[SENTINEL_ADDRESS] != SENTINEL_ADDRESS) {
             revert EmptyModulesOnly();
         }
 
@@ -168,8 +168,8 @@ contract RecoveryModule is GnosisSafeStorage {
         }
 
         // Enable the module
-        modules[self] = modules[SENTINEL_OWNERS];
-        modules[SENTINEL_OWNERS] = self;
+        modules[self] = modules[SENTINEL_ADDRESS];
+        modules[SENTINEL_ADDRESS] = self;
 
         emit EnabledModule(self);
     }
@@ -208,14 +208,14 @@ contract RecoveryModule is GnosisSafeStorage {
         if (numOwners > 1) {
             // Remove agent instances as original multisig owners and leave only the last one to swap later
             for (uint256 i = 0; i < numOwners - 1; ++i) {
-                payload = abi.encodeCall(IMultisig.removeOwner, (SENTINEL_OWNERS, owners[i], THRESHOLD));
+                payload = abi.encodeCall(IMultisig.removeOwner, (SENTINEL_ADDRESS, owners[i], THRESHOLD));
                 msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.Call, multisig, uint256(0),
                     payload.length, payload));
             }
         }
 
         // Swap the first agent instance address with the service owner address using the sentinel address as the previous one
-        payload = abi.encodeCall(IMultisig.swapOwner, (SENTINEL_OWNERS, owners[numOwners - 1], msg.sender));
+        payload = abi.encodeCall(IMultisig.swapOwner, (SENTINEL_ADDRESS, owners[numOwners - 1], msg.sender));
         // Concatenate multi send payload with the packed data of (operation, multisig address, value(0), payload length, payload)
         msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.Call, multisig, uint256(0),
             payload.length, payload));
