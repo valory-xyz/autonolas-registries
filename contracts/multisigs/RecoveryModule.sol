@@ -143,9 +143,9 @@ contract RecoveryModule is GnosisSafeStorage {
         serviceRegistry = _serviceRegistry;
     }
 
-    /// @dev Enables self address as a module.
+    /// @dev Enables self address as a multisig module.
     /// @notice This function must only be called via `DELEGATECALL` when a Safe contract is created.
-    ///         For enabling the module after the safe is created use direct native Safe enableModule() function call.
+    ///         For enabling module after multisig is created use direct native Safe enableModule() function call.
     function enableModule() external {
         // Check that the function is called via `DELEGATECALL`
         if (address(this) == self) {
