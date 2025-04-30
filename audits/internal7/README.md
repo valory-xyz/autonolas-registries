@@ -24,7 +24,7 @@ N/A
 #### Problems found instrumentally
 Several checks are obtained automatically. They are commented. Some issues found need to be fixed. <br>
 All automatic warnings are listed in the following file, concerns of which we address in more detail below: <br>
-[slither-full](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal5/analysis/slither_full.txt)
+[slither-full](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal7/analysis/slither_full.txt)
 ```
 INFO:Detectors:
 RecoveryModule.recoverAccess(uint256).owners (RecoveryModule-flatten.sol#1815) shadows:
