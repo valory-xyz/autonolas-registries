@@ -1,0 +1,55 @@
+'solc --version' running
+'solc ./RecoveryModule-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal7/analysis/contracts' running
+'solc --version' running
+'solc ./SafeMultisigWithRecoveryModule-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal7/analysis/contracts' running
+INFO:Printers:Inheritance
+Child_Contract -> Immediate_Base_Contracts [Not_Immediate_Base_Contracts]
++ GnosisSafeStorage
+
++ console
+
++ IMultiSend
+
++ IMultisig
+
++ IServiceRegistry
+
++ RecoveryModule
+ -> GnosisSafeStorage
+
+
+Base_Contract -> Immediate_Child_Contracts
+ [Not_Immediate_Child_Contracts]
+
++ GnosisSafeStorage
+ -> RecoveryModule
+
++ console
+
++ IMultiSend
+
++ IMultisig
+
++ IServiceRegistry
+
++ RecoveryModule
+
+INFO:Printers:Inheritance
+Child_Contract -> Immediate_Base_Contracts [Not_Immediate_Base_Contracts]
++ console
+
++ ISafeProxyFactory
+
++ SafeMultisigWithRecoveryModule
+
+
+Base_Contract -> Immediate_Child_Contracts
+ [Not_Immediate_Child_Contracts]
+
++ console
+
++ ISafeProxyFactory
+
++ SafeMultisigWithRecoveryModule
+
+INFO:Slither:. analyzed (9 contracts)

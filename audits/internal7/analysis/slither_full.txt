@@ -1,0 +1,40 @@
+
+INFO:Detectors:
+RecoveryModule.recoverAccess(uint256).owners (RecoveryModule-flatten.sol#1815) shadows:
+	- GnosisSafeStorage.owners (RecoveryModule-flatten.sol#14) (state variable)
+RecoveryModule.create(address[],uint256,bytes).owners (RecoveryModule-flatten.sol#1864) shadows:
+	- GnosisSafeStorage.owners (RecoveryModule-flatten.sol#14) (state variable)
+RecoveryModule.create(address[],uint256,bytes).threshold (RecoveryModule-flatten.sol#1864) shadows:
+	- GnosisSafeStorage.threshold (RecoveryModule-flatten.sol#16) (state variable)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#local-variable-shadowing
+
+
+
+INFO:Detectors:
+Reentrancy in RecoveryModule.create(address[],uint256,bytes) (RecoveryModule-flatten.sol#1864-1949):
+	External calls:
+	- IMultisig(multisig).execTransactionFromModule(multiSend,0,payload,IMultisig.Operation.DelegateCall) (RecoveryModule-flatten.sol#1925)
+	Event emitted after the call(s):
+	- ServiceRedeployed(serviceOwner,serviceId,owners,threshold) (RecoveryModule-flatten.sol#1948)
+
+Reentrancy in RecoveryModule.recoverAccess(uint256) (RecoveryModule-flatten.sol#1799-1847):
+	External calls:
+	- IMultisig(multisig).execTransactionFromModule(multiSend,0,payload,IMultisig.Operation.DelegateCall) (RecoveryModule-flatten.sol#1844)
+	Event emitted after the call(s):
+	- AccessRecovered(msg.sender,serviceId) (RecoveryModule-flatten.sol#1846)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+
+
+INFO:Detectors:
+RecoveryModule.create(address[],uint256,bytes) (RecoveryModule-flatten.sol#1864-1949) has a high cyclomatic complexity (12).
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cyclomatic-complexity
+
+INFO:Detectors:
+Function console._sendLogPayloadImplementation(bytes) (RecoveryModule-flatten.sol#31-46) contains magic number: 32
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/magic_number.md
+
+
+
+
+

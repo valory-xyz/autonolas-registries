@@ -1,0 +1,51 @@
+'solc --version' running
+'solc ./RecoveryModule-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal7/analysis/contracts' running
+'solc --version' running
+'solc ./SafeMultisigWithRecoveryModule-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal7/analysis/contracts' running
+INFO:Printers:
+##############################
+####### RecoveryModule #######
+##############################
+
+## Constructor Call Sequence
+	- RecoveryModule
+
+## Constructor Definitions
+
+### RecoveryModule
+
+     constructor (address _multiSend, address _serviceRegistry) {
+        // Check for zero address
+        if (_multiSend == address(0) || _serviceRegistry == address(0)) {
+            revert ZeroAddress();
+        }
+
+        self = address(this);
+        multiSend = _multiSend;
+        serviceRegistry = _serviceRegistry;
+    }
+
+INFO:Printers:
+##############################################
+####### SafeMultisigWithRecoveryModule #######
+##############################################
+
+## Constructor Call Sequence
+	- SafeMultisigWithRecoveryModule
+
+## Constructor Definitions
+
+### SafeMultisigWithRecoveryModule
+
+     constructor (address _safe, address _safeProxyFactory, address _recoveryModule) {
+        // Check for zero addresses
+        if (_safe == address(0) || _safeProxyFactory == address(0) || _recoveryModule == address(0)) {
+            revert ZeroAddress();
+        }
+
+        safe = _safe;
+        safeProxyFactory = _safeProxyFactory;
+        recoveryModule = _recoveryModule;
+    }
+
+INFO:Slither:. analyzed (9 contracts)

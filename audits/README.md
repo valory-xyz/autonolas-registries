@@ -19,6 +19,9 @@ contracts is located in this folder: [internal audit 5](https://github.com/valor
 An internal audit with a focus on PoAA Staking fixing after C4A
 contracts is located in this folder: [internal audit 6](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal6).
 
+An internal audit with a focus on recovery modules
+contracts is located in this folder: [internal audit 7](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal7).
+
 ### External audit
 
 Following the initial contracts [audit report](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/Valory%20Review%20Final.pdf),
