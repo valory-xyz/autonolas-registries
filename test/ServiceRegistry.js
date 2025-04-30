@@ -3545,7 +3545,7 @@ describe("ServiceRegistry", function () {
             const safeContracts = require("@gnosis.pm/safe-contracts");
             let callData = [];
             let txs = [];
-            nonce = await multisig.nonce();
+            let nonce = await multisig.nonce();
             // Add the addresses, but keep the threshold the same
             for (let i = 0; i < agentInstances.length; i++) {
                 callData[i] = multisig.interface.encodeFunctionData("addOwnerWithThreshold", [agentInstances[i].address, 1]);
