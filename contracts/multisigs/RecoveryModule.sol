@@ -25,6 +25,13 @@ interface IMultiSend {
 interface IMultisig {
     enum Operation {Call, DelegateCall}
 
+    /// @dev Allows to add a new owner to the Safe and update the threshold at the same time.
+    ///      This can only be done via a Safe transaction.
+    /// @notice Adds the owner `owner` to the Safe and updates the threshold to `_threshold`.
+    /// @param owner New owner address.
+    /// @param _threshold New threshold.
+    function addOwnerWithThreshold(address owner, uint256 _threshold) external;
+
     /// @dev Allows to remove an owner from the Safe and update the threshold at the same time.
     ///      This can only be done via a Safe transaction.
     /// @notice Removes the owner `owner` from the Safe and updates the threshold to `_threshold`.
@@ -52,6 +59,10 @@ interface IMultisig {
     /// @dev Returns array of owners.
     /// @return Array of Safe owners.
     function getOwners() external view returns (address[] memory);
+
+    /// @dev Returns multisig threshold.
+    /// @return Multisig threshold.
+    function getThreshold() external view returns (uint256);
 }
 
 /// @dev Service Registry interface
@@ -88,6 +99,11 @@ interface IServiceRegistry {
 /// @param owner Required sender address as an owner.
 error OwnerOnly(address sender, address owner);
 
+/// @dev Only `registry` has a privilege, but the `sender` was provided.
+/// @param sender Sender address.
+/// @param registry Required sender address as a registry.
+error RegistryOnly(address sender, address registry);
+
 /// @dev Provided zero address.
 error ZeroAddress();
 
@@ -108,6 +124,25 @@ error EmptyModulesOnly();
 /// @dev Modules must not be duplicated.
 error DuplicateModule();
 
+/// @dev Provided incorrect data length.
+/// @param expected Expected minimum data length.
+/// @param provided Provided data length.
+error IncorrectDataLength(uint256 expected, uint256 provided);
+
+/// @dev Provided incorrect multisig threshold.
+/// @param expected Expected threshold.
+/// @param provided Provided threshold.
+error WrongThreshold(uint256 expected, uint256 provided);
+
+/// @dev Provided incorrect number of owners.
+/// @param expected Expected number of owners.
+/// @param provided Provided number of owners.
+error WrongNumOwners(uint256 expected, uint256 provided);
+
+/// @dev Provided incorrect multisig owner.
+/// @param provided Provided owner address.
+error WrongOwner(address provided);
+
 
 /// @title RecoveryModule - Smart contract for Safe recovery module for scenarios when the access is lost
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -115,10 +150,13 @@ error DuplicateModule();
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract RecoveryModule is GnosisSafeStorage {
     event EnabledModule(address indexed module);
-    event AccessRecovered(address indexed sender, uint256 indexed serviceId);
+    event AccessRecovered(address indexed serviceOwner, uint256 indexed serviceId);
+    event ServiceRedeployed(address indexed serviceOwner, uint256 indexed serviceId, address[] owners, uint256 threshold);
 
-    // Resulting threshold is always one
-    uint256 public constant THRESHOLD = 1;
+    // Resulting recover threshold is always one
+    uint256 public constant RECOVER_THRESHOLD = 1;
+    // Default data length for service redeployment: encoded uint256 = 32 (bytes)
+    uint256 public constant DEFAULT_DATA_LENGTH = 32;
     // Sentinel address
     address internal constant SENTINEL_ADDRESS = address(0x1);
 
@@ -205,13 +243,11 @@ contract RecoveryModule is GnosisSafeStorage {
 
         // In case of more than one agent instance address, we need to add all of them except for the first one,
         // after that swap the first agent instance with the current service owner, and then update the threshold
-        if (numOwners > 1) {
-            // Remove agent instances as original multisig owners and leave only the last one to swap later
-            for (uint256 i = 0; i < numOwners - 1; ++i) {
-                payload = abi.encodeCall(IMultisig.removeOwner, (SENTINEL_ADDRESS, owners[i], THRESHOLD));
-                msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.Call, multisig, uint256(0),
-                    payload.length, payload));
-            }
+        // Remove agent instances as original multisig owners and leave only the last one to swap later
+        for (uint256 i = 0; i < numOwners - 1; ++i) {
+            payload = abi.encodeCall(IMultisig.removeOwner, (SENTINEL_ADDRESS, owners[i], RECOVER_THRESHOLD));
+            msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.Call, multisig, uint256(0),
+                payload.length, payload));
         }
 
         // Swap the first agent instance address with the service owner address using the sentinel address as the previous one
@@ -227,5 +263,97 @@ contract RecoveryModule is GnosisSafeStorage {
         IMultisig(multisig).execTransactionFromModule(multiSend, 0, payload, IMultisig.Operation.DelegateCall);
 
         emit AccessRecovered(msg.sender, serviceId);
+    }
+
+    /// @dev Updates and/or verifies the existent gnosis safe multisig for changed owners and threshold.
+    /// @notice This function operates with existent multisig proxy that is requested to be updated in terms of
+    ///         the set of owners' addresses and the threshold. There are two scenarios possible:
+    ///         1. The multisig proxy is already updated before reaching this function. Then the multisig address
+    ///            must be passed as a payload such that its owners and threshold are verified against those specified
+    ///            in the argument list.
+    ///         2. The multisig proxy is not yet updated. Then the multisig address must be passed in a packed bytes of
+    ///            data along with the Gnosis Safe `execTransaction()` function arguments packed payload. That payload
+    ///            is going to modify the mulsisig proxy as per its signed transaction. At the end, the updated multisig
+    ///            proxy is going to be verified with the provided set of owners' addresses and the threshold.
+    ///         Note that owners' addresses in the multisig are stored in reverse order compared to how they were added:
+    ///         https://etherscan.io/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552#code#F6#L56
+    /// @param owners Set of updated multisig owners to verify against.
+    /// @param threshold Updated number for multisig transaction confirmations.
+    /// @param data Packed data containing address of an existent gnosis safe multisig and a payload to call the multisig with.
+    /// @return multisig Address of a multisig (proxy).
+    function create(address[] memory owners, uint256 threshold, bytes memory data) external returns (address multisig) {
+        // Check that msg.sender is the Service Registry contract
+        // This means that the create() call is authorized by the service owner
+        if (msg.sender != serviceRegistry) {
+            revert RegistryOnly(msg.sender, serviceRegistry);
+        }
+
+        // Check for the correct data length
+        uint256 dataLength = data.length;
+        if (dataLength != DEFAULT_DATA_LENGTH) {
+            revert IncorrectDataLength(DEFAULT_DATA_LENGTH, dataLength);
+        }
+
+        // Get number of owners
+        uint256 numOwners = owners.length;
+        // Each operation payload
+        bytes memory payload;
+        // Overall multi send data payload
+        bytes memory msPayload;
+
+        // Decode the service Id
+        uint256 serviceId = abi.decode(data, (uint256));
+
+        // Get service owner
+        address serviceOwner = IServiceRegistry(serviceRegistry).ownerOf(serviceId);
+        // Get service multisig
+        (, multisig, , , , , ) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
+
+        // Get multisig owners
+        address[] memory checkOwners = IMultisig(multisig).getOwners();
+
+        // If service owner is still the only multisig owner, multisig must be updated with provided owners list
+        if (checkOwners.length == 1 && checkOwners[0] == serviceOwner) {
+            // Add agent instances as multisig owners without changing threshold
+            for (uint256 i = 0; i < numOwners; ++i) {
+                payload = abi.encodeCall(IMultisig.addOwnerWithThreshold, (owners[i], RECOVER_THRESHOLD));
+                msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.Call, multisig, uint256(0),
+                    payload.length, payload));
+            }
+
+            // Remove service owner address using the first agent instance address as the previous one, and update threshold
+            payload = abi.encodeCall(IMultisig.removeOwner, (owners[0], serviceOwner, threshold));
+            // Concatenate multi send payload with the packed data of (operation, multisig address, value(0), payload length, payload)
+            msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.Call, multisig, uint256(0),
+                payload.length, payload));
+
+            // Multisend call to execute all the payloads
+            payload = abi.encodeCall(IMultiSend.multiSend, (msPayload));
+
+            // Execute module call
+            IMultisig(multisig).execTransactionFromModule(multiSend, 0, payload, IMultisig.Operation.DelegateCall);
+        }
+
+        // Get multisig owners and threshold
+        checkOwners = IMultisig(multisig).getOwners();
+        uint256 checkThreshold = IMultisig(multisig).getThreshold();
+
+        // Verify updated multisig proxy for provided owners and threshold
+        if (threshold != checkThreshold) {
+            revert WrongThreshold(checkThreshold, threshold);
+        }
+        if (numOwners != checkOwners.length) {
+            revert WrongNumOwners(checkOwners.length, numOwners);
+        }
+        // The owners' addresses in the multisig itself are stored in reverse order compared to how they were added:
+        // https://etherscan.io/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552#code#F6#L56
+        // Thus, the check must be carried out accordingly.
+        for (uint256 i = 0; i < numOwners; ++i) {
+            if (owners[i] != checkOwners[numOwners - i - 1]) {
+                revert WrongOwner(owners[i]);
+            }
+        }
+
+        emit ServiceRedeployed(serviceOwner, serviceId, owners, threshold);
     }
 }
