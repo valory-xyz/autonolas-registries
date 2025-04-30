@@ -92,6 +92,12 @@ interface IServiceRegistry {
     /// @param serviceId Service Id.
     /// @return serviceOwner Service owner address.
     function ownerOf(uint256 serviceId) external view returns (address serviceOwner);
+
+    /// @dev Gets service agent instances.
+    /// @param serviceId ServiceId.
+    /// @return numAgentInstances Number of agent instances.
+    /// @return agentInstances Pre-allocated list of agent instance addresses.
+    function getAgentInstances(uint256 serviceId) external view returns (uint256 numAgentInstances, address[] memory agentInstances);
 }
 
 /// @dev Only `owner` has a privilege, but the `sender` was provided.
@@ -271,16 +277,15 @@ contract RecoveryModule is GnosisSafeStorage {
     ///         1. The multisig proxy is already updated before reaching this function. Then the multisig address
     ///            must be passed as a payload such that its owners and threshold are verified against those specified
     ///            in the argument list.
-    ///         2. The multisig proxy is not yet updated. Then the multisig address must be passed in a packed bytes of
-    ///            data along with the Gnosis Safe `execTransaction()` function arguments packed payload. That payload
-    ///            is going to modify the mulsisig proxy as per its signed transaction. At the end, the updated multisig
-    ///            proxy is going to be verified with the provided set of owners' addresses and the threshold.
+    ///         2. The multisig proxy is not yet updated. Then the service Id must be passed in a packed bytes of
+    ///            data in order to update multisig owners to match service agent instances. The updated multisig
+    ///            proxy is then going to be verified with the provided set of owners' addresses and the threshold.
     ///         Note that owners' addresses in the multisig are stored in reverse order compared to how they were added:
     ///         https://etherscan.io/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552#code#F6#L56
     /// @param owners Set of updated multisig owners to verify against.
     /// @param threshold Updated number for multisig transaction confirmations.
-    /// @param data Packed data containing address of an existent gnosis safe multisig and a payload to call the multisig with.
-    /// @return multisig Address of a multisig (proxy).
+    /// @param data Packed data containing multisig service Id.
+    /// @return multisig Multisig address.
     function create(address[] memory owners, uint256 threshold, bytes memory data) external returns (address multisig) {
         // Check that msg.sender is the Service Registry contract
         // This means that the create() call is authorized by the service owner
@@ -303,6 +308,17 @@ contract RecoveryModule is GnosisSafeStorage {
 
         // Decode the service Id
         uint256 serviceId = abi.decode(data, (uint256));
+
+        // Check owners vs agent instances: this prevents modification of another service Id via a create() function
+        (, address[] memory agentInstances) = IServiceRegistry(serviceRegistry).getAgentInstances(serviceId);
+        if (numOwners != agentInstances.length) {
+            revert WrongNumOwners(agentInstances.length, numOwners);
+        }
+        for (uint256 i = 0; i < numOwners; ++i) {
+            if (owners[i] != agentInstances[i]) {
+                revert WrongOwner(owners[i]);
+            }
+        }
 
         // Get service owner
         address serviceOwner = IServiceRegistry(serviceRegistry).ownerOf(serviceId);
