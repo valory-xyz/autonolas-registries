@@ -34,8 +34,8 @@ contract SafeMultisigWithRecoveryModule {
     bytes4 public constant SAFE_SETUP_SELECTOR = 0xb63e800d;
     // Encoded selector of the Recovery module enableModule function
     bytes4 public constant ENABLE_MODULE_SELECTOR = 0x24292962;
-    // Default data size for several Safe Factory params without payload: address + uint256 = 20 + 32 = 52 (bytes)
-    uint256 public constant DEFAULT_DATA_LENGTH = 52;
+    // Default data size for several Safe Factory params without payload: address + uint256 = 2 full slots = 64 (bytes)
+    uint256 public constant DEFAULT_DATA_LENGTH = 64;
 
     // Safe contract address
     address public immutable safe;
@@ -65,7 +65,7 @@ contract SafeMultisigWithRecoveryModule {
     /// @dev Creates a Safe multisig.
     /// @param owners Set of multisig owners.
     /// @param threshold Number of required confirmations for a multisig transaction.
-    /// @param data Decoded data related to the creation of a chosen multisig.
+    /// @param data Encoded data related to the creation of a chosen multisig.
     /// @return multisig Address of a created multisig.
     function create(
         address[] memory owners,

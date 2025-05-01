@@ -18,7 +18,7 @@ N/A
   RecoveryModule.sol                 |      100 |       50 |      100 |    81.43 |... 359,362,369 |
   SafeMultisigWithRecoveryModule.sol |     87.5 |       20 |      100 |    73.33 |    50,74,75,79 |
 ```
-[]
+[x] Fixed
 
 ### Security issues. Updated 30-04-25
 #### Problems found instrumentally
