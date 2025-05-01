@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
-import "hardhat/console.sol";
+
 // Safe Proxy Factory interface extracted from the mainnet: https://etherscan.io/address/0xa6b71e26c5e0845f74c812102ca7114b6a896ab2#code#F2#L61
 interface ISafeProxyFactory {
     /// @dev Allows to create new proxy contact and execute a message call to the new proxy within one transaction.
@@ -22,6 +22,9 @@ error ZeroAddress();
 /// @param provided Provided data length.
 error IncorrectDataLength(uint256 expected, uint256 provided);
 
+/// @dev Caught reentrancy violation.
+error ReentrancyGuard();
+
 /// @title SafeMultisigWithRecoveryModule - Smart contract for Safe multisig creation with the recovery module
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
@@ -33,12 +36,16 @@ contract SafeMultisigWithRecoveryModule {
     bytes4 public constant ENABLE_MODULE_SELECTOR = 0x24292962;
     // Default data size for several Safe Factory params without payload: address + uint256 = 20 + 32 = 52 (bytes)
     uint256 public constant DEFAULT_DATA_LENGTH = 52;
+
     // Safe contract address
     address public immutable safe;
     // Safe Factory contract address
     address public immutable safeProxyFactory;
     // Recovery module address
     address public immutable recoveryModule;
+
+    // Reentrancy lock
+    uint256 internal _locked = 1;
 
     /// @dev SafeMultisigWithRecoveryModule constructor.
     /// @param _safe Safe contract address.
@@ -65,6 +72,12 @@ contract SafeMultisigWithRecoveryModule {
         uint256 threshold,
         bytes memory data
     ) external returns (address multisig) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         address fallbackHandler;
         uint256 nonce;
 
@@ -88,5 +101,7 @@ contract SafeMultisigWithRecoveryModule {
 
         // Create a gnosis safe multisig via the proxy factory
         multisig = ISafeProxyFactory(safeProxyFactory).createProxyWithNonce(safe, safeParams, nonce);
+
+        _locked = 1;
     }
 }

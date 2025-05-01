@@ -2,7 +2,6 @@
 pragma solidity ^0.8.28;
 
 import {GnosisSafeStorage} from "@gnosis.pm/safe-contracts/contracts/examples/libraries/GnosisSafeStorage.sol";
-import "hardhat/console.sol";
 
 /// @dev Sage multi send interface
 interface IMultiSend {
@@ -149,6 +148,9 @@ error WrongNumOwners(uint256 expected, uint256 provided);
 /// @param provided Provided owner address.
 error WrongOwner(address provided);
 
+/// @dev Caught reentrancy violation.
+error ReentrancyGuard();
+
 
 /// @title RecoveryModule - Smart contract for Safe recovery module for scenarios when the access is lost
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -172,6 +174,9 @@ contract RecoveryModule is GnosisSafeStorage {
     address public immutable multiSend;
     // Service Registry contract address
     address public immutable serviceRegistry;
+
+    // Reentrancy lock
+    uint256 internal _locked = 1;
 
     /// @dev RecoveryModule constructor.
     /// @param _multiSend Multisend contract address.
@@ -222,6 +227,12 @@ contract RecoveryModule is GnosisSafeStorage {
     /// @notice Only service owner is entitled to recover and become the ultimate multisig owner.
     /// @param serviceId Service Id.
     function recoverAccess(uint256 serviceId) external {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Get service owner
         address serviceOwner = IServiceRegistry(serviceRegistry).ownerOf(serviceId);
 
@@ -237,11 +248,11 @@ contract RecoveryModule is GnosisSafeStorage {
         }
 
         // Get multisig owners
-        address[] memory owners = IMultisig(multisig).getOwners();
+        address[] memory multisigOwners = IMultisig(multisig).getOwners();
 
         // Remove all the owners and swap the last one with the service owner
         // Get number of owners
-        uint256 numOwners = owners.length;
+        uint256 numOwners = multisigOwners.length;
         // Each operation payload
         bytes memory payload;
         // Overall multi send data payload
@@ -251,13 +262,13 @@ contract RecoveryModule is GnosisSafeStorage {
         // after that swap the first agent instance with the current service owner, and then update the threshold
         // Remove agent instances as original multisig owners and leave only the last one to swap later
         for (uint256 i = 0; i < numOwners - 1; ++i) {
-            payload = abi.encodeCall(IMultisig.removeOwner, (SENTINEL_ADDRESS, owners[i], RECOVER_THRESHOLD));
+            payload = abi.encodeCall(IMultisig.removeOwner, (SENTINEL_ADDRESS, multisigOwners[i], RECOVER_THRESHOLD));
             msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.Call, multisig, uint256(0),
                 payload.length, payload));
         }
 
         // Swap the first agent instance address with the service owner address using the sentinel address as the previous one
-        payload = abi.encodeCall(IMultisig.swapOwner, (SENTINEL_ADDRESS, owners[numOwners - 1], msg.sender));
+        payload = abi.encodeCall(IMultisig.swapOwner, (SENTINEL_ADDRESS, multisigOwners[numOwners - 1], msg.sender));
         // Concatenate multi send payload with the packed data of (operation, multisig address, value(0), payload length, payload)
         msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.Call, multisig, uint256(0),
             payload.length, payload));
@@ -269,6 +280,8 @@ contract RecoveryModule is GnosisSafeStorage {
         IMultisig(multisig).execTransactionFromModule(multiSend, 0, payload, IMultisig.Operation.DelegateCall);
 
         emit AccessRecovered(msg.sender, serviceId);
+
+        _locked = 1;
     }
 
     /// @dev Updates and/or verifies the existent gnosis safe multisig for changed owners and threshold.
@@ -282,11 +295,21 @@ contract RecoveryModule is GnosisSafeStorage {
     ///            proxy is then going to be verified with the provided set of owners' addresses and the threshold.
     ///         Note that owners' addresses in the multisig are stored in reverse order compared to how they were added:
     ///         https://etherscan.io/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552#code#F6#L56
-    /// @param owners Set of updated multisig owners to verify against.
+    /// @param multisigOwners Set of updated multisig owners to verify against.
     /// @param threshold Updated number for multisig transaction confirmations.
     /// @param data Packed data containing multisig service Id.
     /// @return multisig Multisig address.
-    function create(address[] memory owners, uint256 threshold, bytes memory data) external returns (address multisig) {
+    function create(
+        address[] memory multisigOwners,
+        uint256 threshold,
+        bytes memory data
+    ) external returns (address multisig) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Check that msg.sender is the Service Registry contract
         // This means that the create() call is authorized by the service owner
         if (msg.sender != serviceRegistry) {
@@ -300,7 +323,7 @@ contract RecoveryModule is GnosisSafeStorage {
         }
 
         // Get number of owners
-        uint256 numOwners = owners.length;
+        uint256 numOwners = multisigOwners.length;
         // Each operation payload
         bytes memory payload;
         // Overall multi send data payload
@@ -326,8 +349,8 @@ contract RecoveryModule is GnosisSafeStorage {
             revert WrongNumOwners(agentInstances.length, numOwners);
         }
         for (uint256 i = 0; i < numOwners; ++i) {
-            if (owners[i] != agentInstances[i]) {
-                revert WrongOwner(owners[i]);
+            if (multisigOwners[i] != agentInstances[i]) {
+                revert WrongOwner(multisigOwners[i]);
             }
         }
 
@@ -338,13 +361,13 @@ contract RecoveryModule is GnosisSafeStorage {
         if (checkOwners.length == 1 && checkOwners[0] == serviceOwner) {
             // Add agent instances as multisig owners without changing threshold
             for (uint256 i = 0; i < numOwners; ++i) {
-                payload = abi.encodeCall(IMultisig.addOwnerWithThreshold, (owners[i], RECOVER_THRESHOLD));
+                payload = abi.encodeCall(IMultisig.addOwnerWithThreshold, (multisigOwners[i], RECOVER_THRESHOLD));
                 msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.Call, multisig, uint256(0),
                     payload.length, payload));
             }
 
             // Remove service owner address using the first agent instance address as the previous one, and update threshold
-            payload = abi.encodeCall(IMultisig.removeOwner, (owners[0], serviceOwner, threshold));
+            payload = abi.encodeCall(IMultisig.removeOwner, (multisigOwners[0], serviceOwner, threshold));
             // Concatenate multi send payload with the packed data of (operation, multisig address, value(0), payload length, payload)
             msPayload = bytes.concat(msPayload, abi.encodePacked(IMultisig.Operation.Call, multisig, uint256(0),
                 payload.length, payload));
@@ -371,11 +394,13 @@ contract RecoveryModule is GnosisSafeStorage {
         // https://etherscan.io/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552#code#F6#L56
         // Thus, the check must be carried out accordingly.
         for (uint256 i = 0; i < numOwners; ++i) {
-            if (owners[i] != checkOwners[numOwners - i - 1]) {
-                revert WrongOwner(owners[i]);
+            if (multisigOwners[i] != checkOwners[numOwners - i - 1]) {
+                revert WrongOwner(multisigOwners[i]);
             }
         }
 
-        emit ServiceRedeployed(serviceOwner, serviceId, owners, threshold);
+        emit ServiceRedeployed(serviceOwner, serviceId, multisigOwners, threshold);
+
+        _locked = 1;
     }
 }

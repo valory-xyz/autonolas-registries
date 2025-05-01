@@ -29,7 +29,7 @@ All automatic warnings are listed in the following file, concerns of which we ad
 INFO:Detectors:
 RecoveryModule.recoverAccess(uint256).owners (RecoveryModule-flatten.sol#1815) shadows:
 ```
-[]
+[x] Fixed
 
 ### Issue
 #### Reentrancy issue. Low issue
@@ -37,13 +37,13 @@ RecoveryModule.recoverAccess(uint256).owners (RecoveryModule-flatten.sol#1815) s
 function recoverAccess(uint256 serviceId) {}
 function create(address[] memory owners, uint256 threshold, bytes memory data) external returns (address multisig) {}
 ```
-[]
+[x] Fixed
 
 #### Remove import "hardhat/console.sol";
 ```
 Remove console.sol in product mode.
 ```
-[]
+[x] Fixed
 
 #### Notes/Question 1
 ```
