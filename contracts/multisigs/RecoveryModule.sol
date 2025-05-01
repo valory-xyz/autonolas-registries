@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {GnosisSafeStorage} from "@gnosis.pm/safe-contracts/contracts/examples/libraries/GnosisSafeStorage.sol";
-
+import "hardhat/console.sol";
 /// @dev Sage multi send interface
 interface IMultiSend {
     /// @dev Sends multiple transactions and reverts all if one fails.
@@ -126,9 +126,6 @@ error ZeroNonceOnly();
 /// @dev Modules must not be initialized.
 error EmptyModulesOnly();
 
-/// @dev Modules must not be duplicated.
-error DuplicateModule();
-
 /// @dev Provided incorrect data length.
 /// @param expected Expected minimum data length.
 /// @param provided Provided data length.
@@ -201,19 +198,9 @@ contract RecoveryModule is GnosisSafeStorage {
             revert DelegatecallOnly();
         }
 
-        // Check that the Safe proxy nonce is zero
+        // Check that the Safe proxy nonce is zero: able to execute only during the multisig initialization
         if (nonce > 0) {
             revert ZeroNonceOnly();
-        }
-
-        // Check that no modules are initialized
-        if (modules[SENTINEL_ADDRESS] != SENTINEL_ADDRESS) {
-            revert EmptyModulesOnly();
-        }
-
-        // Module cannot be added twice.
-        if (modules[self] != address(0)) {
-            revert DuplicateModule();
         }
 
         // Enable the module
