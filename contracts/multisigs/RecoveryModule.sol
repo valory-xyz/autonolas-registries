@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {GnosisSafeStorage} from "@gnosis.pm/safe-contracts/contracts/examples/libraries/GnosisSafeStorage.sol";
-import "hardhat/console.sol";
+
 /// @dev Sage multi send interface
 interface IMultiSend {
     /// @dev Sends multiple transactions and reverts all if one fails.
