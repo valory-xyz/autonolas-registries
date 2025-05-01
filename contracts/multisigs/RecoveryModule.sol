@@ -234,6 +234,11 @@ contract RecoveryModule is GnosisSafeStorage {
             revert WrongServiceState(uint8(state), serviceId);
         }
 
+        // Check for zero address to prevent execution before initial service is deployment
+        if (multisig == address(0)) {
+            revert ZeroAddress();
+        }
+
         // Get multisig owners
         address[] memory multisigOwners = IMultisig(multisig).getOwners();
 
@@ -325,7 +330,7 @@ contract RecoveryModule is GnosisSafeStorage {
         // Get service multisig
         (, multisig, , checkThreshold, , , ) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
 
-        // Check for zero address to prevent execution during the first service deployment
+        // Check for zero address to prevent execution during initial service deployment
         if (multisig == address(0)) {
             revert ZeroAddress();
         }
