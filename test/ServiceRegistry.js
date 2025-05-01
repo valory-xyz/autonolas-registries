@@ -3340,6 +3340,11 @@ describe("ServiceRegistry", function () {
             await serviceRegistry.changeManager(serviceManager.address);
             await serviceRegistry.connect(serviceManager).create(owner, configHash, [1], [[1, regBond]], threshold);
 
+            // Try to recover access when the service was never deployed yet
+            await expect(
+                recoveryModule.connect(serviceOwner).recoverAccess(serviceId)
+            ).to.be.revertedWithCustomError(recoveryModule, "ZeroAddress");
+
             // Activate agent instance registration
             await serviceRegistry.connect(serviceManager).activateRegistration(owner, serviceId, {value: regDeposit});
 
@@ -3796,6 +3801,14 @@ describe("ServiceRegistry", function () {
             await serviceRegistry.changeMultisigPermission(safeMultisigWithRecoveryModule.address, true);
             await serviceRegistry.changeMultisigPermission(recoveryModule.address, true);
 
+            // Pack the service Id
+            const data = ethers.utils.solidityPack(["uint256"], [serviceId]);
+            // Try to redeploy the service when the service is never deployed
+            await expect(
+                serviceRegistry.connect(serviceManager).deploy(serviceOwnerAddress, serviceId,
+                    recoveryModule.address, data)
+            ).to.be.revertedWithCustomError(recoveryModule, "ZeroAddress");
+
             // Deploy the service, create a multisig, enable module, and get its address
             const safe = await serviceRegistry.connect(serviceManager).deploy(serviceOwnerAddress, serviceId,
                 safeMultisigWithRecoveryModule.address, payload);
@@ -3845,9 +3858,7 @@ describe("ServiceRegistry", function () {
                 safeContracts.executeTxWithSigners(multisig, safeTx, [serviceOwner])
             ).to.emit(multisig, "ExecutionSuccess");
 
-            // Pack the original multisig address
-            const data = ethers.utils.solidityPack(["uint256"], [serviceId]);
-            // Redeploy the service using the newly updated multisig (same multisig address)
+            // Redeploy the service using the newly updated multisig
             await serviceRegistry.connect(serviceManager).deploy(serviceOwnerAddress, serviceId,
                 recoveryModule.address, data);
 
