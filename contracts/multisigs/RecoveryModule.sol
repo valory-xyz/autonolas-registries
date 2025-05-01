@@ -309,6 +309,17 @@ contract RecoveryModule is GnosisSafeStorage {
         // Decode the service Id
         uint256 serviceId = abi.decode(data, (uint256));
 
+        // Get service owner
+        address serviceOwner = IServiceRegistry(serviceRegistry).ownerOf(serviceId);
+        uint256 checkThreshold;
+        // Get service multisig
+        (, multisig, , checkThreshold, , , ) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
+
+        // Check service threshold
+        if (checkThreshold != threshold) {
+            revert WrongThreshold(checkThreshold, threshold);
+        }
+
         // Check owners vs agent instances: this prevents modification of another service Id via a create() function
         (, address[] memory agentInstances) = IServiceRegistry(serviceRegistry).getAgentInstances(serviceId);
         if (numOwners != agentInstances.length) {
@@ -319,11 +330,6 @@ contract RecoveryModule is GnosisSafeStorage {
                 revert WrongOwner(owners[i]);
             }
         }
-
-        // Get service owner
-        address serviceOwner = IServiceRegistry(serviceRegistry).ownerOf(serviceId);
-        // Get service multisig
-        (, multisig, , , , , ) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
 
         // Get multisig owners
         address[] memory checkOwners = IMultisig(multisig).getOwners();
@@ -352,7 +358,7 @@ contract RecoveryModule is GnosisSafeStorage {
 
         // Get multisig owners and threshold
         checkOwners = IMultisig(multisig).getOwners();
-        uint256 checkThreshold = IMultisig(multisig).getThreshold();
+        checkThreshold = IMultisig(multisig).getThreshold();
 
         // Verify updated multisig proxy for provided owners and threshold
         if (threshold != checkThreshold) {

@@ -53,13 +53,13 @@ function create(address[] memory owners, uint256 threshold, bytes memory data) e
 payload = abi.encodeCall(IMultisig.removeOwner, (owners[0], serviceOwner, threshold));
 }
 ```
-[]
+[x] Fixed
 
 #### Notes/Question 2
 ```
 Is it possible that this is the case with `else` and what should be done then?
 if (checkOwners.length == 1 && checkOwners[0] == serviceOwner) { } else {??}
 ```
-[]
+[x] As designed
 
 
