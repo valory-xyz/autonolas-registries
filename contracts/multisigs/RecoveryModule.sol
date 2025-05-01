@@ -325,6 +325,11 @@ contract RecoveryModule is GnosisSafeStorage {
         // Get service multisig
         (, multisig, , checkThreshold, , , ) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
 
+        // Check for zero address to prevent execution during the first service deployment
+        if (multisig == address(0)) {
+            revert ZeroAddress();
+        }
+
         // Check service threshold
         if (checkThreshold != threshold) {
             revert WrongThreshold(checkThreshold, threshold);
