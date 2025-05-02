@@ -126,9 +126,6 @@ error ZeroNonceOnly();
 /// @dev Modules must not be initialized.
 error EmptyModulesOnly();
 
-/// @dev Modules must not be initialized.
-error EmptyModulesOnly();
-
 /// @dev Modules must not be duplicated.
 error DuplicateModule();
 
