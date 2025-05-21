@@ -40,12 +40,12 @@ error ReentrancyGuard();
 /// @param account Account address.
 error UnauthorizedAccount(address account);
 
-/// @title HashUpdater - Metadata Hash Updater contract to manage actual / additional hashes
+/// @title ComplementaryServiceMetadata - Complementary Service Metadata contract to manage complementary service hashes
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-contract HashUpdater {
-    event HashUpdated(uint256 indexed serviceId, bytes32 indexed hash);
+contract ComplementaryServiceMetadata {
+    event ComplementaryMetadataUpdated(uint256 indexed serviceId, bytes32 indexed hash);
 
     // Olas mech version number
     string public constant VERSION = "0.1.0";
@@ -59,7 +59,7 @@ contract HashUpdater {
     // Mapping of serviceId => actual metadata hash
     mapping(uint256 => bytes32) public mapServiceHashes;
 
-    /// @dev HashUpdater constructor.
+    /// @dev ComplementaryServiceMetadata constructor.
     /// @param _serviceRegistry Service Registry address.
     constructor(address _serviceRegistry) {
         // Check for zero address
@@ -96,7 +96,7 @@ contract HashUpdater {
         // Update service hash
         mapServiceHashes[serviceId] = hash;
 
-        emit HashUpdated(serviceId, hash);
+        emit ComplementaryMetadataUpdated(serviceId, hash);
 
         _locked = 1;
     }
