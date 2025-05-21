@@ -1,0 +1,9 @@
+'solc --version' running
+'solc ./RecoveryModule-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal7/analysis/contracts' running
+'solc --version' running
+'solc ./SafeMultisigWithRecoveryModule-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal7/analysis/contracts' running
+INFO:Printers:Inheritance Graph: ./RecoveryModule-flatten.sol.inheritance-graph.dot
+
+INFO:Printers:Inheritance Graph: ./SafeMultisigWithRecoveryModule-flatten.sol.inheritance-graph.dot
+
+INFO:Slither:. analyzed (9 contracts)

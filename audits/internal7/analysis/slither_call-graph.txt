@@ -1,0 +1,17 @@
+'solc --version' running
+'solc ./RecoveryModule-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal7/analysis/contracts' running
+'solc --version' running
+'solc ./SafeMultisigWithRecoveryModule-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal7/analysis/contracts' running
+INFO:Printers:Call Graph: ./RecoveryModule-flatten.sol.all_contracts.call-graph.dot
+Call Graph: ./RecoveryModule-flatten.sol.console.call-graph.dot
+Call Graph: ./RecoveryModule-flatten.sol.IMultiSend.call-graph.dot
+Call Graph: ./RecoveryModule-flatten.sol.IMultisig.call-graph.dot
+Call Graph: ./RecoveryModule-flatten.sol.IServiceRegistry.call-graph.dot
+Call Graph: ./RecoveryModule-flatten.sol.RecoveryModule.call-graph.dot
+
+INFO:Printers:Call Graph: ./SafeMultisigWithRecoveryModule-flatten.sol.all_contracts.call-graph.dot
+Call Graph: ./SafeMultisigWithRecoveryModule-flatten.sol.console.call-graph.dot
+Call Graph: ./SafeMultisigWithRecoveryModule-flatten.sol.ISafeProxyFactory.call-graph.dot
+Call Graph: ./SafeMultisigWithRecoveryModule-flatten.sol.SafeMultisigWithRecoveryModule.call-graph.dot
+
+INFO:Slither:. analyzed (9 contracts)
