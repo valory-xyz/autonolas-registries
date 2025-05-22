@@ -16,7 +16,7 @@ interface IServiceRegistry {
     /// @param serviceId Service Id.
     /// @return securityDeposit Registration activation deposit.
     /// @return multisig Service multisig address.
-    /// @return configHash IPFS hashes pointing to the config metapayload.
+    /// @return configHash IPFS hash pointing to the config metadata.
     /// @return threshold Agent instance signers threshold.
     /// @return maxNumAgentInstances Total number of agent instances.
     /// @return numAgentInstances Actual number of agent instances.
