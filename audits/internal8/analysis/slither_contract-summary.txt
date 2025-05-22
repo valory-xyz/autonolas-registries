@@ -1,0 +1,14 @@
+'solc --version' running
+'solc ./ComplementaryServiceMetadata-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal8/analysis/contracts' running
+INFO:Printers:
++ Contract IServiceRegistry (Most derived contract)
+  - From IServiceRegistry
+    - mapServices(uint256) (external)
+    - ownerOf(uint256) (external)
+
++ Contract ComplementaryServiceMetadata (Most derived contract)
+  - From ComplementaryServiceMetadata
+    - changeHash(uint256,bytes32) (external)
+    - constructor(address) (public)
+
+INFO:Slither:. analyzed (2 contracts)
