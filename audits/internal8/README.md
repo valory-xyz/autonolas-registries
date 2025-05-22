@@ -4,7 +4,7 @@ The review has been performed based on the contract code in the following reposi
 commit: `tag: v1.2.6-pre-internal-audit` <br> 
 
 ## Objectives
-The audit focused on recovery modules contracts in this repo.
+The audit focused on metadate hash updater contracts in this repo.
 
 ### Flatten version
 Flatten version of contracts. [contracts](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal8/analysis/contracts) 
