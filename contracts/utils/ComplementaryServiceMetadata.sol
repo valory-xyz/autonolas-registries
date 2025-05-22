@@ -80,15 +80,21 @@ contract ComplementaryServiceMetadata {
         }
         _locked = 2;
 
-        // Get service owner
-        address serviceOwner = IServiceRegistry(serviceRegistry).ownerOf(serviceId);
-        // Check for service owner
-        if (msg.sender != serviceOwner) {
-            // Get service multisig
-            (, address multisig, , , , , ) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
+        // Get service multisig and state
+        (, address multisig, , , , , IServiceRegistry.ServiceState state) =
+            IServiceRegistry(serviceRegistry).mapServices(serviceId);
 
-            // Check for service multisig address
+        // Check for multisig access when the service is deployed
+        if (state == IServiceRegistry.ServiceState.Deployed) {
             if (msg.sender != multisig) {
+                revert UnauthorizedAccount(msg.sender);
+            }
+        } else {
+            // Get service owner
+            address serviceOwner = IServiceRegistry(serviceRegistry).ownerOf(serviceId);
+
+            // Check for service owner
+            if (msg.sender != serviceOwner) {
                 revert UnauthorizedAccount(msg.sender);
             }
         }
