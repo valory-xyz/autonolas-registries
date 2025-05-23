@@ -16,7 +16,7 @@ contractPath="contracts/multisigs/RecoveryModule.sol:RecoveryModule"
 constructorArgs="$multiSendCallOnlyAddress $serviceRegistryAddress"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
-# Conditional logic (correct syntax)
+# Get deployer based on the ledger flag
 if [ "$useLedger" == "true" ]; then
   walletArgs="-l --mnemonic-derivation-path $derivationPath"
   deployer=$(cast wallet address $walletArgs)
@@ -24,7 +24,6 @@ else
   echo "Using PRIVATE_KEY: ${PRIVATE_KEY:0:6}..."
   walletArgs="--private-key $PRIVATE_KEY"
   deployer=$(cast wallet address $walletArgs)
-  execCmd="$execCmd $walletArgs $contractArgs"
 fi
 
 # Deployment message
