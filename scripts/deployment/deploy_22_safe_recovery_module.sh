@@ -12,7 +12,8 @@ serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' globals.json)
 
 execCmd="forge create --broadcast --rpc-url $networkURL$ALCHEMY_API_KEY_MAINNET"
 contractPath="contracts/multisigs/RecoveryModule.sol:RecoveryModule"
-contractArgs="$contractPath --constructor-args $multiSendCallOnlyAddress $serviceRegistryAddress"
+constructorArgs="$multiSendCallOnlyAddress $serviceRegistryAddress"
+contractArgs="$contractPath --constructor-args $constructorArgs"
 
 # Conditional logic (correct syntax)
 if [ "$useLedger" == "true" ]; then
@@ -45,6 +46,6 @@ forge verify-contract \
     --etherscan-api-key "$ETHERSCAN_API_KEY" \
     "$recoveryModuleAddress" \
     "$contractPath" \
-    --constructor-args $(cast abi-encode "constructor(address,address)" "$multiSendCallOnlyAddress" "$serviceRegistryAddress")
+    --constructor-args $(cast abi-encode "constructor(address,address)" "$constructorArgs")
 
 echo "Recovery Module deployed at address: $recoveryModuleAddress"
