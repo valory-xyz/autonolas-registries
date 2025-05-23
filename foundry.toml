@@ -1,0 +1,9 @@
+[profile.default]
+solc = "0.8.30"
+src = "contracts"
+out = "out"
+libs = ["lib"]
+
+remappings = [
+    "@gnosis.pm=node_modules/@gnosis.pm",
+]
