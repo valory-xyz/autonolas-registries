@@ -1,0 +1,24 @@
+'solc --version' running
+'solc ./ComplementaryServiceMetadata-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal8/analysis/contracts' running
+INFO:Printers:
+############################################
+####### ComplementaryServiceMetadata #######
+############################################
+
+## Constructor Call Sequence
+	- ComplementaryServiceMetadata
+
+## Constructor Definitions
+
+### ComplementaryServiceMetadata
+
+     constructor(address _serviceRegistry) {
+        // Check for zero address
+        if (_serviceRegistry == address(0)) {
+            revert ZeroAddress();
+        }
+
+        serviceRegistry = _serviceRegistry;
+    }
+
+INFO:Slither:. analyzed (2 contracts)

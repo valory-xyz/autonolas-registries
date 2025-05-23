@@ -1,4 +1,4 @@
-pragma solidity =0.8.25;
+pragma solidity ^0.8.30;
 
 import {IService} from "../contracts/interfaces/IService.sol";
 import "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";

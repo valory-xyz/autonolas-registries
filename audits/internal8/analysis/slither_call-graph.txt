@@ -1,0 +1,7 @@
+'solc --version' running
+'solc ./ComplementaryServiceMetadata-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal8/analysis/contracts' running
+INFO:Printers:Call Graph: ./ComplementaryServiceMetadata-flatten.sol.all_contracts.call-graph.dot
+Call Graph: ./ComplementaryServiceMetadata-flatten.sol.IServiceRegistry.call-graph.dot
+Call Graph: ./ComplementaryServiceMetadata-flatten.sol.ComplementaryServiceMetadata.call-graph.dot
+
+INFO:Slither:. analyzed (2 contracts)
