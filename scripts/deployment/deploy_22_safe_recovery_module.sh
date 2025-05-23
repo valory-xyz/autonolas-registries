@@ -18,12 +18,13 @@ contractArgs="$contractPath --constructor-args $constructorArgs"
 
 # Conditional logic (correct syntax)
 if [ "$useLedger" == "true" ]; then
-  deployer=$(cast wallet address -l --mnemonic-derivation-path "$derivationPath")
-  execCmd="$execCmd -l --mnemonic-derivation-path $derivationPath $contractArgs"
+  walletArgs="-l --mnemonic-derivation-path $derivationPath"
+  deployer=$(cast wallet address $walletArgs)
 else
   echo "Using PRIVATE_KEY: ${PRIVATE_KEY:0:6}..."
-  deployer=$(cast wallet address --private-key $PRIVATE_KEY)
-  execCmd="$execCmd --private-key $PRIVATE_KEY $contractArgs"
+  walletArgs="--private-key $PRIVATE_KEY"
+  deployer=$(cast wallet address $walletArgs)
+  execCmd="$execCmd $walletArgs $contractArgs"
 fi
 
 # Deployment message
@@ -31,6 +32,7 @@ echo "Deploying from: $deployer"
 echo "Deployment of: $contractArgs"
 
 # Deploy the contract and capture the address
+execCmd="$execCmd $walletArgs $contractArgs"
 deploymentOutput=$($execCmd)
 recoveryModuleAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
 
