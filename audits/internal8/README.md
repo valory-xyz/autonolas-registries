@@ -45,3 +45,28 @@ No issue
 ```
 [x] There is no such state
 
+
+# Re-audit 23.05.2025
+The review has been performed based on the contract code in the following repository:<br>
+`https://github.com/valory-xyz/autonolas-registries` <br>
+commit: `tag: v1.2.7-pre-internal-audit` <br>
+
+## Objectives
+The audit focused on metadate hash updater contracts in this repo.
+
+### Flatten version
+Flatten version of contracts. [contracts](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal8/analysis/contracts) 
+
+### Valid coverage
+```
+ComplementaryServiceMetadata.sol   |      100 |    91.67 |      100 |    94.74 |             79 |
+```
+
+### Security issues. Updated 23-05-25
+#### Problems found instrumentally
+No issue
+[slither-full](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal8/analysis/slither_full.txt)
+
+### Issue
+No issue
+

@@ -1,4 +1,4 @@
-// Sources flattened with hardhat v2.23.0 https://hardhat.org
+// Sources flattened with hardhat v2.24.0 https://hardhat.org
 
 // SPDX-License-Identifier: MIT
 
@@ -22,7 +22,7 @@ interface IServiceRegistry {
     /// @param serviceId Service Id.
     /// @return securityDeposit Registration activation deposit.
     /// @return multisig Service multisig address.
-    /// @return configHash IPFS hashes pointing to the config metapayload.
+    /// @return configHash IPFS hash pointing to the config metadata.
     /// @return threshold Agent instance signers threshold.
     /// @return maxNumAgentInstances Total number of agent instances.
     /// @return numAgentInstances Actual number of agent instances.
@@ -86,23 +86,9 @@ contract ComplementaryServiceMetadata {
         }
         _locked = 2;
 
-        // Get service multisig and state
-        (, address multisig, , , , , IServiceRegistry.ServiceState state) =
-            IServiceRegistry(serviceRegistry).mapServices(serviceId);
-
-        // Check for multisig access when the service is deployed
-        if (state == IServiceRegistry.ServiceState.Deployed) {
-            if (msg.sender != multisig) {
-                revert UnauthorizedAccount(msg.sender);
-            }
-        } else {
-            // Get service owner
-            address serviceOwner = IServiceRegistry(serviceRegistry).ownerOf(serviceId);
-
-            // Check for service owner
-            if (msg.sender != serviceOwner) {
-                revert UnauthorizedAccount(msg.sender);
-            }
+        // Check for msg.sender access to change hash
+        if (!isAbleChangeHash(msg.sender, serviceId)) {
+            revert UnauthorizedAccount(msg.sender);
         }
 
         // Update service hash
@@ -111,5 +97,32 @@ contract ComplementaryServiceMetadata {
         emit ComplementaryMetadataUpdated(serviceId, hash);
 
         _locked = 1;
+    }
+
+    /// @dev Checks if account is able to change service metadata hash.
+    /// @param account Account address.
+    /// @param serviceId Service id.
+    /// @return True if account has access, false otherwise.
+    function isAbleChangeHash(address account, uint256 serviceId) public view returns (bool) {
+        // Get service multisig and state
+        (, address multisig, , , , , IServiceRegistry.ServiceState state) =
+            IServiceRegistry(serviceRegistry).mapServices(serviceId);
+
+        // Check for multisig access when the service is deployed
+        if (state == IServiceRegistry.ServiceState.Deployed) {
+            if (account != multisig) {
+                return false;
+            }
+        } else {
+            // Get service owner
+            address serviceOwner = IServiceRegistry(serviceRegistry).ownerOf(serviceId);
+
+            // Check for service owner
+            if (account != serviceOwner) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
