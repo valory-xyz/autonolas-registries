@@ -17,7 +17,7 @@ N/A
 ComplementaryServiceMetadata.sol   |        0 |        0 |        0 |        0 |... 103,105,107
 ```
 No tests
-[]
+[x] Fixed
 
 ### Security issues. Updated 22-05-25
 #### Problems found instrumentally
@@ -43,5 +43,5 @@ No issue
         }
         Can there be a service state in which changing the hash is prohibited?
 ```
-[]
+[x] There is no such state
 
