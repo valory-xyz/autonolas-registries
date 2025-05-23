@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Read variables using jq
+contractVerification=$(jq -r '.contractVerification' globals.json)
 useLedger=$(jq -r '.useLedger' globals.json)
 derivationPath=$(jq -r '.derivationPath' globals.json)
 gasPriceInGwei=$(jq -r '.gasPriceInGwei' globals.json)
@@ -17,13 +18,16 @@ contractArgs="$contractPath --constructor-args $constructorArgs"
 
 # Conditional logic (correct syntax)
 if [ "$useLedger" == "true" ]; then
-  execCmd="$execCmd --mnemonic-derivation-path $derivationPath $contractArgs"
+  deployer=$(cast wallet address -l --mnemonic-derivation-path "$derivationPath")
+  execCmd="$execCmd -l --mnemonic-derivation-path $derivationPath $contractArgs"
 else
   echo "Using PRIVATE_KEY: ${PRIVATE_KEY:0:6}..."
+  deployer=$(cast wallet address --private-key $PRIVATE_KEY)
   execCmd="$execCmd --private-key $PRIVATE_KEY $contractArgs"
 fi
 
 # Deployment message
+echo "Deploying from: $deployer"
 echo "Deployment of: $contractArgs"
 
 # Deploy the contract and capture the address
@@ -41,11 +45,13 @@ fi
 echo "$(jq '. += {"recoveryModuleAddress":"'$recoveryModuleAddress'"}' globals.json)" > globals.json
 
 # Verify contract
-forge verify-contract \
+if [ "$contractVerification" == "true" ]; then
+  forge verify-contract \
     --chain-id "$chainId" \
     --etherscan-api-key "$ETHERSCAN_API_KEY" \
     "$recoveryModuleAddress" \
     "$contractPath" \
     --constructor-args $(cast abi-encode "constructor(address,address)" "$constructorArgs")
+fi
 
 echo "Recovery Module deployed at address: $recoveryModuleAddress"
