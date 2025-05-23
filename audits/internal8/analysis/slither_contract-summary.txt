@@ -10,5 +10,6 @@ INFO:Printers:
   - From ComplementaryServiceMetadata
     - changeHash(uint256,bytes32) (external)
     - constructor(address) (public)
+    - isAbleChangeHash(address,uint256) (public)
 
 INFO:Slither:. analyzed (2 contracts)
