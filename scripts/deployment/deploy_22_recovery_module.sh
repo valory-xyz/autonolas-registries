@@ -26,7 +26,6 @@ elif [ $chainId == 11155111 ]; then
     fi
 fi
 
-execCmd="forge create --broadcast --rpc-url $networkURL$API_KEY"
 contractPath="contracts/multisigs/RecoveryModule.sol:RecoveryModule"
 constructorArgs="$multiSendCallOnlyAddress $serviceRegistryAddress"
 contractArgs="$contractPath --constructor-args $constructorArgs"
@@ -44,10 +43,9 @@ fi
 # Deployment message
 echo "Deploying from: $deployer"
 echo "Deployment of: $contractArgs"
-exit 0
 
 # Deploy the contract and capture the address
-execCmd="$execCmd $walletArgs $contractArgs"
+execCmd="forge create --broadcast --rpc-url $networkURL$API_KEY $walletArgs $contractArgs"
 deploymentOutput=$($execCmd)
 recoveryModuleAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
 
