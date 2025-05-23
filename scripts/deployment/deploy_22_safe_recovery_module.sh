@@ -32,7 +32,7 @@ recoveryModuleAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{p
 
 returnedLength=${#recoveryModuleAddress}
 
-if [ $returnedLength == 0 ]; then
+if [ $returnedLength != 42 ]; then
   echo "!!! The contract was not deployed, aborting..."
   exit 0
 fi
