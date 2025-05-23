@@ -35,9 +35,11 @@ execCmd="$execCmd $walletArgs $contractArgs"
 deploymentOutput=$($execCmd)
 recoveryModuleAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
 
-returnedLength=${#recoveryModuleAddress}
+# Get output length
+outputLength=${#recoveryModuleAddress}
 
-if [ $returnedLength != 42 ]; then
+# Check for the deployed address
+if [ $outputLength != 42 ]; then
   echo "!!! The contract was not deployed, aborting..."
   exit 0
 fi
@@ -47,12 +49,13 @@ echo "$(jq '. += {"recoveryModuleAddress":"'$recoveryModuleAddress'"}' globals.j
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
+  echo "Verifying contract..."
   forge verify-contract \
     --chain-id "$chainId" \
     --etherscan-api-key "$ETHERSCAN_API_KEY" \
     "$recoveryModuleAddress" \
     "$contractPath" \
-    --constructor-args $(cast abi-encode "constructor(address,address)" "$constructorArgs")
+    --constructor-args $(cast abi-encode "constructor(address,address)" $constructorArgs)
 fi
 
-echo "Recovery Module deployed at address: $recoveryModuleAddress"
+echo "Recovery Module deployed at: $recoveryModuleAddress"
