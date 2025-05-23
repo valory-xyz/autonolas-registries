@@ -11,17 +11,17 @@ networkURL=$(jq -r '.networkURL' globals.json)
 multiSendCallOnlyAddress=$(jq -r '.multiSendCallOnlyAddress' globals.json)
 serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' globals.json)
 
-# Getting L1 API key
-if [ $chainId == 1 ]; then
-  API_KEY=$ALCHEMY_API_KEY_MAINNET
+# Check for Polygon keys only since on other networks those are not needed
+if [ $chainId == 137 ]; then
+  API_KEY=$ALCHEMY_API_KEY_MATIC
   if [ "$API_KEY" == "" ]; then
-      echo "set ALCHEMY_API_KEY_MAINNET env variable"
+      echo "set ALCHEMY_API_KEY_MATIC env variable"
       exit 0
   fi
-elif [ $chainId == 11155111 ]; then
-    API_KEY=$ALCHEMY_API_KEY_SEPOLIA
+elif [ $chainId == 80002 ]; then
+    API_KEY=$ALCHEMY_API_KEY_AMOY
     if [ "$API_KEY" == "" ]; then
-        echo "set ALCHEMY_API_KEY_SEPOLIA env variable"
+        echo "set ALCHEMY_API_KEY_AMOY env variable"
         exit 0
     fi
 fi
@@ -44,7 +44,6 @@ fi
 # Deployment message
 echo "Deploying from: $deployer"
 echo "Deployment of: $contractArgs"
-exit 0
 
 # Deploy the contract and capture the address
 execCmd="$execCmd $walletArgs $contractArgs"
