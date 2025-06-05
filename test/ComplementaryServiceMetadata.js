@@ -93,7 +93,7 @@ describe("ComplementaryServiceMetadata", function () {
         });
 
         it("Check complementary token URI", async function () {
-            await complementaryServiceMetadata.changeHash(serviceId, serviceHash)
+            await complementaryServiceMetadata.changeHash(serviceId, serviceHash);
             const baseURI = await serviceRegistry.baseURI();
             const cidPrefix = "f01701220";
             expect(await complementaryServiceMetadata.complementaryTokenURI(serviceId))
