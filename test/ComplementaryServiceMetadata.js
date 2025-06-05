@@ -8,6 +8,7 @@ describe("ComplementaryServiceMetadata", function () {
     let signers;
     const AddressZero = ethers.constants.AddressZero;
     const serviceId = 1;
+    const serviceHash = "0x" + "5".repeat(64);
     let deployer;
 
     beforeEach(async function () {
@@ -89,6 +90,14 @@ describe("ComplementaryServiceMetadata", function () {
             await expect(complementaryServiceMetadata.changeHash(serviceId, newHash))
                 .to.emit(complementaryServiceMetadata, "ComplementaryMetadataUpdated")
                 .withArgs(serviceId, newHash);
+        });
+
+        it("Check complementary token URI", async function () {
+            await complementaryServiceMetadata.changeHash(serviceId, serviceHash);
+            const baseURI = await serviceRegistry.baseURI();
+            const cidPrefix = "f01701220";
+            expect(await complementaryServiceMetadata.tokenURI(serviceId))
+                .to.equal(baseURI + cidPrefix + serviceHash.slice(2));
         });
     });
 
