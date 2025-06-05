@@ -25,7 +25,7 @@ elif [ $chainId == 11155111 ]; then
     fi
 fi
 
-contractPath="contracts/multisigs/RecoveryModule.sol:RecoveryModule"
+contractPath="contracts/utils/ComplementaryServiceMetadata.sol:ComplementaryServiceMetadata"
 constructorArgs="$serviceRegistryAddress"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
