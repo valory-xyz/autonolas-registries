@@ -4,6 +4,8 @@ pragma solidity ^0.8.19;
 /// @title MockServiceRegistry - Smart contract for mocking some of the service registry functionality
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 contract MockServiceRegistry {
+    string public constant baseURI = "ipfs://";
+
     mapping(uint256 => address) public mapServiceOwners;
 
     function setServiceOwner(uint256 serviceId, address serviceOwner) external {
