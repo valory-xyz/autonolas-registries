@@ -26,11 +26,10 @@ interface IServiceRegistry {
 
     /// @dev Gets the owner of a specified service Id.
     /// @param serviceId Service Id.
-    /// @return serviceOwner Service owner address.
-    function ownerOf(uint256 serviceId) external view returns (address serviceOwner);
+    function ownerOf(uint256 serviceId) external view returns (address);
 
-    /// @dev Gets service registry baseURI
-    function baseURI() external view returns(string memory);
+    /// @dev Gets service registry baseURI.
+    function baseURI() external view returns (string memory);
 }
 
 /// @dev Provided zero address.
