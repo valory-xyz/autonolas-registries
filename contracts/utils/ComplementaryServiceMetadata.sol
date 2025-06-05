@@ -162,7 +162,7 @@ contract ComplementaryServiceMetadata {
     /// @notice Expected multicodec: dag-pb; hashing function: sha2-256, with base16 encoding and leading CID_PREFIX removed.
     /// @param serviceId Service Id.
     /// @return Complementary service token URI string.
-    function complementaryTokenURI(uint256 serviceId) public view returns (string memory) {
+    function tokenURI(uint256 serviceId) public view returns (string memory) {
         bytes32 serviceHash = mapServiceHashes[serviceId];
         // Parse 2 parts of bytes32 into left and right hex16 representation, and concatenate into string
         // adding the base URI and a cid prefix for the full base16 multibase prefix IPFS hash representation

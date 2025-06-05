@@ -96,7 +96,7 @@ describe("ComplementaryServiceMetadata", function () {
             await complementaryServiceMetadata.changeHash(serviceId, serviceHash);
             const baseURI = await serviceRegistry.baseURI();
             const cidPrefix = "f01701220";
-            expect(await complementaryServiceMetadata.complementaryTokenURI(serviceId))
+            expect(await complementaryServiceMetadata.tokenURI(serviceId))
                 .to.equal(baseURI + cidPrefix + serviceHash.slice(2));
         });
     });
