@@ -72,4 +72,4 @@ if [ "$contractVerification" == "true" ]; then
     --constructor-args $(cast abi-encode "constructor(address,address)" $constructorArgs)
 fi
 
-echo "Recovery Module deployed at: $recoveryModuleAddress"
+echo "Contract deployed at: $recoveryModuleAddress"
