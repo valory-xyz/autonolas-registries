@@ -1,15 +1,22 @@
 #!/bin/bash
 
-# Read variables using jq
-contractVerification=$(jq -r '.contractVerification' globals.json)
-useLedger=$(jq -r '.useLedger' globals.json)
-derivationPath=$(jq -r '.derivationPath' globals.json)
-gasPriceInGwei=$(jq -r '.gasPriceInGwei' globals.json)
-chainId=$(jq -r '.chainId' globals.json)
-networkURL=$(jq -r '.networkURL' globals.json)
+# Get globals file
+globals="$(dirname "$0")/globals_$1.json"
+if ! test -f $globals; then
+  echo "!!! $globals is not found"
+  exit 0
+fi
 
-multiSendCallOnlyAddress=$(jq -r '.multiSendCallOnlyAddress' globals.json)
-serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' globals.json)
+# Read variables using jq
+contractVerification=$(jq -r '.contractVerification' $globals)
+useLedger=$(jq -r '.useLedger' $globals)
+derivationPath=$(jq -r '.derivationPath' $globals)
+gasPriceInGwei=$(jq -r '.gasPriceInGwei' $globals)
+chainId=$(jq -r '.chainId' $globals)
+networkURL=$(jq -r '.networkURL' $globals)
+
+multiSendCallOnlyAddress=$(jq -r '.multiSendCallOnlyAddress' $globals)
+serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' $globals)
 
 # Check for Polygon keys only since on other networks those are not needed
 if [ $chainId == 137 ]; then
@@ -59,17 +66,20 @@ if [ $outputLength != 42 ]; then
 fi
 
 # Write new deployed contract back into JSON
-echo "$(jq '. += {"recoveryModuleAddress":"'$recoveryModuleAddress'"}' globals.json)" > globals.json
+echo "$(jq '. += {"recoveryModuleAddress":"'$recoveryModuleAddress'"}' $globals)" > $globals
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
-  echo "Verifying contract..."
-  forge verify-contract \
-    --chain-id "$chainId" \
-    --etherscan-api-key "$ETHERSCAN_API_KEY" \
-    "$recoveryModuleAddress" \
-    "$contractPath" \
-    --constructor-args $(cast abi-encode "constructor(address,address)" $constructorArgs)
+  contractParams="$recoveryModuleAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address)" $constructorArgs)"
+
+  echo "Verifying contract on Etherscan..."
+  forge verify-contract --chain-id "$chainId" --etherscan-api-key "$ETHERSCAN_API_KEY" $contractParams
+
+  blockscoutURL=$(jq -r '.blockscoutURL' $globals)
+  if [ "$blockscoutURL" != "null" ]; then
+    echo "Verifying contract on Blockscout..."
+    forge verify-contract --verifier blockscout --verifier-url "$blockscoutURL/api" $contractParams
+  fi
 fi
 
 echo "Contract deployed at: $recoveryModuleAddress"

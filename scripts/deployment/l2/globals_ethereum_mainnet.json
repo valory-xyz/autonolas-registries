@@ -4,6 +4,7 @@
   "derivationPath": "m/44'/60'/2'/0/0",
   "providerName": "mainnet",
   "networkURL": "https://eth-mainnet.g.alchemy.com/v2/",
+  "blockscoutURL":"https://eth.blockscout.com",
   "gasPriceInGwei": "30",
   "bridgeMediatorAddress": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE",
   "serviceRegistryAddress": "0x48b6af7B12C71f09e2fC8aF4855De4Ff54e775cA",
