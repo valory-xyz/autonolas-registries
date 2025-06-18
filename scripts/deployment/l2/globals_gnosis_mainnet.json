@@ -32,5 +32,6 @@
   "apyLimit":"3000000000000000000",
   "stakingVerifierAddress":"0x1D59DadE4FAeA7771eC7221420012d413175404C",
   "stakingFactoryAddress":"0xb0228CA253A88Bc8eb4ca70BCAC8f87b381f4700",
-  "hashCheckpoint": "0x694e62BDF7Ff510A4EE66662cf4866A961a31653"
+  "hashCheckpoint": "0x694e62BDF7Ff510A4EE66662cf4866A961a31653",
+  "complementaryServiceMetadataAddress": "0x0598081D48FB80B0A7E52FAD2905AE9beCd6fC69"
 }
