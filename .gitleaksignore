@@ -491,3 +491,15 @@ d935142b2b2f45cfcafaea38c9fc9a5fa0d2980a:scripts/deployment/l2/globals_base_main
 090e1b7b1b8d2ec11c177a0abfd3ed0d8c1fad72:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:20
 090e1b7b1b8d2ec11c177a0abfd3ed0d8c1fad72:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:21
 090e1b7b1b8d2ec11c177a0abfd3ed0d8c1fad72:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:24
+c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/globals_mainnet.json:generic-api-key:1
+c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/l2/globals_arbitrum_one.json:generic-api-key:1
+c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/l2/globals_arbitrum_sepolia.json:generic-api-key:1
+c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/l2/globals_base_sepolia.json:generic-api-key:1
+c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/l2/globals_celo_alfajores.json:generic-api-key:1
+c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:1
+c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/l2/globals_gnosis_chiado.json:generic-api-key:1
+c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/l2/globals_mode_mainnet.json:generic-api-key:1
+c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/l2/globals_mode_sepolia.json:generic-api-key:1
+c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/l2/globals_optimistic_mainnet.json:generic-api-key:1
+c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/l2/globals_optimistic_sepolia.json:generic-api-key:1
+c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:1
