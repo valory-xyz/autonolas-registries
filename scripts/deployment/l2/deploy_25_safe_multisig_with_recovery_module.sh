@@ -2,7 +2,7 @@
 
 # Get globals file
 globals="$(dirname "$0")/globals_$1.json"
-if ! test -f $globals; then
+if [ ! -f $globals ]; then
   echo "!!! $globals is not found"
   exit 0
 fi
