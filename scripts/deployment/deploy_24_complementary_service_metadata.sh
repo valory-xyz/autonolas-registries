@@ -70,6 +70,7 @@ echo "$(jq '. += {"complementaryServiceMetadataAddress":"'$complementaryServiceM
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
   contractParams="$complementaryServiceMetadataAddress $contractPath --constructor-args $(cast abi-encode "constructor(address)" $constructorArgs)"
+  echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."
   forge verify-contract --chain-id "$chainId" --etherscan-api-key "$ETHERSCAN_API_KEY" $contractParams
