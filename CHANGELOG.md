@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+
+[1.2.4]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.10...v1.2.2
 [1.1.10]: https://github.com/valory-xyz/autonolas-registries/compare/v1.1.9...v1.1.10
@@ -22,6 +24,9 @@ The format is based on [Common Changelog](https://common-changelog.org).
 [1.0.1]: https://github.com/valory-xyz/autonolas-registries/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/valory-xyz/autonolas-registries/releases/tag/v1.0.0
 
+
+## [v1.2.4] - 2024-11-19
+- Deployment of canonical GnosisSafeMultisig on Optimism and Base ([#202](https://github.com/valory-xyz/autonolas-registries/pull/202))
 
 ## [v1.2.3] - 2024-11-01
 - Deploying full light protocol with staking contracts to Mode ([#198](https://github.com/valory-xyz/autonolas-registries/pull/198))

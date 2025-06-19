@@ -3,6 +3,9 @@ solc = "0.8.30"
 src = "contracts"
 out = "out"
 libs = ["lib"]
+optimizer = true
+optimizer_runs = 750
+evm_version = "prague"
 
 remappings = [
     "@gnosis.pm=node_modules/@gnosis.pm",
