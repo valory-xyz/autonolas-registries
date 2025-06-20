@@ -21,7 +21,6 @@ async function main() {
     const optimismMessengerAddress = parsedData.optimismMessengerAddress;
     const wormholeL1MessageRelayerAddress = parsedData.wormholeL1MessageRelayerAddress;
     const timelockAddress = parsedData.timelockAddress;
-    const multiSendCallOnlyAddress = parsedData.multiSendCallOnlyAddress;
 
     // WormholeRelayer contract
     const wormholeRelayerJSON = "abis/bridges/wormhole/WormholeRelayer.json";
@@ -50,7 +49,7 @@ async function main() {
         parsedData.stakingVerifierAddress,
         parsedData.stakingFactoryAddress,
         "0xb4096d181C08DDF75f1A63918cCa0d1023C4e6C7" // WormholeTargetDispenserL2 on Celo
-    ]
+    ];
 
     // Get change owner payload which is the same for all the contracts
     const serviceRegistry = await ethers.getContractAt("ServiceRegistryL2", parsedData.serviceRegistryAddress);
@@ -99,7 +98,7 @@ async function main() {
     //const safeContracts = require("@gnosis.pm/safe-contracts");
     //const CM = "0x04C06323Fe3D53Deb7364c0055E1F68458Cc2570";
     //const multisig = await ethers.getContractAt("GnosisSafe", CM);
-    //const multiSend = await ethers.getContractAt("MultiSendCallOnly", multiSendCallOnlyAddress);
+    //const multiSend = await ethers.getContractAt("MultiSendCallOnly", parsedData.multiSendCallOnlyAddress);
     //const nonce = await multisig.nonce();
 
     //const txs = [
