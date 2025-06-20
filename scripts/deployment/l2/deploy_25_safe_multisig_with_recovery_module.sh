@@ -72,6 +72,7 @@ echo "$(jq '. += {"safeMultisigWithRecoveryModuleAddress":"'$safeMultisigWithRec
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
   contractParams="$safeMultisigWithRecoveryModuleAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address,address)" $constructorArgs)"
+  echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."
   forge verify-contract --chain-id "$chainId" --etherscan-api-key "$ETHERSCAN_API_KEY" $contractParams

@@ -503,3 +503,10 @@ c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/l2/globals_mode_sepo
 c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/l2/globals_optimistic_mainnet.json:generic-api-key:1
 c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/l2/globals_optimistic_sepolia.json:generic-api-key:1
 c1980c43a524e3079056b7bb82d66086b2ca8fa9:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:1
+28c072acfd7fc9407f4e75441f906e5ead519caa:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:21
+28c072acfd7fc9407f4e75441f906e5ead519caa:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:22
+28c072acfd7fc9407f4e75441f906e5ead519caa:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:25
+f6bd4e8d54f430ff12bd9a022ef777fa2b4a5425:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:21
+f6bd4e8d54f430ff12bd9a022ef777fa2b4a5425:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:22
+f6bd4e8d54f430ff12bd9a022ef777fa2b4a5425:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:25
+f6bd4e8d54f430ff12bd9a022ef777fa2b4a5425:scripts/deployment/l2/globals_gnosis_mainnet.json:generic-api-key:29

@@ -46,13 +46,17 @@ async function checkBytecode(provider, configContracts, contractName, log) {
             // Get the contract instance
             const contractFromJSON = fs.readFileSync(configContracts[i]["artifact"], "utf8");
             const parsedFile = JSON.parse(contractFromJSON);
-            const bytecode = parsedFile["deployedBytecode"];
+            // Forge JSON
+            let bytecode = parsedFile["deployedBytecode"]["object"];
+            if (bytecode === undefined) {
+                // Hardhat JSON
+                bytecode = parsedFile["deployedBytecode"];
+            }
             const onChainCreationCode = await provider.getCode(configContracts[i]["address"]);
 
-            // Compare last fifth part of deployed bytecode bytes
+            // Compare last 43 bytes as they reflect the deployed contract metadata hash
             // We cannot compare the full one since the repo deployed bytecode does not contain immutable variable info
-            const slicePart = -bytecode.length / 5;
-            customExpectContain(onChainCreationCode, bytecode.slice(slicePart),
+            customExpectContain(onChainCreationCode, bytecode.slice(-86),
                 log + ", address: " + configContracts[i]["address"] + ", failed bytecode comparison");
             return;
         }

@@ -171,6 +171,16 @@
         "address": "0xb0228CA253A88Bc8eb4ca70BCAC8f87b381f4700"
       },
       {
+        "name": "RecoveryModule",
+        "artifact": "abis/0.8.30/RecoveryModule.json",
+        "address": "0x0Cb12457ed26d572c5e4A50f30b6f7A904662a72"
+      },
+      {
+        "name": "SafeMultisigWithRecoveryModule",
+        "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
+        "address": "0xB4eB492bbfDcE5ccc11d675797cCF090eB0bCbd6"
+      },
+      {
         "name": "ComplementaryServiceMetadata",
         "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
         "address": "0x0598081D48FB80B0A7E52FAD2905AE9beCd6fC69"
@@ -327,6 +337,16 @@
         "name": "StakingFactory",
         "artifact": "abis/0.8.25/StakingFactory.json",
         "address": "0x1cEe30D08943EB58EFF84DD1AB44a6ee6FEff63a"
+      },
+      {
+        "name": "RecoveryModule",
+        "artifact": "abis/0.8.30/RecoveryModule.json",
+        "address": "0x359d53C326388D24037b3b1590d217fdb5EEE74c"
+      },
+      {
+        "name": "SafeMultisigWithRecoveryModule",
+        "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
+        "address": "0x8c534420Db046d6801A1A8bE6fb602cC8F257453"
       },
       {
         "name": "ComplementaryServiceMetadata",
