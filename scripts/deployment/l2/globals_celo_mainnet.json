@@ -13,6 +13,7 @@
   "baseURI": "https://gateway.autonolas.tech/ipfs/",
   "serviceRegistryName": "Service Registry L2",
   "serviceRegistrySymbol": "AUTONOLAS-SERVICE-L2-V1",
+  "timelockAddress": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE",
   "bridgeMediatorAddress": "0x397125902ED2cA2d42104F621f448A2cE1bC8Fb7",
   "olasAddress": "0xaCFfAe8e57Ec6E394Eb1b41939A8CF7892DbDc51",
   "multisigProxyHash130": "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000",
@@ -31,5 +32,6 @@
   "stakingVerifierAddress": "0xc40C79C275F3fA1F3f4c723755C81ED2D53A8D81",
   "stakingFactoryAddress": "0x1c2cD884127b080F940b7546c1e9aaf525b1FA55",
   "wormholeL1MessageRelayerAddress": "0x27428DD2d3DD32A4D7f7C497eAaa23130d894911",
-  "wormholeMessengerAddress": "0x397125902ED2cA2d42104F621f448A2cE1bC8Fb7"
+  "wormholeMessengerAddress": "0x397125902ED2cA2d42104F621f448A2cE1bC8Fb7",
+  "optimismMessengerAddress": "0xC14E191A64a7FB0e5790a8a0B9a58683dFFce04d"
 }
