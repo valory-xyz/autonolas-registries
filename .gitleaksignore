@@ -510,3 +510,5 @@ f6bd4e8d54f430ff12bd9a022ef777fa2b4a5425:scripts/deployment/l2/globals_base_main
 f6bd4e8d54f430ff12bd9a022ef777fa2b4a5425:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:22
 f6bd4e8d54f430ff12bd9a022ef777fa2b4a5425:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:25
 f6bd4e8d54f430ff12bd9a022ef777fa2b4a5425:scripts/deployment/l2/globals_gnosis_mainnet.json:generic-api-key:29
+9087b9b8d2ae15d70c88789cf8c3fbbdc865f522:scripts/deployment/globals_mainnet.json:generic-api-key:28
+9087b9b8d2ae15d70c88789cf8c3fbbdc865f522:scripts/deployment/globals_mainnet.json:generic-api-key:29
