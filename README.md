@@ -16,9 +16,9 @@ a group of agent instances.
 
 In order to generalize `components` / `agents` / `services`, they are referred sometimes as `units`.
 
-A graphical overview of the whole on-chain architecture is available here:
+A graphical overview is available [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/flowchart.md).
 
-![architecture](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/On-chain_architecture_v6.png)
+For reference purposes only, an older version of the general Autonolas architecture is available [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/On-chain_architecture_v6.png).
 
 An overview of the design, details on how securing services with ETH or a custom ERC20 token, how service owners can opt for a set of authorized operators,
 as well as how DAOs can manage their autonomous services are provided [here](https://github.com/valory-xyz/autonolas-registries/blob/main/docs/AgentServicesFunctionality.pdf).
@@ -33,14 +33,14 @@ An overview of the registries contracts related to staking can be found [here](h
 
 Note that by default the contracts do not work with:
 - Fee on transfer tokens;
-- Balance changes outside of transfers tokens.
+- Balance changes outside token transfers.
 
 The following list represents registries contracts:
 - Abstract contracts:
   - [GenericRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/GenericRegistry.sol)
   - [UnitRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/UnitRegistry.sol)
   - [GenericManager](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/GenericManager.sol)
-  - [ServiceStakingBase.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/ServiceStakingBase.sol)
+  - [StakingBase.sol](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/staking/StakingBase.sol)
 - Core contracts:
   - [AgentRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/AgentRegistry.sol)
   - [ComponentRegistry](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ComponentRegistry.sol)
@@ -49,8 +49,8 @@ The following list represents registries contracts:
   - [ServiceRegistryTokenUtility](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistryTokenUtility.sol)
 - Periphery contracts:
   - [RegistriesManager](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/RegistriesManager.sol)
-  - [ServiceManager](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceManager.sol)
   - [ServiceManagerToken](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceManagerToken.sol)
+  - [ServiceManager (deprecated)](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceManager.sol)
 - Utility contracts:
   - [OperatorSignedHashes](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/utils/OperatorSignedHashes.sol)
   - [OperatorWhitelist](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/utils/OperatorWhitelist.sol)
@@ -66,16 +66,22 @@ The following list represents registries contracts:
 
 
 In order to deploy a service, its registered agent instances form a consensus mechanism via the means of multisigs using the generic multisig interface.
-One of the most well-known multisigs is Gnosis Safe. The Gnosis interface implementation of a generic multisig interface is provided here:
+One of the most well-known multisigs is [Safe](https://safe.global/). The Safe interface implementation of a generic multisig interface is provided here:
 - [GnosisSafeMultisig](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/multisigs/GnosisSafeMultisig.sol)
 
-Another multisig implementation allows to upgrade / downgrade the number of agent instances that govern the same Gnosis Safe multisig instance between different service re-deployments.
+The updated version accounting for the Recovery Module installation is provided here:
+- [SafeMultisigWithRecoveryModule](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/multisigs/SafeMultisigWithRecoveryModule.sol)
+
+Another multisig implementation allows to upgrade / downgrade the number of agent instances that govern the same Safe multisig instance between different service re-deployments.
 Please note that the initial multisig instance must already exist from a previous service deployment.
 In order to use that option, registered agent instances forming a consensus are required to return the multisig instance ownership to the service owner.
 Then, the service owner must terminate the service, update the number of desired agent instances and move it into a new `active-registration` state.
 Once all agent instances are registered, the service owner re-deploys the service by giving up their ownership of the multisig with registered agent instances and by setting a new multisig instance threshold.
 The implementation of such multisig is provided here:
 - [GnosisSafeSameAddressMultisig](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/multisigs/GnosisSafeSameAddressMultisig.sol)
+
+The updated version with the access recovery feature is provided in the Recovery Module contract itself here:
+- [RecoveryModule](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/multisigs/RecoveryModule.sol)
 
 To verify the multisig data when redeploying the service using the GnosisSafeSameAddressMultisig contract while changing service multisig owners (with updated agent instance addresses),
 see the guidelines and corresponding scripts [here](https://github.com/valory-xyz/autonolas-registries/blob/main/scripts/multisig/)
