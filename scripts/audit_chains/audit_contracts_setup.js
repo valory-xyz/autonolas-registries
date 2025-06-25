@@ -53,6 +53,11 @@ async function checkBytecode(provider, configContracts, contractName, log) {
                 bytecode = parsedFile["deployedBytecode"];
             }
             const onChainCreationCode = await provider.getCode(configContracts[i]["address"]);
+            // Bytecode DEBUG
+            //if (contractName === "ContractName") {
+            //    console.log("onChainCreationCode", onChainCreationCode);
+            //    console.log("bytecode", bytecode);
+            //}
 
             // Compare last 43 bytes as they reflect the deployed contract metadata hash
             // We cannot compare the full one since the repo deployed bytecode does not contain immutable variable info
@@ -276,34 +281,34 @@ async function checkOperatorWhitelist(chainId, provider, globalsInstance, config
 }
 
 // Check gnosis safe implementation: chain Id, provider, parsed globals, configuration contracts, contract name
-async function checkGnosisSafeImplementation(chainId, provider, globalsInstance, configContracts, contractName, log) {
+async function checkGnosisSafeMultisig(chainId, provider, globalsInstance, configContracts, contractName, log) {
     // Check the bytecode
     await checkBytecode(provider, configContracts, contractName, log);
 
     // Get the contract instance
-    const gnosisSafeImplementation = await findContractInstance(provider, configContracts, contractName);
+    const gnosisSafeMultisig = await findContractInstance(provider, configContracts, contractName);
 
-    log += ", address: " + gnosisSafeImplementation.address;
+    log += ", address: " + gnosisSafeMultisig.address;
     // Check default data length
-    const defaultDataLength = Number(await gnosisSafeImplementation.DEFAULT_DATA_LENGTH());
+    const defaultDataLength = Number(await gnosisSafeMultisig.DEFAULT_DATA_LENGTH());
     customExpect(defaultDataLength, 144, log + ", function: DEFAULT_DATA_LENGTH()");
 
-    // Check Gnosis Sage setup selector
-    const setupSelector = await gnosisSafeImplementation.GNOSIS_SAFE_SETUP_SELECTOR();
+    // Check Gnosis Safe setup selector
+    const setupSelector = await gnosisSafeMultisig.GNOSIS_SAFE_SETUP_SELECTOR();
     customExpect(setupSelector, "0xb63e800d", log + ", function: GNOSIS_SAFE_SETUP_SELECTOR()");
 }
 
 // Check gnosis safe same address implementation: chain Id, provider, parsed globals, configuration contracts, contract name
-async function checkGnosisSafeSameAddressImplementation(chainId, provider, globalsInstance, configContracts, contractName, log) {
+async function checkGnosisSafeSameAddressMultisig(chainId, provider, globalsInstance, configContracts, contractName, log) {
     // Check the bytecode
     await checkBytecode(provider, configContracts, contractName, log);
 
     // Get the contract instance
-    const gnosisSafeSameAddressImplementation = await findContractInstance(provider, configContracts, contractName);
+    const gnosisSafeSameAddressMultisig = await findContractInstance(provider, configContracts, contractName);
 
-    log += ", address: " + gnosisSafeSameAddressImplementation.address;
+    log += ", address: " + gnosisSafeSameAddressMultisig.address;
     // Check default data length
-    const defaultDataLength = Number(await gnosisSafeSameAddressImplementation.DEFAULT_DATA_LENGTH());
+    const defaultDataLength = Number(await gnosisSafeSameAddressMultisig.DEFAULT_DATA_LENGTH());
     customExpect(defaultDataLength, 20, log + ", function: DEFAULT_DATA_LENGTH()");
 }
 
@@ -369,6 +374,66 @@ async function checkStakingFactory(chainId, provider, globalsInstance, configCon
     customExpect(verifier, globalsInstance["stakingVerifierAddress"], log + ", function: verifier()");
 }
 
+// Check RecoveryModule: chain Id, provider, parsed globals, configuration contracts, contract name
+async function checkRecoveryModule(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    // Get the contract instance
+    const recoveryModule = await findContractInstance(provider, configContracts, contractName);
+
+    log += ", address: " + recoveryModule.address;
+    // Check default data length
+    const defaultDataLength = Number(await recoveryModule.DEFAULT_DATA_LENGTH());
+    customExpect(defaultDataLength, 32, log + ", function: DEFAULT_DATA_LENGTH()");
+
+    // Check recover threshold
+    const recoverThreshold = Number(await recoveryModule.RECOVER_THRESHOLD());
+    customExpect(recoverThreshold, 1, log + ", function: RECOVER_THRESHOLD()");
+
+    // Check MultiSend address
+    const multiSend = await recoveryModule.multiSend();
+    customExpect(multiSend, globalsInstance["multiSendCallOnlyAddress"], log + ", function: multiSend()");
+
+    // Check ServiceRegistry address
+    const serviceRegistry = await recoveryModule.serviceRegistry();
+    customExpect(serviceRegistry, globalsInstance["serviceRegistryAddress"], log + ", function: serviceRegistry()");
+}
+
+// Check SafeMultisigWithRecoveryModule: chain Id, provider, parsed globals, configuration contracts, contract name
+async function checkSafeMultisigWithRecoveryModule(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    // Get the contract instance
+    const safeMultisigWithRecoveryModule = await findContractInstance(provider, configContracts, contractName);
+
+    log += ", address: " + safeMultisigWithRecoveryModule.address;
+    // Check default data length
+    const defaultDataLength = Number(await safeMultisigWithRecoveryModule.DEFAULT_DATA_LENGTH());
+    customExpect(defaultDataLength, 64, log + ", function: DEFAULT_DATA_LENGTH()");
+
+    // Check Safe setup selector
+    const setupSelector = await safeMultisigWithRecoveryModule.SAFE_SETUP_SELECTOR();
+    customExpect(setupSelector, "0xb63e800d", log + ", function: SAFE_SETUP_SELECTOR()");
+
+    // Check enable module selector
+    const enableModuleSelector = await safeMultisigWithRecoveryModule.ENABLE_MODULE_SELECTOR();
+    customExpect(enableModuleSelector, "0x24292962", log + ", function: ENABLE_MODULE_SELECTOR()");
+
+    // Check Safe master address
+    const safe = await safeMultisigWithRecoveryModule.safe();
+    customExpect(safe, globalsInstance["gnosisSafeAddress"], log + ", function: safe()");
+
+    // Check Safe Factory address
+    const safeProxyFactory = await safeMultisigWithRecoveryModule.safeProxyFactory();
+    customExpect(safeProxyFactory, globalsInstance["gnosisSafeProxyFactoryAddress"], log + ", function: safeProxyFactory()");
+
+    // Check Recovery Module address
+    const recoveryModule = await safeMultisigWithRecoveryModule.recoveryModule();
+    customExpect(recoveryModule, globalsInstance["recoveryModuleAddress"], log + ", function: safe()");
+}
+
 
 async function main() {
     // Check for the API keys
@@ -386,33 +451,23 @@ async function main() {
 
     // ################################# VERIFY CONTRACTS WITH REPO #################################
     if (verifyRepo) {
-        // For now gnosis chains are not supported
-        const networks = {
-            "mainnet": "etherscan",
-            "polygon": "polygonscan",
-            "arbitrumOne": "arbiscan",
-            "optimistic": "optimistic.etherscan"
-        };
-
         console.log("\nVerifying deployed contracts vs the repo... If no error is output, then the contracts are correct.");
+
+        // TODO Study https://playground.sourcify.dev/
 
         // Traverse all chains
         for (let i = 0; i < numChains; i++) {
-            // Skip gnosis chains
-            if (!networks[configs[i]["name"]]) {
-                continue;
-            }
-
             console.log("\n\nNetwork:", configs[i]["name"]);
-            const network = networks[configs[i]["name"]];
             const contracts = configs[i]["contracts"];
+            const chainId = configs[i]["chainId"];
+            console.log("chainId", chainId);
 
             // Verify contracts
             for (let j = 0; j < contracts.length; j++) {
                 console.log("Checking " + contracts[j]["name"]);
                 const execSync = require("child_process").execSync;
                 try {
-                    execSync("scripts/audit_chains/audit_repo_contract.sh " + network + " " + contracts[j]["name"] + " " + contracts[j]["address"]);
+                    execSync("scripts/audit_chains/audit_repo_contract.sh " + chainId + " " + contracts[j]["name"] + " " + contracts[j]["address"]);
                 } catch (err) {
                     err.stderr.toString();
                 }
@@ -427,7 +482,7 @@ async function main() {
             "mainnet": "scripts/deployment/globals_mainnet.json",
             "polygon": "scripts/deployment/l2/globals_polygon_mainnet.json",
             "gnosis": "scripts/deployment/l2/globals_gnosis_mainnet.json",
-            "arbitrumOne": "scripts/deployment/l2/globals_arbitrum_one.json",
+            "arbitrumOne": "scripts/deployment/l2/globals_arbitrum_mainnet.json",
             "optimistic": "scripts/deployment/l2/globals_optimistic_mainnet.json",
             "base": "scripts/deployment/l2/globals_base_mainnet.json",
             "celo": "scripts/deployment/l2/globals_celo_mainnet.json",
@@ -492,16 +547,22 @@ async function main() {
             await checkOperatorWhitelist(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "OperatorWhitelist", log);
 
             log = initLog + ", contract: " + "GnosisSafeMultisig";
-            await checkGnosisSafeImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeMultisig", log);
+            await checkGnosisSafeMultisig(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeMultisig", log);
 
             log = initLog + ", contract: " + "GnosisSafeSameAddressMultisig";
-            await checkGnosisSafeSameAddressImplementation(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeSameAddressMultisig", log);
+            await checkGnosisSafeSameAddressMultisig(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeSameAddressMultisig", log);
 
             log = initLog + ", contract: " + "StakingVerifier";
             await checkStakingVerifier(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "StakingVerifier", log);
 
             log = initLog + ", contract: " + "StakingFactory";
             await checkStakingFactory(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "StakingFactory", log);
+
+            log = initLog + ", contract: " + "RecoveryModule";
+            await checkRecoveryModule(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "RecoveryModule", log);
+
+            log = initLog + ", contract: " + "SafeMultisigWithRecoveryModule";
+            await checkSafeMultisigWithRecoveryModule(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "SafeMultisigWithRecoveryModule", log);
         }
     }
     // ################################# /VERIFY CONTRACTS SETUP #################################
