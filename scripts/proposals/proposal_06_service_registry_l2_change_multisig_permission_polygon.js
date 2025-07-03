@@ -5,7 +5,7 @@ const { ethers } = require("ethers");
 async function main() {
     const fs = require("fs");
     // Mainnet globals file
-    const globalsFile = "globals.json";
+    const globalsFile = "scripts/deployment/l2/globals_polygon_mainnet.json";
     const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
     const parsedData = JSON.parse(dataFromJSON);
 
@@ -43,10 +43,10 @@ async function main() {
     const fxGovernorTunnelAddress = parsedData.bridgeMediatorAddress;
 
     // Proposal preparation
-    console.log("Proposal 6. Change GnosisSafeSameAddressMultisig implementation addresses in ServiceRegistryL2 on polygon\n");
+    console.log("Proposal 6. Change multisig implementation statuses in ServiceRegistryL2 on on polygon\n");
     // De-whitelist old multisig implementation and whitelist the new one
-    const rawPayloads = [serviceRegistry.interface.encodeFunctionData("changeMultisigPermission", ["0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5", false]),
-        serviceRegistry.interface.encodeFunctionData("changeMultisigPermission", [parsedData.gnosisSafeSameAddressMultisigImplementationAddress, true])];
+    const rawPayloads = [serviceRegistry.interface.encodeFunctionData("changeMultisigPermission", [parsedData.recoveryModuleAddress, true]),
+        serviceRegistry.interface.encodeFunctionData("changeMultisigPermission", [parsedData.safeMultisigWithRecoveryModuleAddress, true])];
     // Pack the second part of data
     const localTargets = [serviceRegistryAddress, serviceRegistryAddress];
     const localValues = [0, 0];

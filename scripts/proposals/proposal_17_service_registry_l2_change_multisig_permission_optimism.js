@@ -5,7 +5,7 @@ const { ethers } = require("ethers");
 async function main() {
     const fs = require("fs");
     // Mainnet globals file
-    const globalsFile = "scripts/deployment/l2/globals_gnosis_mainnet.json";
+    const globalsFile = "scripts/deployment/l2/globals_mode_mainnet.json";
     const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
     const parsedData = JSON.parse(dataFromJSON);
 
@@ -16,35 +16,34 @@ async function main() {
         console.log("Current block number mainnet: " + result);
     });
 
-    const gnosisURL = "https://rpc.gnosischain.com";
-    const gnosisProvider = new ethers.providers.JsonRpcProvider(gnosisURL);
-    await gnosisProvider.getBlockNumber().then((result) => {
-        console.log("Current block number gnosis: " + result);
+    const optimismURL = parsedData.networkURL;
+    const optimismProvider = new ethers.providers.JsonRpcProvider(optimismURL);
+    await optimismProvider.getBlockNumber().then((result) => {
+        console.log("Current block number optimism: " + result);
     });
-    
 
-    // AMBProxy on mainnet
-    const AMBProxyAddress = parsedData.AMBContractProxyForeignAddress;
-    const AMBProxyJSON = "abis/bridges/gnosis/EternalStorageProxy.json";
-    let contractFromJSON = fs.readFileSync(AMBProxyJSON, "utf8");
-    const AMBProxyABI = JSON.parse(contractFromJSON);
-    const AMBProxy = new ethers.Contract(AMBProxyAddress, AMBProxyABI, mainnetProvider);
+    // CDMProxy address on mainnet
+    const CDMProxyAddress = parsedData.L1CrossDomainMessengerProxyAddress;
+    const CDMProxyJSON = "abis/bridges/optimism/L1CrossDomainMessenger.json";
+    let contractFromJSON = fs.readFileSync(CDMProxyJSON, "utf8");
+    const CDMProxyABI = JSON.parse(contractFromJSON);
+    const CDMProxy = new ethers.Contract(CDMProxyAddress, CDMProxyABI, optimismProvider);
 
-    // HomeMediator on gnosis
-    const homeMediatorAddress = parsedData.bridgeMediatorAddress;
-    const homeMediatorJSON = "abis/bridges/gnosis/HomeMediator.json";
-    contractFromJSON = fs.readFileSync(homeMediatorJSON, "utf8");
+    // OptimismMessenger address on optimism
+    const optimismMessengerAddress = parsedData.bridgeMediatorAddress;
+    const optimismMessengerJSON = "abis/bridges/optimism/OptimismMessenger.json";
+    contractFromJSON = fs.readFileSync(optimismMessengerJSON, "utf8");
     let parsedFile = JSON.parse(contractFromJSON);
-    const homeMediatorABI = parsedFile["abi"];
-    const homeMediator = new ethers.Contract(homeMediatorAddress, homeMediatorABI, gnosisProvider);
+    const optimismMessengerABI = parsedFile["abi"];
+    const optimismMessenger = new ethers.Contract(optimismMessengerAddress, optimismMessengerABI, optimismProvider);
 
-    // ServiceRegistryL2 address on gnosis
+    // ServiceRegistryL2 address on optimism
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceRegistryJSON = "artifacts/contracts/ServiceRegistryL2.sol/ServiceRegistryL2.json";
     contractFromJSON = fs.readFileSync(serviceRegistryJSON, "utf8");
     parsedFile = JSON.parse(contractFromJSON);
     const serviceRegistryABI = parsedFile["abi"];
-    const serviceRegistry = new ethers.Contract(serviceRegistryAddress, serviceRegistryABI, gnosisProvider);
+    const serviceRegistry = new ethers.Contract(serviceRegistryAddress, serviceRegistryABI, optimismProvider);
 
     // Whitelist new multisig implementations
     const rawPayloads = [serviceRegistry.interface.encodeFunctionData("changeMultisigPermission", [parsedData.recoveryModuleAddress, true]),
@@ -64,21 +63,18 @@ async function main() {
     }
 
     // Proposal preparation
-    console.log("Proposal 5. Change multisig implementation statuses in ServiceRegistryL2 on gnosis\n");
-    const mediatorPayload = await homeMediator.interface.encodeFunctionData("processMessageFromForeign", [data]);
+    console.log("Proposal 17. Change multisig implementation statuses in ServiceRegistryL2 on Optimism / Base / Mode / Celo\n");
+    // Build the bridge payload
+    const messengerPayload = await optimismMessenger.interface.encodeFunctionData("processMessageFromSource", [data]);
+    const minGasLimit = "2000000";
+    // Build the final payload for the Timelock
+    const timelockPayload = await CDMProxy.interface.encodeFunctionData("sendMessage", [optimismMessengerAddress,
+        messengerPayload, minGasLimit]);
 
-    // AMBContractProxyHomeAddress on gnosis mainnet: 0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59
-    // Function to call by homeMediator: processMessageFromForeign
-    console.log("AMBContractProxyHomeAddress to call homeMediator's processMessageFromForeign function with the data:", data);
-
-    const requestGasLimit = "2000000";
-    const timelockPayload = await AMBProxy.interface.encodeFunctionData("requireToPassMessage", [homeMediatorAddress,
-        mediatorPayload, requestGasLimit]);
-
-    const targets = [AMBProxyAddress];
+    const targets = [CDMProxyAddress];
     const values = [0];
     const callDatas = [timelockPayload];
-    const description = "Change GnosisSafeSameAddressMultisig implementation addresses in ServiceRegistryL2 on gnosis";
+    const description = "Change multisig implementation statuses in ServiceRegistryL2";
 
     // Proposal details
     console.log("targets:", targets);

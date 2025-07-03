@@ -16,10 +16,10 @@ async function main() {
         console.log("Current block number mainnet: " + result);
     });
 
-    const optimisticURL = parsedData.networkURL;
-    const optimisticProvider = new ethers.providers.JsonRpcProvider(optimisticURL);
-    await optimisticProvider.getBlockNumber().then((result) => {
-        console.log("Current block number optimistic: " + result);
+    const optimismURL = parsedData.networkURL;
+    const optimismProvider = new ethers.providers.JsonRpcProvider(optimismURL);
+    await optimismProvider.getBlockNumber().then((result) => {
+        console.log("Current block number optimism: " + result);
     });
 
     // CDMProxy address on mainnet
@@ -27,7 +27,7 @@ async function main() {
     const CDMProxyJSON = "abis/bridges/optimism/L1CrossDomainMessenger.json";
     let contractFromJSON = fs.readFileSync(CDMProxyJSON, "utf8");
     const CDMProxyABI = JSON.parse(contractFromJSON);
-    const CDMProxy = new ethers.Contract(CDMProxyAddress, CDMProxyABI, optimisticProvider);
+    const CDMProxy = new ethers.Contract(CDMProxyAddress, CDMProxyABI, optimismProvider);
 
     // OptimismMessenger address on optimism
     const optimismMessengerAddress = parsedData.bridgeMediatorAddress;
@@ -35,7 +35,7 @@ async function main() {
     contractFromJSON = fs.readFileSync(optimismMessengerJSON, "utf8");
     let parsedFile = JSON.parse(contractFromJSON);
     const optimismMessengerABI = parsedFile["abi"];
-    const optimismMessenger = new ethers.Contract(optimismMessengerAddress, optimismMessengerABI, optimisticProvider);
+    const optimismMessenger = new ethers.Contract(optimismMessengerAddress, optimismMessengerABI, optimismProvider);
 
     // StakingVerifier address on optimism
     const stakingVerifierAddress = parsedData.stakingVerifierAddress;
@@ -43,7 +43,7 @@ async function main() {
     contractFromJSON = fs.readFileSync(stakingVerifierJSON, "utf8");
     parsedFile = JSON.parse(contractFromJSON);
     const stakingVerifierABI = parsedFile["abi"];
-    const stakingVerifier = new ethers.Contract(stakingVerifierAddress, stakingVerifierABI, optimisticProvider);
+    const stakingVerifier = new ethers.Contract(stakingVerifierAddress, stakingVerifierABI, optimismProvider);
 
     // ServiceRegistryL2 address on optimism
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
@@ -51,7 +51,7 @@ async function main() {
     contractFromJSON = fs.readFileSync(serviceRegistryJSON, "utf8");
     parsedFile = JSON.parse(contractFromJSON);
     const serviceRegistryABI = parsedFile["abi"];
-    const serviceRegistry = new ethers.Contract(serviceRegistryAddress, serviceRegistryABI, optimisticProvider);
+    const serviceRegistry = new ethers.Contract(serviceRegistryAddress, serviceRegistryABI, optimismProvider);
 
     // Timelock contract across the bridge must change staking limits
     const value = 0;
