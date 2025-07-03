@@ -525,3 +525,4 @@ f6bd4e8d54f430ff12bd9a022ef777fa2b4a5425:scripts/deployment/l2/globals_gnosis_ma
 59ed7351731a6c2eb0fef7d7f46b02006e54c53c:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:26
 59ed7351731a6c2eb0fef7d7f46b02006e54c53c:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:27
 59ed7351731a6c2eb0fef7d7f46b02006e54c53c:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:28
+9ba281afd673efafa2fc872c37405c89102faf44:scripts/deployment/l2/globals_optimism_sepolia.json:generic-api-key:1
