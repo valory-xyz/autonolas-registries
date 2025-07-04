@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 
 async function main() {
     const fs = require("fs");
-    const globalsFile = "globals.json";
+    const globalsFile = "scripts/deployment/globals_mainnet.json";
     const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
     let parsedData = JSON.parse(dataFromJSON);
     const providerName = parsedData.providerName;
@@ -22,20 +22,11 @@ async function main() {
     const serviceRegistry = await ethers.getContractAt("ServiceRegistry", serviceRegistryAddress);
 
     // Proposal preparation
-    console.log("Proposal 7. Change GnosisSafeSameAddressMultisig implementation addresses in ServiceRegistry");
+    console.log("Proposal 7. Change multisig implementation statuses in ServiceRegistry");
     const targets = [serviceRegistryAddress, serviceRegistryAddress];
     const values = [0, 0];
-    let oldMultisig;
-    if (providerName === "mainnet") {
-        oldMultisig = "0x26Ea2dC7ce1b41d0AD0E0521535655d7a94b684c";
-    } else if (providerName === "sepolia") {
-        oldMultisig = "0x92499E80f50f06C4078794C179986907e7822Ea1";
-    } else {
-        console.log("Unknown network provider", providerName);
-        return;
-    }
-    const callDatas = [serviceRegistry.interface.encodeFunctionData("changeMultisigPermission", [oldMultisig, false]),
-        serviceRegistry.interface.encodeFunctionData("changeMultisigPermission", [parsedData.gnosisSafeSameAddressMultisigImplementationAddress, true])];
+    const callDatas = [serviceRegistry.interface.encodeFunctionData("changeMultisigPermission", [parsedData.recoveryModuleAddress, true]),
+        serviceRegistry.interface.encodeFunctionData("changeMultisigPermission", [parsedData.safeMultisigWithRecoveryModuleAddress, true])];
     const description = "Change GnosisSafeSameAddressMultisig implementation addresses in ServiceRegistry";
 
     // Proposal details
