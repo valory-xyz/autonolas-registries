@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 
 async function main() {
     const fs = require("fs");
-    const globalsFile = "globals.json";
+    const globalsFile = "scripts/deployment/l2/globals_celo_mainnet.json";
     const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
     const parsedData = JSON.parse(dataFromJSON);
     const HashZero = ethers.constants.HashZero;
@@ -65,6 +65,8 @@ async function main() {
         ).slice(2);
     }
     data = "0x" + data;
+
+    console.log("Data:", data);
 
     // Proposal preparation
     console.log("Change contract owners on Celo");
