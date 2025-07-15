@@ -9,7 +9,7 @@ async function main() {
     const AddressZero = ethers.constants.AddressZero;
     const fs = require("fs");
     // Mainnet globals file
-    const globalsFile = "globals.json";
+    const globalsFile = "scripts/deployment/l2/globals_arbitrum_mainnet.json";
     const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
     const parsedData = JSON.parse(dataFromJSON);
 
