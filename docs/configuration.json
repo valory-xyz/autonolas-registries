@@ -274,7 +274,7 @@
     ]
   },
   {
-    "name": "optimistic",
+    "name": "optimism",
     "chainId": "10",
     "contracts": [
       {
