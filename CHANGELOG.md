@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
-[1.2.8]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.4...v1.2.8
+[1.2.7]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.6...v1.2.7
 [1.2.6]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.4...v1.2.6
 [1.2.4]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.2...v1.2.3
@@ -26,9 +26,9 @@ The format is based on [Common Changelog](https://common-changelog.org).
 [1.0.0]: https://github.com/valory-xyz/autonolas-registries/releases/tag/v1.0.0
 
 
-## [v1.2.8] - 2025-06-19
+## [v1.2.7] - 2025-07-16
 - Development of `ComplementaryServiceMetadata` contract
-- Deployment of `ComplementaryServiceMetadata`, `RecoveryModule` and `SafeMultisigWithRecoveryModule` contracts on Gnosis and Base ([#216](https://github.com/valory-xyz/autonolas-registries/pull/216))
+- Deployment of `ComplementaryServiceMetadata` contract on Gnosis and Base, `RecoveryModule` and `SafeMultisigWithRecoveryModule` contracts on Arbitrum, Ethereum, Gnosis, Base, Optimism, Mode, Polygon, Celo ([#216](https://github.com/valory-xyz/autonolas-registries/pull/216))
 - Adjusting static audit
 
 ## [v1.2.6] - 2025-05-02
