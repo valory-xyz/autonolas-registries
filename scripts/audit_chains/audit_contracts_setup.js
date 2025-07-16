@@ -199,6 +199,10 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
     customExpect(res, true, log + ", function: mapMultisigs(safeMultisig)");
     res = await serviceRegistry.mapMultisigs(globalsInstance["gnosisSafeSameAddressMultisigImplementationAddress"]);
     customExpect(res, true, log + ", function: mapMultisigs(safeSameAddressMultisig)");
+    res = await serviceRegistry.mapMultisigs(globalsInstance["recoveryModuleAddress"]);
+    customExpect(res, true, log + ", function: mapMultisigs(recoveryModule)");
+    res = await serviceRegistry.mapMultisigs(globalsInstance["safeMultisigWithRecoveryModuleAddress"]);
+    customExpect(res, true, log + ", function: mapMultisigs(safeMultisigWithRecoveryModule)");
 }
 
 // Check service manager: chain Id, provider, parsed globals, configuration contracts, contract name
