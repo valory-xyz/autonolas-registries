@@ -26,7 +26,7 @@ The format is based on [Common Changelog](https://common-changelog.org).
 [1.0.0]: https://github.com/valory-xyz/autonolas-registries/releases/tag/v1.0.0
 
 
-## [v1.2.7] - 2025-07-16
+## [v1.2.7] - 2025-08-08
 - Development of `ComplementaryServiceMetadata` contract
 - Deployment of `ComplementaryServiceMetadata` contract on Gnosis and Base, `RecoveryModule` and `SafeMultisigWithRecoveryModule` contracts on Arbitrum, Ethereum, Gnosis, Base, Optimism, Mode, Polygon, Celo ([#216](https://github.com/valory-xyz/autonolas-registries/pull/216))
 - Adjusting static audit
