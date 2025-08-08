@@ -55,6 +55,7 @@ async function main() {
     const calldata = stakingVerifier.interface.encodeFunctionData("changeStakingLimits",
         [parsedData.minStakingDepositLimit, parsedData.timeForEmissionsLimit, parsedData.numServicesLimit,
             parsedData.apyLimit]);
+    console.log("calldata:", calldata);
 
     // Users can override the estimated gas params when sending an L1-L2 message
     // Note that this is totally optional

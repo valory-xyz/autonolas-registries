@@ -26,6 +26,7 @@ module.exports = async () => {
         "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a"
     ];
     const operatorPK = "0xf214f2b2cd398c806f84e317254e0f0b801d0643303237d97a22a48e01628897";
+    const multisigProxyHash130 = "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000";
 
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
@@ -97,7 +98,7 @@ module.exports = async () => {
     await gnosisSafeMultisig.deployed();
 
     const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-    const gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy();
+    const gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy(multisigProxyHash130);
     await gnosisSafeSameAddressMultisig.deployed();
 
     const MultiSend = await ethers.getContractFactory("MultiSendCallOnly");
@@ -127,6 +128,15 @@ module.exports = async () => {
     const token = await Token.deploy();
     await token.deployed();
 
+    const RecoveryModule = await ethers.getContractFactory("RecoveryModule");
+    const recoveryModule = await RecoveryModule.deploy(multiSend.address, serviceRegistryL2.address);
+    await recoveryModule.deployed();
+
+    const SafeMultisigWithRecoveryModule = await ethers.getContractFactory("SafeMultisigWithRecoveryModule");
+    const safeMultisigWithRecoveryModule = await SafeMultisigWithRecoveryModule.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address,
+        recoveryModule.address);
+    await safeMultisigWithRecoveryModule.deployed();
+
     console.log("==========================================");
     console.log("ComponentRegistry deployed to:", componentRegistry.address);
     console.log("AgentRegistry deployed to:", agentRegistry.address);
@@ -140,9 +150,11 @@ module.exports = async () => {
     console.log("ERC20Token deployed to:", token.address);
     console.log("Gnosis Safe master copy deployed to:", gnosisSafe.address);
     console.log("Gnosis Safe proxy factory deployed to:", gnosisSafeProxyFactory.address);
+    console.log("Gnosis Safe Multisend deployed to:", multiSend.address);
     console.log("Gnosis Safe Multisig deployed to:", gnosisSafeMultisig.address);
     console.log("Gnosis Safe Multisig with same address deployed to:", gnosisSafeSameAddressMultisig.address);
-    console.log("Gnosis Safe Multisend deployed to:", multiSend.address);
+    console.log("Safe Multisig with Recovery Module deployed to:", safeMultisigWithRecoveryModule.address);
+    console.log("Recovery Module deployed to:", recoveryModule.address);
 
     // Whitelist gnosis multisig implementations
     await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);

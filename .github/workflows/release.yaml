@@ -1,0 +1,47 @@
+name: Release Flow
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish-images:
+    name: Publish Docker Images
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.10"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup
+        run: |
+          echo export TAG=$(git describe --tags --abbrev=0) > env.sh
+          cp scripts/mainnet_snapshot.json ./snapshot.json
+
+      - name: Build version tagged images
+        run: |
+          source env.sh
+          docker build . -t valory/autonolas-registries:$TAG -f ./Dockerfile
+
+      - name: Tag to latest
+        run:  |
+          source env.sh
+          docker tag valory/autonolas-registries:$TAG valory/autonolas-registries:latest
+
+      - name: Docker login
+        env:
+          DOCKER_USER: ${{secrets.DOCKER_USER}}
+          DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+        run: |
+          docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+
+      - name: Docker Push
+        run: |
+          source env.sh
+          docker push valory/autonolas-registries:$TAG
+          docker push valory/autonolas-registries:latest
