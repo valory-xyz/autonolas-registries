@@ -161,6 +161,10 @@ module.exports = async () => {
     await serviceRegistry.changeMultisigPermission(gnosisSafeSameAddressMultisig.address, true);
     await serviceRegistryL2.changeMultisigPermission(gnosisSafeMultisig.address, true);
     await serviceRegistryL2.changeMultisigPermission(gnosisSafeSameAddressMultisig.address, true);
+    await serviceRegistry.changeMultisigPermission(safeMultisigWithRecoveryModule.address, true);
+    await serviceRegistry.changeMultisigPermission(recoveryModule.address, true);
+    await serviceRegistryL2.changeMultisigPermission(safeMultisigWithRecoveryModule.address, true);
+    await serviceRegistryL2.changeMultisigPermission(recoveryModule.address, true);
 
     // Also whitelist multisigs for all the other networks
     // ETH Goerli
