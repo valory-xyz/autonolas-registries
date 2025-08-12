@@ -26,7 +26,7 @@ module.exports = async () => {
         "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a"
     ];
     const operatorPK = "0xf214f2b2cd398c806f84e317254e0f0b801d0643303237d97a22a48e01628897";
-    const multisigProxyHash130 = "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000";
+    const multisigProxyHash130 = "0x73a250ece82993288543aa1430be785cb9c8ef0dfdaa8bbe4d57517f00234ce6";
 
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
