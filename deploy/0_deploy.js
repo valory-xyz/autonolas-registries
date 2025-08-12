@@ -129,7 +129,7 @@ module.exports = async () => {
     await token.deployed();
 
     const RecoveryModule = await ethers.getContractFactory("RecoveryModule");
-    const recoveryModule = await RecoveryModule.deploy(multiSend.address, serviceRegistryL2.address);
+    const recoveryModule = await RecoveryModule.deploy(multiSend.address, serviceRegistry.address);
     await recoveryModule.deployed();
 
     const SafeMultisigWithRecoveryModule = await ethers.getContractFactory("SafeMultisigWithRecoveryModule");
