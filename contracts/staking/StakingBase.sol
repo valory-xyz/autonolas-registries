@@ -36,7 +36,7 @@ interface ICustomRewardsDistributor {
     /// @return Set of receiver addresses.
     /// @return Corresponding set of reward amounts.
     function getRewardReceiversAndAmounts(uint256 serviceId, address serviceOwner, address multisig, uint256 reward)
-        external returns (address[] memory, uint256[] memory);
+        external view returns (address[] memory, uint256[] memory);
 }
 
 // Service Registry interface
@@ -441,30 +441,6 @@ abstract contract StakingBase is ERC721TokenReceiver {
     /// @param amount Amount to withdraw.
     function _transfer(address to, uint256 amount) internal virtual;
 
-    /// @dev Withdraws reward amounts.
-    /// @notice The balance is always greater or equal the amount, as follows from the Base contract logic.
-    /// @param receivers Set of receiver addresses.
-    /// @param amounts Corresponding amounts to withdraw.
-    function _withdraw(address[] memory receivers, uint256[] memory amounts) internal virtual {
-        // Get current balance
-        uint256 updatedBalance = balance;
-
-        // TODO Check for lengths?
-        // Traverse all receivers and amounts
-        for (uint256 i = 0; i < receivers.length; ++i) {
-            // Update the contract balance
-            updatedBalance -= amounts[i];
-
-            // Transfer rewards
-            _transfer(receivers[i], amounts[i]);
-        }
-
-        // Record updated contract balance
-        balance = updatedBalance;
-
-        emit Withdraw(receivers, amounts);
-    }
-
     /// @dev Checks the ratio pass based on external activity checker implementation.
     /// @param multisig Multisig address.
     /// @param lastNonces Last checked service multisig nonces.
@@ -549,76 +525,6 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
 
         emit ServicesEvicted(epochCounter, finalEvictedServiceIds, owners, multisigs, inactivity);
-    }
-
-    /// @dev Gets reward receivers and amounts.
-    /// @param serviceId Service Id.
-    /// @param serviceOwner Actual service owner address.
-    /// @param multisig Service multisig address.
-    /// @param reward Overall claimed reward amount.
-    /// @return receivers Set of receiver addresses.
-    /// @return amounts Corresponding set of reward amounts.
-    function _getRewardReceiversAndAmounts(
-        uint256 serviceId,
-        address serviceOwner,
-        address multisig,
-        uint256 reward,
-        uint256 distributionType
-    ) internal virtual returns (address[] memory receivers, uint256[] memory amounts) {
-        if (distributionType == PROPORTIONAL_REWARDS) {
-            // Get service agent instances
-            (uint256 numInstances, address[] memory agentInstances) =
-                IService(serviceRegistry).getAgentInstances(serviceId);
-
-            // Total number of receivers: 1 (serviceOwner) + numInstances (number of operators)
-            uint256 totalNumReceivers = numInstances + 1;
-
-            // Allocate arrays
-            receivers = new address[](totalNumReceivers);
-            amounts = new uint256[](totalNumReceivers);
-
-            // Current setup implies that all bonds are equal
-            // Get each operator reward
-            uint256 operatorReward = reward / (totalNumReceivers);
-
-            // Get corresponding operators and set operators reward amounts
-            for (uint256 i = 0; i < numInstances; ++i) {
-                receivers[i] = IService(serviceRegistry).mapAgentInstanceOperators(agentInstances[i]);
-                amounts[i] = operatorReward;
-            }
-
-            // Set service owner address and its reward amount
-            receivers[totalNumReceivers - 1] = serviceOwner;
-            // Service owner gets leftovers from division, if any
-            amounts[totalNumReceivers - 1] = reward - (numInstances * operatorReward);
-        } else if (distributionType == SERVICE_OWNER_REWARDS) {
-            // Allocate arrays
-            receivers = new address[](1);
-            amounts = new uint256[](1);
-
-            // Set service owner address and its reward amount
-            receivers[0] = serviceOwner;
-            amounts[0] = reward;
-        } else if (distributionType == SERVICE_MULTISIG_REWARDS) {
-            // Allocate arrays
-            receivers = new address[](1);
-            amounts = new uint256[](1);
-
-            // Set service owner address and its reward amount
-            receivers[0] = multisig;
-            amounts[0] = reward;
-        } else if (distributionType == CUSTOM_REWARDS) {
-            // Check for zero address
-            if (customRewardsDistributor == address(0)) {
-                revert ZeroAddress();
-            }
-
-            // Get receivers and amounts from external customRewardsDistributor contract
-            (receivers, amounts) = ICustomRewardsDistributor(customRewardsDistributor).getRewardReceiversAndAmounts(serviceId,
-                serviceOwner, multisig, reward);
-        } else {
-            revert WrongRewardsDistributionType(distributionType);
-        }
     }
 
     /// @dev Claims rewards for the service.
@@ -736,6 +642,76 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
     }
 
+    /// @dev Gets reward receivers and amounts.
+    /// @param serviceId Service Id.
+    /// @param serviceOwner Actual service owner address.
+    /// @param multisig Service multisig address.
+    /// @param reward Overall claimed reward amount.
+    /// @return receivers Set of receiver addresses.
+    /// @return amounts Corresponding set of reward amounts.
+    function _getRewardReceiversAndAmounts(
+        uint256 serviceId,
+        address serviceOwner,
+        address multisig,
+        uint256 reward,
+        uint256 distributionType
+    ) internal view virtual returns (address[] memory receivers, uint256[] memory amounts) {
+        if (distributionType == PROPORTIONAL_REWARDS) {
+            // Get service agent instances
+            (uint256 numInstances, address[] memory agentInstances) =
+                                    IService(serviceRegistry).getAgentInstances(serviceId);
+
+            // Total number of receivers: 1 (serviceOwner) + numInstances (number of operators)
+            uint256 totalNumReceivers = numInstances + 1;
+
+            // Allocate arrays
+            receivers = new address[](totalNumReceivers);
+            amounts = new uint256[](totalNumReceivers);
+
+            // Current setup implies that all bonds are equal
+            // Get each operator reward
+            uint256 operatorReward = reward / (totalNumReceivers);
+
+            // Get corresponding operators and set operators reward amounts
+            for (uint256 i = 0; i < numInstances; ++i) {
+                receivers[i] = IService(serviceRegistry).mapAgentInstanceOperators(agentInstances[i]);
+                amounts[i] = operatorReward;
+            }
+
+            // Set service owner address and its reward amount
+            receivers[totalNumReceivers - 1] = serviceOwner;
+            // Service owner gets leftovers from division, if any
+            amounts[totalNumReceivers - 1] = reward - (numInstances * operatorReward);
+        } else if (distributionType == SERVICE_OWNER_REWARDS) {
+            // Allocate arrays
+            receivers = new address[](1);
+            amounts = new uint256[](1);
+
+            // Set service owner address and its reward amount
+            receivers[0] = serviceOwner;
+            amounts[0] = reward;
+        } else if (distributionType == SERVICE_MULTISIG_REWARDS) {
+            // Allocate arrays
+            receivers = new address[](1);
+            amounts = new uint256[](1);
+
+            // Set service owner address and its reward amount
+            receivers[0] = multisig;
+            amounts[0] = reward;
+        } else if (distributionType == CUSTOM_REWARDS) {
+            // Check for zero address
+            if (customRewardsDistributor == address(0)) {
+                revert ZeroAddress();
+            }
+
+            // Get receivers and amounts from external customRewardsDistributor contract
+            (receivers, amounts) = ICustomRewardsDistributor(customRewardsDistributor).getRewardReceiversAndAmounts(serviceId,
+                serviceOwner, multisig, reward);
+        } else {
+            revert WrongRewardsDistributionType(distributionType);
+        }
+    }
+
     /// @dev Unstakes the service.
     /// @param serviceId Service Id.
     /// @param distributionType Reward distribution type.
@@ -819,6 +795,30 @@ abstract contract StakingBase is ERC721TokenReceiver {
             emit ServiceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, sInfo.reward,
                 lastAvailableRewards);
         }
+    }
+
+    /// @dev Withdraws reward amounts.
+    /// @notice The balance is always greater or equal the amount, as follows from the Base contract logic.
+    /// @param receivers Set of receiver addresses.
+    /// @param amounts Corresponding amounts to withdraw.
+    function _withdraw(address[] memory receivers, uint256[] memory amounts) internal virtual {
+        // Get current balance
+        uint256 updatedBalance = balance;
+
+        // Note that if array lengths are different, the withdraw reverts, but that's a responsibility of service owner
+        // Traverse all receivers and amounts
+        for (uint256 i = 0; i < receivers.length; ++i) {
+            // Update the contract balance
+            updatedBalance -= amounts[i];
+
+            // Transfer rewards
+            _transfer(receivers[i], amounts[i]);
+        }
+
+        // Record updated contract balance
+        balance = updatedBalance;
+
+        emit Withdraw(receivers, amounts);
     }
 
     /// @dev Checkpoint to allocate rewards up until a current time.
