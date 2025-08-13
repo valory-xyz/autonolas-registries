@@ -544,7 +544,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
             checkpoint();
         }
 
-        // Get the claimed service data
+        // Get service reward
         reward = sInfo.reward;
 
         // Check for the zero reward
@@ -726,7 +726,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Call the checkpoint
         (uint256[] memory serviceIds, , , ) = checkpoint();
 
-        // Get the claimed service data
+        // Get service reward
         reward = sInfo.reward;
 
         uint256 lastAvailableRewards = availableRewards;
