@@ -658,8 +658,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     ) internal view virtual returns (address[] memory receivers, uint256[] memory amounts) {
         if (distributionType == PROPORTIONAL_REWARDS) {
             // Get service agent instances
-            (uint256 numInstances, address[] memory agentInstances) =
-                                    IService(serviceRegistry).getAgentInstances(serviceId);
+            (uint256 numInstances, address[] memory agentInstances) = IService(serviceRegistry).getAgentInstances(serviceId);
 
             // Total number of receivers: 1 (serviceOwner) + numInstances (number of operators)
             uint256 totalNumReceivers = numInstances + 1;
