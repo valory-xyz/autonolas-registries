@@ -797,7 +797,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     }
 
     /// @dev Withdraws reward amounts.
-    /// @notice The balance is always greater or equal the amount, as follows from the Base contract logic.
+    /// @notice The balance is always greater or equal the sum of amounts, as follows from the contract logic.
     /// @param receivers Set of receiver addresses.
     /// @param amounts Corresponding amounts to withdraw.
     function _withdraw(address[] memory receivers, uint256[] memory amounts) internal virtual {
