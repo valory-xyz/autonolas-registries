@@ -261,7 +261,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
     // Contract version
     string public constant VERSION = "0.3.0";
-    // Rewards distribution constants
+    // Reward distribution constants
     // Rewards are divided as per where stake comes from, proportional
     uint256 public constant PROPORTIONAL_REWARDS = 0;
     // Rewards go to service owner
