@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.30;
 
 import {ERC721TokenReceiver} from "../../lib/solmate/src/tokens/ERC721.sol";
 
@@ -24,6 +24,19 @@ interface IActivityChecker {
         uint256[] memory lastNonces,
         uint256 ts
     ) external view returns (bool ratioPass);
+}
+
+// Custom Rewards Distributor interface
+interface ICustomRewardsDistributor {
+    /// @dev Gets custom reward distribution receivers and amounts.
+    /// @param serviceId Service Id.
+    /// @param serviceOwner Actual service owner address.
+    /// @param multisig Service multisig address.
+    /// @param reward Overall claimed reward amount.
+    /// @return Set of receiver addresses.
+    /// @return Corresponding set of reward amounts.
+    function getRewardReceiversAndAmounts(uint256 serviceId, address serviceOwner, address multisig, uint256 reward)
+        external view returns (address[] memory, uint256[] memory);
 }
 
 // Service Registry interface
@@ -88,6 +101,18 @@ interface IService {
     /// @return agentParams Set of agent parameters for each canonical agent Id.
     function getAgentParams(uint256 serviceId) external view
         returns (uint256 numAgentIds, AgentParams[] memory agentParams);
+
+    /// @dev Gets service agent instances.
+    /// @param serviceId ServiceId.
+    /// @return numAgentInstances Number of agent instances.
+    /// @return agentInstances Set of agent instance addresses.
+    function getAgentInstances(uint256 serviceId) external view
+        returns (uint256 numAgentInstances, address[] memory agentInstances);
+
+    /// @dev Gets operator address by provided agent instance one.
+    /// @param agentInstance Agent instance address
+    /// @return operator Operator address that supplied agent instance.
+    function mapAgentInstanceOperators(address agentInstance) external view returns (address operator);
 }
 
 /// @dev Only `owner` has a privilege, but the `sender` was provided.
@@ -178,6 +203,17 @@ abstract contract StakingBase is ERC721TokenReceiver {
         Evicted
     }
 
+    enum RewardDistributionType {
+        // Rewards are divided as per where stake comes from, proportional
+        Proportional,
+        // Rewards go to service owner
+        ServiceOwner,
+        // Rewards go to service multisig
+        ServiceMultisig,
+        // Custom rewards distribution
+        Custom
+    }
+
     // Input staking parameters
     struct StakingParams {
         // Metadata staking information
@@ -210,6 +246,10 @@ abstract contract StakingBase is ERC721TokenReceiver {
         address serviceRegistry;
         // Service activity checker address
         address activityChecker;
+        // Reward distribution type.
+        RewardDistributionType rewardDistributionType;
+        // Custom rewards distributor address
+        address customRewardsDistributor;
     }
 
     event ServiceStaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
@@ -226,10 +266,10 @@ abstract contract StakingBase is ERC721TokenReceiver {
     event ServicesEvicted(uint256 indexed epoch, uint256[] serviceIds, address[] owners, address[] multisigs,
         uint256[] serviceInactivity);
     event Deposit(address indexed sender, uint256 amount, uint256 balance, uint256 availableRewards);
-    event Withdraw(address indexed to, uint256 amount);
+    event Withdraw(address[] receivers, uint256[] amounts);
 
     // Contract version
-    string public constant VERSION = "0.2.0";
+    string public constant VERSION = "0.3.0";
     // Staking parameters for initialization
     // Metadata staking information
     bytes32 public metadataHash;
@@ -258,6 +298,10 @@ abstract contract StakingBase is ERC721TokenReceiver {
     address public serviceRegistry;
     // Service activity checker address
     address public activityChecker;
+    // Reward distribution type.
+    RewardDistributionType public rewardDistributionType;
+    // Custom rewards distributor address
+    address public customRewardsDistributor;
 
     // The rest of state variables
     // Min staking duration
@@ -330,6 +374,14 @@ abstract contract StakingBase is ERC721TokenReceiver {
         numAgentInstances = _stakingParams.numAgentInstances;
         serviceRegistry = _stakingParams.serviceRegistry;
         activityChecker = _stakingParams.activityChecker;
+        rewardDistributionType = _stakingParams.rewardDistributionType;
+        // Check reward distribution type
+        if (_stakingParams.rewardDistributionType == RewardDistributionType.Custom) {
+            if (_stakingParams.customRewardsDistributor == address(0)) {
+                revert ZeroAddress();
+            }
+            customRewardsDistributor = _stakingParams.customRewardsDistributor;
+        }
 
         // Assign optional parameters
         threshold = _stakingParams.threshold;
@@ -392,10 +444,10 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
     }
 
-    /// @dev Withdraws the reward amount to a service owner.
+    /// @dev Transfers reward amount.
     /// @param to Address to.
     /// @param amount Amount to withdraw.
-    function _withdraw(address to, uint256 amount) internal virtual;
+    function _transfer(address to, uint256 amount) internal virtual;
 
     /// @dev Checks the ratio pass based on external activity checker implementation.
     /// @param multisig Multisig address.
@@ -499,7 +551,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
             checkpoint();
         }
 
-        // Get the claimed service data
+        // Get service reward
         reward = sInfo.reward;
 
         // Check for the zero reward
@@ -513,7 +565,13 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Transfer accumulated rewards to the service multisig
         // Note that the reentrancy is not possible since the reward is set to zero
         address multisig = sInfo.multisig;
-        _withdraw(multisig, reward);
+
+        // Get reward receivers and amounts based on the distribution type
+        (address[] memory receivers, uint256[] memory amounts) =
+            _getRewardReceiversAndAmounts(serviceId, sInfo.owner, sInfo.multisig, reward);
+
+        // Transfer reward amounts to specified receivers
+        _withdraw(receivers, amounts);
 
         emit RewardClaimed(epochCounter, serviceId, msg.sender, multisig, sInfo.nonces, reward);
     }
@@ -591,21 +649,83 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
     }
 
+    /// @dev Gets reward receivers and amounts.
+    /// @param serviceId Service Id.
+    /// @param serviceOwner Actual service owner address.
+    /// @param multisig Service multisig address.
+    /// @param reward Overall claimed reward amount.
+    /// @return receivers Set of receiver addresses.
+    /// @return amounts Corresponding set of reward amounts.
+    function _getRewardReceiversAndAmounts(
+        uint256 serviceId,
+        address serviceOwner,
+        address multisig,
+        uint256 reward
+    ) internal view virtual returns (address[] memory receivers, uint256[] memory amounts) {
+        if (rewardDistributionType == RewardDistributionType.Proportional) {
+            // Get service agent instances
+            (uint256 numInstances, address[] memory agentInstances) = IService(serviceRegistry).getAgentInstances(serviceId);
+
+            // Total number of receivers: 1 (serviceOwner) + numInstances (number of operators)
+            uint256 totalNumReceivers = numInstances + 1;
+
+            // Allocate arrays
+            receivers = new address[](totalNumReceivers);
+            amounts = new uint256[](totalNumReceivers);
+
+            // Current setup implies that all bonds are equal
+            // Get each operator reward
+            uint256 operatorReward = reward / (totalNumReceivers);
+
+            // Get corresponding operators and set operators reward amounts
+            for (uint256 i = 0; i < numInstances; ++i) {
+                receivers[i] = IService(serviceRegistry).mapAgentInstanceOperators(agentInstances[i]);
+                amounts[i] = operatorReward;
+            }
+
+            // Set service owner address and its reward amount
+            receivers[totalNumReceivers - 1] = serviceOwner;
+            // Service owner gets leftovers from division, if any
+            amounts[totalNumReceivers - 1] = reward - (numInstances * operatorReward);
+        } else if (rewardDistributionType == RewardDistributionType.ServiceOwner) {
+            // Allocate arrays
+            receivers = new address[](1);
+            amounts = new uint256[](1);
+
+            // Set service owner address and its reward amount
+            receivers[0] = serviceOwner;
+            amounts[0] = reward;
+        } else if (rewardDistributionType == RewardDistributionType.ServiceMultisig) {
+            // Allocate arrays
+            receivers = new address[](1);
+            amounts = new uint256[](1);
+
+            // Set service owner address and its reward amount
+            receivers[0] = multisig;
+            amounts[0] = reward;
+        } else {
+            // Get receivers and amounts from external customRewardsDistributor contract
+            (receivers, amounts) = ICustomRewardsDistributor(customRewardsDistributor).getRewardReceiversAndAmounts(serviceId,
+                serviceOwner, multisig, reward);
+        }
+    }
+
     /// @dev Unstakes the service.
     /// @param serviceId Service Id.
     /// @param enforced Forced unstake flag: true if enforced without getting a reward, and false otherwise.
     /// @return reward Staking reward.
     function _unstake(uint256 serviceId, bool enforced) internal returns (uint256 reward) {
-        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+        // Call the checkpoint first, as mapServiceInfo could be updated there
+        (uint256[] memory serviceIds, , , ) = checkpoint();
+
+        // Get sInfo as memory since there is no writing in storage anymore
+        ServiceInfo memory sInfo = mapServiceInfo[serviceId];
         // Check for the service ownership
         if (msg.sender != sInfo.owner) {
             revert OwnerOnly(msg.sender, sInfo.owner);
         }
 
-        // Call the checkpoint
-        (uint256[] memory serviceIds, , , ) = checkpoint();
-
-        // Get the service reward
+        // Get service reward
         reward = sInfo.reward;
 
         uint256 lastAvailableRewards = availableRewards;
@@ -628,10 +748,6 @@ abstract contract StakingBase is ERC721TokenReceiver {
             }
         }
 
-        // Get the unstaked service data
-        uint256[] memory nonces = sInfo.nonces;
-        address multisig = sInfo.multisig;
-
         // Clear all the data about the unstaked service
         // Delete the service info struct
         delete mapServiceInfo[serviceId];
@@ -648,10 +764,6 @@ abstract contract StakingBase is ERC721TokenReceiver {
             setServiceIds.pop();
         }
 
-        // Transfer the service back to the owner
-        // Note that the reentrancy is not possible due to the ServiceInfo struct being deleted
-        IService(serviceRegistry).transferFrom(address(this), msg.sender, serviceId);
-
         // Transfer accumulated rewards to the service multisig
         if (reward > 0) {
             // Check if the reward is enforced to be returned to availableRewards
@@ -661,15 +773,50 @@ abstract contract StakingBase is ERC721TokenReceiver {
                 lastAvailableRewards += reward;
                 availableRewards = lastAvailableRewards;
             } else {
-                _withdraw(multisig, reward);
+                // Get reward receivers and amounts based on the distribution type
+                (address[] memory receivers, uint256[] memory amounts) =
+                    _getRewardReceiversAndAmounts(serviceId, sInfo.owner, sInfo.multisig, sInfo.reward);
+
+                // Transfer reward amounts to specified receivers
+                _withdraw(receivers, amounts);
             }
         }
 
+        // Transfer the service back to the owner
+        // Note that the reentrancy is not possible due to the ServiceInfo struct being deleted
+        IService(serviceRegistry).transferFrom(address(this), msg.sender, serviceId);
+
         if (enforced) {
-            emit ServiceForceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward, lastAvailableRewards);
+            emit ServiceForceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, reward,
+                lastAvailableRewards);
         } else {
-            emit ServiceUnstaked(epochCounter, serviceId, msg.sender, multisig, nonces, reward, lastAvailableRewards);
+            emit ServiceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, reward,
+                lastAvailableRewards);
         }
+    }
+
+    /// @dev Withdraws reward amounts.
+    /// @notice The balance is always greater or equal the sum of amounts, as follows from the contract logic.
+    /// @param receivers Set of receiver addresses.
+    /// @param amounts Corresponding amounts to withdraw.
+    function _withdraw(address[] memory receivers, uint256[] memory amounts) internal virtual {
+        // Get current balance
+        uint256 updatedBalance = balance;
+
+        // Note that if array lengths are different, the withdraw reverts, but that's a responsibility of service owner
+        // Traverse all receivers and amounts
+        for (uint256 i = 0; i < receivers.length; ++i) {
+            // Update the contract balance
+            updatedBalance -= amounts[i];
+
+            // Transfer rewards
+            _transfer(receivers[i], amounts[i]);
+        }
+
+        // Record updated contract balance
+        balance = updatedBalance;
+
+        emit Withdraw(receivers, amounts);
     }
 
     /// @dev Checkpoint to allocate rewards up until a current time.
