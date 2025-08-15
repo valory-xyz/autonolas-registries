@@ -715,14 +715,15 @@ abstract contract StakingBase is ERC721TokenReceiver {
     /// @param enforced Forced unstake flag: true if enforced without getting a reward, and false otherwise.
     /// @return reward Staking reward.
     function _unstake(uint256 serviceId, bool enforced) internal returns (uint256 reward) {
+        // Call the checkpoint first, as mapServiceInfo could be updated there
+        (uint256[] memory serviceIds, , , ) = checkpoint();
+
+        // Get sInfo as memory since there is no writing in storage anymore
         ServiceInfo memory sInfo = mapServiceInfo[serviceId];
         // Check for the service ownership
         if (msg.sender != sInfo.owner) {
             revert OwnerOnly(msg.sender, sInfo.owner);
         }
-
-        // Call the checkpoint
-        (uint256[] memory serviceIds, , , ) = checkpoint();
 
         // Get service reward
         reward = sInfo.reward;
@@ -786,10 +787,10 @@ abstract contract StakingBase is ERC721TokenReceiver {
         IService(serviceRegistry).transferFrom(address(this), msg.sender, serviceId);
 
         if (enforced) {
-            emit ServiceForceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, sInfo.reward,
+            emit ServiceForceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, reward,
                 lastAvailableRewards);
         } else {
-            emit ServiceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, sInfo.reward,
+            emit ServiceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, reward,
                 lastAvailableRewards);
         }
     }

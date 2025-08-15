@@ -56,7 +56,9 @@ describe("Staking", function () {
         configHash: HashZero,
         proxyHash: HashZero,
         serviceRegistry: AddressZero,
-        activityChecker: AddressZero
+        activityChecker: AddressZero,
+        rewardDistributionType: 2, // Service multisig,
+        customRewardsDistributor: AddressZero
     };
     const maxInactivity = serviceParams.maxNumInactivityPeriods * livenessPeriod + 1;
 
@@ -210,7 +212,9 @@ describe("Staking", function () {
                 configHash: HashZero,
                 proxyHash: HashZero,
                 serviceRegistry: AddressZero,
-                activityChecker: AddressZero
+                activityChecker: AddressZero,
+                rewardDistributionType: 0,
+                customRewardsDistributor: AddressZero
             };
 
             // Service Staking Native Token
@@ -319,6 +323,13 @@ describe("Staking", function () {
                 stakingFactory.createStakingInstance(stakingImplementation.address, initPayload)
             ).to.be.revertedWithCustomError(stakingImplementation, "ZeroValue");
 
+            testServiceParams.rewardDistributionType = 3;
+            initPayload = stakingImplementation.interface.encodeFunctionData("initialize", [testServiceParams]);
+            await expect(
+                stakingFactory.createStakingInstance(stakingImplementation.address, initPayload)
+            ).to.be.revertedWithCustomError(stakingImplementation, "ZeroAddress");
+
+            testServiceParams.rewardDistributionType = 0;
             testServiceParams.agentIds = [0];
             initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
                 [testServiceParams]);
@@ -341,12 +352,6 @@ describe("Staking", function () {
             ).to.be.revertedWithCustomError(stakingImplementation, "WrongAgentId");
 
             testServiceParams.agentIds = [];
-            initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
-                [testServiceParams]);
-            await expect(
-                stakingFactory.createStakingInstance(stakingImplementation.address, initPayload)
-            ).to.be.revertedWithCustomError(stakingImplementation, "ZeroValue");
-
             initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
                 [testServiceParams]);
             await expect(
