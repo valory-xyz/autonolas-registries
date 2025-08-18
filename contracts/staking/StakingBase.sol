@@ -421,6 +421,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     }
 
     /// @dev Checks token / ETH staking deposit.
+    /// @notice This default setup implies that all agent bonds are equal to a minimum staking deposit.
     /// @param serviceId Service Id.
     /// @param stakingDeposit Staking deposit.
     function _checkTokenStakingDeposit(
@@ -673,7 +674,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
             receivers = new address[](totalNumReceivers);
             amounts = new uint256[](totalNumReceivers);
 
-            // Current setup implies that all bonds are equal
+            // Default setup implies that all bonds are equal
             // Get each operator reward
             uint256 operatorReward = reward / (totalNumReceivers);
 
@@ -685,7 +686,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
             // Set service owner address and its reward amount
             receivers[totalNumReceivers - 1] = serviceOwner;
-            // Service owner gets leftovers from division, if any
+            // Service owner gets a division remainder, if any
             amounts[totalNumReceivers - 1] = reward - (numInstances * operatorReward);
         } else if (rewardDistributionType == RewardDistributionType.ServiceOwner) {
             // Allocate arrays
