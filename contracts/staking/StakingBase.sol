@@ -261,7 +261,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     event ServiceForceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
         uint256[] nonces, uint256 reward, uint256 availableRewards);
     event RewardClaimed(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
-        uint256[] nonces, uint256 reward);
+        uint256[] nonces, address[] receivers, uint256[] rewardAmounts);
     event ServiceInactivityWarning(uint256 epoch, uint256 indexed serviceId, uint256 serviceInactivity);
     event ServicesEvicted(uint256 indexed epoch, uint256[] serviceIds, address[] owners, address[] multisigs,
         uint256[] serviceInactivity);
@@ -574,7 +574,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Transfer reward amounts to specified receivers
         _withdraw(receivers, amounts);
 
-        emit RewardClaimed(epochCounter, serviceId, msg.sender, multisig, sInfo.nonces, reward);
+        emit RewardClaimed(epochCounter, serviceId, msg.sender, multisig, sInfo.nonces, receivers, amounts);
     }
 
     /// @dev Calculates staking rewards for all services at current timestamp.
@@ -780,6 +780,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
                 // Transfer reward amounts to specified receivers
                 _withdraw(receivers, amounts);
+
+                emit RewardClaimed(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, receivers, amounts);
             }
         }
 
@@ -788,11 +790,9 @@ abstract contract StakingBase is ERC721TokenReceiver {
         IService(serviceRegistry).transferFrom(address(this), msg.sender, serviceId);
 
         if (enforced) {
-            emit ServiceForceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, reward,
-                lastAvailableRewards);
+            emit ServiceForceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, lastAvailableRewards);
         } else {
-            emit ServiceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, reward,
-                lastAvailableRewards);
+            emit ServiceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, lastAvailableRewards);
         }
     }
 
