@@ -259,7 +259,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     event ServiceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
         uint256[] nonces, uint256 reward, uint256 availableRewards);
     event ServiceForceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
-        uint256[] nonces, uint256 reward, uint256 availableRewards);
+        uint256[] nonces, uint256 availableRewards);
     event RewardClaimed(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
         uint256[] nonces, address[] receivers, uint256[] rewardAmounts);
     event ServiceInactivityWarning(uint256 epoch, uint256 indexed serviceId, uint256 serviceInactivity);
@@ -686,7 +686,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
             // Set service owner address and its reward amount
             receivers[totalNumReceivers - 1] = serviceOwner;
-            // Service owner gets a division remainder, if any
+            // Service owner gets its reward amount and a division remainder, if any
             amounts[totalNumReceivers - 1] = reward - (numInstances * operatorReward);
         } else if (rewardDistributionType == RewardDistributionType.ServiceOwner) {
             // Allocate arrays

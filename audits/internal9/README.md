@@ -51,7 +51,7 @@ numInstances = 0: everything goes to the owner - expectedly correct.
 reward < totalNumReceivers: operatorReward == 0, all operators will get 0, the owner will get the whole reward. This may be normal, because practical impossible.
 Operator duplicates: if the same operator is found in multiple instances, it will get multiple shares - this may be the intended behavior. This is not a question of optimization, but of the correctness of the calculation of shares.
 ```
-[] 
+[x] Noted and intended behavior
 
 
 
