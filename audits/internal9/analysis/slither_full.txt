@@ -1,0 +1,22 @@
+INFO:Detectors:
+StakingBase._getRewardReceiversAndAmounts(uint256,address,address,uint256) (StakingBase-flatten.sol#896-948) performs a multiplication on the result of a division:
+	- operatorReward = reward / (totalNumReceivers) (StakingBase-flatten.sol#915)
+	- amounts[totalNumReceivers - 1] = reward - (numInstances * operatorReward) (StakingBase-flatten.sol#926)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#divide-before-multiply
+
+INFO:Detectors:
+StakingBase._checkRatioPass(address,uint256[],uint256) (StakingBase-flatten.sol#695-720) uses a dangerous strict equality:
+	- success && returnData.length == 32 (StakingBase-flatten.sol#716)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+
+INFO:Detectors:
+StakingBase._evict(uint256[],uint256[],uint256).sCounter (StakingBase-flatten.sol#744) is a local variable never initialized
+StakingBase._unstake(uint256,bool).idx (StakingBase-flatten.sol#978) is a local variable never initialized
+StakingBase.checkpoint().finalEligibleServiceRewards (StakingBase-flatten.sol#1078) is a local variable never initialized
+StakingBase.checkpoint().finalEligibleServiceIds (StakingBase-flatten.sol#1077) is a local variable never initialized
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#uninitialized-local-variables
+
+INFO:Detectors:
+StakingBase _unstake parameter from is not related to msg.sender IService(serviceRegistry).transferFrom(address(this),msg.sender,serviceId) (StakingBase-flatten.sol#1024)
+Reference: https://ventral.digital/posts/2022/8/18/sznsdaos-bountyboard-unauthorized-transferfrom-vulnerability
+

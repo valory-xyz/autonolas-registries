@@ -1,0 +1,35 @@
+'solc --version' running
+'solc ./StakingBase-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal9/analysis/contracts' running
+INFO:Printers:Inheritance
+Child_Contract -> Immediate_Base_Contracts [Not_Immediate_Base_Contracts]
++ ERC721
+
++ ERC721TokenReceiver
+
++ IActivityChecker
+
++ ICustomRewardsDistributor
+
++ IService
+
++ StakingBase
+ -> ERC721TokenReceiver
+
+
+Base_Contract -> Immediate_Child_Contracts
+ [Not_Immediate_Child_Contracts]
+
++ ERC721
+
++ ERC721TokenReceiver
+ -> StakingBase
+
++ IActivityChecker
+
++ ICustomRewardsDistributor
+
++ IService
+
++ StakingBase
+
+INFO:Slither:. analyzed (6 contracts)
