@@ -257,7 +257,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     event Checkpoint(uint256 indexed epoch, uint256 availableRewards, uint256[] serviceIds, uint256[] rewards,
         uint256 epochLength);
     event ServiceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
-        uint256[] nonces, uint256 reward, uint256 availableRewards);
+        uint256[] nonces, uint256 availableRewards);
     event ServiceForceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
         uint256[] nonces, uint256 availableRewards);
     event RewardClaimed(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
