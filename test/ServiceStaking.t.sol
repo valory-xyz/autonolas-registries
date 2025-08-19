@@ -132,7 +132,8 @@ contract BaseSetup is Test {
         StakingBase.StakingParams memory stakingParams = StakingBase.StakingParams(
             bytes32(uint256(uint160(address(msg.sender)))), maxNumServices, rewardsPerSecond, minStakingDeposit,
             minNumStakingPeriods, maxNumInactivityPeriods, livenessPeriod, timeForEmissions, numAgentInstances,
-            emptyArray, 0, bytes32(0), multisigProxyHash, address(serviceRegistry), address(stakingActivityChecker));
+            emptyArray, 0, bytes32(0), multisigProxyHash, address(serviceRegistry), address(stakingActivityChecker),
+            StakingBase.RewardDistributionType.ServiceMultisig, address(0));
         stakingNativeTokenImplementation = new StakingNativeToken();
         stakingTokenImplementation = new StakingToken();
 
