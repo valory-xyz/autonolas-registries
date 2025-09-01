@@ -253,7 +253,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     }
 
     event ServiceStaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
-        uint256[] nonces);
+        uint256[] nonces, uint256 rewardDistributionInfo);
     event Checkpoint(uint256 indexed epoch, uint256 availableRewards, uint256[] serviceIds, uint256[] rewards,
         uint256 epochLength);
     event ServiceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
@@ -708,6 +708,110 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
     }
 
+    /// @dev Stakes the service.
+    /// @notice Each service must be staked for a minimum of maxInactivityDuration time, or until the funds are not zero.
+    ///         maxInactivityDuration = maxNumInactivityPeriods * livenessPeriod
+    /// @param serviceId Service Id.
+    /// @param rewardDistributionInfo Reward distribution info: rewardDistributionType and customRewardsDistributor
+    ///        address, if required.
+    function _stake(uint256 serviceId, uint256 rewardDistributionInfo) internal {
+        // Checkpoint to finalize any unaccounted rewards, if any
+        checkpoint();
+
+        // Check if there available rewards
+        if (availableRewards == 0) {
+            revert NoRewardsAvailable();
+        }
+
+        // Check if the evicted service has not yet unstaked
+        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+        // tsStart being greater than zero means that the service was not yet unstaked: still staking or evicted
+        if (sInfo.tsStart > 0) {
+            revert ServiceNotUnstaked(serviceId);
+        }
+
+        // Check for the maximum number of staking services
+        uint256 numStakingServices = setServiceIds.length;
+        if (numStakingServices == maxNumServices) {
+            revert MaxNumServicesReached(maxNumServices);
+        }
+
+        // Check the service conditions for staking
+        IService.Service memory service = IService(serviceRegistry).getService(serviceId);
+
+        // Check the number of agent instances
+        if (numAgentInstances != service.maxNumAgentInstances) {
+            revert WrongServiceConfiguration(serviceId);
+        }
+
+        // Check the configuration hash, if applicable
+        if (configHash != 0 && configHash != service.configHash) {
+            revert WrongServiceConfiguration(serviceId);
+        }
+        // Check the threshold, if applicable
+        if (threshold > 0 && threshold != service.threshold) {
+            revert WrongServiceConfiguration(serviceId);
+        }
+        // The service must be deployed
+        if (service.state != IService.ServiceState.Deployed) {
+            revert WrongServiceState(uint256(service.state), serviceId);
+        }
+
+        // Check that the multisig address corresponds to the authorized multisig proxy bytecode hash
+        bytes32 multisigProxyHash = keccak256(service.multisig.code);
+        if (proxyHash != multisigProxyHash) {
+            revert UnauthorizedMultisig(service.multisig);
+        }
+
+        // Check the agent Ids requirement, if applicable
+        uint256 size = agentIds.length;
+        if (size > 0) {
+            uint256 numAgents = service.agentIds.length;
+
+            if (size != numAgents) {
+                revert WrongServiceConfiguration(serviceId);
+            }
+            for (uint256 i = 0; i < numAgents; ++i) {
+                // Check that the agent Ids
+                if (agentIds[i] != service.agentIds[i]) {
+                    revert WrongAgentId(agentIds[i]);
+                }
+            }
+        }
+
+        // Check service staking deposit and token, if applicable
+        _checkTokenStakingDeposit(serviceId, service.securityDeposit, service.agentIds);
+
+        // ServiceInfo struct will be an empty one since otherwise the safeTransferFrom above would fail
+        sInfo.multisig = service.multisig;
+        sInfo.owner = msg.sender;
+        // This function might revert if it's incorrectly implemented, however this is not a protocol's responsibility
+        // It is safe to revert in this place
+        uint256[] memory nonces = IActivityChecker(activityChecker).getMultisigNonces(service.multisig);
+        sInfo.nonces = nonces;
+        sInfo.tsStart = block.timestamp;
+
+        // Set reward distribution info: rewardDistributionType and customRewardsDistributor address, if required
+        // rewardDistributionType takes first 8 bits
+        RewardDistributionType rewardDistributionType = RewardDistributionType(rewardDistributionInfo);
+        // Check reward distribution type
+        if (rewardDistributionType == RewardDistributionType.Custom) {
+            // Check custom rewards distributor address: shift rewardDistributionType value of 8 bits
+            if (address(uint160(rewardDistributionInfo >> 8)) == address(0)) {
+                revert ZeroAddress();
+            }
+        }
+        sInfo.rewardDistributionInfo = rewardDistributionInfo;
+
+        // Add the service Id to the set of staked services
+        setServiceIds.push(serviceId);
+
+        // Transfer the service for staking
+        IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
+
+        emit ServiceStaked(epochCounter, serviceId, msg.sender, service.multisig, nonces, rewardDistributionInfo);
+    }
+
     /// @dev Unstakes the service.
     /// @param serviceId Service Id.
     /// @param enforced Forced unstake flag: true if enforced without getting a reward, and false otherwise.
@@ -953,108 +1057,22 @@ abstract contract StakingBase is ERC721TokenReceiver {
         return (serviceIds, finalEligibleServiceIds, finalEligibleServiceRewards, evictServiceIds);
     }
 
-    /// @dev Stakes the service.
+    /// @dev Stakes service with default reward distribution type: Proportional.
+    /// @notice Each service must be staked for a minimum of maxInactivityDuration time, or until the funds are not zero.
+    ///         maxInactivityDuration = maxNumInactivityPeriods * livenessPeriod
+    /// @param serviceId Service Id.
+    function stake(uint256 serviceId) external {
+        _stake(serviceId, 0);
+    }
+
+    /// @dev Stakes service with specified reward distribution info.
     /// @notice Each service must be staked for a minimum of maxInactivityDuration time, or until the funds are not zero.
     ///         maxInactivityDuration = maxNumInactivityPeriods * livenessPeriod
     /// @param serviceId Service Id.
     /// @param rewardDistributionInfo Reward distribution info: rewardDistributionType and customRewardsDistributor
     ///        address, if required.
-    function stake(uint256 serviceId, uint256 rewardDistributionInfo) external {
-        // Checkpoint to finalize any unaccounted rewards, if any
-        checkpoint();
-
-        // Check if there available rewards
-        if (availableRewards == 0) {
-            revert NoRewardsAvailable();
-        }
-
-        // Check if the evicted service has not yet unstaked
-        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
-        // tsStart being greater than zero means that the service was not yet unstaked: still staking or evicted
-        if (sInfo.tsStart > 0) {
-            revert ServiceNotUnstaked(serviceId);
-        }
-
-        // Check for the maximum number of staking services
-        uint256 numStakingServices = setServiceIds.length;
-        if (numStakingServices == maxNumServices) {
-            revert MaxNumServicesReached(maxNumServices);
-        }
-
-        // Check the service conditions for staking
-        IService.Service memory service = IService(serviceRegistry).getService(serviceId);
-
-        // Check the number of agent instances
-        if (numAgentInstances != service.maxNumAgentInstances) {
-            revert WrongServiceConfiguration(serviceId);
-        }
-
-        // Check the configuration hash, if applicable
-        if (configHash != 0 && configHash != service.configHash) {
-            revert WrongServiceConfiguration(serviceId);
-        }
-        // Check the threshold, if applicable
-        if (threshold > 0 && threshold != service.threshold) {
-            revert WrongServiceConfiguration(serviceId);
-        }
-        // The service must be deployed
-        if (service.state != IService.ServiceState.Deployed) {
-            revert WrongServiceState(uint256(service.state), serviceId);
-        }
-
-        // Check that the multisig address corresponds to the authorized multisig proxy bytecode hash
-        bytes32 multisigProxyHash = keccak256(service.multisig.code);
-        if (proxyHash != multisigProxyHash) {
-            revert UnauthorizedMultisig(service.multisig);
-        }
-
-        // Check the agent Ids requirement, if applicable
-        uint256 size = agentIds.length;
-        if (size > 0) {
-            uint256 numAgents = service.agentIds.length;
-
-            if (size != numAgents) {
-                revert WrongServiceConfiguration(serviceId);
-            }
-            for (uint256 i = 0; i < numAgents; ++i) {
-                // Check that the agent Ids
-                if (agentIds[i] != service.agentIds[i]) {
-                    revert WrongAgentId(agentIds[i]);
-                }
-            }
-        }
-
-        // Check service staking deposit and token, if applicable
-        _checkTokenStakingDeposit(serviceId, service.securityDeposit, service.agentIds);
-
-        // ServiceInfo struct will be an empty one since otherwise the safeTransferFrom above would fail
-        sInfo.multisig = service.multisig;
-        sInfo.owner = msg.sender;
-        // This function might revert if it's incorrectly implemented, however this is not a protocol's responsibility
-        // It is safe to revert in this place
-        uint256[] memory nonces = IActivityChecker(activityChecker).getMultisigNonces(service.multisig);
-        sInfo.nonces = nonces;
-        sInfo.tsStart = block.timestamp;
-
-        // Set reward distribution info: rewardDistributionType and customRewardsDistributor address, if required
-        // rewardDistributionType takes first 8 bits
-        RewardDistributionType rewardDistributionType = RewardDistributionType(rewardDistributionInfo);
-        // Check reward distribution type
-        if (rewardDistributionType == RewardDistributionType.Custom) {
-            // Check custom rewards distributor address: shift rewardDistributionType value of 8 bits
-            if (address(uint160(rewardDistributionInfo >> 8)) == address(0)) {
-                revert ZeroAddress();
-            }
-        }
-        sInfo.rewardDistributionInfo = rewardDistributionInfo;
-
-        // Add the service Id to the set of staked services
-        setServiceIds.push(serviceId);
-
-        // Transfer the service for staking
-        IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
-
-        emit ServiceStaked(epochCounter, serviceId, msg.sender, service.multisig, nonces);
+    function stakeWithRewardDistributionInfo(uint256 serviceId, uint256 rewardDistributionInfo) external {
+        _stake(serviceId, rewardDistributionInfo);
     }
 
     /// @dev Unstakes the service with collected reward, if available.
