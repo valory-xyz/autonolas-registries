@@ -190,6 +190,8 @@ struct ServiceInfo {
     uint256 reward;
     // Accumulated inactivity that might lead to the service eviction
     uint256 inactivity;
+    // Reward distribution info
+    uint256 rewardDistributionInfo;
 }
 
 /// @title StakingBase - Base abstract smart contract for staking a service by its owner
@@ -246,8 +248,6 @@ abstract contract StakingBase is ERC721TokenReceiver {
         address serviceRegistry;
         // Service activity checker address
         address activityChecker;
-        // Reward distribution type.
-        RewardDistributionType rewardDistributionType;
         // Custom rewards distributor address
         address customRewardsDistributor;
     }
@@ -298,10 +298,6 @@ abstract contract StakingBase is ERC721TokenReceiver {
     address public serviceRegistry;
     // Service activity checker address
     address public activityChecker;
-    // Reward distribution type.
-    RewardDistributionType public rewardDistributionType;
-    // Custom rewards distributor address
-    address public customRewardsDistributor;
 
     // The rest of state variables
     // Min staking duration
@@ -374,14 +370,6 @@ abstract contract StakingBase is ERC721TokenReceiver {
         numAgentInstances = _stakingParams.numAgentInstances;
         serviceRegistry = _stakingParams.serviceRegistry;
         activityChecker = _stakingParams.activityChecker;
-        rewardDistributionType = _stakingParams.rewardDistributionType;
-        // Check reward distribution type
-        if (_stakingParams.rewardDistributionType == RewardDistributionType.Custom) {
-            if (_stakingParams.customRewardsDistributor == address(0)) {
-                revert ZeroAddress();
-            }
-            customRewardsDistributor = _stakingParams.customRewardsDistributor;
-        }
 
         // Assign optional parameters
         threshold = _stakingParams.threshold;
@@ -569,7 +557,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
         // Get reward receivers and amounts based on the distribution type
         (address[] memory receivers, uint256[] memory amounts) =
-            _getRewardReceiversAndAmounts(serviceId, sInfo.owner, sInfo.multisig, reward);
+            _getRewardReceiversAndAmounts(serviceId, sInfo.owner, sInfo.multisig, reward, sInfo.rewardDistributionInfo);
 
         // Transfer reward amounts to specified receivers
         _withdraw(receivers, amounts);
@@ -661,8 +649,14 @@ abstract contract StakingBase is ERC721TokenReceiver {
         uint256 serviceId,
         address serviceOwner,
         address multisig,
-        uint256 reward
+        uint256 reward,
+        uint256 rewardDistributionInfo
     ) internal view virtual returns (address[] memory receivers, uint256[] memory amounts) {
+        // Get reward distribution info: rewardDistributionType and customRewardsDistributor address, if required
+        // rewardDistributionType is extracted from first 8 bits
+        RewardDistributionType rewardDistributionType = RewardDistributionType(rewardDistributionInfo);
+
+        // Check reward distribution type
         if (rewardDistributionType == RewardDistributionType.Proportional) {
             // Get service agent instances
             (uint256 numInstances, address[] memory agentInstances) = IService(serviceRegistry).getAgentInstances(serviceId);
@@ -705,6 +699,9 @@ abstract contract StakingBase is ERC721TokenReceiver {
             receivers[0] = multisig;
             amounts[0] = reward;
         } else {
+            // Custom rewards distributor address: shift rewardDistributionType value of 8 bits
+            // Note this address was already checked for not being zero
+            address customRewardsDistributor = address(uint160(rewardDistributionInfo >> 8));
             // Get receivers and amounts from external customRewardsDistributor contract
             (receivers, amounts) = ICustomRewardsDistributor(customRewardsDistributor).getRewardReceiversAndAmounts(serviceId,
                 serviceOwner, multisig, reward);
@@ -776,7 +773,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
             } else {
                 // Get reward receivers and amounts based on the distribution type
                 (address[] memory receivers, uint256[] memory amounts) =
-                    _getRewardReceiversAndAmounts(serviceId, sInfo.owner, sInfo.multisig, sInfo.reward);
+                    _getRewardReceiversAndAmounts(serviceId, sInfo.owner, sInfo.multisig, sInfo.reward, sInfo.rewardDistributionInfo);
 
                 // Transfer reward amounts to specified receivers
                 _withdraw(receivers, amounts);
@@ -960,7 +957,9 @@ abstract contract StakingBase is ERC721TokenReceiver {
     /// @notice Each service must be staked for a minimum of maxInactivityDuration time, or until the funds are not zero.
     ///         maxInactivityDuration = maxNumInactivityPeriods * livenessPeriod
     /// @param serviceId Service Id.
-    function stake(uint256 serviceId) external {
+    /// @param rewardDistributionInfo Reward distribution info: rewardDistributionType and customRewardsDistributor
+    ///        address, if required.
+    function stake(uint256 serviceId, uint256 rewardDistributionInfo) external {
         // Checkpoint to finalize any unaccounted rewards, if any
         checkpoint();
 
@@ -1036,6 +1035,18 @@ abstract contract StakingBase is ERC721TokenReceiver {
         uint256[] memory nonces = IActivityChecker(activityChecker).getMultisigNonces(service.multisig);
         sInfo.nonces = nonces;
         sInfo.tsStart = block.timestamp;
+
+        // Set reward distribution info: rewardDistributionType and customRewardsDistributor address, if required
+        // rewardDistributionType takes first 8 bits
+        RewardDistributionType rewardDistributionType = RewardDistributionType(rewardDistributionInfo);
+        // Check reward distribution type
+        if (rewardDistributionType == RewardDistributionType.Custom) {
+            // Check custom rewards distributor address: shift rewardDistributionType value of 8 bits
+            if (address(uint160(rewardDistributionInfo >> 8)) == address(0)) {
+                revert ZeroAddress();
+            }
+        }
+        sInfo.rewardDistributionInfo = rewardDistributionInfo;
 
         // Add the service Id to the set of staked services
         setServiceIds.push(serviceId);
