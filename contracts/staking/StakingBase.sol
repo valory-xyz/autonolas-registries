@@ -248,8 +248,6 @@ abstract contract StakingBase is ERC721TokenReceiver {
         address serviceRegistry;
         // Service activity checker address
         address activityChecker;
-        // Custom rewards distributor address
-        address customRewardsDistributor;
     }
 
     event ServiceStaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
@@ -1071,7 +1069,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     /// @param serviceId Service Id.
     /// @param rewardDistributionInfo Reward distribution info: rewardDistributionType and customRewardsDistributor
     ///        address, if required.
-    function stakeWithRewardDistributionInfo(uint256 serviceId, uint256 rewardDistributionInfo) external {
+    function stake(uint256 serviceId, uint256 rewardDistributionInfo) external {
         _stake(serviceId, rewardDistributionInfo);
     }
 

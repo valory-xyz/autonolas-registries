@@ -56,11 +56,11 @@ describe("Staking", function () {
         configHash: HashZero,
         proxyHash: HashZero,
         serviceRegistry: AddressZero,
-        activityChecker: AddressZero,
-        rewardDistributionType: 2, // Service multisig,
-        customRewardsDistributor: AddressZero
+        activityChecker: AddressZero
     };
     const maxInactivity = serviceParams.maxNumInactivityPeriods * livenessPeriod + 1;
+    // Service multisig
+    const rewardDistributionType = 2;
 
     beforeEach(async function () {
         signers = await ethers.getSigners();
@@ -212,9 +212,7 @@ describe("Staking", function () {
                 configHash: HashZero,
                 proxyHash: HashZero,
                 serviceRegistry: AddressZero,
-                activityChecker: AddressZero,
-                rewardDistributionType: 0,
-                customRewardsDistributor: AddressZero
+                activityChecker: AddressZero
             };
 
             // Service Staking Native Token
@@ -323,13 +321,6 @@ describe("Staking", function () {
                 stakingFactory.createStakingInstance(stakingImplementation.address, initPayload)
             ).to.be.revertedWithCustomError(stakingImplementation, "ZeroValue");
 
-            testServiceParams.rewardDistributionType = 3;
-            initPayload = stakingImplementation.interface.encodeFunctionData("initialize", [testServiceParams]);
-            await expect(
-                stakingFactory.createStakingInstance(stakingImplementation.address, initPayload)
-            ).to.be.revertedWithCustomError(stakingImplementation, "ZeroAddress");
-
-            testServiceParams.rewardDistributionType = 0;
             testServiceParams.agentIds = [0];
             initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
                 [testServiceParams]);
@@ -352,6 +343,12 @@ describe("Staking", function () {
             ).to.be.revertedWithCustomError(stakingImplementation, "WrongAgentId");
 
             testServiceParams.agentIds = [];
+            initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
+                [testServiceParams]);
+            await expect(
+                stakingFactory.createStakingInstance(stakingImplementation.address, initPayload)
+            ).to.be.revertedWithCustomError(stakingImplementation, "ZeroValue");
+
             initPayload = stakingImplementation.interface.encodeFunctionData("initialize",
                 [testServiceParams]);
             await expect(
@@ -470,7 +467,7 @@ describe("Staking", function () {
     context("Staking to StakingNativeToken and StakingToken", function () {
         it("Should fail if there are no available rewards", async function () {
             await expect(
-                stakingNativeToken.stake(serviceId)
+                stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionType)
             ).to.be.revertedWithCustomError(stakingNativeToken, "NoRewardsAvailable");
         });
 
@@ -498,11 +495,11 @@ describe("Staking", function () {
             await serviceRegistry.approve(sStaking.address, serviceId + 1);
 
             // Stake the service
-            await sStaking.stake(serviceId);
+            await sStaking["stake(uint256,uint256)"](serviceId, rewardDistributionType);
 
             // Staking next service is going to fail
             await expect(
-                sStaking.stake(serviceId + 1)
+                sStaking["stake(uint256,uint256)"](serviceId + 1, rewardDistributionType)
             ).to.be.revertedWithCustomError(sStaking, "MaxNumServicesReached");
         });
 
@@ -517,7 +514,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId + 2);
 
             await expect(
-                stakingNativeToken.stake(serviceId + 2)
+                stakingNativeToken["stake(uint256,uint256)"](serviceId + 2, rewardDistributionType)
             ).to.be.revertedWithCustomError(stakingNativeToken, "WrongServiceState");
         });
 
@@ -532,7 +529,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId + 2);
 
             await expect(
-                stakingNativeToken.stake(serviceId + 2)
+                stakingNativeToken["stake(uint256,uint256)"](serviceId + 2, rewardDistributionType)
             ).to.be.revertedWithCustomError(stakingNativeToken, "WrongServiceConfiguration");
         });
 
@@ -554,7 +551,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(sStaking.address, serviceId);
 
             await expect(
-                sStaking.stake(serviceId)
+                sStaking["stake(uint256,uint256)"](serviceId, rewardDistributionType)
             ).to.be.revertedWithCustomError(sStaking, "WrongServiceConfiguration");
         });
 
@@ -576,7 +573,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(sStaking.address, serviceId);
 
             await expect(
-                sStaking.stake(serviceId)
+                sStaking["stake(uint256,uint256)"](serviceId, rewardDistributionType)
             ).to.be.revertedWithCustomError(sStaking, "UnauthorizedMultisig");
         });
 
@@ -598,7 +595,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(sStaking.address, serviceId);
 
             await expect(
-                sStaking.stake(serviceId)
+                sStaking["stake(uint256,uint256)"](serviceId, rewardDistributionType)
             ).to.be.revertedWithCustomError(sStaking, "WrongServiceConfiguration");
         });
 
@@ -633,7 +630,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(sStaking.address, serviceId + 2);
 
             await expect(
-                sStaking.stake(serviceId + 2)
+                sStaking["stake(uint256,uint256)"](serviceId + 2, rewardDistributionType)
             ).to.be.revertedWithCustomError(sStaking, "WrongAgentId");
 
             // Create a new service (serviceId == 4)
@@ -646,7 +643,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(sStaking.address, serviceId + 3);
 
             // Stake the service
-            await sStaking.stake(serviceId + 3);
+            await sStaking["stake(uint256,uint256)"](serviceId + 3, rewardDistributionType);
         });
 
         it("Should fail when the numer of agent instances matching the wrong agent Ids size", async function () {
@@ -674,7 +671,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(sStaking.address, serviceId + 2);
 
             await expect(
-                sStaking.stake(serviceId + 2)
+                sStaking["stake(uint256,uint256)"](serviceId + 2, rewardDistributionType)
             ).to.be.revertedWithCustomError(sStaking, "WrongServiceConfiguration");
         });
 
@@ -694,7 +691,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId + 2);
 
             await expect(
-                stakingNativeToken.stake(serviceId + 2)
+                stakingNativeToken["stake(uint256,uint256)"](serviceId + 2, rewardDistributionType)
             ).to.be.revertedWithCustomError(stakingNativeToken, "LowerThan");
         });
 
@@ -730,7 +727,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingToken.address, sId);
 
             await expect(
-                stakingToken.stake(sId)
+                stakingToken["stake(uint256)"](sId)
             ).to.be.revertedWithCustomError(stakingToken, "WrongStakingToken");
         });
 
@@ -761,7 +758,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingToken.address, sId);
 
             await expect(
-                stakingToken.stake(sId)
+                stakingToken["stake(uint256)"](sId)
             ).to.be.revertedWithCustomError(stakingToken, "ValueLowerThan");
         });
 
@@ -773,7 +770,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId);
 
             // Stake the service
-            await stakingNativeToken.stake(serviceId);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionType);
 
             // Try to unstake not by the owner
             await expect(
@@ -805,7 +802,7 @@ describe("Staking", function () {
             // Approve services
             await serviceRegistry.approve(stakingToken.address, sId);
 
-            await stakingToken.stake(sId);
+            await stakingToken["stake(uint256)"](sId);
         });
 
         it("Returns zero rewards for the not staked service", async function () {
@@ -826,7 +823,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId);
 
             // Stake the service
-            await stakingNativeToken.stake(serviceId);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionType);
 
             // Trying to unstake right away
             await expect(
@@ -848,7 +845,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId);
 
             // Stake the service
-            await stakingNativeToken.stake(serviceId);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionType);
 
             // Check that the service is staked
             let stakingState = await stakingNativeToken.getStakingState(serviceId);
@@ -879,7 +876,7 @@ describe("Staking", function () {
 
             // Try to stake evicted service
             await expect(
-                stakingNativeToken.stake(serviceId)
+                stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionType)
             ).to.be.revertedWithCustomError(stakingNativeToken, "ServiceNotUnstaked");
 
             // Unstake the service
@@ -910,8 +907,8 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId + 1);
 
             // Stake services
-            await stakingNativeToken.stake(serviceId);
-            await stakingNativeToken.stake(serviceId + 1);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionType);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId + 1, rewardDistributionType);
 
             // Call the checkpoint to make sure the rewards logic is not hit
             await stakingNativeToken.checkpoint();
@@ -973,7 +970,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId);
 
             // Stake the service
-            await stakingNativeToken.stake(serviceId);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionType);
 
             // Get the service multisig contract
             const service = await serviceRegistry.getService(serviceId);
@@ -1058,7 +1055,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingToken.address, sId);
 
             // Stake the service
-            await stakingToken.stake(sId);
+            await stakingToken["stake(uint256)"](sId);
 
             // Get the service multisig contract
             const service = await serviceRegistry.getService(sId);
@@ -1116,7 +1113,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId);
 
             // Stake the service
-            await stakingNativeToken.stake(serviceId);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionType);
 
             // Get the service multisig contract
             const service = await serviceRegistry.getService(serviceId);
@@ -1170,7 +1167,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId);
 
             // Stake the service
-            await stakingNativeToken.stake(serviceId);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionType);
 
             // Get the service multisig contract
             const service = await serviceRegistry.getService(serviceId);
@@ -1230,10 +1227,10 @@ describe("Staking", function () {
 
                 // Stake the service
                 if (i == 0) {
-                    await stakingNativeToken.stake(serviceId + i);
+                    await stakingNativeToken["stake(uint256,uint256)"](serviceId + i, rewardDistributionType);
                 } else {
                     await expect(
-                        stakingNativeToken.stake(serviceId + i)
+                        stakingNativeToken["stake(uint256,uint256)"](serviceId + i, rewardDistributionType)
                     ).to.be.revertedWithCustomError(stakingNativeToken, "NoRewardsAvailable");
                 }
 
@@ -1270,7 +1267,7 @@ describe("Staking", function () {
                 await serviceRegistry.approve(stakingNativeToken.address, serviceId + i);
 
                 // Stake the service
-                await stakingNativeToken.stake(serviceId + i);
+                await stakingNativeToken["stake(uint256,uint256)"](serviceId + i, rewardDistributionType);
             }
 
             for (let i = 0; i < 3; i++) {
@@ -1381,7 +1378,7 @@ describe("Staking", function () {
                 await serviceRegistry.approve(stakingNativeToken.address, serviceId + i);
 
                 // Stake the service
-                await stakingNativeToken.stake(serviceId + i);
+                await stakingNativeToken["stake(uint256,uint256)"](serviceId + i, rewardDistributionType);
             }
 
             for (let i = 0; i < 3; i++) {
@@ -1424,7 +1421,7 @@ describe("Staking", function () {
                 await serviceRegistry.approve(stakingNativeToken.address, serviceId + i);
 
                 // Stake the service
-                await stakingNativeToken.stake(serviceId + i);
+                await stakingNativeToken["stake(uint256,uint256)"](serviceId + i, rewardDistributionType);
 
                 // Get the service multisig contract
                 const service = await serviceRegistry.getService(serviceId + i);
@@ -1537,7 +1534,7 @@ describe("Staking", function () {
                 await serviceRegistry.approve(stakingNativeToken.address, serviceId + i);
 
                 // Stake the service
-                await stakingNativeToken.stake(serviceId + i);
+                await stakingNativeToken["stake(uint256,uint256)"](serviceId + i, rewardDistributionType);
             }
 
             // Increase the time for the liveness period
@@ -1554,7 +1551,7 @@ describe("Staking", function () {
 
             // Try to stake the same service again
             await expect(
-                stakingNativeToken.stake(serviceId)
+                stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionType)
             ).to.be.revertedWithCustomError(stakingNativeToken, "ServiceNotUnstaked");
 
             // Create and deploy yet one more service (serviceId == 4)
@@ -1567,7 +1564,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId + 3);
 
             // Stake the service
-            await stakingNativeToken.stake(serviceId + 3);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId + 3, rewardDistributionType);
 
             // Restore a previous state of blockchain
             snapshot.restore();
@@ -1584,7 +1581,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId);
 
             // Stake the service
-            await stakingNativeToken.stake(serviceId);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionType);
 
             // Take the staking timestamp
             let block = await ethers.provider.getBlock("latest");
@@ -1660,7 +1657,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId);
 
             // Stake the service
-            await stakingNativeToken.stake(serviceId);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionType);
 
             // Try to claim not by the service owner
             await expect(
@@ -1754,7 +1751,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId);
 
             // Stake the service
-            await stakingNativeToken.stake(serviceId);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionType);
 
             // Get the service multisig contract
             const service = await serviceRegistry.getService(serviceId);
@@ -1843,8 +1840,8 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId + 1);
 
             // Stake services
-            await stakingNativeToken.stake(serviceId);
-            await stakingNativeToken.stake(serviceId + 1);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionType);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId + 1, rewardDistributionType);
 
             // Call the checkpoint to make sure the rewards logic is not hit
             await stakingNativeToken.checkpoint();
@@ -1934,7 +1931,7 @@ describe("Staking", function () {
             // Transfer the service to the attacker (note we need to use the transfer not to get another reentrancy call)
             await serviceRegistry.transferFrom(deployer.address, attacker.address, serviceId);
 
-            // Stake and checkpoint
+            // Stake service
             await attacker.stake(serviceId);
 
             // Make transactions by the service multisig
@@ -1948,9 +1945,12 @@ describe("Staking", function () {
 
             let reward = await stakingNativeToken.calculateStakingReward(serviceId);
             expect(reward).to.gt(0);
+            console.log(reward);
 
             // Try to perform a reentrancy attack during claim
-            await attacker.checkpointAndClaim(serviceId);
+            await expect(
+                attacker.checkpointAndClaim(serviceId)
+            ).to.be.reverted;
             // Receive funds by attacker and call claim() right away
             nonce = await multisig.nonce();
             txHashData = await safeContracts.buildContractCall(attacker, "getThreshold", [], nonce, 0, 0);
@@ -2005,7 +2005,7 @@ describe("Staking", function () {
             await serviceRegistry.approve(stakingNativeToken.address, serviceId);
 
             // Stake the service
-            await stakingNativeToken.stake(serviceId);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionType);
 
             // Make a transaction by the service multisig
             let nonce = await multisig.nonce();
