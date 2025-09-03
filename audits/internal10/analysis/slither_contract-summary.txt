@@ -1,0 +1,73 @@
+'solc --version' running
+'solc ./StakingBase-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal10/analysis/contracts' running
+INFO:Printers:
++ Contract ERC721 (Most derived contract)
+  - From ERC721
+    - _burn(uint256) (internal)
+    - _mint(address,uint256) (internal)
+    - _safeMint(address,uint256) (internal)
+    - _safeMint(address,uint256,bytes) (internal)
+    - approve(address,uint256) (public)
+    - balanceOf(address) (public)
+    - constructor(string,string) (internal)
+    - ownerOf(uint256) (public)
+    - safeTransferFrom(address,address,uint256) (public)
+    - safeTransferFrom(address,address,uint256,bytes) (public)
+    - setApprovalForAll(address,bool) (public)
+    - supportsInterface(bytes4) (public)
+    - tokenURI(uint256) (public)
+    - transferFrom(address,address,uint256) (public)
+
++ Contract ERC721TokenReceiver
+  - From ERC721TokenReceiver
+    - onERC721Received(address,address,uint256,bytes) (external)
+
++ Contract IActivityChecker (Most derived contract)
+  - From IActivityChecker
+    - getMultisigNonces(address) (external)
+    - isRatioPass(uint256[],uint256[],uint256) (external)
+
++ Contract ICustomRewardsDistributor (Most derived contract)
+  - From ICustomRewardsDistributor
+    - getRewardReceiversAndAmounts(uint256,address,address,uint256) (external)
+
++ Contract IService (Most derived contract)
+  - From IService
+    - getAgentInstances(uint256) (external)
+    - getAgentParams(uint256) (external)
+    - getService(uint256) (external)
+    - mapAgentInstanceOperators(address) (external)
+    - safeTransferFrom(address,address,uint256) (external)
+    - transferFrom(address,address,uint256) (external)
+
++ Contract StakingBase (Most derived contract)
+  - From ERC721TokenReceiver
+    - onERC721Received(address,address,uint256,bytes) (external)
+  - From StakingBase
+    - _calculateStakingRewards() (internal)
+    - _checkRatioPass(address,uint256[],uint256) (internal)
+    - _checkTokenStakingDeposit(uint256,uint256,uint32[]) (internal)
+    - _claim(uint256,bool) (internal)
+    - _evict(uint256[],uint256[],uint256) (internal)
+    - _getRewardReceiversAndAmounts(uint256,address,address,uint256,uint256) (internal)
+    - _initialize(StakingBase.StakingParams) (internal)
+    - _stake(uint256,uint256) (internal)
+    - _transfer(address,uint256) (internal)
+    - _unstake(uint256,bool) (internal)
+    - _withdraw(address[],uint256[]) (internal)
+    - calculateStakingLastReward(uint256) (public)
+    - calculateStakingReward(uint256) (external)
+    - checkpoint() (public)
+    - checkpointAndClaim(uint256) (external)
+    - claim(uint256) (external)
+    - forcedUnstake(uint256) (external)
+    - getAgentIds() (external)
+    - getNextRewardCheckpointTimestamp() (external)
+    - getServiceIds() (public)
+    - getServiceInfo(uint256) (external)
+    - getStakingState(uint256) (external)
+    - stake(uint256) (external)
+    - stake(uint256,uint256) (external)
+    - unstake(uint256) (external)
+
+INFO:Slither:. analyzed (6 contracts)
