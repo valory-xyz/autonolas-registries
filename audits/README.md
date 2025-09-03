@@ -29,7 +29,7 @@ An internal audit with a focus on update of StakingBase
 contracts is located in this folder: [internal audit 9](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal9).
 
 An internal audit with a focus on next update of StakingBase
-contracts is located in this folder: [internal audit 9](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal10).
+contracts is located in this folder: [internal audit 10](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal10).
 
 ### External audit
 

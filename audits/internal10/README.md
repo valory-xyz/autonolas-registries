@@ -22,7 +22,7 @@ File                                 |  % Stmts | % Branch |  % Funcs |  % Lines
 ```
 - No full coverage
 - Non tested critical bug!
-[] 
+[x] Noted 
 
 ### Security issues. Updated 03-09-25
 #### Problems found instrumentally
@@ -49,7 +49,7 @@ if(rewardDistributionInfo < 256) {
 RewardDistributionType rewardDistributionType = RewardDistributionType(rewardDistributionInfo);
 => panic 0x21
 ```
-[]
+[x] Fixed
 
 ### Notes. Aviod non-custom and dirty high bits.
 ```
@@ -62,7 +62,7 @@ then
     revert
 
 ```
-[]
+[x] Fixed
 
 
 

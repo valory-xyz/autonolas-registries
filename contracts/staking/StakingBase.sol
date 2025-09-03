@@ -126,6 +126,9 @@ error ZeroAddress();
 /// @dev Provided zero value.
 error ZeroValue();
 
+/// @dev Provided non-zero value.
+error NonZeroValue();
+
 /// @dev The deployed activity checker must be a contract.
 /// @param activityChecker Activity checker address.
 error ContractOnly(address activityChecker);
@@ -652,7 +655,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     ) internal view virtual returns (address[] memory receivers, uint256[] memory amounts) {
         // Get reward distribution info: rewardDistributionType and customRewardsDistributor address, if required
         // rewardDistributionType is extracted from first 8 bits
-        RewardDistributionType rewardDistributionType = RewardDistributionType(rewardDistributionInfo);
+        RewardDistributionType rewardDistributionType = RewardDistributionType(uint8(rewardDistributionInfo));
 
         // Check reward distribution type
         if (rewardDistributionType == RewardDistributionType.Proportional) {
@@ -791,13 +794,16 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
         // Set reward distribution info: rewardDistributionType and customRewardsDistributor address, if required
         // rewardDistributionType takes first 8 bits
-        RewardDistributionType rewardDistributionType = RewardDistributionType(rewardDistributionInfo);
+        RewardDistributionType rewardDistributionType = RewardDistributionType(uint8(rewardDistributionInfo));
         // Check reward distribution type
         if (rewardDistributionType == RewardDistributionType.Custom) {
             // Check custom rewards distributor address: shift rewardDistributionType value of 8 bits
-            if (address(uint160(rewardDistributionInfo >> 8)) == address(0)) {
+            if (uint160(rewardDistributionInfo >> 8) == 0) {
                 revert ZeroAddress();
             }
+        } else if (uint160(rewardDistributionInfo >> 8) != 0) {
+            // Make sure upper bits do not have any value if reward distribution type is not custom
+            revert NonZeroValue();
         }
         sInfo.rewardDistributionInfo = rewardDistributionInfo;
 
