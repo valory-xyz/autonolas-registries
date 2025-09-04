@@ -84,4 +84,20 @@ contract MockStaking {
             interfaceId == 0x78e06136 || // bytes4(keccak256("calculateServiceStakingReward(uint256)"))
             interfaceId == 0x82a8ea58; // bytes4(keccak256("getServiceInfo(uint256)"))
     }
+
+    /// @dev Gets custom reward distribution receivers and amounts.
+    /// @param reward Overall claimed reward amount.
+    /// @return receivers Set of receiver addresses.
+    /// @return amounts Corresponding set of reward amounts.
+    function getRewardReceiversAndAmounts(uint256, address, address, uint256 reward)
+        external view returns (address[] memory receivers, uint256[] memory amounts) {
+        // Allocate arrays
+        receivers = new address[](1);
+        amounts = new uint256[](1);
+
+        receivers[0] = address(this);
+        amounts[0] = reward;
+    }
+
+    receive() external payable {}
 }

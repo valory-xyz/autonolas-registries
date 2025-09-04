@@ -161,6 +161,11 @@ error MaxNumServicesReached(uint256 maxNumServices);
 /// @param expected Expected value.
 error LowerThan(uint256 provided, uint256 expected);
 
+/// @dev Supplied wrong amount.
+/// @param provided Provided amount.
+/// @param expected Expected amount.
+error WrongAmount(uint256 provided, uint256 expected);
+
 /// @dev Required service configuration is wrong.
 /// @param serviceId Service Id.
 error WrongServiceConfiguration(uint256 serviceId);
@@ -701,9 +706,21 @@ abstract contract StakingBase is ERC721TokenReceiver {
             // Custom rewards distributor address: shift rewardDistributionType value of 8 bits
             // Note this address was already checked for not being zero
             address customRewardsDistributor = address(uint160(rewardDistributionInfo >> 8));
+
             // Get receivers and amounts from external customRewardsDistributor contract
             (receivers, amounts) = ICustomRewardsDistributor(customRewardsDistributor).getRewardReceiversAndAmounts(serviceId,
                 serviceOwner, multisig, reward);
+
+            // Sum all calculated amounts
+            uint256 amountCheck;
+            for (uint256 i = 0; i < amounts.length; ++i) {
+                amountCheck += amounts[i];
+            }
+
+            // Check for reward amount to match total calculated amount
+            if (amountCheck != reward) {
+                revert WrongAmount(amountCheck, reward);
+            }
         }
     }
 

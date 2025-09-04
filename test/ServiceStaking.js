@@ -23,6 +23,7 @@ describe("Staking", function () {
     let stakingToken;
     let stakingActivityChecker;
     let attacker;
+    let customRewardsDistributor;
     let signers;
     let deployer;
     let operator;
@@ -152,6 +153,10 @@ describe("Staking", function () {
         const Attacker = await ethers.getContractFactory("ReentrancyStakingAttacker");
         attacker = await Attacker.deploy(stakingNativeToken.address, serviceRegistry.address);
         await attacker.deployed();
+
+        const CustomRewardsDistributor = await ethers.getContractFactory("MockStaking");
+        customRewardsDistributor = await CustomRewardsDistributor.deploy();
+        await customRewardsDistributor.deployed();
 
         // Set the deployer to be the unit manager by default
         await componentRegistry.changeManager(deployer.address);
@@ -1244,7 +1249,7 @@ describe("Staking", function () {
             snapshot.restore();
         });
 
-        it.skip("Stake and unstake with the service activity and custom rewards distribution", async function () {
+        it("Stake and unstake with the service activity and custom rewards distribution", async function () {
             // Take a snapshot of the current state of the blockchain
             const snapshot = await helpers.takeSnapshot();
 
@@ -1254,14 +1259,23 @@ describe("Staking", function () {
             // Approve services
             await serviceRegistry.approve(stakingNativeToken.address, serviceId);
 
+            // Try to stake the service with unsupported rewards distributor type
+            await expect(
+                stakingNativeToken["stake(uint256,uint256)"](serviceId, 4)
+            ).to.be.reverted;
+
+            const customRewardDistributionType = 3;
             // Try to stake the service with custom rewards distribution without a custom distributor address
             await expect(
-                stakingNativeToken["stake(uint256,uint256)"](serviceId, 3)
+                stakingNativeToken["stake(uint256,uint256)"](serviceId, customRewardDistributionType)
             ).to.be.revertedWithCustomError(stakingNativeToken, "ZeroAddress");
-            return;
+
+            // Encode pack rewards distribution type and address
+            const rewardDistributionInfo = ethers.utils.solidityPack(["address", "uint8"],
+                [customRewardsDistributor.address, customRewardDistributionType]);
 
             // Stake the service with custom rewards distribution
-            await stakingNativeToken["stake(uint256,uint256)"](serviceId, 3);
+            await stakingNativeToken["stake(uint256,uint256)"](serviceId, rewardDistributionInfo);
 
             // Get the service multisig contract
             const service = await serviceRegistry.getService(serviceId);
@@ -1303,15 +1317,12 @@ describe("Staking", function () {
             expect(reward).to.greaterThan(0);
 
             // Unstake the service
-            const balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
-            const balanceBefore2 = ethers.BigNumber.from(await ethers.provider.getBalance(deployer.address));
+            const balanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(customRewardsDistributor.address));
             await stakingNativeToken.unstake(serviceId);
-            const balanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(multisig.address));
-            const balanceAfter2 = ethers.BigNumber.from(await ethers.provider.getBalance(deployer.address));
+            const balanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(customRewardsDistributor.address));
 
-            // The balance before and after the unstake call must be different for service owner and same for multisig
-            expect(balanceAfter2).to.gt(balanceBefore2);
-            expect(balanceAfter).to.equal(balanceBefore);
+            // The balance before and after the unstake call must be different for custom rewards distributor contract
+            expect(balanceAfter).to.gt(balanceBefore);
 
             // Check the final serviceIds set to be empty
             const serviceIds = await stakingNativeToken.getServiceIds();
