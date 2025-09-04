@@ -258,9 +258,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     event Checkpoint(uint256 indexed epoch, uint256 availableRewards, uint256[] serviceIds, uint256[] rewards,
         uint256 epochLength);
     event ServiceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
-        uint256[] nonces, uint256 availableRewards);
-    event ServiceForceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
-        uint256[] nonces, uint256 availableRewards);
+        uint256[] nonces, uint256 availableRewards, bool enforced);
     event RewardClaimed(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
         uint256[] nonces, address[] receivers, uint256[] rewardAmounts);
     event ServiceInactivityWarning(uint256 epoch, uint256 indexed serviceId, uint256 serviceInactivity);
@@ -680,9 +678,9 @@ abstract contract StakingBase is ERC721TokenReceiver {
             }
 
             // Set service owner address and its reward amount
-            receivers[totalNumReceivers - 1] = serviceOwner;
+            receivers[numInstances] = serviceOwner;
             // Service owner gets its reward amount and a division remainder, if any
-            amounts[totalNumReceivers - 1] = reward - (numInstances * operatorReward);
+            amounts[numInstances] = reward - (numInstances * operatorReward);
         } else if (rewardDistributionType == RewardDistributionType.ServiceOwner) {
             // Allocate arrays
             receivers = new address[](1);
@@ -802,7 +800,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
                 revert ZeroAddress();
             }
         } else if (uint160(rewardDistributionInfo >> 8) != 0) {
-            // Make sure upper bits do not have any value if reward distribution type is not custom
+            // Make sure upper bits do not have any value if reward distribution type is not Сustom
             revert NonZeroValue();
         }
         sInfo.rewardDistributionInfo = rewardDistributionInfo;
@@ -894,11 +892,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Note that the reentrancy is not possible due to the ServiceInfo struct being deleted
         IService(serviceRegistry).transferFrom(address(this), msg.sender, serviceId);
 
-        if (enforced) {
-            emit ServiceForceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, lastAvailableRewards);
-        } else {
-            emit ServiceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, lastAvailableRewards);
-        }
+        emit ServiceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, lastAvailableRewards, enforced);
     }
 
     /// @dev Withdraws reward amounts.
@@ -913,6 +907,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Traverse all receivers and amounts
         for (uint256 i = 0; i < receivers.length; ++i) {
             // Update the contract balance
+            // Underflow is not going to happen since reward calculations are based on availableRewards <= balance
             updatedBalance -= amounts[i];
 
             // Transfer rewards
@@ -1140,6 +1135,24 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
         // Add pending reward
         reward += calculateStakingLastReward(serviceId);
+    }
+
+    /// @dev Calculates overall service staking reward at current timestamp.
+    /// @param serviceId Service Id.
+    /// @return receivers Set of receiver addresses.
+    /// @return amounts Corresponding set of reward amounts.
+    function calculateStakingRewardReceiversAndAmounts(
+        uint256 serviceId
+    ) external view returns (address[] memory receivers, uint256[] memory amounts) {
+        // Get current service reward
+        ServiceInfo memory sInfo = mapServiceInfo[serviceId];
+        uint256 reward = sInfo.reward;
+
+        // Add pending reward
+        reward += calculateStakingLastReward(serviceId);
+
+        (receivers, amounts) =
+            _getRewardReceiversAndAmounts(serviceId, sInfo.owner, sInfo.multisig, reward, sInfo.rewardDistributionInfo);
     }
 
     /// @dev Gets the service staking state.
