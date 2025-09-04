@@ -1,0 +1,20 @@
+'solc --version' running
+'solc ./StakingBase-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal10/analysis/contracts' running
+INFO:Printers:
+######################
+####### ERC721 #######
+######################
+
+## Constructor Call Sequence
+	- ERC721
+
+## Constructor Definitions
+
+### ERC721
+
+     constructor(string memory _name, string memory _symbol) {
+        name = _name;
+        symbol = _symbol;
+    }
+
+INFO:Slither:. analyzed (6 contracts)

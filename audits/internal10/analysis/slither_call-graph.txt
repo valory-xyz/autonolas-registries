@@ -1,0 +1,10 @@
+'solc --version' running
+'solc ./StakingBase-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal10/analysis/contracts' running
+INFO:Printers:Call Graph: ./StakingBase-flatten.sol.all_contracts.call-graph.dot
+Call Graph: ./StakingBase-flatten.sol.ERC721.call-graph.dot
+Call Graph: ./StakingBase-flatten.sol.IActivityChecker.call-graph.dot
+Call Graph: ./StakingBase-flatten.sol.ICustomRewardsDistributor.call-graph.dot
+Call Graph: ./StakingBase-flatten.sol.IService.call-graph.dot
+Call Graph: ./StakingBase-flatten.sol.StakingBase.call-graph.dot
+
+INFO:Slither:. analyzed (6 contracts)
