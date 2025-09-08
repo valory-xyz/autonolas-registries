@@ -142,6 +142,11 @@ error WrongAgentId(uint256 agentId);
 /// @param serviceId Service Id.
 error WrongServiceState(uint256 state, uint256 serviceId);
 
+/// @dev Wrong length of two arrays.
+/// @param numValues1 Number of values in a first array.
+/// @param numValues2 Number of values in a second array.
+error WrongArrayLength(uint256 numValues1, uint256 numValues2);
+
 /// @dev Multisig is not whitelisted.
 /// @param multisig Address of a multisig implementation.
 error UnauthorizedMultisig(address multisig);
@@ -270,7 +275,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     event ServicesEvicted(uint256 indexed epoch, uint256[] serviceIds, address[] owners, address[] multisigs,
         uint256[] serviceInactivity);
     event Deposit(address indexed sender, uint256 amount, uint256 balance, uint256 availableRewards);
-    event Withdraw(address[] receivers, uint256[] amounts);
+    event Withdraw(address indexed receiver, uint256 amount);
 
     // Contract version
     string public constant VERSION = "0.3.0";
@@ -711,6 +716,11 @@ abstract contract StakingBase is ERC721TokenReceiver {
             (receivers, amounts) = ICustomRewardsDistributor(customRewardsDistributor).getRewardReceiversAndAmounts(serviceId,
                 serviceOwner, multisig, reward);
 
+            // Check for correct array lengths
+            if (receivers.length == 0 || receivers.length != amounts.length) {
+                revert WrongArrayLength(receivers.length, amounts.length);
+            }
+
             // Sum all calculated amounts
             uint256 amountCheck;
             for (uint256 i = 0; i < amounts.length; ++i) {
@@ -920,7 +930,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Get current balance
         uint256 updatedBalance = balance;
 
-        // Note that if array lengths are different, the withdraw reverts, but that's a responsibility of service owner
+        // Note that array lengths are checked in upper level functions
         // Traverse all receivers and amounts
         for (uint256 i = 0; i < receivers.length; ++i) {
             // Update the contract balance
@@ -929,12 +939,12 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
             // Transfer rewards
             _transfer(receivers[i], amounts[i]);
+
+            emit Withdraw(receivers[i], amounts[i]);
         }
 
         // Record updated contract balance
         balance = updatedBalance;
-
-        emit Withdraw(receivers, amounts);
     }
 
     /// @dev Checkpoint to allocate rewards up until a current time.
