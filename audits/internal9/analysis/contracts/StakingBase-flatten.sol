@@ -1,9 +1,245 @@
+// Sources flattened with hardhat v2.26.3 https://hardhat.org
+
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.30;
 
-import {ERC721TokenReceiver} from "../../lib/solmate/src/tokens/ERC721.sol";
+// File lib/solmate/src/tokens/ERC721.sol
 
+// Original license: SPDX_License_Identifier: MIT
+pragma solidity >=0.8.0;
+
+/// @notice Modern, minimalist, and gas efficient ERC-721 implementation.
+/// @author Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/tokens/ERC721.sol)
+abstract contract ERC721 {
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    event Transfer(address indexed from, address indexed to, uint256 indexed id);
+
+    event Approval(address indexed owner, address indexed spender, uint256 indexed id);
+
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+
+    /*//////////////////////////////////////////////////////////////
+                         METADATA STORAGE/LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    string public name;
+
+    string public symbol;
+
+    function tokenURI(uint256 id) public view virtual returns (string memory);
+
+    /*//////////////////////////////////////////////////////////////
+                      ERC721 BALANCE/OWNER STORAGE
+    //////////////////////////////////////////////////////////////*/
+
+    mapping(uint256 => address) internal _ownerOf;
+
+    mapping(address => uint256) internal _balanceOf;
+
+    function ownerOf(uint256 id) public view virtual returns (address owner) {
+        require((owner = _ownerOf[id]) != address(0), "NOT_MINTED");
+    }
+
+    function balanceOf(address owner) public view virtual returns (uint256) {
+        require(owner != address(0), "ZERO_ADDRESS");
+
+        return _balanceOf[owner];
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                         ERC721 APPROVAL STORAGE
+    //////////////////////////////////////////////////////////////*/
+
+    mapping(uint256 => address) public getApproved;
+
+    mapping(address => mapping(address => bool)) public isApprovedForAll;
+
+    /*//////////////////////////////////////////////////////////////
+                               CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
+    constructor(string memory _name, string memory _symbol) {
+        name = _name;
+        symbol = _symbol;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                              ERC721 LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    function approve(address spender, uint256 id) public virtual {
+        address owner = _ownerOf[id];
+
+        require(msg.sender == owner || isApprovedForAll[owner][msg.sender], "NOT_AUTHORIZED");
+
+        getApproved[id] = spender;
+
+        emit Approval(owner, spender, id);
+    }
+
+    function setApprovalForAll(address operator, bool approved) public virtual {
+        isApprovedForAll[msg.sender][operator] = approved;
+
+        emit ApprovalForAll(msg.sender, operator, approved);
+    }
+
+    function transferFrom(
+        address from,
+        address to,
+        uint256 id
+    ) public virtual {
+        require(from == _ownerOf[id], "WRONG_FROM");
+
+        require(to != address(0), "INVALID_RECIPIENT");
+
+        require(
+            msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],
+            "NOT_AUTHORIZED"
+        );
+
+        // Underflow of the sender's balance is impossible because we check for
+        // ownership above and the recipient's balance can't realistically overflow.
+        unchecked {
+            _balanceOf[from]--;
+
+            _balanceOf[to]++;
+        }
+
+        _ownerOf[id] = to;
+
+        delete getApproved[id];
+
+        emit Transfer(from, to, id);
+    }
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 id
+    ) public virtual {
+        transferFrom(from, to, id);
+
+        if (to.code.length != 0)
+            require(
+                ERC721TokenReceiver(to).onERC721Received(msg.sender, from, id, "") ==
+                    ERC721TokenReceiver.onERC721Received.selector,
+                "UNSAFE_RECIPIENT"
+            );
+    }
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 id,
+        bytes calldata data
+    ) public virtual {
+        transferFrom(from, to, id);
+
+        if (to.code.length != 0)
+            require(
+                ERC721TokenReceiver(to).onERC721Received(msg.sender, from, id, data) ==
+                    ERC721TokenReceiver.onERC721Received.selector,
+                "UNSAFE_RECIPIENT"
+            );
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                              ERC165 LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) {
+        return
+            interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
+            interfaceId == 0x80ac58cd || // ERC165 Interface ID for ERC721
+            interfaceId == 0x5b5e139f; // ERC165 Interface ID for ERC721Metadata
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL MINT/BURN LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    function _mint(address to, uint256 id) internal virtual {
+        require(to != address(0), "INVALID_RECIPIENT");
+
+        require(_ownerOf[id] == address(0), "ALREADY_MINTED");
+
+        // Counter overflow is incredibly unrealistic.
+        unchecked {
+            _balanceOf[to]++;
+        }
+
+        _ownerOf[id] = to;
+
+        emit Transfer(address(0), to, id);
+    }
+
+    function _burn(uint256 id) internal virtual {
+        address owner = _ownerOf[id];
+
+        require(owner != address(0), "NOT_MINTED");
+
+        // Ownership check above ensures no underflow.
+        unchecked {
+            _balanceOf[owner]--;
+        }
+
+        delete _ownerOf[id];
+
+        delete getApproved[id];
+
+        emit Transfer(owner, address(0), id);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL SAFE MINT LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    function _safeMint(address to, uint256 id) internal virtual {
+        _mint(to, id);
+
+        if (to.code.length != 0)
+            require(
+                ERC721TokenReceiver(to).onERC721Received(msg.sender, address(0), id, "") ==
+                    ERC721TokenReceiver.onERC721Received.selector,
+                "UNSAFE_RECIPIENT"
+            );
+    }
+
+    function _safeMint(
+        address to,
+        uint256 id,
+        bytes memory data
+    ) internal virtual {
+        _mint(to, id);
+
+        if (to.code.length != 0)
+            require(
+                ERC721TokenReceiver(to).onERC721Received(msg.sender, address(0), id, data) ==
+                    ERC721TokenReceiver.onERC721Received.selector,
+                "UNSAFE_RECIPIENT"
+            );
+    }
+}
+
+/// @notice A generic interface for a contract which properly accepts ERC721 tokens.
+/// @author Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/tokens/ERC721.sol)
+abstract contract ERC721TokenReceiver {
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external virtual returns (bytes4) {
+        return ERC721TokenReceiver.onERC721Received.selector;
+    }
+}
+
+
+// File contracts/staking/StakingBase.sol
 // Staking Activity Checker interface
+
 interface IActivityChecker {
     /// @dev Gets service multisig nonces.
     /// @param multisig Service multisig address.
@@ -126,9 +362,6 @@ error ZeroAddress();
 /// @dev Provided zero value.
 error ZeroValue();
 
-/// @dev Provided non-zero value.
-error NonZeroValue();
-
 /// @dev The deployed activity checker must be a contract.
 /// @param activityChecker Activity checker address.
 error ContractOnly(address activityChecker);
@@ -141,11 +374,6 @@ error WrongAgentId(uint256 agentId);
 /// @param state Service state.
 /// @param serviceId Service Id.
 error WrongServiceState(uint256 state, uint256 serviceId);
-
-/// @dev Wrong length of two arrays.
-/// @param numValues1 Number of values in a first array.
-/// @param numValues2 Number of values in a second array.
-error WrongArrayLength(uint256 numValues1, uint256 numValues2);
 
 /// @dev Multisig is not whitelisted.
 /// @param multisig Address of a multisig implementation.
@@ -165,11 +393,6 @@ error MaxNumServicesReached(uint256 maxNumServices);
 /// @param provided Provided value is lower.
 /// @param expected Expected value.
 error LowerThan(uint256 provided, uint256 expected);
-
-/// @dev Supplied wrong amount.
-/// @param provided Provided amount.
-/// @param expected Expected amount.
-error WrongAmount(uint256 provided, uint256 expected);
 
 /// @dev Required service configuration is wrong.
 /// @param serviceId Service Id.
@@ -203,8 +426,6 @@ struct ServiceInfo {
     uint256 reward;
     // Accumulated inactivity that might lead to the service eviction
     uint256 inactivity;
-    // Reward distribution info
-    uint256 rewardDistributionInfo;
 }
 
 /// @title StakingBase - Base abstract smart contract for staking a service by its owner
@@ -261,21 +482,27 @@ abstract contract StakingBase is ERC721TokenReceiver {
         address serviceRegistry;
         // Service activity checker address
         address activityChecker;
+        // Reward distribution type.
+        RewardDistributionType rewardDistributionType;
+        // Custom rewards distributor address
+        address customRewardsDistributor;
     }
 
     event ServiceStaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
-        uint256[] nonces, uint256 rewardDistributionInfo);
+        uint256[] nonces);
     event Checkpoint(uint256 indexed epoch, uint256 availableRewards, uint256[] serviceIds, uint256[] rewards,
         uint256 epochLength);
     event ServiceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
-        uint256[] nonces, uint256 availableRewards, bool enforced);
+        uint256[] nonces, uint256 reward, uint256 availableRewards);
+    event ServiceForceUnstaked(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
+        uint256[] nonces, uint256 reward, uint256 availableRewards);
     event RewardClaimed(uint256 epoch, uint256 indexed serviceId, address indexed owner, address indexed multisig,
-        uint256[] nonces, address[] receivers, uint256[] rewardAmounts);
+        uint256[] nonces, uint256 reward);
     event ServiceInactivityWarning(uint256 epoch, uint256 indexed serviceId, uint256 serviceInactivity);
     event ServicesEvicted(uint256 indexed epoch, uint256[] serviceIds, address[] owners, address[] multisigs,
         uint256[] serviceInactivity);
     event Deposit(address indexed sender, uint256 amount, uint256 balance, uint256 availableRewards);
-    event Withdraw(address indexed receiver, uint256 amount);
+    event Withdraw(address[] receivers, uint256[] amounts);
 
     // Contract version
     string public constant VERSION = "0.3.0";
@@ -307,6 +534,10 @@ abstract contract StakingBase is ERC721TokenReceiver {
     address public serviceRegistry;
     // Service activity checker address
     address public activityChecker;
+    // Reward distribution type.
+    RewardDistributionType public rewardDistributionType;
+    // Custom rewards distributor address
+    address public customRewardsDistributor;
 
     // The rest of state variables
     // Min staking duration
@@ -379,6 +610,14 @@ abstract contract StakingBase is ERC721TokenReceiver {
         numAgentInstances = _stakingParams.numAgentInstances;
         serviceRegistry = _stakingParams.serviceRegistry;
         activityChecker = _stakingParams.activityChecker;
+        rewardDistributionType = _stakingParams.rewardDistributionType;
+        // Check reward distribution type
+        if (_stakingParams.rewardDistributionType == RewardDistributionType.Custom) {
+            if (_stakingParams.customRewardsDistributor == address(0)) {
+                revert ZeroAddress();
+            }
+            customRewardsDistributor = _stakingParams.customRewardsDistributor;
+        }
 
         // Assign optional parameters
         threshold = _stakingParams.threshold;
@@ -566,12 +805,12 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
         // Get reward receivers and amounts based on the distribution type
         (address[] memory receivers, uint256[] memory amounts) =
-            _getRewardReceiversAndAmounts(serviceId, sInfo.owner, sInfo.multisig, reward, sInfo.rewardDistributionInfo);
+            _getRewardReceiversAndAmounts(serviceId, sInfo.owner, sInfo.multisig, reward);
 
         // Transfer reward amounts to specified receivers
         _withdraw(receivers, amounts);
 
-        emit RewardClaimed(epochCounter, serviceId, msg.sender, multisig, sInfo.nonces, receivers, amounts);
+        emit RewardClaimed(epochCounter, serviceId, msg.sender, multisig, sInfo.nonces, reward);
     }
 
     /// @dev Calculates staking rewards for all services at current timestamp.
@@ -658,14 +897,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
         uint256 serviceId,
         address serviceOwner,
         address multisig,
-        uint256 reward,
-        uint256 rewardDistributionInfo
+        uint256 reward
     ) internal view virtual returns (address[] memory receivers, uint256[] memory amounts) {
-        // Get reward distribution info: rewardDistributionType and customRewardsDistributor address, if required
-        // rewardDistributionType is extracted from first 8 bits
-        RewardDistributionType rewardDistributionType = RewardDistributionType(uint8(rewardDistributionInfo));
-
-        // Check reward distribution type
         if (rewardDistributionType == RewardDistributionType.Proportional) {
             // Get service agent instances
             (uint256 numInstances, address[] memory agentInstances) = IService(serviceRegistry).getAgentInstances(serviceId);
@@ -688,9 +921,9 @@ abstract contract StakingBase is ERC721TokenReceiver {
             }
 
             // Set service owner address and its reward amount
-            receivers[numInstances] = serviceOwner;
-            // Service owner gets its reward amount and a division remainder, if any
-            amounts[numInstances] = reward - (numInstances * operatorReward);
+            receivers[totalNumReceivers - 1] = serviceOwner;
+            // Service owner gets a division remainder, if any
+            amounts[totalNumReceivers - 1] = reward - (numInstances * operatorReward);
         } else if (rewardDistributionType == RewardDistributionType.ServiceOwner) {
             // Allocate arrays
             receivers = new address[](1);
@@ -708,137 +941,10 @@ abstract contract StakingBase is ERC721TokenReceiver {
             receivers[0] = multisig;
             amounts[0] = reward;
         } else {
-            // Custom rewards distributor address: shift rewardDistributionType value of 8 bits
-            // Note this address was already checked for not being zero
-            address customRewardsDistributor = address(uint160(rewardDistributionInfo >> 8));
-
             // Get receivers and amounts from external customRewardsDistributor contract
             (receivers, amounts) = ICustomRewardsDistributor(customRewardsDistributor).getRewardReceiversAndAmounts(serviceId,
                 serviceOwner, multisig, reward);
-
-            // Check for correct array lengths
-            if (receivers.length == 0 || receivers.length != amounts.length) {
-                revert WrongArrayLength(receivers.length, amounts.length);
-            }
-
-            // Sum all calculated amounts
-            uint256 amountCheck;
-            for (uint256 i = 0; i < amounts.length; ++i) {
-                amountCheck += amounts[i];
-            }
-
-            // Check for reward amount to match total calculated amount
-            if (amountCheck != reward) {
-                revert WrongAmount(amountCheck, reward);
-            }
         }
-    }
-
-    /// @dev Stakes the service.
-    /// @notice Each service must be staked for a minimum of maxInactivityDuration time, or until the funds are not zero.
-    ///         maxInactivityDuration = maxNumInactivityPeriods * livenessPeriod
-    /// @param serviceId Service Id.
-    /// @param rewardDistributionInfo Reward distribution info: rewardDistributionType and customRewardsDistributor
-    ///        address, if required.
-    function _stake(uint256 serviceId, uint256 rewardDistributionInfo) internal {
-        // Checkpoint to finalize any unaccounted rewards, if any
-        checkpoint();
-
-        // Check if there available rewards
-        if (availableRewards == 0) {
-            revert NoRewardsAvailable();
-        }
-
-        // Check if the evicted service has not yet unstaked
-        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
-        // tsStart being greater than zero means that the service was not yet unstaked: still staking or evicted
-        if (sInfo.tsStart > 0) {
-            revert ServiceNotUnstaked(serviceId);
-        }
-
-        // Check for the maximum number of staking services
-        uint256 numStakingServices = setServiceIds.length;
-        if (numStakingServices == maxNumServices) {
-            revert MaxNumServicesReached(maxNumServices);
-        }
-
-        // Check the service conditions for staking
-        IService.Service memory service = IService(serviceRegistry).getService(serviceId);
-
-        // Check the number of agent instances
-        if (numAgentInstances != service.maxNumAgentInstances) {
-            revert WrongServiceConfiguration(serviceId);
-        }
-
-        // Check the configuration hash, if applicable
-        if (configHash != 0 && configHash != service.configHash) {
-            revert WrongServiceConfiguration(serviceId);
-        }
-        // Check the threshold, if applicable
-        if (threshold > 0 && threshold != service.threshold) {
-            revert WrongServiceConfiguration(serviceId);
-        }
-        // The service must be deployed
-        if (service.state != IService.ServiceState.Deployed) {
-            revert WrongServiceState(uint256(service.state), serviceId);
-        }
-
-        // Check that the multisig address corresponds to the authorized multisig proxy bytecode hash
-        bytes32 multisigProxyHash = keccak256(service.multisig.code);
-        if (proxyHash != multisigProxyHash) {
-            revert UnauthorizedMultisig(service.multisig);
-        }
-
-        // Check the agent Ids requirement, if applicable
-        uint256 size = agentIds.length;
-        if (size > 0) {
-            uint256 numAgents = service.agentIds.length;
-
-            if (size != numAgents) {
-                revert WrongServiceConfiguration(serviceId);
-            }
-            for (uint256 i = 0; i < numAgents; ++i) {
-                // Check that the agent Ids
-                if (agentIds[i] != service.agentIds[i]) {
-                    revert WrongAgentId(agentIds[i]);
-                }
-            }
-        }
-
-        // Check service staking deposit and token, if applicable
-        _checkTokenStakingDeposit(serviceId, service.securityDeposit, service.agentIds);
-
-        // ServiceInfo struct will be an empty one since otherwise the safeTransferFrom above would fail
-        sInfo.multisig = service.multisig;
-        sInfo.owner = msg.sender;
-        // This function might revert if it's incorrectly implemented, however this is not a protocol's responsibility
-        // It is safe to revert in this place
-        uint256[] memory nonces = IActivityChecker(activityChecker).getMultisigNonces(service.multisig);
-        sInfo.nonces = nonces;
-        sInfo.tsStart = block.timestamp;
-
-        // Set reward distribution info: rewardDistributionType and customRewardsDistributor address, if required
-        // rewardDistributionType takes first 8 bits
-        RewardDistributionType rewardDistributionType = RewardDistributionType(uint8(rewardDistributionInfo));
-        // Check reward distribution type
-        if (rewardDistributionType == RewardDistributionType.Custom) {
-            // Check custom rewards distributor address: shift rewardDistributionType value of 8 bits
-            if (uint160(rewardDistributionInfo >> 8) == 0) {
-                revert ZeroAddress();
-            }
-        } else if (uint160(rewardDistributionInfo >> 8) != 0) {
-            // Make sure upper bits do not have any value if reward distribution type is not Сustom
-            revert NonZeroValue();
-        }
-        sInfo.rewardDistributionInfo = rewardDistributionInfo;
-
-        // Add the service Id to the set of staked services
-        setServiceIds.push(serviceId);
-
-        // Transfer the service for staking
-        IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
-
-        emit ServiceStaked(epochCounter, serviceId, msg.sender, service.multisig, nonces, rewardDistributionInfo);
     }
 
     /// @dev Unstakes the service.
@@ -906,12 +1012,10 @@ abstract contract StakingBase is ERC721TokenReceiver {
             } else {
                 // Get reward receivers and amounts based on the distribution type
                 (address[] memory receivers, uint256[] memory amounts) =
-                    _getRewardReceiversAndAmounts(serviceId, sInfo.owner, sInfo.multisig, sInfo.reward, sInfo.rewardDistributionInfo);
+                    _getRewardReceiversAndAmounts(serviceId, sInfo.owner, sInfo.multisig, sInfo.reward);
 
                 // Transfer reward amounts to specified receivers
                 _withdraw(receivers, amounts);
-
-                emit RewardClaimed(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, receivers, amounts);
             }
         }
 
@@ -919,7 +1023,13 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Note that the reentrancy is not possible due to the ServiceInfo struct being deleted
         IService(serviceRegistry).transferFrom(address(this), msg.sender, serviceId);
 
-        emit ServiceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, lastAvailableRewards, enforced);
+        if (enforced) {
+            emit ServiceForceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, reward,
+                lastAvailableRewards);
+        } else {
+            emit ServiceUnstaked(epochCounter, serviceId, msg.sender, sInfo.multisig, sInfo.nonces, reward,
+                lastAvailableRewards);
+        }
     }
 
     /// @dev Withdraws reward amounts.
@@ -930,21 +1040,20 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Get current balance
         uint256 updatedBalance = balance;
 
-        // Note that array lengths are checked in upper level functions
+        // Note that if array lengths are different, the withdraw reverts, but that's a responsibility of service owner
         // Traverse all receivers and amounts
         for (uint256 i = 0; i < receivers.length; ++i) {
             // Update the contract balance
-            // Underflow is not going to happen since reward calculations are based on availableRewards <= balance
             updatedBalance -= amounts[i];
 
             // Transfer rewards
             _transfer(receivers[i], amounts[i]);
-
-            emit Withdraw(receivers[i], amounts[i]);
         }
 
         // Record updated contract balance
         balance = updatedBalance;
+
+        emit Withdraw(receivers, amounts);
     }
 
     /// @dev Checkpoint to allocate rewards up until a current time.
@@ -1083,22 +1192,94 @@ abstract contract StakingBase is ERC721TokenReceiver {
         return (serviceIds, finalEligibleServiceIds, finalEligibleServiceRewards, evictServiceIds);
     }
 
-    /// @dev Stakes service with default reward distribution type: Proportional.
+    /// @dev Stakes the service.
     /// @notice Each service must be staked for a minimum of maxInactivityDuration time, or until the funds are not zero.
     ///         maxInactivityDuration = maxNumInactivityPeriods * livenessPeriod
     /// @param serviceId Service Id.
     function stake(uint256 serviceId) external {
-        _stake(serviceId, 0);
-    }
+        // Checkpoint to finalize any unaccounted rewards, if any
+        checkpoint();
 
-    /// @dev Stakes service with specified reward distribution info.
-    /// @notice Each service must be staked for a minimum of maxInactivityDuration time, or until the funds are not zero.
-    ///         maxInactivityDuration = maxNumInactivityPeriods * livenessPeriod
-    /// @param serviceId Service Id.
-    /// @param rewardDistributionInfo Reward distribution info: rewardDistributionType and customRewardsDistributor
-    ///        address, if required.
-    function stake(uint256 serviceId, uint256 rewardDistributionInfo) external {
-        _stake(serviceId, rewardDistributionInfo);
+        // Check if there available rewards
+        if (availableRewards == 0) {
+            revert NoRewardsAvailable();
+        }
+
+        // Check if the evicted service has not yet unstaked
+        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+        // tsStart being greater than zero means that the service was not yet unstaked: still staking or evicted
+        if (sInfo.tsStart > 0) {
+            revert ServiceNotUnstaked(serviceId);
+        }
+
+        // Check for the maximum number of staking services
+        uint256 numStakingServices = setServiceIds.length;
+        if (numStakingServices == maxNumServices) {
+            revert MaxNumServicesReached(maxNumServices);
+        }
+
+        // Check the service conditions for staking
+        IService.Service memory service = IService(serviceRegistry).getService(serviceId);
+
+        // Check the number of agent instances
+        if (numAgentInstances != service.maxNumAgentInstances) {
+            revert WrongServiceConfiguration(serviceId);
+        }
+
+        // Check the configuration hash, if applicable
+        if (configHash != 0 && configHash != service.configHash) {
+            revert WrongServiceConfiguration(serviceId);
+        }
+        // Check the threshold, if applicable
+        if (threshold > 0 && threshold != service.threshold) {
+            revert WrongServiceConfiguration(serviceId);
+        }
+        // The service must be deployed
+        if (service.state != IService.ServiceState.Deployed) {
+            revert WrongServiceState(uint256(service.state), serviceId);
+        }
+
+        // Check that the multisig address corresponds to the authorized multisig proxy bytecode hash
+        bytes32 multisigProxyHash = keccak256(service.multisig.code);
+        if (proxyHash != multisigProxyHash) {
+            revert UnauthorizedMultisig(service.multisig);
+        }
+
+        // Check the agent Ids requirement, if applicable
+        uint256 size = agentIds.length;
+        if (size > 0) {
+            uint256 numAgents = service.agentIds.length;
+
+            if (size != numAgents) {
+                revert WrongServiceConfiguration(serviceId);
+            }
+            for (uint256 i = 0; i < numAgents; ++i) {
+                // Check that the agent Ids
+                if (agentIds[i] != service.agentIds[i]) {
+                    revert WrongAgentId(agentIds[i]);
+                }
+            }
+        }
+
+        // Check service staking deposit and token, if applicable
+        _checkTokenStakingDeposit(serviceId, service.securityDeposit, service.agentIds);
+
+        // ServiceInfo struct will be an empty one since otherwise the safeTransferFrom above would fail
+        sInfo.multisig = service.multisig;
+        sInfo.owner = msg.sender;
+        // This function might revert if it's incorrectly implemented, however this is not a protocol's responsibility
+        // It is safe to revert in this place
+        uint256[] memory nonces = IActivityChecker(activityChecker).getMultisigNonces(service.multisig);
+        sInfo.nonces = nonces;
+        sInfo.tsStart = block.timestamp;
+
+        // Add the service Id to the set of staked services
+        setServiceIds.push(serviceId);
+
+        // Transfer the service for staking
+        IService(serviceRegistry).safeTransferFrom(msg.sender, address(this), serviceId);
+
+        emit ServiceStaked(epochCounter, serviceId, msg.sender, service.multisig, nonces);
     }
 
     /// @dev Unstakes the service with collected reward, if available.
@@ -1162,24 +1343,6 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
         // Add pending reward
         reward += calculateStakingLastReward(serviceId);
-    }
-
-    /// @dev Calculates overall service staking reward at current timestamp.
-    /// @param serviceId Service Id.
-    /// @return receivers Set of receiver addresses.
-    /// @return amounts Corresponding set of reward amounts.
-    function calculateStakingRewardReceiversAndAmounts(
-        uint256 serviceId
-    ) external view returns (address[] memory receivers, uint256[] memory amounts) {
-        // Get current service reward
-        ServiceInfo memory sInfo = mapServiceInfo[serviceId];
-        uint256 reward = sInfo.reward;
-
-        // Add pending reward
-        reward += calculateStakingLastReward(serviceId);
-
-        (receivers, amounts) =
-            _getRewardReceiversAndAmounts(serviceId, sInfo.owner, sInfo.multisig, reward, sInfo.rewardDistributionInfo);
     }
 
     /// @dev Gets the service staking state.

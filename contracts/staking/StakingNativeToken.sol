@@ -21,21 +21,15 @@ contract StakingNativeToken is StakingBase {
         _initialize(_stakingParams);
     }
 
-    /// @dev Withdraws the reward amount to a service owner.
-    /// @notice The balance is always greater or equal the amount, as follows from the Base contract logic.
+    /// @dev Transfers reward amount.
     /// @param to Address to.
     /// @param amount Amount to withdraw.
-    function _withdraw(address to, uint256 amount) internal override {
-        // Update the contract balance
-        balance -= amount;
-
+    function _transfer(address to, uint256 amount) internal override {
         // Transfer the amount
         (bool success, ) = to.call{value: amount}("");
         if (!success) {
             revert TransferFailed(address(0), address(this), to, amount);
         }
-
-        emit Withdraw(to, amount);
     }
 
     receive() external payable {

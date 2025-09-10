@@ -1,0 +1,7 @@
+INFO:Detectors:
+In a function StakingBase._stake(uint256,uint256) (StakingBase-flatten.sol#949-1045) variable StakingBase.agentIds (StakingBase-flatten.sol#550) is read multiple times
+In a function StakingBase._unstake(uint256,bool) (StakingBase-flatten.sol#1051-1130) variable StakingBase.epochCounter (StakingBase-flatten.sol#540) is read multiple times
+In a function StakingBase._unstake(uint256,bool) (StakingBase-flatten.sol#1051-1130) variable StakingBase.setServiceIds (StakingBase-flatten.sol#554) is read multiple times
+In a function StakingBase.checkpoint() (StakingBase-flatten.sol#1161-1290) variable StakingBase.mapServiceInfo (StakingBase-flatten.sol#552) is read multiple times
+Reference: https://github.com/pessimistic-io/slitherin/blob/master/docs/multiple_storage_read.md
+
