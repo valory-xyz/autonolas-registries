@@ -26,7 +26,7 @@ contract ApplicationClassifier {
     event OwnerUpdated(address indexed owner);
     event MaintainerUpdated(address indexed maintainer);
     event ImplementationUpdated(address indexed implementation);
-    event ServiceStatusUpdated(uint256 indexed serviceId, ApplicationType appType);
+    event ServiceApplicationTypeUpdated(uint256 indexed serviceId, ApplicationType appType);
 
     // Version number
     string public constant VERSION = "0.1.0";
@@ -107,6 +107,6 @@ contract ApplicationClassifier {
         // Record current service type
         mapServiceIdStatuses[serviceId] = appType;
 
-        emit ServiceStatusUpdated(serviceId, appType);
+        emit ServiceApplicationTypeUpdated(serviceId, appType);
     }
 }
