@@ -7,6 +7,9 @@ interface IERC721 {
     /// @dev Gives permission to `spender` to transfer `tokenId` token to another account.
     function approve(address spender, uint256 id) external;
 
+    /// @dev Returns the owner of the `tokenId` token.
+    function ownerOf(uint256 tokenId) external view returns (address);
+
     /// @dev Returns the account approved for `tokenId` token.
     function getApproved(uint256 tokenId) external view returns (address);
 
@@ -78,6 +81,7 @@ error ReentrancyGuard();
 contract IdentityRegistryBridger is ERC721TokenReceiver {
     event OwnerUpdated(address indexed owner);
     event ImplementationUpdated(address indexed implementation);
+    event AgentDecoupled(uint256 indexed serviceId, uint256 indexed agentId);
     event AgentRegistered(uint256 indexed serviceId, uint256 indexed agentId, address serviceMultisig, string serviceTokenUri);
     event AgentUpdated(uint256 indexed serviceId, uint256 indexed agentId, address serviceMultisig, string serviceTokenUri);
 
@@ -196,7 +200,18 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         // Get corresponding 8004 agent Id
         agentId = mapServiceIdAgentIds[serviceId];
 
-        // Check for 8004 agent Id existence
+        // Get agent Id owner
+        address agentOwner = IERC721(identityRegistry).ownerOf(agentId);
+        // Check for decoupled agents
+        if (agentOwner != address(this)) {
+            // Zero the agent Id such that the new one is created
+            agentId = 0;
+
+            // Decouple current agent Id
+            emit AgentDecoupled(serviceId, agentId);
+        }
+
+        // Check for 8004 agent Id correspondance
         if (agentId == 0) {
             registered = true;
 
