@@ -100,9 +100,6 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     address public immutable serviceManager;
     // Service Registry address
     address public immutable serviceRegistry;
-    // TODO - maybe not needed?
-    // Service Registry Token Utility address
-    address public immutable serviceRegistryTokenUtility;
 
     // Owner address
     address public owner;
