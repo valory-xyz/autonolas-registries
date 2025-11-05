@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.30;
 
 import {GenericManager} from "./GenericManager.sol";
 import {OperatorSignedHashes} from "./utils/OperatorSignedHashes.sol";
@@ -15,6 +15,13 @@ interface IOperatorWhitelist {
     function isOperatorWhitelisted(uint256 serviceId, address operator) external view returns (bool status);
 }
 
+interface IIdentityRegistryBridger {
+    /// @dev Registers or updates 8004 agent Id corresponding to service Id.
+    /// @param serviceId Service Id.
+    /// @return agentId Corresponding 8004 agent Id.
+    function register(uint256 serviceId) external returns (uint256 agentId);
+}
+
 // Generic token interface
 interface IToken {
     /// @dev Gets the owner of the token Id.
@@ -23,29 +30,47 @@ interface IToken {
     function ownerOf(uint256 tokenId) external view returns (address);
 }
 
+/// @dev The contract is already initialized.
+error AlreadyInitialized();
+
 /// @title Service Manager - Periphery smart contract for managing services with custom ERC20 tokens or ETH
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-/// @author AL
+/// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
+/// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
     event OperatorWhitelistUpdated(address indexed operatorWhitelist);
+    event IdentityRegistryBridgerUpdated(address indexed identityRegistryBridger);
+    event ImplementationUpdated(address indexed implementation);
     event CreateMultisig(address indexed multisig);
+    event AgentRegistered(uint256 indexed agentId, uint256 indexed serviceId);
+
+    // Name of a signing domain
+    string public constant NAME = "OLAS Service Manager";
+    // Version number
+    string public constant VERSION = "1.2.0";
+    // Service Manager proxy address slot
+    // keccak256("PROXY_SERVICE_MANAGER") = "0xe39e69948a448ce9239ad71b908b6c5b46225f86ffa735b25a8cd64080315855"
+    bytes32 public constant PROXY_SERVICE_MANAGER = 0xe39e69948a448ce9239ad71b908b6c5b46225f86ffa735b25a8cd64080315855;
+    // A well-known representation of ETH as an address
+    address public constant ETH_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+    // Bond wrapping constant
+    uint96 public constant BOND_WRAPPER = 1;
 
     // Service Registry address
     address public immutable serviceRegistry;
     // Service Registry Token Utility address
     address public immutable serviceRegistryTokenUtility;
-    // A well-known representation of ETH as an address
-    address public constant ETH_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
-    // Bond wrapping constant
-    uint96 public constant BOND_WRAPPER = 1;
+
+    // 8004 Identity Registry Bridger address
+    address public identityRegistryBridger;
     // Operator whitelist address
     address public operatorWhitelist;
 
-    /// @dev ServiceRegistryTokenUtility constructor.
-    /// @param _serviceRegistry Service Registry contract address.
-    /// @param _serviceRegistryTokenUtility Service Registry Token Utility contract address.
-    constructor(address _serviceRegistry, address _serviceRegistryTokenUtility, address _operatorWhitelist)
-        OperatorSignedHashes("Service Manager Token", "1.1.1")
+    /// @dev ServiceManager constructor.
+    /// @param _serviceRegistry Service Registry address.
+    /// @param _serviceRegistryTokenUtility Service Registry Token Utility address.
+    constructor(address _serviceRegistry, address _serviceRegistryTokenUtility)
+        OperatorSignedHashes(NAME, VERSION)
     {
         // Check for the Service Registry related contract zero addresses
         if (_serviceRegistry == address(0) || _serviceRegistryTokenUtility == address(0)) {
@@ -54,7 +79,25 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
 
         serviceRegistry = _serviceRegistry;
         serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
+    }
+
+    /// @dev Initializes proxy contract storage.
+    /// @param _identityRegistryBridger 8004 Identity Registry Bridger address.
+    /// @param _operatorWhitelist Operator Whitelist address (optional).
+    function initialize(address _identityRegistryBridger, address _operatorWhitelist) external {
+        // Check if contract is already initialized
+        if (owner != address(0)) {
+            revert AlreadyInitialized();
+        }
+
+        // Check for zero address
+        if (_identityRegistryBridger == address(0)) {
+            revert ZeroAddress();
+        }
+
+        identityRegistryBridger = _identityRegistryBridger;
         operatorWhitelist = _operatorWhitelist;
+
         owner = msg.sender;
     }
 
@@ -68,6 +111,39 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
 
         operatorWhitelist = newOperatorWhitelist;
         emit OperatorWhitelistUpdated(newOperatorWhitelist);
+    }
+
+    /// @dev Changes Identity Registry Bridger contract address.
+    /// @param newIdentityRegistryBridger New Identity Registry Bridger contract address.
+    function changeIdentityRegistryBridger(address newIdentityRegistryBridger) external {
+        // Check for the contract ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        identityRegistryBridger = newIdentityRegistryBridger;
+        emit IdentityRegistryBridgerUpdated(newIdentityRegistryBridger);
+    }
+
+    /// @dev Changes implementation contract address.
+    /// @notice Make sure implementation contract has function to change its implementation.
+    /// @param implementation Implementation contract address.
+    function changeImplementation(address implementation) external {
+        // Check for contract ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for zero address
+        if (implementation == address(0)) {
+            revert ZeroAddress();
+        }
+
+        // Store implementation address under designated storage slot
+        assembly {
+            sstore(PROXY_SERVICE_MANAGER, implementation)
+        }
+        emit ImplementationUpdated(implementation);
     }
 
     /// @dev Creates a new service.
@@ -197,6 +273,11 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
 
         // Activate registration in the original ServiceRegistry contract
         if (isTokenSecured) {
+            // Check for msg.value
+            if (msg.value != BOND_WRAPPER) {
+                revert IncorrectRegistrationDepositValue(msg.value, BOND_WRAPPER, serviceId);
+            }
+
             // If the service Id is based on the ERC20 token, the provided value to the standard registration is 1
             success = IService(serviceRegistry).activateRegistration{value: BOND_WRAPPER}(msg.sender, serviceId);
         } else {
@@ -228,10 +309,16 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
 
         // Register agent instances in a main ServiceRegistry contract
         if (isTokenSecured) {
+            // Get total bond wrapper value
+            uint256 totalBond = agentInstances.length * BOND_WRAPPER;
+            // Check for msg.value
+            if (msg.value != totalBond) {
+                revert IncorrectAgentBondingValue(msg.value, totalBond, serviceId);
+            }
+
             // If the service Id is based on the ERC20 token, the provided value to the standard registration is 1
             // multiplied by the number of agent instances
-            success = IService(serviceRegistry).registerAgents{value: agentInstances.length * BOND_WRAPPER}(msg.sender,
-                serviceId, agentInstances, agentIds);
+            success = IService(serviceRegistry).registerAgents{value: totalBond}(msg.sender, serviceId, agentInstances, agentIds);
         } else {
             // Otherwise follow the standard msg.value path
             success = IService(serviceRegistry).registerAgents{value: msg.value}(msg.sender, serviceId, agentInstances, agentIds);
@@ -249,8 +336,15 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
         bytes memory data
     ) external returns (address multisig)
     {
+        // TODO Check if multisig was updated or not?
+        // Create or update multisig instance
         multisig = IService(serviceRegistry).deploy(msg.sender, serviceId, multisigImplementation, data);
+
+        // Register or update corresponding 8004 agent Id
+        uint256 agentId = IIdentityRegistryBridger(identityRegistryBridger).register(serviceId);
+
         emit CreateMultisig(multisig);
+        emit AgentRegistered(agentId, serviceId);
     }
 
     /// @dev Terminates the service.

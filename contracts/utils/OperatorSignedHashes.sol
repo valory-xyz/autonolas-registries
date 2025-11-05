@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.30;
 
 interface ISignatureValidator {
     /// @dev Should return whether the signature provided is valid for the provided hash.
@@ -39,8 +39,9 @@ error HashNotApproved(address operator, bytes32 msgHash, bytes signature);
 error WrongOperatorAddress(address provided, address expected);
 
 /// @title OperatorSignedHashes - Smart contract for managing operator signed hashes
-/// @author AL
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
+/// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
+/// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract OperatorSignedHashes {
     event OperatorHashApproved(address indexed operator, bytes32 hash);
 
@@ -64,11 +65,6 @@ contract OperatorSignedHashes {
     // Version hash
     bytes32 public immutable versionHash;
 
-    // Name of a signing domain
-    string public name;
-    // Version of a signing domain
-    string public version;
-
     // Map of operator address and serviceId => unbond nonce
     mapping(uint256 => uint256) public mapOperatorUnbondNonces;
     // Map of operator address and serviceId => register agents nonce
@@ -80,8 +76,6 @@ contract OperatorSignedHashes {
     /// @param _name Name of a signing domain.
     /// @param _version Version of a signing domain.
     constructor(string memory _name, string memory _version) {
-        name = _name;
-        version = _version;
         nameHash = keccak256(bytes(_name));
         versionHash = keccak256(bytes(_version));
         chainId = block.chainid;
