@@ -58,6 +58,9 @@ interface IServiceRegistry {
 /// @dev Provided zero address.
 error ZeroAddress();
 
+/// @dev Provided zero value.
+error ZeroValue();
+
 /// @dev Only `owner` has a privilege, but the `sender` was provided.
 /// @param sender Sender address.
 /// @param owner Required sender address as an owner.
@@ -120,6 +123,70 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         identityRegistry = _identityRegistry;
         serviceManager = _serviceManager;
         serviceRegistry = IServiceManager(_serviceManager).serviceRegistry();
+    }
+
+    function _register(uint256 serviceId) internal returns (uint256 agentId) {
+        // Get token URI
+        string memory tokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
+
+        // Get actual service multisig
+        (,address multisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
+
+        // Check for zero address, although this must never happen
+        if (multisig == address(0)) {
+            revert ZeroAddress();
+        }
+
+        // TODO Work on this block to finalize
+        // Assemble OLAS specific metadata entry
+        IIdentityRegistry.MetadataEntry[] memory metadataEntries = new IIdentityRegistry.MetadataEntry[](1);
+        metadataEntries[0] = IIdentityRegistry.MetadataEntry({
+            key: "Ecosystem: OLAS V1",
+            value: "0x01"
+        });
+
+        // Create new agent Id
+        agentId = IIdentityRegistry(identityRegistry).register(tokenUri, metadataEntries);
+
+        // Link service Id and agent Id
+        mapServiceIdAgentIds[serviceId] = agentId;
+
+        // Approve service multisig such that it becomes agentId operator
+        IERC721(identityRegistry).approve(multisig, agentId);
+
+        emit AgentRegistered(serviceId, agentId, multisig, tokenUri);
+    }
+
+    function _update(uint256 serviceId, uint256 agentId) internal {
+        // Get token URI
+        string memory serviceTokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
+
+        // Get actual service multisig
+        (,address serviceMultisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
+
+        // Check for zero address, although this must never happen
+        if (serviceMultisig == address(0)) {
+            revert ZeroAddress();
+        }
+
+        // Get 8004 agent Id tokenUri
+        string memory agentTokenUri = IERC721(identityRegistry).tokenURI(agentId);
+        // Check if tokenUri has changed
+        if (keccak256(bytes(serviceTokenUri)) != keccak256(bytes(agentTokenUri))) {
+            // Set updated tokenUri
+            IIdentityRegistry(identityRegistry).setAgentUri(agentId, serviceTokenUri);
+        }
+
+        // Check for multisig change
+        address agentServiceMultisig = IERC721(identityRegistry).getApproved(agentId);
+        // Check if multisig address has changed
+        if (serviceMultisig != agentServiceMultisig) {
+            // Approve updated service multisig such that it becomes agentId operator
+            IERC721(identityRegistry).approve(serviceMultisig, agentId);
+        }
+
+        // TODO Shall we NOT emit anything if nothing has been changed?
+        emit AgentUpdated(serviceId, agentId, serviceMultisig, serviceTokenUri);
     }
 
     /// @dev Initializes proxy contract storage.
@@ -186,71 +253,69 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
             revert ManagerOnly(msg.sender, serviceManager);
         }
 
-        // Get token URI
-        string memory serviceTokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
-
-        // Get actual service multisig
-        (,address serviceMultisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
-
-        // Check for zero address, although this must never happen
-        if (serviceMultisig == address(0)) {
-            revert ZeroAddress();
-        }
-
         // Get corresponding 8004 agent Id
         agentId = mapServiceIdAgentIds[serviceId];
 
-        // Get agent Id owner
-        address agentOwner = IERC721(identityRegistry).ownerOf(agentId);
-        // Check for decoupled agents
-        if (agentOwner != address(this)) {
-            // Zero the agent Id such that the new one is created
-            agentId = 0;
+        // Check existing 8004 agent for not being decoupled
+        if (agentId > 0) {
+            // Get agent Id owner
+            address agentOwner = IERC721(identityRegistry).ownerOf(agentId);
+            // Check for agent Id ownership
+            if (agentOwner != address(this)) {
+                // Zero the agent Id such that the new one is created
+                agentId = 0;
 
-            // Decouple current agent Id
-            emit AgentDecoupled(serviceId, agentId);
+                // TODO Have external ownable function to check and decouple agents?
+                // Decouple current agent Id
+                emit AgentDecoupled(serviceId, agentId);
+            }
         }
 
-        // Check for 8004 agent Id correspondance
+        // Check for 8004 agent Id correspondence
         if (agentId == 0) {
             registered = true;
 
-            // Assemble OLAS specific metadata entry
-            IIdentityRegistry.MetadataEntry[] memory metadataEntries = new IIdentityRegistry.MetadataEntry[](1);
-            metadataEntries[0] = IIdentityRegistry.MetadataEntry({
-                key: "Ecosystem: OLAS V1",
-                value: "0x01"
-            });
-
             // Create new agent Id
-            agentId = IIdentityRegistry(identityRegistry).register(serviceTokenUri, metadataEntries);
-
-            // Link service Id and agent Id
-            mapServiceIdAgentIds[serviceId] = agentId;
-
-            // Approve service multisig such that it becomes agentId operator
-            IERC721(identityRegistry).approve(serviceMultisig, agentId);
-
-            emit AgentRegistered(serviceId, agentId, serviceMultisig, serviceTokenUri);
+            agentId = _register(serviceId);
         } else {
-            // Get 8004 agent Id tokenUri
-            string memory agentTokenUri = IERC721(identityRegistry).tokenURI(agentId);
+            _update(serviceId, agentId);
+        }
 
-            // Check if tokenUri has changed
-            if (keccak256(bytes(serviceTokenUri)) != keccak256(bytes(agentTokenUri))) {
-                // Set updated tokenUri
-                IIdentityRegistry(identityRegistry).setAgentUri(agentId, serviceTokenUri);
+        _locked = 1;
+    }
+
+    /// @dev Links service Ids with created 8004 agent Ids.
+    /// @param serviceIds Set of service Ids.
+    /// @return agentIds Set of 8004 agent Ids.
+    function link(uint256[] memory serviceIds) external returns (uint256[] memory agentIds) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
+        // Get number of serviceIds
+        uint256 numServices = serviceIds.length;
+        if (numServices == 0) {
+            revert ZeroValue();
+        }
+
+        // Allocate agentIds array
+        agentIds = new uint256[](numServices);
+
+        // Check for all the service Ids not to have corresponding agent Ids
+        for (uint256 i = 0; i < numServices; ++i) {
+            // Get corresponding 8004 agent Id
+            uint256 checkAgentId = mapServiceIdAgentIds[serviceIds[i]];
+            // Check for agent Id to be zero
+            if (checkAgentId > 0) {
+                revert();
             }
+        }
 
-            // Check for multisig change
-            address agentServiceMultisig = IERC721(identityRegistry).getApproved(agentId);
-            if (serviceMultisig != agentServiceMultisig) {
-                // Approve updated service multisig such that it becomes agentId operator
-                IERC721(identityRegistry).approve(serviceMultisig, agentId);
-            }
-
-            // TODO Shall we NOT emit anything if nothing has been changed?
-            emit AgentUpdated(serviceId, agentId, serviceMultisig, serviceTokenUri);
+        // Create 8004 agent Ids for all service Ids
+        for (uint256 i = 0; i < numServices; ++i) {
+            agentIds[i] = _register(serviceIds[i]);
         }
 
         _locked = 1;
