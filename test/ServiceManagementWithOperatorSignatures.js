@@ -83,9 +83,11 @@ describe("ServiceManagementWithOperatorSignatures", function () {
         await serviceRegistryTokenUtility.deployed();
 
         const ServiceManager = await ethers.getContractFactory("ServiceManagerToken");
-        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address,
-            AddressZero);
+        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
         await serviceManager.deployed();
+
+        // TODO
+        await serviceManager.initialize(operatorWhitelist.address, operatorWhitelist.address);
 
         const Token = await ethers.getContractFactory("ERC20Token");
         token = await Token.deploy();

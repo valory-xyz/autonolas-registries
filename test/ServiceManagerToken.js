@@ -117,11 +117,11 @@ describe("ServiceManagerToken", function () {
             const ServiceManager = await ethers.getContractFactory("ServiceManagerToken");
 
             await expect(
-                ServiceManager.deploy(AddressZero, AddressZero, AddressZero)
+                ServiceManager.deploy(AddressZero, AddressZero)
             ).to.be.revertedWithCustomError(serviceManager, "ZeroAddress");
 
             await expect(
-                ServiceManager.deploy(serviceRegistry.address, AddressZero, AddressZero)
+                ServiceManager.deploy(serviceRegistry.address, AddressZero)
             ).to.be.revertedWithCustomError(serviceManager, "ZeroAddress");
         });
 

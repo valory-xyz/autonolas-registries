@@ -107,6 +107,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     // Reentrancy lock
     uint256 internal _locked = 1;
 
+    // Mapping of service Id => 8004 agent Id
     mapping(uint256 => uint256) public mapServiceIdAgentIds;
 
     /// @dev IdentityRegistryBridger constructor.
@@ -138,8 +139,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         // Assemble OLAS specific metadata entry
         IIdentityRegistry.MetadataEntry[] memory metadataEntries = new IIdentityRegistry.MetadataEntry[](1);
         metadataEntries[0] = IIdentityRegistry.MetadataEntry({
-            key: "Ecosystem: OLAS V1",
-            value: "0x01"
+            key: "Ecosystem",
+            value: abi.encode("OLAS V1")
         });
 
         // Create new agent Id
@@ -253,18 +254,19 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         // Get corresponding 8004 agent Id
         agentId = mapServiceIdAgentIds[serviceId];
 
+        // TODO: if agent is decoupled - create new (as of now), or revert, or return false?
         // Check existing 8004 agent for not being decoupled
         if (agentId > 0) {
             // Get agent Id owner
             address agentOwner = IERC721(identityRegistry).ownerOf(agentId);
             // Check for agent Id ownership
             if (agentOwner != address(this)) {
-                // Zero the agent Id such that the new one is created
-                agentId = 0;
-
                 // TODO Have external ownable function to check and decouple agents?
                 // Decouple current agent Id
                 emit AgentDecoupled(serviceId, agentId);
+
+                // Zero the agent Id such that the new one is created
+                agentId = 0;
             }
         }
 
@@ -275,6 +277,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
             // Create new agent Id
             agentId = _register(serviceId);
         } else {
+            // Update agent data, if applicable
             _update(serviceId, agentId);
         }
 
@@ -303,16 +306,15 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         // Check for all the service Ids not to have corresponding agent Ids
         for (uint256 i = 0; i < numServices; ++i) {
             // Get corresponding 8004 agent Id
-            uint256 checkAgentId = mapServiceIdAgentIds[serviceIds[i]];
-            // Check for agent Id to be zero
-            if (checkAgentId > 0) {
-                revert();
-            }
-        }
+            agentIds[i] = mapServiceIdAgentIds[serviceIds[i]];
 
-        // Create 8004 agent Ids for all service Ids
-        for (uint256 i = 0; i < numServices; ++i) {
-            agentIds[i] = _register(serviceIds[i]);
+            // Check for agent Id to be zero
+            if (agentIds[i] == 0) {
+                // Create 8004 agent Id for service Id
+                agentIds[i] = _register(serviceIds[i]);
+            }
+
+            // Otherwise no changes are made
         }
 
         _locked = 1;
