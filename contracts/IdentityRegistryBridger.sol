@@ -78,8 +78,8 @@ error ReentrancyGuard();
 contract IdentityRegistryBridger is ERC721TokenReceiver {
     event OwnerUpdated(address indexed owner);
     event ImplementationUpdated(address indexed implementation);
-    event AgentRegistered(uint256 indexed agentId, uint256 indexed serviceId, address serviceMultisig, string serviceTokenUri);
-    event AgentUpdated(uint256 indexed agentId, uint256 indexed serviceId, address serviceMultisig, string serviceTokenUri);
+    event AgentRegistered(uint256 indexed serviceId, uint256 indexed agentId, address serviceMultisig, string serviceTokenUri);
+    event AgentUpdated(uint256 indexed serviceId, uint256 indexed agentId, address serviceMultisig, string serviceTokenUri);
 
     // Version number
     string public constant VERSION = "0.1.0";
@@ -169,7 +169,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @dev Registers or updates 8004 agent Id corresponding to service Id.
     /// @param serviceId Service Id.
     /// @return agentId Corresponding 8004 agent Id.
-    function register(uint256 serviceId) external returns (uint256 agentId) {
+    /// @return registered True if registered, otherwise updated.
+    function register(uint256 serviceId) external returns (uint256 agentId, bool registered) {
         // Reentrancy guard
         if (_locked > 1) {
             revert ReentrancyGuard();
@@ -197,6 +198,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Check for 8004 agent Id existence
         if (agentId == 0) {
+            registered = true;
+
             // Assemble OLAS specific metadata entry
             IIdentityRegistry.MetadataEntry[] memory metadataEntries = new IIdentityRegistry.MetadataEntry[](1);
             metadataEntries[0] = IIdentityRegistry.MetadataEntry({
@@ -213,7 +216,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
             // Approve service multisig such that it becomes agentId operator
             IERC721(identityRegistry).approve(serviceMultisig, agentId);
 
-            emit AgentRegistered(agentId, serviceId, serviceMultisig, serviceTokenUri);
+            emit AgentRegistered(serviceId, agentId, serviceMultisig, serviceTokenUri);
         } else {
             // Get 8004 agent Id tokenUri
             string memory agentTokenUri = IERC721(identityRegistry).tokenURI(agentId);
@@ -232,7 +235,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
             }
 
             // TODO Shall we NOT emit anything if nothing has been changed?
-            emit AgentUpdated(agentId, serviceId, serviceMultisig, serviceTokenUri);
+            emit AgentUpdated(serviceId, agentId, serviceMultisig, serviceTokenUri);
         }
 
         _locked = 1;

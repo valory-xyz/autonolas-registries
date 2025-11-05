@@ -19,7 +19,8 @@ interface IIdentityRegistryBridger {
     /// @dev Registers or updates 8004 agent Id corresponding to service Id.
     /// @param serviceId Service Id.
     /// @return agentId Corresponding 8004 agent Id.
-    function register(uint256 serviceId) external returns (uint256 agentId);
+    /// @return registered True if registered, otherwise updated.
+    function register(uint256 serviceId) external returns (uint256 agentId, bool registered);
 }
 
 // Generic token interface
@@ -42,7 +43,7 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
     event IdentityRegistryBridgerUpdated(address indexed identityRegistryBridger);
     event ImplementationUpdated(address indexed implementation);
     event CreateMultisig(address indexed multisig);
-    event AgentRegistered(uint256 indexed agentId, uint256 indexed serviceId);
+    event ServiceAgentRegisteredOrUpdated(uint256 indexed serviceId, uint256 indexed agentId, bool registered);
 
     // Name of a signing domain
     string public constant NAME = "OLAS Service Manager";
@@ -341,10 +342,10 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
         multisig = IService(serviceRegistry).deploy(msg.sender, serviceId, multisigImplementation, data);
 
         // Register or update corresponding 8004 agent Id
-        uint256 agentId = IIdentityRegistryBridger(identityRegistryBridger).register(serviceId);
+        (uint256 agentId, bool registered) = IIdentityRegistryBridger(identityRegistryBridger).register(serviceId);
 
         emit CreateMultisig(multisig);
-        emit AgentRegistered(agentId, serviceId);
+        emit ServiceAgentRegisteredOrUpdated(serviceId, agentId, registered);
     }
 
     /// @dev Terminates the service.
