@@ -87,9 +87,11 @@ describe("ServiceManagerToken", function () {
         await operatorWhitelistL2.deployed();
 
         const ServiceManager = await ethers.getContractFactory("ServiceManagerToken");
-        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address,
-            operatorWhitelist.address);
+        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
         await serviceManager.deployed();
+
+        // TODO
+        await serviceManager.initialize(operatorWhitelist.address, operatorWhitelist.address);
 
         serviceManagerL2 = await ServiceManager.deploy(serviceRegistryL2.address, serviceRegistryTokenUtilityL2.address,
             operatorWhitelistL2.address);
