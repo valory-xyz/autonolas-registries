@@ -123,6 +123,9 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         serviceRegistry = IServiceManager(_serviceManager).serviceRegistry();
     }
 
+    /// @dev Registers 8004 agent Id corresponding to service Id.
+    /// @param serviceId Service Id.
+    /// @return agentId Corresponding 8004 agent Id.
     function _register(uint256 serviceId) internal returns (uint256 agentId) {
         // Get token URI
         string memory tokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
@@ -155,6 +158,9 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         emit AgentRegistered(serviceId, agentId, multisig, tokenUri);
     }
 
+    /// @dev Updates 8004 agent Id corresponding to service Id.
+    /// @param serviceId Service Id.
+    /// @param agentId Corresponding 8004 agent Id.
     function _update(uint256 serviceId, uint256 agentId) internal {
         // Get token URI
         string memory serviceTokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
