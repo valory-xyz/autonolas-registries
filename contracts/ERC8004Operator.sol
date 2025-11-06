@@ -38,7 +38,10 @@ error ReentrancyGuard();
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract ERC8004Operator {
     event OwnerUpdated(address indexed owner);
-    event MessageSigned(address indexed sender, bytes32 indexed digest);
+    event FeedbackAuthSubmitted(address indexed sender, uint256 indexed agentId, address indexed clientAddress,
+        uint256 indexLimit, uint256 expiry, bytes32 digest);
+    event ValidationRequestSubmitted(address indexed sender, uint256 indexed agentId, address indexed validatorAddress,
+        string requestUri, bytes32 requestHash);
 
     // Version number
     string public constant VERSION = "0.1.0";
@@ -144,7 +147,7 @@ contract ERC8004Operator {
         // Record "signed" digest
         mapSignedHashes[digest] = true;
 
-        emit MessageSigned(msg.sender, digest);
+        emit FeedbackAuthSubmitted(msg.sender, agentId, clientAddress, indexLimit, expiry, digest);
 
         _locked - 1;
     }
@@ -175,6 +178,8 @@ contract ERC8004Operator {
 
         // Call validation request on behalf of agent operator
         IValidationRegistry(validationRegistry).validationRequest(validatorAddress, agentId, requestUri, requestHash);
+
+        emit ValidationRequestSubmitted(msg.sender, agentId, validatorAddress, requestUri, requestHash);
 
         _locked - 1;
     }
