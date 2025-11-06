@@ -40,6 +40,11 @@ error ManagerOnly(address sender, address manager);
 /// @dev The contract is already initialized.
 error AlreadyInitialized();
 
+/// @dev Agent Id is already assigned to service Id.
+/// @param agentId Agent Id.
+/// @param serviceId Service Id.
+error AgentIdAlreadyAssigned(uint256 agentId, uint256 serviceId);
+
 /// @dev Caught reentrancy violation.
 error ReentrancyGuard();
 
@@ -50,13 +55,20 @@ error ReentrancyGuard();
 contract IdentityRegistryBridger is ERC721TokenReceiver {
     event OwnerUpdated(address indexed owner);
     event ManagerUpdated(address indexed manager);
+    event OperatorUpdated(address indexed operator);
     event ImplementationUpdated(address indexed implementation);
     event AgentRegistered(uint256 indexed serviceId, uint256 indexed agentId, address serviceMultisig, string serviceTokenUri);
     event AgentUriUpdated(uint256 indexed serviceId, uint256 indexed agentId, string tokenUri);
-    event AgentMultisigUpdated(uint256 indexed serviceId, uint256 indexed agentId, address serviceMultisig);
+    event AgentMultisigUpdated(uint256 indexed serviceId, uint256 indexed agentId, address oldMultisig, address indexed newMultisig);
 
     // Version number
     string public constant VERSION = "0.1.0";
+    // Ecosystem metadata key
+    string public constant ECOSYSTEM_METADATA_KEY = "ecosystem";
+    // Agent wallet multisig metadata key
+    string public constant AGENT_WALLET_MULTISIG_METADATA_KEY = "agentWallet: {multisig}";
+    // Service Id metadata key
+    string public constant SERVICE_ID_METADATA_KEY = "serviceId";
     // Identity Registry Bridger proxy address slot
     // keccak256("PROXY_IDENTITY_REGISTRY_BRIDGER") = "0x03684189c8fb7a536ac4dbd4b7ad063c37db21bcd0f9c51fe45a4eb16359c165"
     bytes32 public constant PROXY_IDENTITY_REGISTRY_BRIDGER = 0x03684189c8fb7a536ac4dbd4b7ad063c37db21bcd0f9c51fe45a4eb16359c165;
@@ -65,14 +77,13 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     address public immutable identityRegistry;
     // Service Registry address
     address public immutable serviceRegistry;
-    // TODO immutable or not?
-    // 8004 Operator address
-    address public immutable operator;
 
-    // Manager address
-    address public manager;
     // Owner address
     address public owner;
+    // Manager address
+    address public manager;
+    // 8004 Operator address
+    address public operator;
 
     // Reentrancy lock
     uint256 internal _locked = 1;
@@ -143,6 +154,23 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         emit ManagerUpdated(newManager);
     }
 
+    /// @dev Changes contract manager address.
+    /// @param newOperator New contract owner address.
+    function changeOperator(address newOperator) external {
+        // Check for the ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for the zero address
+        if (newOperator == address(0)) {
+            revert ZeroAddress();
+        }
+
+        operator = newOperator;
+        emit OperatorUpdated(newOperator);
+    }
+
     /// @dev Changes implementation contract address.
     /// @notice Make sure implementation contract has function to change its implementation.
     /// @param implementation Implementation contract address.
@@ -185,19 +213,23 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         agentId = mapServiceIdAgentIds[serviceId];
         // This must never happen
         if (agentId > 0) {
-            revert();
+            revert AgentIdAlreadyAssigned(agentId, serviceId);
         }
 
         // TODO Work on this block to finalize: multisig etc
         // Assemble OLAS specific metadata entry
-        IIdentityRegistry.MetadataEntry[] memory metadataEntries = new IIdentityRegistry.MetadataEntry[](2);
+        IIdentityRegistry.MetadataEntry[] memory metadataEntries = new IIdentityRegistry.MetadataEntry[](3);
         metadataEntries[0] = IIdentityRegistry.MetadataEntry({
-            key: "ecosystem",
+            key: ECOSYSTEM_METADATA_KEY,
             value: abi.encode("OLAS V1")
         });
         metadataEntries[1] = IIdentityRegistry.MetadataEntry({
-            key: "agentWallet: {multisig}",
+            key: AGENT_WALLET_MULTISIG_METADATA_KEY,
             value: abi.encode(multisig)
+        });
+        metadataEntries[2] = IIdentityRegistry.MetadataEntry({
+            key: SERVICE_ID_METADATA_KEY,
+            value: abi.encode(serviceId)
         });
 
         // Create new agent Id
@@ -246,8 +278,9 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
     /// @dev Updates 8004 agent Id wallet corresponding to service Id multisig.
     /// @param serviceId Service Id.
-    /// @param multisig Corresponding 8004 agent Id.
-    function updateAgentWallet(uint256 serviceId, address multisig) external {
+    /// @param oldMultisig Old multisig address.
+    /// @param newMultisig New multisig address.
+    function updateAgentWallet(uint256 serviceId, address oldMultisig, address newMultisig) external {
         // Reentrancy guard
         if (_locked > 1) {
             revert ReentrancyGuard();
@@ -265,50 +298,15 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         // Modify only if agent Id is already defined, otherwise skip
         if (agentId > 0) {
             // Update agent wallet metadata entry
-            IIdentityRegistry(identityRegistry).setMetadata(agentId, "agentWallet: {multisig}", abi.encode(multisig));
+            IIdentityRegistry(identityRegistry).setMetadata(agentId, AGENT_WALLET_MULTISIG_METADATA_KEY, abi.encode(newMultisig));
 
-            // TODO remove old one - pass oldMultisig address as well
-            // Link multisig and agentId
-            mapMultisigAgentIds[multisig] = agentId;
+            // Unlink old multisig and agentId
+            mapMultisigAgentIds[oldMultisig] = 0;
+            // Link new multisig and agentId
+            mapMultisigAgentIds[newMultisig] = agentId;
 
-            emit AgentMultisigUpdated(serviceId, agentId, multisig);
+            emit AgentMultisigUpdated(serviceId, agentId, oldMultisig, newMultisig);
         }
-        _locked = 1;
-    }
-
-    /// @dev Links service Ids with created 8004 agent Ids.
-    /// @param serviceIds Set of service Ids.
-    /// @return agentIds Set of 8004 agent Ids.
-    function link(uint256[] memory serviceIds) external returns (uint256[] memory agentIds) {
-        // Reentrancy guard
-        if (_locked > 1) {
-            revert ReentrancyGuard();
-        }
-        _locked = 2;
-
-        // Get number of serviceIds
-        uint256 numServices = serviceIds.length;
-        if (numServices == 0) {
-            revert ZeroValue();
-        }
-
-        // Allocate agentIds array
-        agentIds = new uint256[](numServices);
-
-        // Check for all the service Ids not to have corresponding agent Ids
-        for (uint256 i = 0; i < numServices; ++i) {
-            // Get corresponding 8004 agent Id
-            agentIds[i] = mapServiceIdAgentIds[serviceIds[i]];
-
-            // Check for agent Id to be zero
-            if (agentIds[i] == 0) {
-                // Create 8004 agent Id for service Id
-                //agentIds[i] = _register(serviceIds[i]);
-            }
-
-            // Otherwise no changes are made
-        }
-
         _locked = 1;
     }
 }

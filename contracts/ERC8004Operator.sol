@@ -6,7 +6,7 @@ interface IIdentityRegistry {
 }
 
 interface IIdentityRegistryBridger {
-    function mapMultisigAgentIds(address multisig) external returns (uint256);
+    function mapMultisigAgentIds(address multisig) external view returns (uint256);
 }
 
 interface IValidationRegistry {
@@ -45,7 +45,9 @@ contract ERC8004Operator {
 
     // Version number
     string public constant VERSION = "0.1.0";
-    // Value for the contract signature validation: bytes4(keccak256("isValidSignature(bytes32,bytes)")
+    // Agent wallet multisig metadata key
+    string public constant AGENT_WALLET_MULTISIG_METADATA_KEY = "agentWallet: {multisig}";
+    // Contract signature validation value: bytes4(keccak256("isValidSignature(bytes32,bytes)")
     bytes4 constant internal EIP1271_MAGIC_VALUE = 0x1626ba7e;
 
     // Identity Registry 8004 address
@@ -98,6 +100,20 @@ contract ERC8004Operator {
         emit OwnerUpdated(newOwner);
     }
 
+    function _checkAgentWallet(uint256 agentId) internal view {
+        // Get agent wallet multisig address in bytes
+        bytes memory agentWalletBytes =
+            IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_MULTISIG_METADATA_KEY);
+
+        // Decode agent wallet address
+        address agentWallet = abi.decode(agentWalletBytes, (address));
+
+        // Check for access
+        if (msg.sender != agentWallet) {
+            revert OwnerOnly(msg.sender, agentWallet);
+        }
+    }
+
     /// @dev Authorizes feedback for client by corresponding agent.
     function authorizeFeedback(address clientAddress, uint64 indexLimit, uint256 expiry) external {
         // Reentrancy guard
@@ -113,15 +129,8 @@ contract ERC8004Operator {
             revert ZeroValue();
         }
 
-        // Check multisig in agent metadata
-        // Get agent wallet multisig address in bytes
-        bytes memory agentWalletBytes = IIdentityRegistry(identityRegistry).getMetadata(agentId, "agentWallet: {multisig}");
-        // Decode agent wallet address
-        address agentWallet = abi.decode(agentWalletBytes, (address));
-        // Check for access
-        if (msg.sender != agentWallet) {
-            revert OwnerOnly(msg.sender, agentWallet);
-        }
+        // Check for msg.sender to be agent wallet in its metadata
+        _checkAgentWallet(agentId);
 
         // Construct message hash
         bytes32 messageHash = keccak256(
@@ -165,16 +174,8 @@ contract ERC8004Operator {
         }
         _locked = 2;
 
-        // Get agent wallet multisig address in bytes
-        bytes memory agentWalletBytes = IIdentityRegistry(identityRegistry).getMetadata(agentId, "agentWallet: {multisig}");
-
-        // Decode agent wallet address
-        address agentWallet = abi.decode(agentWalletBytes, (address));
-
-        // Check for access
-        if (msg.sender != agentWallet) {
-            revert OwnerOnly(msg.sender, agentWallet);
-        }
+        // Check for msg.sender to be agent wallet in its metadata
+        _checkAgentWallet(agentId);
 
         // Call validation request on behalf of agent operator
         IValidationRegistry(validationRegistry).validationRequest(validatorAddress, agentId, requestUri, requestHash);

@@ -30,8 +30,9 @@ interface IIdentityRegistryBridger {
 
     /// @dev Updates 8004 agent Id wallet corresponding to service Id multisig.
     /// @param serviceId Service Id.
-    /// @param multisig Corresponding 8004 agent Id.
-    function updateAgentWallet(uint256 serviceId, address multisig) external;
+    /// @param oldMultisig Old multisig address.
+    /// @param newMultisig New multisig address.
+    function updateAgentWallet(uint256 serviceId, address oldMultisig, address newMultisig) external;
 }
 
 interface IServiceRegistry {
@@ -55,6 +56,9 @@ interface IServiceRegistry {
     /// @return state Service state.
     function mapServices(uint256 serviceId) external view returns (uint96 securityDeposit, address multisig,
         bytes32 configHash, uint32 threshold, uint32 maxNumAgentInstances, uint32 numAgentInstances, ServiceState state);
+
+    /// @dev Gets Service Registry total supply.
+    function totalSupply() external view returns (uint256);
 }
 
 // ERC721 interface
@@ -331,20 +335,20 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     ) external returns (address multisig)
     {
         // Get current service multisig
-        (,address curServiceMultisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
+        (,address lastMultisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
 
         // Create or update multisig instance
         multisig = IService(serviceRegistry).deploy(msg.sender, serviceId, multisigImplementation, data);
 
         // 8004 Identity Registry workflow
-        if (curServiceMultisig == address(0)) {
+        if (lastMultisig == address(0)) {
             // Get service token URI
             string memory tokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
             // Register corresponding 8004 agent Id
             IIdentityRegistryBridger(identityRegistryBridger).register(serviceId, multisig, tokenUri);
-        } else if (curServiceMultisig != multisig) {
+        } else if (lastMultisig != multisig) {
             // Update corresponding metadata in 8004 agent Id
-            IIdentityRegistryBridger(identityRegistryBridger).updateAgentWallet(serviceId, multisig);
+            IIdentityRegistryBridger(identityRegistryBridger).updateAgentWallet(serviceId, lastMultisig, multisig);
         }
 
         emit CreateMultisig(multisig);
@@ -495,6 +499,52 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         } else {
             // Otherwise follow the standard msg.value path
             success = IService(serviceRegistry).registerAgents{value: msg.value}(operator, serviceId, agentInstances, agentIds);
+        }
+    }
+
+    /// @dev Links service Ids with registered 8004 agent Ids.
+    /// @param startServiceId Starting service Id.
+    /// @param numServices Number of services to link.
+    /// @return agentIds Set of 8004 agent Ids.
+    function linkServiceIdAgentIds(
+        uint256 startServiceId,
+        uint256 numServices
+    ) external returns (uint256[] memory agentIds)
+    {
+        // Check for zero values
+        if (startServiceId == 0 || numServices == 0) {
+            revert ZeroValue();
+        }
+
+        // Check for overflow
+        uint256 maxNumServiceId = IServiceRegistry(serviceRegistry).totalSupply() + 1;
+        if (startServiceId > maxNumServiceId) {
+            revert Overflow(startServiceId, maxNumServiceId);
+        }
+
+        uint256 lastServiceId = startServiceId + numServices;
+        if (lastServiceId > maxNumServiceId) {
+            uint256 diff = lastServiceId - maxNumServiceId;
+            numServices -= diff;
+            if (numServices == 0) {
+                numServices = 1;
+            }
+        }
+
+        // Allocate agentIds array
+        agentIds = new uint256[](numServices);
+
+        // Traverse services and create corresponding 8004 agents
+        for (uint256 i = 0; i < numServices; ++i) {
+            // Get service multisig
+            (,address multisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(startServiceId);
+            // Get service token URI
+            string memory tokenUri = IERC721(serviceRegistry).tokenURI(startServiceId);
+            // Register corresponding 8004 agent Id
+            IIdentityRegistryBridger(identityRegistryBridger).register(startServiceId, multisig, tokenUri);
+
+            // Increase serviceId counter
+            startServiceId++;
         }
     }
 }
