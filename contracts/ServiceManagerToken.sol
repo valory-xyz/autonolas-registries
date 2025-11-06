@@ -38,21 +38,13 @@ error AlreadyInitialized();
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
-contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
+contract ServiceManager is GenericManager, OperatorSignedHashes {
     event OperatorWhitelistUpdated(address indexed operatorWhitelist);
     event IdentityRegistryBridgerUpdated(address indexed identityRegistryBridger);
     event ImplementationUpdated(address indexed implementation);
     event CreateMultisig(address indexed multisig);
     event ServiceAgentRegisteredOrUpdated(uint256 indexed serviceId, uint256 indexed agentId, bool registered);
 
-    // Name of a signing domain
-    string public constant NAME = "OLAS Service Manager";
-    // Version number
-    string public constant VERSION = "1.2.0";
-    // Service Manager proxy address slot
-    // keccak256("PROXY_SERVICE_MANAGER") = "0xe39e69948a448ce9239ad71b908b6c5b46225f86ffa735b25a8cd64080315855"
-    bytes32 public constant PROXY_SERVICE_MANAGER = 0xe39e69948a448ce9239ad71b908b6c5b46225f86ffa735b25a8cd64080315855;
-    // A well-known representation of ETH as an address
     address public constant ETH_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     // Bond wrapping constant
     uint96 public constant BOND_WRAPPER = 1;
@@ -61,41 +53,32 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
     address public immutable serviceRegistry;
     // Service Registry Token Utility address
     address public immutable serviceRegistryTokenUtility;
-
     // 8004 Identity Registry Bridger address
-    address public identityRegistryBridger;
+    address public immutable identityRegistryBridger;
+
     // Operator whitelist address
     address public operatorWhitelist;
 
     /// @dev ServiceManager constructor.
     /// @param _serviceRegistry Service Registry address.
     /// @param _serviceRegistryTokenUtility Service Registry Token Utility address.
-    constructor(address _serviceRegistry, address _serviceRegistryTokenUtility)
-        OperatorSignedHashes(NAME, VERSION)
+    /// @param _identityRegistryBridger 8004 Identity Registry Bridger address.
+    /// @param _operatorWhitelist Operator Whitelist address (optional).
+    constructor(
+        address _serviceRegistry,
+        address _serviceRegistryTokenUtility,
+        address _identityRegistryBridger,
+        address _operatorWhitelist
+    )
+        OperatorSignedHashes("OLAS Service Manager", "1.2.0")
     {
         // Check for the Service Registry related contract zero addresses
-        if (_serviceRegistry == address(0) || _serviceRegistryTokenUtility == address(0)) {
+        if (_serviceRegistry == address(0) || _serviceRegistryTokenUtility == address(0) || _identityRegistryBridger == address(0)) {
             revert ZeroAddress();
         }
 
         serviceRegistry = _serviceRegistry;
         serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
-    }
-
-    /// @dev Initializes proxy contract storage.
-    /// @param _identityRegistryBridger 8004 Identity Registry Bridger address.
-    /// @param _operatorWhitelist Operator Whitelist address (optional).
-    function initialize(address _identityRegistryBridger, address _operatorWhitelist) external {
-        // Check if contract is already initialized
-        if (owner != address(0)) {
-            revert AlreadyInitialized();
-        }
-
-        // Check for zero address
-        if (_identityRegistryBridger == address(0)) {
-            revert ZeroAddress();
-        }
-
         identityRegistryBridger = _identityRegistryBridger;
         operatorWhitelist = _operatorWhitelist;
 
@@ -112,39 +95,6 @@ contract ServiceManagerToken is GenericManager, OperatorSignedHashes {
 
         operatorWhitelist = newOperatorWhitelist;
         emit OperatorWhitelistUpdated(newOperatorWhitelist);
-    }
-
-    /// @dev Changes Identity Registry Bridger contract address.
-    /// @param newIdentityRegistryBridger New Identity Registry Bridger contract address.
-    function changeIdentityRegistryBridger(address newIdentityRegistryBridger) external {
-        // Check for the contract ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        identityRegistryBridger = newIdentityRegistryBridger;
-        emit IdentityRegistryBridgerUpdated(newIdentityRegistryBridger);
-    }
-
-    /// @dev Changes implementation contract address.
-    /// @notice Make sure implementation contract has function to change its implementation.
-    /// @param implementation Implementation contract address.
-    function changeImplementation(address implementation) external {
-        // Check for contract ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for zero address
-        if (implementation == address(0)) {
-            revert ZeroAddress();
-        }
-
-        // Store implementation address under designated storage slot
-        assembly {
-            sstore(PROXY_SERVICE_MANAGER, implementation)
-        }
-        emit ImplementationUpdated(implementation);
     }
 
     /// @dev Creates a new service.

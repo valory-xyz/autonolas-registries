@@ -83,6 +83,7 @@ error ReentrancyGuard();
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract IdentityRegistryBridger is ERC721TokenReceiver {
     event OwnerUpdated(address indexed owner);
+    event ManagerUpdated(address indexed manager);
     event ImplementationUpdated(address indexed implementation);
     event AgentDecoupled(uint256 indexed serviceId, uint256 indexed agentId);
     event AgentRegistered(uint256 indexed serviceId, uint256 indexed agentId, address serviceMultisig, string serviceTokenUri);
@@ -96,11 +97,11 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
     // Identity Registry 8004 address
     address public immutable identityRegistry;
-    // Service Manager address
-    address public immutable serviceManager;
     // Service Registry address
     address public immutable serviceRegistry;
 
+    // Manager address
+    address public manager;
     // Owner address
     address public owner;
 
@@ -111,16 +112,16 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     mapping(uint256 => uint256) public mapServiceIdAgentIds;
 
     /// @dev IdentityRegistryBridger constructor.
-    /// @param _serviceManager Service Manager address.
-    constructor (address _identityRegistry, address _serviceManager) {
+    /// @param _identityRegistry 8004 Identity Registry address.
+    /// @param _serviceRegistry Service Registry address.
+    constructor (address _identityRegistry, address _serviceRegistry) {
         // Check for zero addresses
-        if (_identityRegistry == address(0) || _serviceManager == address(0)) {
+        if (_identityRegistry == address(0) || _serviceRegistry == address(0)) {
             revert ZeroAddress();
         }
 
         identityRegistry = _identityRegistry;
-        serviceManager = _serviceManager;
-        serviceRegistry = IServiceManager(_serviceManager).serviceRegistry();
+        serviceRegistry = _serviceRegistry;
     }
 
     /// @dev Registers 8004 agent Id corresponding to service Id.
@@ -194,12 +195,14 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     }
 
     /// @dev Initializes proxy contract storage.
-    function initialize() external {
+    /// @param _manager Manager address.
+    function initialize(address _manager) external {
         // Check if contract is already initialized
         if (owner != address(0)) {
             revert AlreadyInitialized();
         }
 
+        manager = _manager;
         owner = msg.sender;
     }
 
@@ -218,6 +221,23 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         owner = newOwner;
         emit OwnerUpdated(newOwner);
+    }
+
+    /// @dev Changes contract manager address.
+    /// @param newManager New contract owner address.
+    function changeManager(address newManager) external {
+        // Check for the ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for the zero address
+        if (newManager == address(0)) {
+            revert ZeroAddress();
+        }
+
+        manager = newManager;
+        emit ManagerUpdated(newManager);
     }
 
     /// @dev Changes implementation contract address.
@@ -253,8 +273,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         _locked = 2;
 
         // Check for access
-        if (msg.sender != serviceManager) {
-            revert ManagerOnly(msg.sender, serviceManager);
+        if (msg.sender != manager) {
+            revert ManagerOnly(msg.sender, manager);
         }
 
         // Get corresponding 8004 agent Id
