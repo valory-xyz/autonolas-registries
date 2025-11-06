@@ -74,8 +74,6 @@ interface IERC721 {
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract ServiceManager is GenericManager, OperatorSignedHashes {
     event OperatorWhitelistUpdated(address indexed operatorWhitelist);
-    event IdentityRegistryBridgerUpdated(address indexed identityRegistryBridger);
-    event ImplementationUpdated(address indexed implementation);
     event CreateMultisig(address indexed multisig);
 
     address public constant ETH_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
@@ -338,6 +336,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         // Create or update multisig instance
         multisig = IService(serviceRegistry).deploy(msg.sender, serviceId, multisigImplementation, data);
 
+        // 8004 Identity Registry workflow
         if (curServiceMultisig == address(0)) {
             // Get service token URI
             string memory tokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
