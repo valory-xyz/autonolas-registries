@@ -16,19 +16,56 @@ interface IOperatorWhitelist {
 }
 
 interface IIdentityRegistryBridger {
-    /// @dev Registers or updates 8004 agent Id corresponding to service Id.
+    /// @dev Registers 8004 agent Id corresponding to service Id.
     /// @param serviceId Service Id.
+    /// @param multisig Service multisig.
+    /// @param tokenUri Service tokenUri.
     /// @return agentId Corresponding 8004 agent Id.
-    /// @return registered True if registered, otherwise updated.
-    function register(uint256 serviceId) external returns (uint256 agentId, bool registered);
+    function register(uint256 serviceId, address multisig, string memory tokenUri) external returns (uint256 agentId);
+
+    /// @dev Updated agent URI according to provided service URI.
+    /// @param serviceId Service Id.
+    /// @param tokenUri Service tokenUri.
+    function updateAgentUri(uint256 serviceId, string memory tokenUri) external;
+
+    /// @dev Updates 8004 agent Id wallet corresponding to service Id multisig.
+    /// @param serviceId Service Id.
+    /// @param multisig Corresponding 8004 agent Id.
+    function updateAgentWallet(uint256 serviceId, address multisig) external;
 }
 
-// Generic token interface
-interface IToken {
+interface IServiceRegistry {
+    enum ServiceState {
+        NonExistent,
+        PreRegistration,
+        ActiveRegistration,
+        FinishedRegistration,
+        Deployed,
+        TerminatedBonded
+    }
+
+    /// @dev Gets service instance params.
+    /// @param serviceId Service Id.
+    /// @return securityDeposit Registration activation deposit.
+    /// @return multisig Service multisig address.
+    /// @return configHash IPFS hashes pointing to the config metadata.
+    /// @return threshold Agent instance signers threshold.
+    /// @return maxNumAgentInstances Total number of agent instances.
+    /// @return numAgentInstances Actual number of agent instances.
+    /// @return state Service state.
+    function mapServices(uint256 serviceId) external view returns (uint96 securityDeposit, address multisig,
+        bytes32 configHash, uint32 threshold, uint32 maxNumAgentInstances, uint32 numAgentInstances, ServiceState state);
+}
+
+// ERC721 interface
+interface IERC721 {
     /// @dev Gets the owner of the token Id.
     /// @param tokenId Token Id.
     /// @return Token Id owner address.
     function ownerOf(uint256 tokenId) external view returns (address);
+
+    /// @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
+    function tokenURI(uint256 tokenId) external view returns (string memory);
 }
 
 /// @dev The contract is already initialized.
@@ -43,7 +80,6 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     event IdentityRegistryBridgerUpdated(address indexed identityRegistryBridger);
     event ImplementationUpdated(address indexed implementation);
     event CreateMultisig(address indexed multisig);
-    event ServiceAgentRegisteredOrUpdated(uint256 indexed serviceId, uint256 indexed agentId, bool registered);
 
     address public constant ETH_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     // Bond wrapping constant
@@ -174,6 +210,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
             revert ZeroAddress();
         }
 
+        // Get current service token URI
+        string memory curServiceTokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
+
         uint256 numAgents = agentParams.length;
         if (token == ETH_TOKEN_ADDRESS) {
             // If any of the slots is a non-zero, the correspondent bond cannot be zero
@@ -212,6 +251,15 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
             // bond values of agent Ids that are not going to be used in the service. This is coming from the fact
             // that all the checks are done on the original ServiceRegistry side
             IServiceTokenUtility(serviceRegistryTokenUtility).createWithToken(serviceId, token, agentIds, bonds);
+        }
+
+        // Get updated service token URI
+        string memory updatedTokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
+
+        // Check if tokenUri has changed
+        if (keccak256(bytes(curServiceTokenUri)) != keccak256(bytes(updatedTokenUri))) {
+            // Updated tokenUri in 8004 Identity Registry
+            IIdentityRegistryBridger(identityRegistryBridger).updateAgentUri(serviceId, updatedTokenUri);
         }
     }
 
@@ -287,15 +335,23 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         bytes memory data
     ) external returns (address multisig)
     {
-        // TODO Check if multisig was updated or not?
+        // Get current service multisig
+        (,address curServiceMultisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
+
         // Create or update multisig instance
         multisig = IService(serviceRegistry).deploy(msg.sender, serviceId, multisigImplementation, data);
 
-        // Register or update corresponding 8004 agent Id
-        (uint256 agentId, bool registered) = IIdentityRegistryBridger(identityRegistryBridger).register(serviceId);
+        if (curServiceMultisig == address(0)) {
+            // Get service token URI
+            string memory tokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
+            // Register corresponding 8004 agent Id
+            IIdentityRegistryBridger(identityRegistryBridger).register(serviceId, multisig, tokenUri);
+        } else if (curServiceMultisig != multisig) {
+            // Update corresponding metadata in 8004 agent Id
+            IIdentityRegistryBridger(identityRegistryBridger).updateAgentWallet(serviceId, multisig);
+        }
 
         emit CreateMultisig(multisig);
-        emit ServiceAgentRegisteredOrUpdated(serviceId, agentId, registered);
     }
 
     /// @dev Terminates the service.
@@ -351,7 +407,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     ) external returns (bool success, uint256 refund)
     {
         // Check the service owner
-        address serviceOwner = IToken(serviceRegistry).ownerOf(serviceId);
+        address serviceOwner = IERC721(serviceRegistry).ownerOf(serviceId);
         if (msg.sender != serviceOwner) {
             revert OwnerOnly(msg.sender, serviceOwner);
         }
@@ -407,7 +463,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         bytes memory signature
     ) external payable returns (bool success) {
         // Check the service owner
-        address serviceOwner = IToken(serviceRegistry).ownerOf(serviceId);
+        address serviceOwner = IERC721(serviceRegistry).ownerOf(serviceId);
         if (msg.sender != serviceOwner) {
             revert OwnerOnly(msg.sender, serviceOwner);
         }

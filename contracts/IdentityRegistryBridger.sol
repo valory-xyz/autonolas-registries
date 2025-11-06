@@ -6,15 +6,6 @@ import {ERC721TokenReceiver} from "../lib/solmate/src/tokens/ERC721.sol";
 interface IERC721 {
     /// @dev Gives permission to `spender` to transfer `tokenId` token to another account.
     function approve(address spender, uint256 id) external;
-
-    /// @dev Returns the owner of the `tokenId` token.
-    function ownerOf(uint256 tokenId) external view returns (address);
-
-    /// @dev Returns the account approved for `tokenId` token.
-    function getApproved(uint256 tokenId) external view returns (address);
-
-    /// @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
-    function tokenURI(uint256 tokenId) external view returns (string memory);
 }
 
 interface IIdentityRegistry {
@@ -25,34 +16,9 @@ interface IIdentityRegistry {
 
     function register(string memory tokenUri, MetadataEntry[] memory metadata) external returns (uint256 agentId);
 
+    function setMetadata(uint256 agentId, string memory key, bytes memory value) external;
+
     function setAgentUri(uint256 agentId, string calldata newUri) external;
-}
-
-interface IServiceManager {
-    function serviceRegistry() external returns (address);
-}
-
-interface IServiceRegistry {
-    enum ServiceState {
-        NonExistent,
-        PreRegistration,
-        ActiveRegistration,
-        FinishedRegistration,
-        Deployed,
-        TerminatedBonded
-    }
-
-    /// @dev Gets service instance params.
-    /// @param serviceId Service Id.
-    /// @return securityDeposit Registration activation deposit.
-    /// @return multisig Service multisig address.
-    /// @return configHash IPFS hashes pointing to the config metadata.
-    /// @return threshold Agent instance signers threshold.
-    /// @return maxNumAgentInstances Total number of agent instances.
-    /// @return numAgentInstances Actual number of agent instances.
-    /// @return state Service state.
-    function mapServices(uint256 serviceId) external view returns (uint96 securityDeposit, address multisig,
-        bytes32 configHash, uint32 threshold, uint32 maxNumAgentInstances, uint32 numAgentInstances, ServiceState state);
 }
 
 /// @dev Provided zero address.
@@ -85,9 +51,9 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     event OwnerUpdated(address indexed owner);
     event ManagerUpdated(address indexed manager);
     event ImplementationUpdated(address indexed implementation);
-    event AgentDecoupled(uint256 indexed serviceId, uint256 indexed agentId);
     event AgentRegistered(uint256 indexed serviceId, uint256 indexed agentId, address serviceMultisig, string serviceTokenUri);
-    event AgentUpdated(uint256 indexed serviceId, uint256 indexed agentId, address serviceMultisig, string serviceTokenUri);
+    event AgentUriUpdated(uint256 indexed serviceId, uint256 indexed agentId, string tokenUri);
+    event AgentMultisigUpdated(uint256 indexed serviceId, uint256 indexed agentId, address serviceMultisig);
 
     // Version number
     string public constant VERSION = "0.1.0";
@@ -99,6 +65,9 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     address public immutable identityRegistry;
     // Service Registry address
     address public immutable serviceRegistry;
+    // TODO immutable or not?
+    // 8004 Operator address
+    address public immutable operator;
 
     // Manager address
     address public manager;
@@ -114,84 +83,16 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @dev IdentityRegistryBridger constructor.
     /// @param _identityRegistry 8004 Identity Registry address.
     /// @param _serviceRegistry Service Registry address.
-    constructor (address _identityRegistry, address _serviceRegistry) {
+    /// @param _operator 8004 Operator address.
+    constructor (address _identityRegistry, address _serviceRegistry, address _operator) {
         // Check for zero addresses
-        if (_identityRegistry == address(0) || _serviceRegistry == address(0)) {
+        if (_identityRegistry == address(0) || _serviceRegistry == address(0) || _operator == address(0)) {
             revert ZeroAddress();
         }
 
         identityRegistry = _identityRegistry;
         serviceRegistry = _serviceRegistry;
-    }
-
-    /// @dev Registers 8004 agent Id corresponding to service Id.
-    /// @param serviceId Service Id.
-    /// @return agentId Corresponding 8004 agent Id.
-    function _register(uint256 serviceId) internal returns (uint256 agentId) {
-        // Get token URI
-        string memory tokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
-
-        // Get actual service multisig
-        (,address multisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
-
-        // Check for zero address, although this must never happen
-        if (multisig == address(0)) {
-            revert ZeroAddress();
-        }
-
-        // TODO Work on this block to finalize
-        // Assemble OLAS specific metadata entry
-        IIdentityRegistry.MetadataEntry[] memory metadataEntries = new IIdentityRegistry.MetadataEntry[](1);
-        metadataEntries[0] = IIdentityRegistry.MetadataEntry({
-            key: "Ecosystem",
-            value: abi.encode("OLAS V1")
-        });
-
-        // Create new agent Id
-        agentId = IIdentityRegistry(identityRegistry).register(tokenUri, metadataEntries);
-
-        // Link service Id and agent Id
-        mapServiceIdAgentIds[serviceId] = agentId;
-
-        // Approve service multisig such that it becomes agentId operator
-        IERC721(identityRegistry).approve(multisig, agentId);
-
-        emit AgentRegistered(serviceId, agentId, multisig, tokenUri);
-    }
-
-    /// @dev Updates 8004 agent Id corresponding to service Id.
-    /// @param serviceId Service Id.
-    /// @param agentId Corresponding 8004 agent Id.
-    function _update(uint256 serviceId, uint256 agentId) internal {
-        // Get token URI
-        string memory serviceTokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
-
-        // Get actual service multisig
-        (,address serviceMultisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
-
-        // Check for zero address, although this must never happen
-        if (serviceMultisig == address(0)) {
-            revert ZeroAddress();
-        }
-
-        // Get 8004 agent Id tokenUri
-        string memory agentTokenUri = IERC721(identityRegistry).tokenURI(agentId);
-        // Check if tokenUri has changed
-        if (keccak256(bytes(serviceTokenUri)) != keccak256(bytes(agentTokenUri))) {
-            // Set updated tokenUri
-            IIdentityRegistry(identityRegistry).setAgentUri(agentId, serviceTokenUri);
-        }
-
-        // Check for multisig change
-        address agentServiceMultisig = IERC721(identityRegistry).getApproved(agentId);
-        // Check if multisig address has changed
-        if (serviceMultisig != agentServiceMultisig) {
-            // Approve updated service multisig such that it becomes agentId operator
-            IERC721(identityRegistry).approve(serviceMultisig, agentId);
-        }
-
-        // TODO Shall we NOT emit anything if nothing has been changed?
-        emit AgentUpdated(serviceId, agentId, serviceMultisig, serviceTokenUri);
+        operator = _operator;
     }
 
     /// @dev Initializes proxy contract storage.
@@ -261,11 +162,12 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         emit ImplementationUpdated(implementation);
     }
 
-    /// @dev Registers or updates 8004 agent Id corresponding to service Id.
+    /// @dev Registers 8004 agent Id corresponding to service Id.
     /// @param serviceId Service Id.
+    /// @param multisig Service multisig.
+    /// @param tokenUri Service tokenUri.
     /// @return agentId Corresponding 8004 agent Id.
-    /// @return registered True if registered, otherwise updated.
-    function register(uint256 serviceId) external returns (uint256 agentId, bool registered) {
+    function register(uint256 serviceId, address multisig, string memory tokenUri) external returns (uint256 agentId) {
         // Reentrancy guard
         if (_locked > 1) {
             revert ReentrancyGuard();
@@ -279,34 +181,91 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Get corresponding 8004 agent Id
         agentId = mapServiceIdAgentIds[serviceId];
-
-        // TODO: if agent is decoupled - create new (as of now), or revert, or return false?
-        // Check existing 8004 agent for not being decoupled
+        // This must never happen
         if (agentId > 0) {
-            // Get agent Id owner
-            address agentOwner = IERC721(identityRegistry).ownerOf(agentId);
-            // Check for agent Id ownership
-            if (agentOwner != address(this)) {
-                // TODO Have external ownable function to check and decouple agents?
-                // Decouple current agent Id
-                emit AgentDecoupled(serviceId, agentId);
-
-                // Zero the agent Id such that the new one is created
-                agentId = 0;
-            }
+            revert();
         }
 
-        // Check for 8004 agent Id correspondence
-        if (agentId == 0) {
-            registered = true;
+        // TODO Work on this block to finalize: multisig etc
+        // Assemble OLAS specific metadata entry
+        IIdentityRegistry.MetadataEntry[] memory metadataEntries = new IIdentityRegistry.MetadataEntry[](2);
+        metadataEntries[0] = IIdentityRegistry.MetadataEntry({
+            key: "Ecosystem",
+            value: abi.encode("OLAS V1")
+        });
+        metadataEntries[1] = IIdentityRegistry.MetadataEntry({
+            key: "agentWallet",
+            value: abi.encode(multisig)
+        });
 
-            // Create new agent Id
-            agentId = _register(serviceId);
-        } else {
-            // Update agent data, if applicable
-            _update(serviceId, agentId);
+        // Create new agent Id
+        agentId = IIdentityRegistry(identityRegistry).register(tokenUri, metadataEntries);
+
+        // Link service Id and agent Id
+        mapServiceIdAgentIds[serviceId] = agentId;
+
+        // Approve agentId operator
+        IERC721(identityRegistry).approve(operator, agentId);
+
+        emit AgentRegistered(serviceId, agentId, multisig, tokenUri);
+
+        _locked = 1;
+    }
+
+    /// @dev Updated agent URI according to provided service URI.
+    /// @param serviceId Service Id.
+    /// @param tokenUri Service tokenUri.
+    function updateAgentUri(uint256 serviceId, string memory tokenUri) external {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
+        // Check for access
+        if (msg.sender != manager) {
+            revert ManagerOnly(msg.sender, manager);
         }
 
+        // Get corresponding agent Id
+        uint256 agentId = mapServiceIdAgentIds[serviceId];
+
+        // Modify only if agent Id is already defined, otherwise skip
+        if (agentId > 0) {
+
+            // Set tokenUri
+            IIdentityRegistry(identityRegistry).setAgentUri(agentId, tokenUri);
+
+            emit AgentUriUpdated(serviceId, agentId, tokenUri);
+        }
+        _locked = 1;
+    }
+
+    /// @dev Updates 8004 agent Id wallet corresponding to service Id multisig.
+    /// @param serviceId Service Id.
+    /// @param multisig Corresponding 8004 agent Id.
+    function updateAgentWallet(uint256 serviceId, address multisig) external {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
+        // Check for access
+        if (msg.sender != manager) {
+            revert ManagerOnly(msg.sender, manager);
+        }
+
+        // Get corresponding agent Id
+        uint256 agentId = mapServiceIdAgentIds[serviceId];
+
+        // Modify only if agent Id is already defined, otherwise skip
+        if (agentId > 0) {
+            // Update agent wallet metadata entry
+            IIdentityRegistry(identityRegistry).setMetadata(agentId, "agentWallet", abi.encode(multisig));
+
+            emit AgentMultisigUpdated(serviceId, agentId, multisig);
+        }
         _locked = 1;
     }
 
@@ -337,7 +296,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
             // Check for agent Id to be zero
             if (agentIds[i] == 0) {
                 // Create 8004 agent Id for service Id
-                agentIds[i] = _register(serviceIds[i]);
+                //agentIds[i] = _register(serviceIds[i]);
             }
 
             // Otherwise no changes are made
