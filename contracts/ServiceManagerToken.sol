@@ -68,9 +68,6 @@ interface IERC721 {
     function tokenURI(uint256 tokenId) external view returns (string memory);
 }
 
-/// @dev The contract is already initialized.
-error AlreadyInitialized();
-
 /// @title Service Manager - Periphery smart contract for managing services with custom ERC20 tokens or ETH
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
