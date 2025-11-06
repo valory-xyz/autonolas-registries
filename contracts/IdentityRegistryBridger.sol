@@ -79,6 +79,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
     // Mapping of service Id => 8004 agent Id
     mapping(uint256 => uint256) public mapServiceIdAgentIds;
+    // Mapping of multisig address => 8004 agent Id
+    mapping(address => uint256) public mapMultisigAgentIds;
 
     /// @dev IdentityRegistryBridger constructor.
     /// @param _identityRegistry 8004 Identity Registry address.
@@ -190,11 +192,11 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         // Assemble OLAS specific metadata entry
         IIdentityRegistry.MetadataEntry[] memory metadataEntries = new IIdentityRegistry.MetadataEntry[](2);
         metadataEntries[0] = IIdentityRegistry.MetadataEntry({
-            key: "Ecosystem",
+            key: "ecosystem",
             value: abi.encode("OLAS V1")
         });
         metadataEntries[1] = IIdentityRegistry.MetadataEntry({
-            key: "agentWallet",
+            key: "agentWallet: {multisig}",
             value: abi.encode(multisig)
         });
 
@@ -203,6 +205,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Link service Id and agent Id
         mapServiceIdAgentIds[serviceId] = agentId;
+        // Link multisig and agentId
+        mapMultisigAgentIds[multisig] = agentId;
 
         // Approve agentId operator
         IERC721(identityRegistry).approve(operator, agentId);
@@ -232,7 +236,6 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Modify only if agent Id is already defined, otherwise skip
         if (agentId > 0) {
-
             // Set tokenUri
             IIdentityRegistry(identityRegistry).setAgentUri(agentId, tokenUri);
 
@@ -262,7 +265,11 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         // Modify only if agent Id is already defined, otherwise skip
         if (agentId > 0) {
             // Update agent wallet metadata entry
-            IIdentityRegistry(identityRegistry).setMetadata(agentId, "agentWallet", abi.encode(multisig));
+            IIdentityRegistry(identityRegistry).setMetadata(agentId, "agentWallet: {multisig}", abi.encode(multisig));
+
+            // TODO remove old one - pass oldMultisig address as well
+            // Link multisig and agentId
+            mapMultisigAgentIds[multisig] = agentId;
 
             emit AgentMultisigUpdated(serviceId, agentId, multisig);
         }
