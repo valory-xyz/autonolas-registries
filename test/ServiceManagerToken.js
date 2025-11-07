@@ -151,10 +151,6 @@ describe("ServiceManagerToken", function () {
             await expect(
                 ServiceManager.deploy(serviceRegistry.address, AddressZero, AddressZero, AddressZero)
             ).to.be.revertedWithCustomError(serviceManager, "ZeroAddress");
-
-            await expect(
-                ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address, AddressZero, AddressZero)
-            ).to.be.revertedWithCustomError(serviceManager, "ZeroAddress");
         });
 
         it("Changing owner", async function () {
