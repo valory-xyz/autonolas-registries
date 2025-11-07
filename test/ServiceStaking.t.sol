@@ -11,7 +11,7 @@ import {GnosisSafeMultisig} from "../contracts/multisigs/GnosisSafeMultisig.sol"
 import {ServiceRegistryL2} from "../contracts/ServiceRegistryL2.sol";
 import {ServiceRegistryTokenUtility} from "../contracts/ServiceRegistryTokenUtility.sol";
 import {OperatorWhitelist} from "../contracts/utils/OperatorWhitelist.sol";
-import {ServiceManager} from "../contracts/ServiceManagerToken.sol";
+import {ServiceManager} from "../contracts/ServiceManager.sol";
 import {MockIdentityRegistry} from "../contracts/test/MockIdentityRegistry.sol";
 import {IdentityRegistryBridger} from "../contracts/IdentityRegistryBridger.sol";
 import {IdentityRegistryBridgerProxy} from "../contracts/proxies/IdentityRegistryBridgerProxy.sol";
