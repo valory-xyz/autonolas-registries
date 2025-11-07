@@ -74,7 +74,7 @@ describe("ServiceManagerNative", function () {
             serviceRegistry.address);
         await identityRegistryBridger.deployed();
 
-        proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", []);
+        const proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", []);
         // Deploy identityRegistryBridger proxy based on the needed identityRegistryBridger initialization
         const IdentityRegistryBridgerProxy = await ethers.getContractFactory("IdentityRegistryBridgerProxy");
         const identityRegistryBridgerProxy = await IdentityRegistryBridgerProxy.deploy(identityRegistryBridger.address,
