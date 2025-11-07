@@ -66,7 +66,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     // Ecosystem metadata key
     string public constant ECOSYSTEM_METADATA_KEY = "ecosystem";
     // Agent wallet multisig metadata key
-    string public constant AGENT_WALLET_MULTISIG_METADATA_KEY = "agentWallet: {multisig}";
+    string public constant AGENT_WALLET_MULTISIG_METADATA_KEY = "agentWallet";
     // Service Id metadata key
     string public constant SERVICE_ID_METADATA_KEY = "serviceId";
     // Identity Registry Bridger proxy address slot

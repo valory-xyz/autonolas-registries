@@ -46,7 +46,7 @@ contract ERC8004Operator {
     // Version number
     string public constant VERSION = "0.1.0";
     // Agent wallet multisig metadata key
-    string public constant AGENT_WALLET_MULTISIG_METADATA_KEY = "agentWallet: {multisig}";
+    string public constant AGENT_WALLET_MULTISIG_METADATA_KEY = "agentWallet";
     // Contract signature validation value: bytes4(keccak256("isValidSignature(bytes32,bytes)")
     bytes4 constant internal EIP1271_MAGIC_VALUE = 0x1626ba7e;
 
