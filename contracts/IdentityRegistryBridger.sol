@@ -57,7 +57,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     event ManagerUpdated(address indexed manager);
     event OperatorUpdated(address indexed operator);
     event ImplementationUpdated(address indexed implementation);
-    event AgentRegistered(uint256 indexed serviceId, uint256 indexed agentId, address serviceMultisig, string serviceTokenUri);
+    event ServiceAgentLinked(uint256 indexed serviceId, uint256 indexed agentId, address serviceMultisig);
     event AgentUriUpdated(uint256 indexed serviceId, uint256 indexed agentId, string tokenUri);
     event AgentMultisigUpdated(uint256 indexed serviceId, uint256 indexed agentId, address oldMultisig, address indexed newMultisig);
 
@@ -67,6 +67,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     string public constant ECOSYSTEM_METADATA_KEY = "ecosystem";
     // Agent wallet multisig metadata key
     string public constant AGENT_WALLET_MULTISIG_METADATA_KEY = "agentWallet";
+    // Service Registry metadata key
+    string public constant SERVICE_REGISTRY_METADATA_KEY = "serviceRegistry";
     // Service Id metadata key
     string public constant SERVICE_ID_METADATA_KEY = "serviceId";
     // Identity Registry Bridger proxy address slot
@@ -207,14 +209,13 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Get corresponding 8004 agent Id
         agentId = mapServiceIdAgentIds[serviceId];
-        // This must never happen
+        // Only allow one agentId per serviceId
         if (agentId > 0) {
             revert AgentIdAlreadyAssigned(agentId, serviceId);
         }
 
-        // TODO Work on this block to finalize: multisig etc
         // Assemble OLAS specific metadata entry
-        IIdentityRegistry.MetadataEntry[] memory metadataEntries = new IIdentityRegistry.MetadataEntry[](3);
+        IIdentityRegistry.MetadataEntry[] memory metadataEntries = new IIdentityRegistry.MetadataEntry[](4);
         metadataEntries[0] = IIdentityRegistry.MetadataEntry({
             key: ECOSYSTEM_METADATA_KEY,
             value: abi.encode("OLAS V1")
@@ -224,6 +225,10 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
             value: abi.encode(multisig)
         });
         metadataEntries[2] = IIdentityRegistry.MetadataEntry({
+            key: SERVICE_REGISTRY_METADATA_KEY,
+            value: abi.encode(serviceRegistry)
+        });
+        metadataEntries[3] = IIdentityRegistry.MetadataEntry({
             key: SERVICE_ID_METADATA_KEY,
             value: abi.encode(serviceId)
         });
@@ -239,7 +244,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         // Approve agentId operator
         IERC721(identityRegistry).approve(operator, agentId);
 
-        emit AgentRegistered(serviceId, agentId, multisig, tokenUri);
+        emit ServiceAgentLinked(serviceId, agentId, multisig);
 
         _locked = 1;
     }
