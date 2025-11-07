@@ -10,8 +10,8 @@ describe("ServiceManagerNative", function () {
     let gnosisSafeProxyFactory;
     let gnosisSafeMultisig;
     let serviceRegistry;
-    let identityRegistry;
     let serviceRegistryTokenUtility;
+    let identityRegistry;
     let identityRegistryBridger;
     let erc8004Operator;
     let serviceManager;
