@@ -96,27 +96,23 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @dev IdentityRegistryBridger constructor.
     /// @param _identityRegistry 8004 Identity Registry address.
     /// @param _serviceRegistry Service Registry address.
-    /// @param _operator 8004 Operator address.
-    constructor (address _identityRegistry, address _serviceRegistry, address _operator) {
+    constructor (address _identityRegistry, address _serviceRegistry) {
         // Check for zero addresses
-        if (_identityRegistry == address(0) || _serviceRegistry == address(0) || _operator == address(0)) {
+        if (_identityRegistry == address(0) || _serviceRegistry == address(0)) {
             revert ZeroAddress();
         }
 
         identityRegistry = _identityRegistry;
         serviceRegistry = _serviceRegistry;
-        operator = _operator;
     }
 
     /// @dev Initializes proxy contract storage.
-    /// @param _manager Manager address.
-    function initialize(address _manager) external {
+    function initialize() external {
         // Check if contract is already initialized
         if (owner != address(0)) {
             revert AlreadyInitialized();
         }
 
-        manager = _manager;
         owner = msg.sender;
     }
 

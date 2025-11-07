@@ -9,6 +9,9 @@ describe("ServiceManagementWithOperatorSignatures", function () {
     let agentRegistry;
     let serviceRegistry;
     let serviceRegistryTokenUtility;
+    let identityRegistry;
+    let identityRegistryBridger;
+    let erc8004Operator;
     let serviceManager;
     let gnosisSafe;
     let gnosisSafeMultisig;
@@ -82,12 +85,37 @@ describe("ServiceManagementWithOperatorSignatures", function () {
         serviceRegistryTokenUtility = await ServiceRegistryTokenUtility.deploy(serviceRegistry.address);
         await serviceRegistryTokenUtility.deployed();
 
-        const ServiceManager = await ethers.getContractFactory("ServiceManagerToken");
-        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
+        const IdentityRegistry = await ethers.getContractFactory("MockIdentityRegistry");
+        identityRegistry = await IdentityRegistry.deploy();
+        await identityRegistry.deployed();
+
+        const IdentityRegistryBridger = await ethers.getContractFactory("IdentityRegistryBridger");
+        identityRegistryBridger = await IdentityRegistryBridger.deploy(identityRegistry.address,
+            serviceRegistry.address);
+        await identityRegistryBridger.deployed();
+
+        proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", []);
+        // Deploy identityRegistryBridger proxy based on the needed identityRegistryBridger initialization
+        const IdentityRegistryBridgerProxy = await ethers.getContractFactory("IdentityRegistryBridgerProxy");
+        const identityRegistryBridgerProxy = await IdentityRegistryBridgerProxy.deploy(identityRegistryBridger.address,
+            proxyData);
+        await identityRegistryBridgerProxy.deployed();
+
+        // Wrap identityRegistryBridger proxy contract
+        identityRegistryBridger = await ethers.getContractAt("IdentityRegistryBridger", identityRegistryBridgerProxy.address);
+
+        const ERC8004Operator = await ethers.getContractFactory("ERC8004Operator");
+        erc8004Operator = await ERC8004Operator.deploy(identityRegistry.address, identityRegistry.address,
+            identityRegistryBridger.address);
+        await erc8004Operator.deployed();
+
+        const ServiceManager = await ethers.getContractFactory("ServiceManager");
+        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address,
+            identityRegistryBridger.address, AddressZero);
         await serviceManager.deployed();
 
-        // TODO
-        await serviceManager.initialize(serviceRegistry.address, AddressZero);
+        await identityRegistryBridger.changeManager(serviceManager.address);
+        await identityRegistryBridger.changeOperator(erc8004Operator.address);
 
         const Token = await ethers.getContractFactory("ERC20Token");
         token = await Token.deploy();

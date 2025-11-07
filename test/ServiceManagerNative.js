@@ -3,14 +3,18 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("ServiceManager", function () {
+describe("ServiceManagerNative", function () {
     let componentRegistry;
     let agentRegistry;
     let gnosisSafe;
     let gnosisSafeProxyFactory;
-    let serviceRegistry;
-    let serviceManager;
     let gnosisSafeMultisig;
+    let serviceRegistry;
+    let identityRegistry;
+    let serviceRegistryTokenUtility;
+    let identityRegistryBridger;
+    let erc8004Operator;
+    let serviceManager;
     let signers;
     const configHash = "0x" + "5".repeat(64);
     const regBond = 1000;
@@ -27,6 +31,8 @@ describe("ServiceManager", function () {
     const unitHash3 = "0x" + "3".repeat(64);
     const payload = "0x";
     const AddressZero = "0x" + "0".repeat(40);
+    const ETHAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+    
     beforeEach(async function () {
         const ComponentRegistry = await ethers.getContractFactory("ComponentRegistry");
         componentRegistry = await ComponentRegistry.deploy("agent components", "MECHCOMP",
@@ -46,18 +52,50 @@ describe("ServiceManager", function () {
         gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deploy();
         await gnosisSafeProxyFactory.deployed();
 
+        const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
+        gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
+        await gnosisSafeMultisig.deployed();
+
         const ServiceRegistry = await ethers.getContractFactory("ServiceRegistry");
         serviceRegistry = await ServiceRegistry.deploy("service registry", "SERVICE", "https://localhost/agent/",
             agentRegistry.address);
         await serviceRegistry.deployed();
 
-        const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
-        gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
-        await gnosisSafeMultisig.deployed();
+        const ServiceRegistryTokenUtility = await ethers.getContractFactory("ServiceRegistryTokenUtility");
+        serviceRegistryTokenUtility = await ServiceRegistryTokenUtility.deploy(serviceRegistry.address);
+        await serviceRegistryTokenUtility.deployed();
+
+        const IdentityRegistry = await ethers.getContractFactory("MockIdentityRegistry");
+        identityRegistry = await IdentityRegistry.deploy();
+        await identityRegistry.deployed();
+
+        const IdentityRegistryBridger = await ethers.getContractFactory("IdentityRegistryBridger");
+        identityRegistryBridger = await IdentityRegistryBridger.deploy(identityRegistry.address,
+            serviceRegistry.address);
+        await identityRegistryBridger.deployed();
+
+        proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", []);
+        // Deploy identityRegistryBridger proxy based on the needed identityRegistryBridger initialization
+        const IdentityRegistryBridgerProxy = await ethers.getContractFactory("IdentityRegistryBridgerProxy");
+        const identityRegistryBridgerProxy = await IdentityRegistryBridgerProxy.deploy(identityRegistryBridger.address,
+            proxyData);
+        await identityRegistryBridgerProxy.deployed();
+
+        // Wrap identityRegistryBridger proxy contract
+        identityRegistryBridger = await ethers.getContractAt("IdentityRegistryBridger", identityRegistryBridgerProxy.address);
+
+        const ERC8004Operator = await ethers.getContractFactory("ERC8004Operator");
+        erc8004Operator = await ERC8004Operator.deploy(identityRegistry.address, identityRegistry.address,
+            identityRegistryBridger.address);
+        await erc8004Operator.deployed();
 
         const ServiceManager = await ethers.getContractFactory("ServiceManager");
-        serviceManager = await ServiceManager.deploy(serviceRegistry.address);
+        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address,
+            identityRegistryBridger.address, AddressZero);
         await serviceManager.deployed();
+
+        await identityRegistryBridger.changeManager(serviceManager.address);
+        await identityRegistryBridger.changeOperator(erc8004Operator.address);
 
         signers = await ethers.getSigners();
         await componentRegistry.changeManager(signers[0].address);
@@ -96,6 +134,7 @@ describe("ServiceManager", function () {
             await agentRegistry.connect(manager).create(owner, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner, unitHash1, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
             // Try to pause not from the owner of the service manager
             await expect(
@@ -108,7 +147,7 @@ describe("ServiceManager", function () {
             // Try minting when paused
             // 0 is component, 1 is agent
             await expect(
-                serviceManager.create(owner, configHash, agentIds, agentParams, maxThreshold)
+                serviceManager.create(owner, ETHAddress, configHash, agentIds, agentParams, maxThreshold)
             ).to.be.revertedWithCustomError(serviceManager, "Paused");
 
             // Try to unpause not from the owner of the service manager
@@ -120,13 +159,13 @@ describe("ServiceManager", function () {
             await serviceManager.unpause();
 
             // Mint component and agent
-            await serviceManager.create(owner, configHash, agentIds, agentParams, maxThreshold);
+            await serviceManager.create(owner, ETHAddress, configHash, agentIds, agentParams, maxThreshold);
         });
 
         it("Should fail when creating a service without a manager being white listed", async function () {
             const owner = signers[4].address;
             await expect(
-                serviceManager.create(owner, configHash, agentIds, agentParams, threshold)
+                serviceManager.create(owner, ETHAddress, configHash, agentIds, agentParams, threshold)
             ).to.be.revertedWithCustomError(serviceManager, "ManagerOnly");
         });
 
@@ -137,7 +176,8 @@ describe("ServiceManager", function () {
             await agentRegistry.connect(manager).create(owner, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner, unitHash1, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
-            await serviceManager.create(owner, configHash, agentIds, agentParams,
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
+            await serviceManager.create(owner, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
             expect(await serviceRegistry.exists(serviceIds[0])).to.equal(true);
         });
@@ -151,9 +191,10 @@ describe("ServiceManager", function () {
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
-            await serviceManager.create(owner.address, configHash, agentIds, agentParams,
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
+            await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
-            await serviceManager.create(owner.address, configHash, agentIds, agentParams,
+            await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
             await serviceManager.connect(owner).activateRegistration(serviceIds[0], {value: regDeposit});
             await serviceManager.connect(owner).activateRegistration(serviceIds[1], {value: regDeposit});
@@ -172,20 +213,21 @@ describe("ServiceManager", function () {
             await agentRegistry.changeManager(manager.address);
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
             // Pause the contract
             await serviceManager.pause();
 
             // Try creating a contract when paused
             await expect(
-                serviceManager.create(owner.address, configHash, [1], [[1, regBond]], 1)
+                serviceManager.create(owner.address, ETHAddress, configHash, [1], [[1, regBond]], 1)
             ).to.be.revertedWithCustomError(serviceManager, "Paused");
 
             // Unpause the contract
             await serviceManager.unpause();
 
             // Create a service
-            await serviceManager.create(owner.address, configHash, [1], [[1, regBond]], 1);
+            await serviceManager.create(owner.address, ETHAddress, configHash, [1], [[1, regBond]], 1);
         });
     });
     
@@ -198,11 +240,12 @@ describe("ServiceManager", function () {
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
-            await serviceManager.create(owner.address, configHash, agentIds, agentParams,
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
+            await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
-            await serviceManager.create(owner.address, configHash, agentIds, agentParams,
+            await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
-            await serviceManager.connect(owner).update(configHash, [1, 2, 3],
+            await serviceManager.connect(owner).update(ETHAddress, configHash, [1, 2, 3],
                 [[3, regBond], [0, regBond], [4, regBond]], maxThreshold, serviceIds[0]);
             expect(await serviceRegistry.exists(2)).to.equal(true);
             expect(await serviceRegistry.exists(3)).to.equal(false);
@@ -222,18 +265,19 @@ describe("ServiceManager", function () {
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
             // Creating two services
-            await serviceManager.create(owner.address, configHash, agentIds, agentParams,
+            await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
-            await serviceManager.create(owner.address, configHash, agentIds, agentParams,
+            await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
 
             // Updating service Id == 1
             const newAgentIds = [1, 2, 3];
             const newAgentParams = [[2, regBond], [0, regBond], [1, regBond]];
             const newMaxThreshold = newAgentParams[0][0] + newAgentParams[2][0];
-            await serviceManager.connect(owner).update(configHash, newAgentIds,
+            await serviceManager.connect(owner).update(ETHAddress, configHash, newAgentIds,
                 newAgentParams, newMaxThreshold, serviceIds[0]);
             let service = await serviceRegistry.getService(serviceIds[0]);
             expect(service.state).to.equal(1);
@@ -246,7 +290,7 @@ describe("ServiceManager", function () {
 
             // Fail when trying to update the service again, even though no agent instances are registered yet
             await expect(
-                serviceManager.connect(owner).update(configHash, newAgentIds,
+                serviceManager.connect(owner).update(ETHAddress, configHash, newAgentIds,
                     newAgentParams, newMaxThreshold, serviceIds[0])
             ).to.be.revertedWithCustomError(serviceManager, "WrongServiceState");
 
@@ -287,12 +331,13 @@ describe("ServiceManager", function () {
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
             // Creating a service
             const newAgentIds = [1, 2];
             const newAgentParams = [[2, regBond], [1, regBond]];
             const newMaxThreshold = newAgentParams[0][0] + newAgentParams[1][0];
-            await serviceManager.create(owner.address, configHash, newAgentIds,
+            await serviceManager.create(owner.address, ETHAddress, configHash, newAgentIds,
                 newAgentParams, newMaxThreshold);
             await serviceManager.connect(owner).activateRegistration(serviceIds[0], {value: regDeposit});
 
@@ -350,11 +395,12 @@ describe("ServiceManager", function () {
             await agentRegistry.connect(manager).create(owner, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner, unitHash1, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
             // Creating two services
-            await serviceManager.create(owner, configHash, agentIds, agentParams,
+            await serviceManager.create(owner, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
-            await serviceManager.create(owner, configHash, agentIds, agentParams,
+            await serviceManager.create(owner, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
 
             // Initial checks
@@ -402,7 +448,8 @@ describe("ServiceManager", function () {
             await agentRegistry.connect(mechManager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(mechManager).create(owner.address, unitHash1, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
-            await serviceManager.connect(owner).create(owner.address, configHash, [agentIds[0]],
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
+            await serviceManager.connect(owner).create(owner.address, ETHAddress, configHash, [agentIds[0]],
                 [[maxThreshold, regBond]], maxThreshold);
 
             // Activate agent instance registration and register an agent instance
@@ -438,13 +485,14 @@ describe("ServiceManager", function () {
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
-            await serviceManager.create(owner.address, configHash, agentIds, agentParams,
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
+            await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
-            await serviceManager.create(owner.address, configHash, agentIds, agentParams,
+            await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
             await serviceManager.connect(owner).activateRegistration(serviceIds[0], {value: regDeposit});
             await serviceManager.connect(owner).terminate(serviceIds[0]);
-            await serviceManager.connect(owner).update(configHash, [1, 2, 3],
+            await serviceManager.connect(owner).update(ETHAddress, configHash, [1, 2, 3],
                 [[3, regBond], [0, regBond], [4, regBond]], maxThreshold, serviceIds[0]);
         });
     });
@@ -461,9 +509,10 @@ describe("ServiceManager", function () {
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
             await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
             // Creating a service and activating registration
-            await serviceManager.create(owner.address, configHash, [1], [[1, regBond]], 1);
+            await serviceManager.create(owner.address, ETHAddress, configHash, [1], [[1, regBond]], 1);
             await serviceManager.connect(owner).activateRegistration(serviceIds[0], {value: regDeposit});
 
             // Registering agent instance
