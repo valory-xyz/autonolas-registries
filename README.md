@@ -49,8 +49,7 @@ The following list represents registries contracts:
   - [ServiceRegistryTokenUtility](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistryTokenUtility.sol)
 - Periphery contracts:
   - [RegistriesManager](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/RegistriesManager.sol)
-  - [ServiceManagerToken](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceManagerToken.sol)
-  - [ServiceManager (deprecated)](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceManager.sol)
+  - [ServiceManager](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceManager.sol)
 - Utility contracts:
   - [OperatorSignedHashes](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/utils/OperatorSignedHashes.sol)
   - [OperatorWhitelist](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/utils/OperatorWhitelist.sol)
