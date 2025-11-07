@@ -94,6 +94,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     event ServiceAgentLinked(uint256 indexed serviceId, uint256 indexed agentId, address serviceMultisig);
     event AgentUriUpdated(uint256 indexed serviceId, uint256 indexed agentId, string tokenUri);
     event AgentMultisigUpdated(uint256 indexed serviceId, uint256 indexed agentId, address oldMultisig, address indexed newMultisig);
+    event StartLinkServiceIdUpdated(uint256 indexed serviceId);
 
     // Version number
     string public constant VERSION = "0.1.0";
@@ -120,6 +121,9 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     address public manager;
     // 8004 Operator address
     address public operator;
+
+    // Starting service Id for linking with agent Id
+    uint256 public startLinkServiceId;
 
     // Reentrancy lock
     uint256 internal _locked = 1;
@@ -188,6 +192,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
             revert AlreadyInitialized();
         }
 
+        startLinkServiceId = 1;
         owner = msg.sender;
     }
 
@@ -355,36 +360,37 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     }
 
     /// @dev Links service Ids with registered 8004 agent Ids.
-    /// @param startServiceId Starting service Id.
     /// @param numServices Number of services to link.
     /// @return agentIds Set of 8004 agent Ids.
-    function linkServiceIdAgentIds(
-        uint256 startServiceId,
-        uint256 numServices
-    ) external returns (uint256[] memory agentIds)
-    {
-        // Check for zero values
-        if (startServiceId == 0 || numServices == 0) {
+    function linkServiceIdAgentIds(uint256 numServices) external returns (uint256[] memory agentIds) {
+        // Check for zero value
+        if (numServices == 0) {
             revert ZeroValue();
         }
 
         // Allocate serviceIds array
         uint256[] memory serviceIds = new uint256[](numServices);
 
+        uint256 serviceId = startLinkServiceId;
         // Assign service Ids
         for (uint256 i = 0; i < numServices; ++i) {
-            serviceIds[i] = startServiceId + i;
+            serviceIds[i] = serviceId + i;
         }
+
+        serviceId += numServices;
+        // Record start link service Id for next iteration
+        startLinkServiceId = serviceId;
 
         // Traverse services and create corresponding 8004 agents
         agentIds = updateOrLinkServiceIdAgentIds(serviceIds);
+
+        emit StartLinkServiceIdUpdated(serviceId);
     }
 
     /// @dev Updates or links service Ids with registered 8004 agent Ids.
     /// @param serviceIds Set of service Ids.
     /// @return agentIds Corresponding set of 8004 agent Ids.
-    function updateOrLinkServiceIdAgentIds(uint256[] memory serviceIds) public returns (uint256[] memory agentIds)
-    {
+    function updateOrLinkServiceIdAgentIds(uint256[] memory serviceIds) public returns (uint256[] memory agentIds) {
         // Get number of service Ids
         uint256 numServices = serviceIds.length;
         // Check for zero value
