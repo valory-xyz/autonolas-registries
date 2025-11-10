@@ -29,16 +29,16 @@ async function main() {
     console.log("EOA is:", deployer);
 
     // Transaction signing and execution
-    console.log("17. EOA to deploy ServiceManagerToken");
-    const ServiceManagerToken = await ethers.getContractFactory("ServiceManagerToken");
-    console.log("You are signing the following transaction: ServiceManagerToken.connect(EOA).deploy()");
-    const serviceManagerToken = await ServiceManagerToken.connect(EOA).deploy(serviceRegistryAddress,
+    console.log("17. EOA to deploy ServiceManager");
+    const ServiceManager = await ethers.getContractFactory("ServiceManager");
+    console.log("You are signing the following transaction: ServiceManager.connect(EOA).deploy()");
+    const serviceManager = await ServiceManager.connect(EOA).deploy(serviceRegistryAddress,
         serviceRegistryTokenUtilityAddress, operatorWhitelistAddress);
-    const result = await serviceManagerToken.deployed();
+    const result = await serviceManager.deployed();
 
     // Transaction details
-    console.log("Contract deployment: ServiceManagerToken");
-    console.log("Contract address:", serviceManagerToken.address);
+    console.log("Contract deployment: ServiceManager");
+    console.log("Contract address:", serviceManager.address);
     console.log("Transaction:", result.deployTransaction.hash);
 
     // If on sepolia, wait for half a minute for the transaction completion
@@ -47,13 +47,13 @@ async function main() {
     }
 
     // Writing updated parameters back to the JSON file
-    parsedData.serviceManagerTokenAddress = serviceManagerToken.address;
+    parsedData.serviceManagerAddress = serviceManager.address;
     fs.writeFileSync(globalsFile, JSON.stringify(parsedData));
 
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/verify_17_service_manager_token.js --network " + providerName + " " + serviceManagerToken.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/verify_17_service_manager_token.js --network " + providerName + " " + serviceManager.address, { encoding: "utf-8" });
     }
 }
 

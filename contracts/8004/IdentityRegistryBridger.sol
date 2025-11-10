@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {ERC721TokenReceiver} from "../lib/solmate/src/tokens/ERC721.sol";
+import {ERC721TokenReceiver} from "../../lib/solmate/src/tokens/ERC721.sol";
 
 interface IERC721 {
     /// @dev Gives permission to `spender` to transfer `tokenId` token to another account.

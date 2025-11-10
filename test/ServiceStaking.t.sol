@@ -13,9 +13,9 @@ import {ServiceRegistryTokenUtility} from "../contracts/ServiceRegistryTokenUtil
 import {OperatorWhitelist} from "../contracts/utils/OperatorWhitelist.sol";
 import {ServiceManager} from "../contracts/ServiceManager.sol";
 import {MockIdentityRegistry} from "../contracts/test/MockIdentityRegistry.sol";
-import {IdentityRegistryBridger} from "../contracts/IdentityRegistryBridger.sol";
-import {IdentityRegistryBridgerProxy} from "../contracts/proxies/IdentityRegistryBridgerProxy.sol";
-import {ERC8004Operator} from "../contracts/ERC8004Operator.sol";
+import {IdentityRegistryBridger} from "../contracts/8004/IdentityRegistryBridger.sol";
+import {IdentityRegistryBridgerProxy} from "../contracts/8004/IdentityRegistryBridgerProxy.sol";
+import {ERC8004Operator} from "../contracts/8004/ERC8004Operator.sol";
 import "../contracts/staking/StakingNativeToken.sol";
 import {StakingToken} from "../contracts/staking/StakingToken.sol";
 import {StakingVerifier} from "../contracts/staking/StakingVerifier.sol";

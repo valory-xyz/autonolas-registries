@@ -14,9 +14,6 @@ derivationPath=$(jq -r '.derivationPath' $globals)
 chainId=$(jq -r '.chainId' $globals)
 networkURL=$(jq -r '.networkURL' $globals)
 
-multiSendCallOnlyAddress=$(jq -r '.multiSendCallOnlyAddress' $globals)
-serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' $globals)
-
 # Check for Polygon keys only since on other networks those are not needed
 if [ $chainId == 137 ]; then
   API_KEY=$ALCHEMY_API_KEY_MATIC
@@ -32,9 +29,13 @@ elif [ $chainId == 80002 ]; then
     fi
 fi
 
-contractName="RecoveryModule"
-contractPath="contracts/multisigs/$contractName.sol:$contractName"
-constructorArgs="$multiSendCallOnlyAddress $serviceRegistryAddress"
+serviceRegistryName=$(jq -r '.serviceRegistryName' $globals)
+serviceRegistrySymbol=$(jq -r '.serviceRegistrySymbol' $globals)
+baseURI=$(jq -r '.baseURI' $globals)
+
+contractName="ServiceRegistryL2"
+contractPath="contracts/$contractName.sol:$contractName"
+constructorArgs="$serviceRegistryName $serviceRegistrySymbol $baseURI"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
 # Get deployer based on the ledger flag
@@ -54,10 +55,10 @@ echo "Deployment of: $contractArgs"
 # Deploy the contract and capture the address
 execCmd="forge create --broadcast --rpc-url $networkURL$API_KEY $walletArgs $contractArgs"
 deploymentOutput=$($execCmd)
-recoveryModuleAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
+serviceRegistryAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
 
 # Get output length
-outputLength=${#recoveryModuleAddress}
+outputLength=${#serviceRegistryAddress}
 
 # Check for the deployed address
 if [ $outputLength != 42 ]; then
@@ -66,11 +67,11 @@ if [ $outputLength != 42 ]; then
 fi
 
 # Write new deployed contract back into JSON
-echo "$(jq '. += {"recoveryModuleAddress":"'$recoveryModuleAddress'"}' $globals)" > $globals
+echo "$(jq '. += {"serviceRegistryAddress":"'$serviceRegistryAddress'"}' $globals)" > $globals
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
-  contractParams="$recoveryModuleAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address)" $constructorArgs)"
+  contractParams="$serviceRegistryAddress $contractPath --constructor-args $(cast abi-encode "constructor(string,string,string)" "$serviceRegistryName" "$serviceRegistrySymbol" "$baseURI")"
   echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."
@@ -83,4 +84,4 @@ if [ "$contractVerification" == "true" ]; then
   fi
 fi
 
-echo "$contractName deployed at: $recoveryModuleAddress"
+echo "$contractName deployed at: $serviceRegistryAddress"

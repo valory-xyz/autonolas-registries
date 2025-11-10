@@ -36,11 +36,12 @@ async function main() {
     const componentRegistry = await ethers.getContractAt("ComponentRegistry", componentRegistryAddress);
     const agentRegistry = await ethers.getContractAt("AgentRegistry", agentRegistryAddress);
     const serviceRegistry = await ethers.getContractAt("ServiceRegistry", serviceRegistryAddress);
+    const serviceRegistryTokenUtility = await ethers.getContractAt("ServiceRegistryTokenUtility", serviceRegistryTokenUtilityAddress);
     const registriesManager = await ethers.getContractAt("RegistriesManager", registriesManagerAddress);
     const serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerAddress);
 
     // Transaction signing and execution
-    // 10. EOA to transfer ownership rights of ComponentRegistry to Timelock calling `changeOwner(Timelock)`;
+    // 15. EOA to transfer ownership rights of ComponentRegistry to Timelock calling `changeOwner(Timelock)`;
     console.log("You are signing the following transaction: componentRegistry.connect(EOA).changeOwner()");
     let result = await componentRegistry.connect(EOA).changeOwner(timelockAddress);
     // Transaction details
@@ -48,7 +49,7 @@ async function main() {
     console.log("Contract address:", componentRegistryAddress);
     console.log("Transaction:", result.hash);
 
-    // 11. EOA to transfer ownership rights of AgentRegistry to Timelock calling `changeOwner(Timelock)`;
+    // 16. EOA to transfer ownership rights of AgentRegistry to Timelock calling `changeOwner(Timelock)`;
     console.log("You are signing the following transaction: agentRegistry.connect(EOA).changeOwner()");
     result = await agentRegistry.connect(EOA).changeOwner(timelockAddress);
     // Transaction details
@@ -56,7 +57,7 @@ async function main() {
     console.log("Contract address:", agentRegistryAddress);
     console.log("Transaction:", result.hash);
 
-    // 12. EOA to transfer ownership rights of ServiceRegistry to Timelock calling `changeOwner(Timelock)`;
+    // 17. EOA to transfer ownership rights of ServiceRegistry to Timelock calling `changeOwner(Timelock)`;
     console.log("You are signing the following transaction: serviceRegistry.connect(EOA).changeOwner()");
     result = await serviceRegistry.connect(EOA).changeOwner(timelockAddress);
     // Transaction details
@@ -64,7 +65,14 @@ async function main() {
     console.log("Contract address:", serviceRegistryAddress);
     console.log("Transaction:", result.hash);
 
-    // 13. EOA to transfer ownership rights of RegistriesManager to Timelock calling `changeOwner(Timelock)`;
+    // 18. EOA to transfer ownership rights of ServiceRegistryTokenUtility to Timelock calling `changeOwner(Timelock)`;
+    console.log("You are signing the following transaction: ServiceRegistryTokenUtility.connect(EOA).changeOwner()");
+    let result = await serviceRegistryTokenUtility.connect(EOA).changeOwner(timelockAddress);
+    // Transaction details
+    console.log("Contract address:", serviceRegistryTokenUtilityAddress);
+    console.log("Transaction:", result.hash);
+
+    // 19. EOA to transfer ownership rights of RegistriesManager to Timelock calling `changeOwner(Timelock)`;
     console.log("You are signing the following transaction: registriesManager.connect(EOA).changeOwner()");
     result = await registriesManager.connect(EOA).changeOwner(timelockAddress);
     // Transaction details
@@ -72,7 +80,7 @@ async function main() {
     console.log("Contract address:", registriesManagerAddress);
     console.log("Transaction:", result.hash);
 
-    // 14. EOA to transfer ownership rights of ServiceManager to Timelock calling `changeOwner(Timelock)`.
+    // 20. EOA to transfer ownership rights of ServiceManager to Timelock calling `changeOwner(Timelock)`.
     console.log("You are signing the following transaction: serviceManager.connect(EOA).changeOwner()");
     result = await serviceManager.connect(EOA).changeOwner(timelockAddress);
     // Transaction details
