@@ -1,6 +1,5 @@
 /*global process*/
 
-const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { LedgerSigner } = require("@anders-t/ethers-ledger");
 
@@ -66,7 +65,7 @@ async function main() {
 
     // 12. EOA to change the manager of ServiceRegistryTokenUtility to ServiceManager calling `changeManager(ServiceManager)`;
     console.log("You are signing the following transaction: serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerAddress)");
-    let result = await serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerAddress);
+    result = await serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerAddress);
     // Transaction details
     console.log("Contract name: ServiceRegistryTokenUtility");
     console.log("Contract address:", serviceRegistryTokenUtilityAddress);
@@ -74,14 +73,14 @@ async function main() {
 
     // 13. EOA to whitelist GnosisSafeMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeMultisig)`;
     console.log("9. You are signing the following transaction: serviceRegistry.connect(EOA).changeMultisigPermission()");
-    result = await serviceRegistry.connect(EOA).changeMultisigPermission(gnosisSafeMultisigImplementationAddress, true, { gasPrice });
+    result = await serviceRegistry.connect(EOA).changeMultisigPermission(gnosisSafeMultisigImplementationAddress, true);
     // Transaction details
     console.log("Contract address:", serviceRegistryAddress);
     console.log("Transaction:", result.hash);
 
     // 14. EOA to whitelist GnosisSafeSameAddressMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeSameAddressMultisig)`;
     console.log("10. You are signing the following transaction: serviceRegistry.connect(EOA).changeMultisigPermission()");
-    result = await serviceRegistry.connect(EOA).changeMultisigPermission(gnosisSafeSameAddressMultisigImplementationAddress, true, { gasPrice });
+    result = await serviceRegistry.connect(EOA).changeMultisigPermission(gnosisSafeSameAddressMultisigImplementationAddress, true);
     // Transaction details
     console.log("Contract address:", serviceRegistryAddress);
     console.log("Transaction:", result.hash);
