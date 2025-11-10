@@ -41,13 +41,13 @@ jobs:
 
       # Compile the code and run tests and deploy script(s)
       - name: Compile the code
-        run: ./node_modules/.bin/hardhat compile
+        run: yarn compile
       - name: Run tests
-        run: ./node_modules/.bin/hardhat test
+        run: yarn test
 
       # Run hardhat coverage and upload codecov report
       - name: Solidity coverage summary
-        run: export NODE_OPTIONS="--max-old-space-size=8192" && ./node_modules/.bin/hardhat coverage
+        run: export NODE_OPTIONS="--max-old-space-size=8192" && yarn coverage
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:

@@ -111,17 +111,32 @@ test
 ```
 
 ### Compile the code and run
-Compile the code:
+#### Hardhat
+Compile the code with Hardhat:
 ```
-npx hardhat compile
+yarn compile
 ```
-Run the tests:
+Run tests with Hardhat:
 ```
-npx hardhat test
+yarn test
 ```
-Run tests with forge:
+Run coverage with Hardhat:
 ```
-forge test --hh -vvv
+yarn coverage
+```
+
+#### Forge
+Compile the code with Forge:
+```
+forge build
+```
+Run tests with Forge (skip fork testing):
+```
+forge test --match-contract Staking -vvv
+```
+Run fork tests with Forge:
+```
+forge test -f $FORK_NODE_URL --match-contract IdentityRegistry -vvv
 ```
 
 ### Test with instrumented code

@@ -425,7 +425,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
             // Check if agent Id has been registered
             if (agentIds[i] == 0) {
                 // Register corresponding 8004 agent Id
-                _register(serviceId, multisig, tokenUri);
+                agentIds[i] = _register(serviceId, multisig, tokenUri);
             } else {
                 uint256 agentId = agentIds[i];
 

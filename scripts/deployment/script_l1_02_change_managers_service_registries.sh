@@ -25,7 +25,7 @@ chainId=$(jq -r '.chainId' $globals)
 networkURL=$(jq -r '.networkURL' $globals)
 
 serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' $globals)
-serviceRegistryTokenUtilityAddress=$(jq -r '.serviceRegistryAddress' $globals)
+serviceRegistryTokenUtilityAddress=$(jq -r '.serviceRegistryTokenUtilityAddress' $globals)
 serviceManagerAddress=$(jq -r '.serviceManagerAddress' $globals)
 
 # Getting L1 API key
