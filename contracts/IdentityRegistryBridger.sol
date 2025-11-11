@@ -350,6 +350,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         if (agentId > 0) {
             _updateAgentUri(serviceId, agentId, tokenUri);
         }
+
         _locked = 1;
     }
 
@@ -396,11 +397,11 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         // Get first and last service Ids bound
         uint256 serviceId = startLinkServiceId;
         // Note that lastServiceId is not going to be processed, as there is a strict (< numServices) condition
-        // lastServiceId is going to be starting service Id in next iteration
+        // lastServiceId is going to be starting service Id in next iteration: processing [serviceId, lastServiceId)
         uint256 lastServiceId = serviceId + numServices;
 
         // Adjust last service Id if needed
-        if (lastServiceId > maxServiceId + 1) {
+        if (lastServiceId - 1 > maxServiceId) {
             numServices = lastServiceId - maxServiceId;
             lastServiceId = serviceId + numServices;
         }
@@ -414,6 +415,9 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
             (,address multisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
             // Skip services that were never deployed
             if (multisig == address(0)) {
+                // Increase service Id
+                serviceId++;
+
                 continue;
             }
 
@@ -494,10 +498,10 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
                 uint256 agentId = agentIds[i];
 
                 // Get agent Id value through multisig
-                uint256 checkAgent = mapMultisigAgentIds[multisig];
+                uint256 checkAgentId = mapMultisigAgentIds[multisig];
 
                 // Check for agent Id difference
-                if (checkAgent != agentId) {
+                if (checkAgentId != agentId) {
                     // Check agentWallet metadata
                     bytes memory agentWallet =
                         IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
