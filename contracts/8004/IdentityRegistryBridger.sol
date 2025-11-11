@@ -48,11 +48,8 @@ interface IServiceRegistry {
     function mapServices(uint256 serviceId) external view returns (uint96 securityDeposit, address multisig,
         bytes32 configHash, uint32 threshold, uint32 maxNumAgentInstances, uint32 numAgentInstances, ServiceState state);
 
-    /// @dev Checks for the unit existence.
-    /// @notice Service counter starts from 1.
-    /// @param serviceId Service Id.
-    /// @return true if service exists, false otherwise.
-    function exists(uint256 serviceId) external view returns (bool);
+    /// @dev Gets total supply of services.
+    function totalSupply() external view returns (uint256);
 }
 
 /// @dev Provided zero address.
@@ -82,6 +79,10 @@ error AgentIdAlreadyAssigned(uint256 agentId, uint256 serviceId);
 /// @dev Caught reentrancy violation.
 error ReentrancyGuard();
 
+/// @dev Provided wrong service Id.
+/// @param serviceId Service Id.
+error WrongServiceId(uint256 serviceId);
+
 /// @title Identity Registry Bridger - Smart contract for bridging OLAS AI Agent Registry with 8004 Identity Registry
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
@@ -100,6 +101,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     string public constant VERSION = "0.1.0";
     // Ecosystem metadata key
     string public constant ECOSYSTEM_METADATA_KEY = "ecosystem";
+    // Ecosystem metadata value
+    bytes public constant ECOSYSTEM_METADATA_VALUE = abi.encode("OLAS V1");
     // Agent wallet multisig metadata key
     string public constant AGENT_WALLET_METADATA_KEY = "agentWallet";
     // Service Registry metadata key
@@ -156,7 +159,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         IIdentityRegistry.MetadataEntry[] memory metadataEntries = new IIdentityRegistry.MetadataEntry[](4);
         metadataEntries[0] = IIdentityRegistry.MetadataEntry({
             key: ECOSYSTEM_METADATA_KEY,
-            value: abi.encode("OLAS V1")
+            value: ECOSYSTEM_METADATA_VALUE
         });
         metadataEntries[1] = IIdentityRegistry.MetadataEntry({
             key: AGENT_WALLET_METADATA_KEY,
@@ -183,6 +186,34 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         IERC721(identityRegistry).approve(operator, agentId);
 
         emit ServiceAgentLinked(serviceId, agentId, multisig);
+    }
+
+    /// @dev Updated agent URI according to provided service URI.
+    /// @param agentId Corresponding agent Id.
+    /// @param serviceId Service Id.
+    /// @param tokenUri Service tokenUri.
+    function _updateAgentUri(uint256 serviceId, uint256 agentId, string memory tokenUri) internal {
+        // Set tokenUri
+        IIdentityRegistry(identityRegistry).setAgentUri(agentId, tokenUri);
+
+        emit AgentUriUpdated(serviceId, agentId, tokenUri);
+    }
+
+    /// @dev Updates 8004 agent Id wallet corresponding to service Id multisig.
+    /// @param serviceId Service Id.
+    /// @param agentId Corresponding agent Id.
+    /// @param oldMultisig Old multisig address.
+    /// @param newMultisig New multisig address.
+    function _updateAgentWallet(uint256 serviceId, uint256 agentId, address oldMultisig, address newMultisig) internal {
+        // Update agent wallet metadata entry
+        IIdentityRegistry(identityRegistry).setMetadata(agentId, AGENT_WALLET_METADATA_KEY, abi.encode(newMultisig));
+
+        // Unlink old multisig and agentId
+        mapMultisigAgentIds[oldMultisig] = 0;
+        // Link new multisig and agentId
+        mapMultisigAgentIds[newMultisig] = agentId;
+
+        emit AgentMultisigUpdated(serviceId, agentId, oldMultisig, newMultisig);
     }
 
     /// @dev Initializes proxy contract storage.
@@ -214,7 +245,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     }
 
     /// @dev Changes contract manager address.
-    /// @param newManager New contract owner address.
+    /// @param newManager New contract manager address.
     function changeManager(address newManager) external {
         // Check for the ownership
         if (msg.sender != owner) {
@@ -230,8 +261,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         emit ManagerUpdated(newManager);
     }
 
-    /// @dev Changes contract manager address.
-    /// @param newOperator New contract owner address.
+    /// @dev Changes ERC8004 operator address.
+    /// @param newOperator New ERC8004 operator  address.
     function changeOperator(address newOperator) external {
         // Check for the ownership
         if (msg.sender != owner) {
@@ -317,11 +348,9 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Modify only if agent Id is already defined, otherwise skip
         if (agentId > 0) {
-            // Set tokenUri
-            IIdentityRegistry(identityRegistry).setAgentUri(agentId, tokenUri);
-
-            emit AgentUriUpdated(serviceId, agentId, tokenUri);
+            _updateAgentUri(serviceId, agentId, tokenUri);
         }
+
         _locked = 1;
     }
 
@@ -346,16 +375,9 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Modify only if agent Id is already defined, otherwise skip
         if (agentId > 0) {
-            // Update agent wallet metadata entry
-            IIdentityRegistry(identityRegistry).setMetadata(agentId, AGENT_WALLET_METADATA_KEY, abi.encode(newMultisig));
-
-            // Unlink old multisig and agentId
-            mapMultisigAgentIds[oldMultisig] = 0;
-            // Link new multisig and agentId
-            mapMultisigAgentIds[newMultisig] = agentId;
-
-            emit AgentMultisigUpdated(serviceId, agentId, oldMultisig, newMultisig);
+            _updateAgentWallet(serviceId, agentId, oldMultisig, newMultisig);
         }
+
         _locked = 1;
     }
 
@@ -368,26 +390,60 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
             revert ZeroValue();
         }
 
-        // Allocate serviceIds array
-        uint256[] memory serviceIds = new uint256[](numServices);
+        // Get max available service Id
+        // service Id numbering starts from id == 1, so last service Id is totalSupply + 1
+        uint256 maxServiceId = IServiceRegistry(serviceRegistry).totalSupply() + 1;
 
+        // Get first and last service Ids bound
         uint256 serviceId = startLinkServiceId;
-        // Assign service Ids
-        for (uint256 i = 0; i < numServices; ++i) {
-            serviceIds[i] = serviceId + i;
+        // Note that lastServiceId is not going to be processed, as there is a strict (< numServices) condition
+        // lastServiceId is going to be starting service Id in next iteration: processing [serviceId, lastServiceId)
+        uint256 lastServiceId = serviceId + numServices;
+
+        // Adjust last service Id if needed
+        if (lastServiceId - 1 > maxServiceId) {
+            numServices = lastServiceId - maxServiceId;
+            lastServiceId = serviceId + numServices;
         }
 
-        serviceId += numServices;
+        // Allocate agentIds array
+        agentIds = new uint256[](numServices);
+
+        // Assign agent Ids
+        for (uint256 i = 0; i < numServices; ++i) {
+            // Get service multisig
+            (,address multisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
+            // Skip services that were never deployed
+            if (multisig == address(0)) {
+                // Increase service Id
+                serviceId++;
+
+                continue;
+            }
+
+            // Get service token URI
+            string memory tokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
+
+            // Get corresponding 8004 agent Id
+            agentIds[i] = mapServiceIdAgentIds[serviceId];
+            // Check if agent Id has been registered
+            if (agentIds[i] == 0) {
+                // Register corresponding 8004 agent Id
+                agentIds[i] = _register(serviceId, multisig, tokenUri);
+            }
+
+            // Increase service Id
+            serviceId++;
+        }
+
         // Record start link service Id for next iteration
-        startLinkServiceId = serviceId;
+        startLinkServiceId = lastServiceId;
 
-        // Traverse services and create corresponding 8004 agents
-        agentIds = updateOrLinkServiceIdAgentIds(serviceIds);
-
-        emit StartLinkServiceIdUpdated(serviceId);
+        emit StartLinkServiceIdUpdated(lastServiceId);
     }
 
     /// @dev Updates or links service Ids with registered 8004 agent Ids.
+    /// @notice Set of service Ids must be in ascending order with unique values.
     /// @param serviceIds Set of service Ids.
     /// @return agentIds Corresponding set of 8004 agent Ids.
     function updateOrLinkServiceIdAgentIds(uint256[] memory serviceIds) public returns (uint256[] memory agentIds) {
@@ -401,13 +457,25 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         // Allocate agentIds array
         agentIds = new uint256[](numServices);
 
+        // Get max available service Id
+        // service Id numbering starts from id == 1, so last service Id is totalSupply + 1
+        uint256 maxServiceId = IServiceRegistry(serviceRegistry).totalSupply() + 1;
+
+        uint256 lastId;
         // Traverse services and update or create corresponding 8004 agents
         for (uint256 i = 0; i < numServices; ++i) {
             uint256 serviceId = serviceIds[i];
 
-            // Check for service Id existence
-            if (!IServiceRegistry(serviceRegistry).exists(serviceId)) {
-                continue;
+            // Check for reaching max service Id
+            if (serviceId > maxServiceId) {
+                break;
+            }
+
+            // Check for ascending order with unique values
+            if (serviceId > lastId) {
+                lastId = serviceId;
+            } else {
+                revert WrongServiceId(serviceId);
             }
 
             // Get service multisig
@@ -429,17 +497,19 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
             } else {
                 uint256 agentId = agentIds[i];
 
-                // Check agentWallet metadata
-                bytes memory agentWallet =
-                    IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
-                // Decode multisig value
-                address checkMultisig = abi.decode(agentWallet, (address));
+                // Get agent Id value through multisig
+                uint256 checkAgentId = mapMultisigAgentIds[multisig];
 
-                // Check for multisig address difference
-                if (checkMultisig != multisig) {
-                    // Update agent wallet metadata entry
-                    IIdentityRegistry(identityRegistry).setMetadata(agentId, AGENT_WALLET_METADATA_KEY,
-                        abi.encode(multisig));
+                // Check for agent Id difference
+                if (checkAgentId != agentId) {
+                    // Check agentWallet metadata
+                    bytes memory agentWallet =
+                        IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
+                    // Decode multisig value
+                    address oldMultisig = abi.decode(agentWallet, (address));
+
+                    // Update agentWallet metadata and mapping
+                    _updateAgentWallet(serviceId, agentId, oldMultisig, multisig);
                 }
 
                 // Get tokenUri
@@ -448,7 +518,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
                 // Check for tokenUri difference
                 if (keccak256(bytes(checkTokenUri)) != keccak256(bytes(tokenUri))) {
                     // Updated tokenUri in 8004 Identity Registry
-                    IIdentityRegistry(identityRegistry).setAgentUri(agentId, tokenUri);
+                    _updateAgentUri(serviceId, agentId, tokenUri);
                 }
             }
         }
