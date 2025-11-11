@@ -32,7 +32,7 @@
   "stakingFactoryAddress": "",
   "recoveryModuleAddress": "0x0a40C5ff1EB345E92DaAB5981Fc05219cCe4463E",
   "safeMultisigWithRecoveryModuleAddress": "0x164e1CA068afeF66EFbB9cA19d904c44E8386fd9",
-  "identityRegistryBridgerAddress": "0xBe58B928b96E313441926c6eaa7343D17771dcF5",
+  "identityRegistryBridgerAddress": "0x787Ef8cb931f670aDE21f806A8e8A3553999689c",
   "identityRegistryBridgerProxyAddress": "0x293b030678996ac600CAF53854177F60894DAF7A",
-  "erc8004OperatorAddress": "0xF3d3f6C7Eb8C92457d9E35958D2B7450397eb6d5"
+  "erc8004OperatorAddress": "0x6C4C45B5005547e9465Ac61B771cC9712BE44ae0"
 }

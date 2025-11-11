@@ -5,12 +5,27 @@ import {Utils} from "./utils/Utils.sol";
 import {IToken} from "../contracts/interfaces/IToken.sol";
 import {IService} from "../contracts/interfaces/IService.sol";
 import {IdentityRegistryBridger} from "../contracts/8004/IdentityRegistryBridger.sol";
+import {ERC8004Operator} from "../contracts/8004/ERC8004Operator.sol";
 import {ServiceManager} from "../contracts/ServiceManager.sol";
+
+interface IReputationRegistry {
+    function giveFeedback(
+        uint256 agentId,
+        uint8 score,
+        bytes32 tag1,
+        bytes32 tag2,
+        string calldata feedbackUri,
+        bytes32 feedbackHash,
+        bytes calldata feedbackAuth
+    ) external;
+}
 
 contract BaseSetup is Test {
     Utils internal utils;
     IdentityRegistryBridger internal identityRegistryBridger;
     ServiceManager internal serviceManager;
+    ERC8004Operator internal erc8004Operator;
+
 
     address payable[] internal users;
     address internal deployer;
@@ -21,6 +36,9 @@ contract BaseSetup is Test {
     address internal constant SERVICE_MANAGER = 0x52beace64D3E5e59A03d8e5c7a1fC7b59f635b22;
     address internal constant safeMultisigWithRecoveryModule = 0x164e1CA068afeF66EFbB9cA19d904c44E8386fd9;
     address internal constant IDENTITY_REGISTRY_BRIDGER = 0x293b030678996ac600CAF53854177F60894DAF7A;
+    address internal constant ERC8004_OPERATOR = 0x6C4C45B5005547e9465Ac61B771cC9712BE44ae0;
+    address internal constant IDENTITY_REGISTRY = 0x8004a6090Cd10A7288092483047B097295Fb8847;
+    address internal constant REPUTATION_REGISTRY = 0x8004B8FD1A363aa02fDC07635C0c5F94f6Af5B7E;
     uint96 internal constant SECURITY_DEPOSIT = 1;
     uint32 internal constant THRESHOLD = 1;
 
@@ -38,6 +56,7 @@ contract BaseSetup is Test {
         // Deploy V2 oracle
         serviceManager = ServiceManager(SERVICE_MANAGER);
         identityRegistryBridger = IdentityRegistryBridger(IDENTITY_REGISTRY_BRIDGER);
+        erc8004Operator = ERC8004Operator(ERC8004_OPERATOR);
 
         // Get funds for deployer and operator
         vm.deal(deployer, 5 ether);
@@ -54,7 +73,7 @@ contract IdentityRegistry is BaseSetup {
         super.setUp();
     }
 
-    /// @dev Create 10 services and link them with identity registry by creating corresponding agents.
+    /// @dev Create services and link them with identity registry by creating corresponding agents.
     function testCreateServicesLinkIdentityRegistry() public {
         IService.AgentParams[] memory agentParams = new IService.AgentParams[](1);
         agentParams[0] = IService.AgentParams({slots: 1, bond: SECURITY_DEPOSIT});
@@ -85,5 +104,78 @@ contract IdentityRegistry is BaseSetup {
         // Create agents and link services in 2 sets
         identityRegistryBridger.linkServiceIdAgentIds(numServices / 2);
         identityRegistryBridger.linkServiceIdAgentIds(numServices / 2);
+    }
+
+    /// @dev Signs feedback requests by 8004 operator and leave feedback.
+        function testSignFeedbackRequestsAndExecute() public {
+        IService.AgentParams[] memory agentParams = new IService.AgentParams[](1);
+        agentParams[0] = IService.AgentParams({slots: 1, bond: SECURITY_DEPOSIT});
+
+        // Create service, activate, register and deploy
+        vm.startPrank(deployer);
+        // Create
+        uint256 serviceId = serviceManager.create(deployer, ETH_ADDRESS, configHash, agentIds, agentParams, THRESHOLD);
+
+        // Activate registration
+        serviceManager.activateRegistration{value: SECURITY_DEPOSIT}(serviceId);
+        vm.stopPrank();
+
+        // Register agent instances
+        address[] memory agentInstances = new address[](1);
+        agentInstances[0] = users[2];
+        vm.prank(operator);
+        serviceManager.registerAgents{value: SECURITY_DEPOSIT}(serviceId, agentInstances, agentIds);
+
+        // Deploy
+        vm.prank(deployer);
+        address multisig = serviceManager.deploy(serviceId, safeMultisigWithRecoveryModule, "");
+
+        // Create agent and link service
+        uint256[] memory agentIds = identityRegistryBridger.linkServiceIdAgentIds(serviceId);
+
+        // Authorize feedback
+        address clientAddress = users[3];
+        uint64 indexLimit = 2;
+        uint256 expiry = block.timestamp + 1000;
+        vm.prank(multisig);
+        erc8004Operator.authorizeFeedback(clientAddress, indexLimit, expiry);
+
+        // Leave feedback
+        uint256 agentId = agentIds[0];
+        uint8 score = 100;
+        bytes32 tag1;
+        bytes32 tag2;
+        string memory feedbackUri;
+        bytes32 feedbackHash;
+
+        // Encode first 224 bytes
+        bytes memory feedbackAuth = abi.encode(agentId, clientAddress, indexLimit, expiry, block.chainid,
+            IDENTITY_REGISTRY, address(erc8004Operator));
+
+        // We need signature of 65 bytes with v == 27 / 28
+        bytes32 r = bytes32(uint256(1));
+        bytes32 s = bytes32(uint256(1));
+        uint8 v = 27;
+        bytes memory signature = abi.encodePacked(r, s, v);
+        feedbackAuth = bytes.concat(feedbackAuth, signature);
+
+        // Try to leave feedback not by authorized client
+        vm.prank(deployer);
+        vm.expectRevert("Client mismatch");
+        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, tag1, tag2, feedbackUri, feedbackHash,
+            feedbackAuth);
+
+        // Give 2 feedbacks by client
+        vm.startPrank(clientAddress);
+        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, tag1, tag2, feedbackUri, feedbackHash,
+            feedbackAuth);
+        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, tag1, tag2, feedbackUri, feedbackHash,
+            feedbackAuth);
+
+        vm.expectRevert("IndexLimit exceeded");
+        // The 3rd is reverted as limit index is 2
+        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, tag1, tag2, feedbackUri, feedbackHash,
+            feedbackAuth);
+        vm.stopPrank();
     }
 }

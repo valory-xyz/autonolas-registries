@@ -31,11 +31,11 @@ fi
 
 identityRegistryAddress=$(jq -r '.identityRegistryAddress' $globals)
 validationRegistryAddress=$(jq -r '.validationRegistryAddress' $globals)
-identityRegistryBridgerAddress=$(jq -r '.identityRegistryBridgerAddress' $globals)
+identityRegistryBridgerProxyAddress=$(jq -r '.identityRegistryBridgerProxyAddress' $globals)
 
 contractName="ERC8004Operator"
 contractPath="contracts/8004/$contractName.sol:$contractName"
-constructorArgs="$identityRegistryAddress $validationRegistryAddress $identityRegistryBridgerAddress"
+constructorArgs="$identityRegistryAddress $validationRegistryAddress $identityRegistryBridgerProxyAddress"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
 # Get deployer based on the ledger flag

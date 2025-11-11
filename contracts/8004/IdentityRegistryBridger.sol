@@ -92,7 +92,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     event ManagerUpdated(address indexed manager);
     event OperatorUpdated(address indexed operator);
     event ImplementationUpdated(address indexed implementation);
-    event ServiceAgentLinked(uint256 indexed serviceId, uint256 indexed agentId, address serviceMultisig);
+    event ServiceAgentLinked(uint256 indexed serviceId, uint256 indexed agentId, address multisig);
     event AgentUriUpdated(uint256 indexed serviceId, uint256 indexed agentId, string tokenUri);
     event AgentMultisigUpdated(uint256 indexed serviceId, uint256 indexed agentId, address oldMultisig, address indexed newMultisig);
     event StartLinkServiceIdUpdated(uint256 indexed serviceId);
