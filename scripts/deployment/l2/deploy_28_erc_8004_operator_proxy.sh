@@ -14,27 +14,27 @@ derivationPath=$(jq -r '.derivationPath' $globals)
 chainId=$(jq -r '.chainId' $globals)
 networkURL=$(jq -r '.networkURL' $globals)
 
-# Getting L1 API key
-if [ $chainId == 1 ]; then
-  API_KEY=$ALCHEMY_API_KEY_MAINNET
+# Check for Polygon keys only since on other networks those are not needed
+if [ $chainId == 137 ]; then
+  API_KEY=$ALCHEMY_API_KEY_MATIC
   if [ "$API_KEY" == "" ]; then
-      echo "set ALCHEMY_API_KEY_MAINNET env variable"
+      echo "set ALCHEMY_API_KEY_MATIC env variable"
       exit 0
   fi
-elif [ $chainId == 11155111 ]; then
-    API_KEY=$ALCHEMY_API_KEY_SEPOLIA
+elif [ $chainId == 80002 ]; then
+    API_KEY=$ALCHEMY_API_KEY_AMOY
     if [ "$API_KEY" == "" ]; then
-        echo "set ALCHEMY_API_KEY_SEPOLIA env variable"
+        echo "set ALCHEMY_API_KEY_AMOY env variable"
         exit 0
     fi
 fi
 
-identityRegistryAddress=$(jq -r '.identityRegistryAddress' $globals)
-serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' $globals)
+erc8004OperatorAddress=$(jq -r '.erc8004OperatorAddress' $globals)
+proxyData=$(cast calldata "initialize()")
 
-contractName="IdentityRegistryBridger"
+contractName="IdentityRegistryBridgerProxy"
 contractPath="contracts/8004/$contractName.sol:$contractName"
-constructorArgs="$identityRegistryAddress $serviceRegistryAddress"
+constructorArgs="$erc8004OperatorAddress $proxyData"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
 # Get deployer based on the ledger flag
@@ -54,10 +54,10 @@ echo "Deployment of: $contractArgs"
 # Deploy the contract and capture the address
 execCmd="forge create --broadcast --rpc-url $networkURL$API_KEY $walletArgs $contractArgs"
 deploymentOutput=$($execCmd)
-identityRegistryBridgerAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
+erc8004OperatorProxyAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
 
 # Get output length
-outputLength=${#identityRegistryBridgerAddress}
+outputLength=${#erc8004OperatorProxyAddress}
 
 # Check for the deployed address
 if [ $outputLength != 42 ]; then
@@ -66,11 +66,11 @@ if [ $outputLength != 42 ]; then
 fi
 
 # Write new deployed contract back into JSON
-echo "$(jq '. += {"identityRegistryBridgerAddress":"'$identityRegistryBridgerAddress'"}' $globals)" > $globals
+echo "$(jq '. += {"erc8004OperatorProxyAddress":"'$erc8004OperatorProxyAddress'"}' $globals)" > $globals
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
-  contractParams="$identityRegistryBridgerAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address)" $constructorArgs)"
+  contractParams="$erc8004OperatorProxyAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,bytes)" $constructorArgs)"
   echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."
@@ -83,4 +83,4 @@ if [ "$contractVerification" == "true" ]; then
   fi
 fi
 
-echo "$contractName deployed at: $identityRegistryBridgerAddress"
+echo "$contractName deployed at: $erc8004OperatorProxyAddress"

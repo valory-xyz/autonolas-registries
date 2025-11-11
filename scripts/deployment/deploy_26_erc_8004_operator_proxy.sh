@@ -29,13 +29,12 @@ elif [ $chainId == 11155111 ]; then
     fi
 fi
 
-identityRegistryAddress=$(jq -r '.identityRegistryAddress' $globals)
-validationRegistryAddress=$(jq -r '.validationRegistryAddress' $globals)
-identityRegistryBridgerProxyAddress=$(jq -r '.identityRegistryBridgerProxyAddress' $globals)
+erc8004OperatorAddress=$(jq -r '.erc8004OperatorAddress' $globals)
+proxyData=$(cast calldata "initialize()")
 
-contractName="ERC8004Operator"
+contractName="IdentityRegistryBridgerProxy"
 contractPath="contracts/8004/$contractName.sol:$contractName"
-constructorArgs="$identityRegistryAddress $validationRegistryAddress $identityRegistryBridgerProxyAddress"
+constructorArgs="$erc8004OperatorAddress $proxyData"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
 # Get deployer based on the ledger flag
@@ -55,10 +54,10 @@ echo "Deployment of: $contractArgs"
 # Deploy the contract and capture the address
 execCmd="forge create --broadcast --rpc-url $networkURL$API_KEY $walletArgs $contractArgs"
 deploymentOutput=$($execCmd)
-erc8004OperatorAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
+erc8004OperatorProxyAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
 
 # Get output length
-outputLength=${#erc8004OperatorAddress}
+outputLength=${#erc8004OperatorProxyAddress}
 
 # Check for the deployed address
 if [ $outputLength != 42 ]; then
@@ -67,11 +66,11 @@ if [ $outputLength != 42 ]; then
 fi
 
 # Write new deployed contract back into JSON
-echo "$(jq '. += {"erc8004OperatorAddress":"'$erc8004OperatorAddress'"}' $globals)" > $globals
+echo "$(jq '. += {"erc8004OperatorProxyAddress":"'$erc8004OperatorProxyAddress'"}' $globals)" > $globals
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
-  contractParams="$erc8004OperatorAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address,address)" $constructorArgs)"
+  contractParams="$erc8004OperatorProxyAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,bytes)" $constructorArgs)"
   echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."
@@ -84,4 +83,4 @@ if [ "$contractVerification" == "true" ]; then
   fi
 fi
 
-echo "$contractName deployed at: $erc8004OperatorAddress"
+echo "$contractName deployed at: $erc8004OperatorProxyAddress"

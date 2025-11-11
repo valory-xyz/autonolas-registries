@@ -68,7 +68,7 @@ error OwnerOnly(address sender, address owner);
 /// @param manager Required sender address as a manager.
 error ManagerOnly(address sender, address manager);
 
-/// @dev The contract is already initialized.
+/// @dev Storage is already initialized.
 error AlreadyInitialized();
 
 /// @dev Agent Id is already assigned to service Id.
@@ -117,13 +117,13 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     address public immutable identityRegistry;
     // Service Registry address
     address public immutable serviceRegistry;
+    // 8004 Operator address
+    address public immutable operator;
 
     // Owner address
     address public owner;
     // Manager address
     address public manager;
-    // 8004 Operator address
-    address public operator;
 
     // Starting service Id for linking with agent Id
     uint256 public startLinkServiceId;
@@ -139,14 +139,16 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @dev IdentityRegistryBridger constructor.
     /// @param _identityRegistry 8004 Identity Registry address.
     /// @param _serviceRegistry Service Registry address.
-    constructor (address _identityRegistry, address _serviceRegistry) {
+    /// @param _operator ERC-8004 Operator address.
+    constructor (address _identityRegistry, address _serviceRegistry, address _operator) {
         // Check for zero addresses
-        if (_identityRegistry == address(0) || _serviceRegistry == address(0)) {
+        if (_identityRegistry == address(0) || _serviceRegistry == address(0) || _operator == address(0)) {
             revert ZeroAddress();
         }
 
         identityRegistry = _identityRegistry;
         serviceRegistry = _serviceRegistry;
+        operator = _operator;
     }
 
     /// @dev Registers 8004 agent Id corresponding to service Id.
@@ -230,12 +232,12 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @dev Changes contract owner address.
     /// @param newOwner New contract owner address.
     function changeOwner(address newOwner) external {
-        // Check for the ownership
+        // Check for ownership
         if (msg.sender != owner) {
             revert OwnerOnly(msg.sender, owner);
         }
 
-        // Check for the zero address
+        // Check for zero address
         if (newOwner == address(0)) {
             revert ZeroAddress();
         }
@@ -247,35 +249,18 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @dev Changes contract manager address.
     /// @param newManager New contract manager address.
     function changeManager(address newManager) external {
-        // Check for the ownership
+        // Check for ownership
         if (msg.sender != owner) {
             revert OwnerOnly(msg.sender, owner);
         }
 
-        // Check for the zero address
+        // Check for zero address
         if (newManager == address(0)) {
             revert ZeroAddress();
         }
 
         manager = newManager;
         emit ManagerUpdated(newManager);
-    }
-
-    /// @dev Changes ERC8004 operator address.
-    /// @param newOperator New ERC8004 operator  address.
-    function changeOperator(address newOperator) external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero address
-        if (newOperator == address(0)) {
-            revert ZeroAddress();
-        }
-
-        operator = newOperator;
-        emit OperatorUpdated(newOperator);
     }
 
     /// @dev Changes implementation contract address.
@@ -293,6 +278,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         }
 
         // Store implementation address under designated storage slot
+        // solhint-disable-next-line avoid-low-level-calls
         assembly {
             sstore(PROXY_IDENTITY_REGISTRY_BRIDGER, implementation)
         }

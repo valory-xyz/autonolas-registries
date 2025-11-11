@@ -29,6 +29,9 @@ error ZeroValue();
 /// @param owner Required sender address as an owner.
 error OwnerOnly(address sender, address owner);
 
+/// @dev Storage is already initialized.
+error AlreadyInitialized();
+
 /// @dev Caught reentrancy violation.
 error ReentrancyGuard();
 
@@ -38,6 +41,8 @@ error ReentrancyGuard();
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract ERC8004Operator {
     event OwnerUpdated(address indexed owner);
+    event IdentityRegistryBridgerUpdated(address indexed identityRegistryBridger);
+    event ImplementationUpdated(address indexed implementation);
     event FeedbackAuthSubmitted(address indexed sender, uint256 indexed agentId, address indexed clientAddress,
         uint256 indexLimit, uint256 expiry, bytes32 digest);
     event ValidationRequestSubmitted(address indexed sender, uint256 indexed agentId, address indexed validatorAddress,
@@ -49,14 +54,17 @@ contract ERC8004Operator {
     string public constant AGENT_WALLET_METADATA_KEY = "agentWallet";
     // Contract signature validation value: bytes4(keccak256("isValidSignature(bytes32,bytes)")
     bytes4 constant internal EIP1271_MAGIC_VALUE = 0x1626ba7e;
+    // ERC-8004 Operator proxy address slot
+    // keccak256("PROXY_ERC_8004_OPERATOR") = "0xa9f38cc44a40040970dc2e16fc2bd2246d1a0f51a63d37e96d48630d0ff81a38"
+    bytes32 public constant PROXY_ERC_8004_OPERATOR = 0xa9f38cc44a40040970dc2e16fc2bd2246d1a0f51a63d37e96d48630d0ff81a38;
 
     // Identity Registry 8004 address
     address public immutable identityRegistry;
     // Validation Registry address
     address public immutable validationRegistry;
-    // Identity Registry Bridger address
-    address public immutable identityRegistryBridger;
 
+    // Identity Registry Bridger address
+    address public identityRegistryBridger;
     // Owner address
     address public owner;
 
@@ -66,38 +74,17 @@ contract ERC8004Operator {
     // Mapping of signed hashes
     mapping(bytes32 => bool) public mapSignedHashes;
 
-    /// @dev IdentityRegistryBridger constructor.
+    /// @dev ERC8004Operator constructor.
     /// @param _identityRegistry 8004 Identity Registry address.
     /// @param _validationRegistry Validation Registry address.
-    /// @param _identityRegistryBridger 8004 Operator address.
-    constructor (address _identityRegistry, address _validationRegistry, address _identityRegistryBridger) {
+    constructor (address _identityRegistry, address _validationRegistry) {
         // Check for zero addresses
-        if (_identityRegistry == address(0) || _validationRegistry == address(0) || _identityRegistryBridger == address(0)) {
+        if (_identityRegistry == address(0) || _validationRegistry == address(0)) {
             revert ZeroAddress();
         }
 
         identityRegistry = _identityRegistry;
         validationRegistry = _validationRegistry;
-        identityRegistryBridger = _identityRegistryBridger;
-
-        owner = msg.sender;
-    }
-
-    /// @dev Changes contract owner address.
-    /// @param newOwner New contract owner address.
-    function changeOwner(address newOwner) external {
-        // Check for the ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for the zero address
-        if (newOwner == address(0)) {
-            revert ZeroAddress();
-        }
-
-        owner = newOwner;
-        emit OwnerUpdated(newOwner);
     }
 
     /// @dev Checks agent wallet validity.
@@ -114,6 +101,72 @@ contract ERC8004Operator {
         if (msg.sender != agentWallet) {
             revert OwnerOnly(msg.sender, agentWallet);
         }
+    }
+
+    /// @dev Initializes proxy contract storage.
+    function initialize() external {
+        // Check if contract is already initialized
+        if (owner != address(0)) {
+            revert AlreadyInitialized();
+        }
+
+        owner = msg.sender;
+    }
+
+    /// @dev Changes contract owner address.
+    /// @param newOwner New contract owner address.
+    function changeOwner(address newOwner) external {
+        // Check for ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for zero address
+        if (newOwner == address(0)) {
+            revert ZeroAddress();
+        }
+
+        owner = newOwner;
+        emit OwnerUpdated(newOwner);
+    }
+
+    /// @dev Changes identity registry bridger address.
+    /// @param newIdentityRegistryBridger 8004 Operator address.
+    function changeIdentityRegistryBridger(address newIdentityRegistryBridger) external {
+        // Check for ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for zero address
+        if (newIdentityRegistryBridger == address(0)) {
+            revert ZeroAddress();
+        }
+
+        identityRegistryBridger = newIdentityRegistryBridger;
+        emit IdentityRegistryBridgerUpdated(newIdentityRegistryBridger);
+    }
+
+    /// @dev Changes implementation contract address.
+    /// @notice Make sure implementation contract has function to change its implementation.
+    /// @param implementation Implementation contract address.
+    function changeImplementation(address implementation) external {
+        // Check for contract ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for zero address
+        if (implementation == address(0)) {
+            revert ZeroAddress();
+        }
+
+        // Store implementation address under designated storage slot
+        // solhint-disable-next-line avoid-low-level-calls
+        assembly {
+            sstore(PROXY_ERC_8004_OPERATOR, implementation)
+        }
+        emit ImplementationUpdated(implementation);
     }
 
     /// @dev Authorizes feedback for client by corresponding agent.

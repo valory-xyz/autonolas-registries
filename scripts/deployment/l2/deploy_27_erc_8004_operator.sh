@@ -31,11 +31,10 @@ fi
 
 identityRegistryAddress=$(jq -r '.identityRegistryAddress' $globals)
 validationRegistryAddress=$(jq -r '.validationRegistryAddress' $globals)
-identityRegistryBridgerAddress=$(jq -r '.identityRegistryBridgerAddress' $globals)
 
 contractName="ERC8004Operator"
 contractPath="contracts/8004/$contractName.sol:$contractName"
-constructorArgs="$identityRegistryAddress $validationRegistryAddress $identityRegistryBridgerAddress"
+constructorArgs="$identityRegistryAddress $validationRegistryAddress"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
 # Get deployer based on the ledger flag
@@ -71,7 +70,7 @@ echo "$(jq '. += {"erc8004OperatorAddress":"'$erc8004OperatorAddress'"}' $global
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
-  contractParams="$erc8004OperatorAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address,address)" $constructorArgs)"
+  contractParams="$erc8004OperatorAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address)" $constructorArgs)"
   echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."
