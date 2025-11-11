@@ -46,7 +46,7 @@ contract ERC8004Operator {
     // Version number
     string public constant VERSION = "0.1.0";
     // Agent wallet multisig metadata key
-    string public constant AGENT_WALLET_MULTISIG_METADATA_KEY = "agentWallet";
+    string public constant AGENT_WALLET_METADATA_KEY = "agentWallet";
     // Contract signature validation value: bytes4(keccak256("isValidSignature(bytes32,bytes)")
     bytes4 constant internal EIP1271_MAGIC_VALUE = 0x1626ba7e;
 
@@ -100,10 +100,12 @@ contract ERC8004Operator {
         emit OwnerUpdated(newOwner);
     }
 
+    /// @dev Checks agent wallet validity.
+    /// @param agentId Agent Id.
     function _checkAgentWallet(uint256 agentId) internal view {
         // Get agent wallet multisig address in bytes
         bytes memory agentWalletBytes =
-            IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_MULTISIG_METADATA_KEY);
+            IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
 
         // Decode agent wallet address
         address agentWallet = abi.decode(agentWalletBytes, (address));
@@ -115,6 +117,9 @@ contract ERC8004Operator {
     }
 
     /// @dev Authorizes feedback for client by corresponding agent.
+    /// @param clientAddress Client address.
+    /// @param indexLimit Feedback index limit.
+    /// @param expiry Expiry timestamp.
     function authorizeFeedback(address clientAddress, uint64 indexLimit, uint256 expiry) external {
         // Reentrancy guard
         if (_locked > 1) {
@@ -162,6 +167,10 @@ contract ERC8004Operator {
     }
 
     /// @dev Agent validation request.
+    /// @param validatorAddress Validator address.
+    /// @param agentId Agent Id.
+    /// @param requestUri Request URI.
+    /// @param requestHash Request hash.
     function validationRequest(
         address validatorAddress,
         uint256 agentId,
@@ -186,6 +195,8 @@ contract ERC8004Operator {
     }
 
     /// @dev Should return whether the signature provided is valid for the provided data.
+    /// @param messageHash Message hash.
+    /// @return magicValue Contract ERC1271 magic value.
     function isValidSignature(bytes32 messageHash, bytes memory) external view returns (bytes4 magicValue) {
         if (mapSignedHashes[messageHash]) {
             magicValue = EIP1271_MAGIC_VALUE;
