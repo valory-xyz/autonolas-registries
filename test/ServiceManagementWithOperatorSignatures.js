@@ -237,7 +237,7 @@ describe("ServiceManagementWithOperatorSignatures", function () {
             signMessageData = [await safeContracts.safeSignMessage(serviceOwnerOwners[0], serviceOwnerMultisig, txHashData, 0),
                 await safeContracts.safeSignMessage(serviceOwnerOwners[1], serviceOwnerMultisig, txHashData, 0)];
             await safeContracts.executeTx(serviceOwnerMultisig, txHashData, signMessageData, 0);
-            return;
+
             // Check that the unbond nonce has changed
             expect(await serviceManager.getOperatorUnbondNonce(operator.address, serviceId)).to.equal(unbondNonce + 1);
 
