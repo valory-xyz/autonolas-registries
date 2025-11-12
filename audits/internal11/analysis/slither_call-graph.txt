@@ -1,0 +1,18 @@
+'solc --version' running
+'solc ./ERC8004Operator-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal11/analysis/contracts' running
+'solc --version' running
+'solc ./IdentityRegistryBridger-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal11/analysis/contracts' running
+INFO:Printers:Call Graph: ./ERC8004Operator-flatten.sol.all_contracts.call-graph.dot
+Call Graph: ./ERC8004Operator-flatten.sol.IIdentityRegistry.call-graph.dot
+Call Graph: ./ERC8004Operator-flatten.sol.IIdentityRegistryBridger.call-graph.dot
+Call Graph: ./ERC8004Operator-flatten.sol.IValidationRegistry.call-graph.dot
+Call Graph: ./ERC8004Operator-flatten.sol.ERC8004Operator.call-graph.dot
+
+INFO:Printers:Call Graph: ./IdentityRegistryBridger-flatten.sol.all_contracts.call-graph.dot
+Call Graph: ./IdentityRegistryBridger-flatten.sol.ERC721.call-graph.dot
+Call Graph: ./IdentityRegistryBridger-flatten.sol.IERC721.call-graph.dot
+Call Graph: ./IdentityRegistryBridger-flatten.sol.IIdentityRegistry.call-graph.dot
+Call Graph: ./IdentityRegistryBridger-flatten.sol.IServiceRegistry.call-graph.dot
+Call Graph: ./IdentityRegistryBridger-flatten.sol.IdentityRegistryBridger.call-graph.dot
+
+INFO:Slither:. analyzed (10 contracts)

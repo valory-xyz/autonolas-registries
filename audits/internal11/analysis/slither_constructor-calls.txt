@@ -1,0 +1,68 @@
+'solc --version' running
+'solc ./ERC8004Operator-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal11/analysis/contracts' running
+'solc --version' running
+'solc ./IdentityRegistryBridger-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal11/analysis/contracts' running
+INFO:Printers:
+###############################
+####### ERC8004Operator #######
+###############################
+
+## Constructor Call Sequence
+	- ERC8004Operator
+
+## Constructor Definitions
+
+### ERC8004Operator
+
+     constructor (address _identityRegistry, address _validationRegistry, address _identityRegistryBridger) {
+        // Check for zero addresses
+        if (_identityRegistry == address(0) || _validationRegistry == address(0) || _identityRegistryBridger == address(0)) {
+            revert ZeroAddress();
+        }
+
+        identityRegistry = _identityRegistry;
+        validationRegistry = _validationRegistry;
+        identityRegistryBridger = _identityRegistryBridger;
+
+        owner = msg.sender;
+    }
+
+INFO:Printers:
+######################
+####### ERC721 #######
+######################
+
+## Constructor Call Sequence
+	- ERC721
+
+## Constructor Definitions
+
+### ERC721
+
+     constructor(string memory _name, string memory _symbol) {
+        name = _name;
+        symbol = _symbol;
+    }
+
+#######################################
+####### IdentityRegistryBridger #######
+#######################################
+
+## Constructor Call Sequence
+	- IdentityRegistryBridger
+
+## Constructor Definitions
+
+### IdentityRegistryBridger
+
+     constructor (address _identityRegistry, address _serviceRegistry) {
+        // Check for zero addresses
+        if (_identityRegistry == address(0) || _serviceRegistry == address(0)) {
+            revert ZeroAddress();
+        }
+
+        identityRegistry = _identityRegistry;
+        serviceRegistry = _serviceRegistry;
+    }
+
+INFO:Slither:. analyzed (10 contracts)
