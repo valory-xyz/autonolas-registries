@@ -74,6 +74,9 @@ interface IERC721 {
     function tokenURI(uint256 tokenId) external view returns (string memory);
 }
 
+/// @dev Storage is already initialized.
+error AlreadyInitialized();
+
 /// @title Service Manager - Periphery smart contract for managing services with custom ERC20 tokens or ETH
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
@@ -81,8 +84,13 @@ interface IERC721 {
 contract ServiceManager is GenericManager, OperatorSignedHashes {
     event OperatorWhitelistUpdated(address indexed operatorWhitelist);
     event IdentityRegistryBridgerUpdated(address indexed identityRegistryBridger);
+    event ImplementationUpdated(address indexed implementation);
     event CreateMultisig(address indexed multisig);
 
+    // Service Manager proxy address slot
+    // keccak256("PROXY_SERVICE_MANAGER") = "0xe39e69948a448ce9239ad71b908b6c5b46225f86ffa735b25a8cd64080315855"
+    bytes32 public constant PROXY_SERVICE_MANAGER = 0xe39e69948a448ce9239ad71b908b6c5b46225f86ffa735b25a8cd64080315855;
+    // A well-known representation of ETH as address
     address public constant ETH_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     // Bond wrapping constant
     uint96 public constant BOND_WRAPPER = 1;
@@ -119,6 +127,14 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
         identityRegistryBridger = _identityRegistryBridger;
         operatorWhitelist = _operatorWhitelist;
+    }
+
+    /// @dev Initializes proxy contract storage.
+    function initialize() external {
+        // Check if contract is already initialized
+        if (owner != address(0)) {
+            revert AlreadyInitialized();
+        }
 
         owner = msg.sender;
     }
@@ -145,6 +161,27 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
 
         identityRegistryBridger = newIdentityRegistryBridger;
         emit IdentityRegistryBridgerUpdated(newIdentityRegistryBridger);
+    }
+
+    /// @dev Changes implementation contract address.
+    /// @notice Make sure implementation contract has function to change its implementation.
+    /// @param implementation Implementation contract address.
+    function changeImplementation(address implementation) external {
+        // Check for contract ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        // Check for zero address
+        if (implementation == address(0)) {
+            revert ZeroAddress();
+        }
+
+        // Store implementation address under designated storage slot
+        assembly {
+            sstore(PROXY_SERVICE_MANAGER, implementation)
+        }
+        emit ImplementationUpdated(implementation);
     }
 
     /// @dev Creates a new service.

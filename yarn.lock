@@ -2177,10 +2177,10 @@ ethereum-cryptography@^2.0.0, ethereum-cryptography@^2.1.2, ethereum-cryptograph
     "@scure/bip32" "1.4.0"
     "@scure/bip39" "1.3.0"
 
-ethereum-sources-downloader@^0.2.1:
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/ethereum-sources-downloader/-/ethereum-sources-downloader-0.2.1.tgz#67981ebf7c2fbdff48d7fc13f378acc579117c5a"
-  integrity sha512-iL05RrUKuwVbV/8tpFF7HhH+8d7ivMqb8C3j+uocdyB/y2CUsDs1ruQdg3GihRSUwD7+NpvFrnjkYGYpihorKQ==
+ethereum-sources-downloader@^0.2.3:
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/ethereum-sources-downloader/-/ethereum-sources-downloader-0.2.3.tgz#56ab53485f617cc7a55258bff8b6249d279083d0"
+  integrity sha512-+nnqoVOGfgxGp0WUMzy3HNawrS8UCd70Z5hgpV7UnI9E0xIFdSusXxTfmzZjuVbxzOzNuyF6tWYbJ87bvMt5jQ==
   dependencies:
     commander "^9.3.0"
     fast-json-stable-stringify "^2.1.0"

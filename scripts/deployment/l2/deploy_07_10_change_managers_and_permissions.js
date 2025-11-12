@@ -14,7 +14,7 @@ async function main() {
     const gasPriceInGwei = parsedData.gasPriceInGwei;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
-    const serviceManagerAddress = parsedData.serviceManagerAddress;
+    const serviceManagerProxyAddress = parsedData.serviceManagerProxyAddress;
     const gnosisSafeMultisigImplementationAddress = parsedData.gnosisSafeMultisigImplementationAddress;
     const gnosisSafeSameAddressMultisigImplementationAddress = parsedData.gnosisSafeSameAddressMultisigImplementationAddress;
 
@@ -55,14 +55,14 @@ async function main() {
     // Transaction signing and execution
     // 7. EOA to change the manager of ServiceRegistry to ServiceManager calling `changeManager(ServiceManager)`;
     console.log("7. You are signing the following transaction: serviceRegistry.connect(EOA).changeManager()");
-    let result = await serviceRegistry.connect(EOA).changeManager(serviceManagerAddress, { gasPrice });
+    let result = await serviceRegistry.connect(EOA).changeManager(serviceManagerProxyAddress, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceRegistryAddress);
     console.log("Transaction:", result.hash);
 
     // 8. EOA to change the manager of ServiceRegistryTokenUtility to ServiceManager calling `changeManager(ServiceManager)`;
-    console.log("8. You are signing the following transaction: serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerAddress)");
-    result = await serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerAddress, { gasPrice });
+    console.log("8. You are signing the following transaction: serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerProxyAddress)");
+    result = await serviceRegistryTokenUtility.connect(EOA).changeManager(serviceManagerProxyAddress, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceRegistryTokenUtilityAddress);
     console.log("Transaction:", result.hash);

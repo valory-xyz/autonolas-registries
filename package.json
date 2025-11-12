@@ -49,7 +49,7 @@
     "@ethersproject/solidity": "^5.7.0",
     "@ethersproject/wallet": "^5.7.0",
     "eth-permit": "^0.2.3",
-    "ethereum-sources-downloader": "^0.2.1",
+    "ethereum-sources-downloader": "^0.2.3",
     "@arbitrum/sdk": "^v3.3.3"
   }
 }

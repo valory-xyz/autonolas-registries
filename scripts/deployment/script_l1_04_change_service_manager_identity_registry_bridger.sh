@@ -24,7 +24,7 @@ derivationPath=$(jq -r '.derivationPath' $globals)
 chainId=$(jq -r '.chainId' $globals)
 networkURL=$(jq -r '.networkURL' $globals)
 
-serviceManagerAddress=$(jq -r '.serviceManagerAddress' $globals)
+serviceManagerProxyAddress=$(jq -r '.serviceManagerProxyAddress' $globals)
 identityRegistryBridgerProxyAddress=$(jq -r '.identityRegistryBridgerProxyAddress' $globals)
 
 # Getting L1 API key
@@ -55,14 +55,14 @@ fi
 castSendHeader="cast send --rpc-url $networkURL$API_KEY $walletArgs"
 
 echo "${green}Change manager for IdentityRegistryBridgerProxy${reset}"
-castArgs="$identityRegistryBridgerProxyAddress changeManager(address) $serviceManagerAddress"
+castArgs="$identityRegistryBridgerProxyAddress changeManager(address) $serviceManagerProxyAddress"
 echo $castArgs
 castCmd="$castSendHeader $castArgs"
 result=$($castCmd)
 echo "$result" | grep "status"
 
 echo "${green}Set identity registry bridger for ServiceRManager${reset}"
-castArgs="$serviceManagerAddress setIdentityRegistryBridger(address) $identityRegistryBridgerProxyAddress"
+castArgs="$serviceManagerProxyAddress setIdentityRegistryBridger(address) $identityRegistryBridgerProxyAddress"
 echo $castArgs
 castCmd="$castSendHeader $castArgs"
 result=$($castCmd)

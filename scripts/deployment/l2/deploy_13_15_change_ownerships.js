@@ -14,7 +14,7 @@ async function main() {
     const gasPriceInGwei = parsedData.gasPriceInGwei;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
-    const serviceManagerAddress = parsedData.serviceManagerAddress;
+    const serviceManagerProxyAddress = parsedData.serviceManagerProxyAddress;
     let bridgeMediatorAddress = parsedData.bridgeMediatorAddress;
 
     let networkURL = parsedData.networkURL;
@@ -47,7 +47,7 @@ async function main() {
     // Get all the contracts
     const serviceRegistry = await ethers.getContractAt("ServiceRegistryL2", serviceRegistryAddress);
     const serviceRegistryTokenUtility = await ethers.getContractAt("ServiceRegistryTokenUtility", serviceRegistryTokenUtilityAddress);
-    const serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerAddress);
+    const serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerProxyAddress);
 
     // Gas pricing
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
@@ -71,7 +71,7 @@ async function main() {
     console.log("15. You are signing the following transaction: serviceManager.connect(EOA).changeOwner()");
     result = await serviceManager.connect(EOA).changeOwner(bridgeMediatorAddress, { gasPrice });
     // Transaction details
-    console.log("Contract address:", serviceManagerAddress);
+    console.log("Contract address:", serviceManagerProxyAddress);
     console.log("Transaction:", result.hash);
 }
 

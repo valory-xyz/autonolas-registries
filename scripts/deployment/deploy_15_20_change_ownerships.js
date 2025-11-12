@@ -16,7 +16,7 @@ async function main() {
     const agentRegistryAddress = parsedData.agentRegistryAddress;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const registriesManagerAddress = parsedData.registriesManagerAddress;
-    const serviceManagerAddress = parsedData.serviceManagerAddress;
+    const serviceManagerProxyAddress = parsedData.serviceManagerProxyAddress;
     const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
     const timelockAddress = parsedData.timelockAddress;
     let EOA;
@@ -39,7 +39,7 @@ async function main() {
     const serviceRegistry = await ethers.getContractAt("ServiceRegistry", serviceRegistryAddress);
     const serviceRegistryTokenUtility = await ethers.getContractAt("ServiceRegistryTokenUtility", serviceRegistryTokenUtilityAddress);
     const registriesManager = await ethers.getContractAt("RegistriesManager", registriesManagerAddress);
-    const serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerAddress);
+    const serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerProxyAddress);
 
     // Transaction signing and execution
     // 15. EOA to transfer ownership rights of ComponentRegistry to Timelock calling `changeOwner(Timelock)`;
@@ -86,8 +86,8 @@ async function main() {
     console.log("You are signing the following transaction: serviceManager.connect(EOA).changeOwner()");
     result = await serviceManager.connect(EOA).changeOwner(timelockAddress);
     // Transaction details
-    console.log("Contract name: ServiceManager");
-    console.log("Contract address:", serviceManagerAddress);
+    console.log("Contract name: ServiceManagerProxy");
+    console.log("Contract address:", serviceManagerProxyAddress);
     console.log("Transaction:", result.hash);
 
     // Data verification
