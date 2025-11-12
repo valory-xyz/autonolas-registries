@@ -4,9 +4,9 @@ const { ethers } = require("ethers");
 const fs = require("fs");
 
 async function buildCalldataForChain({
-  globalsFile,
-  mainnetProvider,
-  l2Label,
+    globalsFile,
+    mainnetProvider,
+    l2Label,
 }) {
 
   // Load per-chain globals
