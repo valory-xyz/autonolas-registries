@@ -69,15 +69,42 @@ As a result, if the first service in the range is not activated (multisig = 0), 
 ```
 []
 
-### Medium/Notes. Double check no-revert in updated ServiceManager
-```
 
-        // 8004 Identity Registry workflow
-        if (identityRegistryBridger != address(0)) {
-            // Get updated service token URI
-            string memory updatedTokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
+### Medium/Notes. Double-check design
 ```
+IIdentityRegistryBridger(identityRegistryBridger).updateAgentWallet(serviceId, lastMultisig, multisig); <-- It's in normal workflow called in one place. Is that enough for all cases?
+ref: ServiceManager
+ref: `Double-check in manager controlled function`
 
+I mean, can such a desynchronization happen in the future, after the execution `updateOrLinkServiceIdAgentIds`
+Keeping in mind that this function is executed only once
+                uint256 agentId = agentIds[i];
+
+                // Get agent Id value through multisig
+                uint256 checkAgent = mapMultisigAgentIds[multisig];
+
+                // Check for agent Id difference
+                if (checkAgent != agentId) {
+                    // Check agentWallet metadata
+                    bytes memory agentWallet =
+                        IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
+                    // Decode multisig value
+                    address oldMultisig = abi.decode(agentWallet, (address));
+
+                    // Update agentWallet metadata and mapping
+                    _updateAgentWallet(serviceId, agentId, oldMultisig, multisig);
+                }
+
+                // Get tokenUri
+                string memory checkTokenUri = IERC721(identityRegistry).tokenURI(agentId);
+
+                // Check for tokenUri difference
+                if (keccak256(bytes(checkTokenUri)) != keccak256(bytes(tokenUri))) {
+                    // Updated tokenUri in 8004 Identity Registry
+                    _updateAgentUri(serviceId, agentId, tokenUri);
+                }
+```
+[]
 
 ### Low/Notes. Double-check in manager controlled function.
 ```
@@ -89,7 +116,9 @@ if multisig != oldMultisig then revert()
 This could overwrite data for the old multisig (not for this serviceId) by mistake. 
 mapMultisigAgentIds[oldMultisig] = 0;
 
-Always checked in ServiceManager (manager)?
+Always checked in ServiceManager (manager)? 
+Ref: updateOrLinkServiceIdAgentIds - contradicts the hypothesis that the old multisig should be valid.
+oldMultisig != IServiceRegistry(serviceRegistry).mapServices(serviceId) by design updateOrLinkServiceIdAgentIds
 ```
 []
 
