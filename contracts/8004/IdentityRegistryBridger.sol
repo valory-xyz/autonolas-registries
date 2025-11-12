@@ -371,6 +371,12 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @param numServices Number of services to link.
     /// @return agentIds Set of 8004 agent Ids.
     function linkServiceIdAgentIds(uint256 numServices) external returns (uint256[] memory agentIds) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Check for zero value
         if (numServices == 0) {
             revert ZeroValue();
@@ -381,15 +387,15 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         uint256 maxServiceId = IServiceRegistry(serviceRegistry).totalSupply() + 1;
 
         // Get first and last service Ids bound
-        uint256 serviceId = startLinkServiceId;
+        uint256 startServiceId = startLinkServiceId;
         // Note that lastServiceId is not going to be processed, as there is a strict (< numServices) condition
         // lastServiceId is going to be starting service Id in next iteration: processing [serviceId, lastServiceId)
-        uint256 lastServiceId = serviceId + numServices;
+        uint256 lastServiceId = startServiceId + numServices;
 
         // Adjust last service Id if needed
         if (lastServiceId - 1 > maxServiceId) {
             numServices = lastServiceId - maxServiceId;
-            lastServiceId = serviceId + numServices;
+            lastServiceId = startServiceId + numServices;
         }
 
         // Allocate agentIds array
@@ -397,13 +403,11 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Assign agent Ids
         for (uint256 i = 0; i < numServices; ++i) {
+            uint256 serviceId = startServiceId + i;
             // Get service multisig
             (,address multisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
             // Skip services that were never deployed
             if (multisig == address(0)) {
-                // Increase service Id
-                serviceId++;
-
                 continue;
             }
 
@@ -417,15 +421,14 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
                 // Register corresponding 8004 agent Id
                 agentIds[i] = _register(serviceId, multisig, tokenUri);
             }
-
-            // Increase service Id
-            serviceId++;
         }
 
         // Record start link service Id for next iteration
         startLinkServiceId = lastServiceId;
 
         emit StartLinkServiceIdUpdated(lastServiceId);
+
+        _locked = 1;
     }
 
     /// @dev Updates or links service Ids with registered 8004 agent Ids.
@@ -433,6 +436,12 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @param serviceIds Set of service Ids.
     /// @return agentIds Corresponding set of 8004 agent Ids.
     function updateOrLinkServiceIdAgentIds(uint256[] memory serviceIds) public returns (uint256[] memory agentIds) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Get number of service Ids
         uint256 numServices = serviceIds.length;
         // Check for zero value
@@ -508,5 +517,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
                 }
             }
         }
+
+        _locked = 1;
     }
 }

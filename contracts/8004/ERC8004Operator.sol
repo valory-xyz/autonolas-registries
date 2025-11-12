@@ -54,6 +54,8 @@ contract ERC8004Operator {
     string public constant AGENT_WALLET_METADATA_KEY = "agentWallet";
     // Contract signature validation value: bytes4(keccak256("isValidSignature(bytes32,bytes)")
     bytes4 constant internal EIP1271_MAGIC_VALUE = 0x1626ba7e;
+    // EIP-1271 invalid signature value return
+    bytes4 constant internal EIP1271_FAILURE_VALUE = 0xffffffff;
     // ERC-8004 Operator proxy address slot
     // keccak256("PROXY_ERC_8004_OPERATOR") = "0xa9f38cc44a40040970dc2e16fc2bd2246d1a0f51a63d37e96d48630d0ff81a38"
     bytes32 public constant PROXY_ERC_8004_OPERATOR = 0xa9f38cc44a40040970dc2e16fc2bd2246d1a0f51a63d37e96d48630d0ff81a38;
@@ -71,8 +73,8 @@ contract ERC8004Operator {
     // Reentrancy lock
     uint256 internal _locked = 1;
 
-    // Mapping of signed hashes
-    mapping(bytes32 => bool) public mapSignedHashes;
+    // Mapping of signed hash => signer
+    mapping(bytes32 => address) public mapSignedHashes;
 
     /// @dev ERC8004Operator constructor.
     /// @param _identityRegistry 8004 Identity Registry address.
@@ -212,11 +214,11 @@ contract ERC8004Operator {
         }
 
         // Record "signed" digest
-        mapSignedHashes[digest] = true;
+        mapSignedHashes[digest] = msg.sender;
 
         emit FeedbackAuthSubmitted(msg.sender, agentId, clientAddress, indexLimit, expiry, digest);
 
-        _locked - 1;
+        _locked = 1;
     }
 
     /// @dev Agent validation request.
@@ -244,15 +246,36 @@ contract ERC8004Operator {
 
         emit ValidationRequestSubmitted(msg.sender, agentId, validatorAddress, requestUri, requestHash);
 
-        _locked - 1;
+        _locked = 1;
     }
 
     /// @dev Should return whether the signature provided is valid for the provided data.
     /// @param messageHash Message hash.
-    /// @return magicValue Contract ERC1271 magic value.
-    function isValidSignature(bytes32 messageHash, bytes memory) external view returns (bytes4 magicValue) {
-        if (mapSignedHashes[messageHash]) {
-            magicValue = EIP1271_MAGIC_VALUE;
+    /// @param signature Signature bytes.
+    /// @return Contract ERC1271 magic or failure value.
+    function isValidSignature(bytes32 messageHash, bytes memory signature) external view returns (bytes4) {
+        // Get message hash signer
+        address signer = mapSignedHashes[messageHash];
+
+        // Check signature validity
+        if (signer != address(0) && signature.length == 65) {
+            // Decompose signature
+            bytes32 r; bytes32 s; uint8 v;
+            // solhint-disable-next-line avoid-low-level-calls
+            assembly {
+                r := mload(add(signature, 0x20))
+                s := mload(add(signature, 0x40))
+                v := byte(0, mload(add(signature, 0x60)))
+            }
+
+            // Get signer address from r
+            address checkSigner = address(uint160(uint256(r)));
+            // Check for signer validity
+            if (signer == checkSigner) {
+                return EIP1271_MAGIC_VALUE;
+            }
         }
+
+        return EIP1271_FAILURE_VALUE;
     }
 }

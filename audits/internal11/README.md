@@ -39,7 +39,7 @@ grep -r _locked ./ | grep "-"
 ./ERC8004Operator.sol:        _locked - 1;
 ./ERC8004Operator.sol:        _locked - 1;
 ```
-[]
+[x] Fixed
 
 ### High/Medium. No proxy pattern in ERC8004Operator 
 ```
@@ -50,7 +50,7 @@ There is no guarantee that the ABI will remain the same.
 2. It is risky to leave an unmodifiable implementation that will be used in thousands of agents.
 Recommendation: Proxy pattern for the operator.
 ```
-[]
+[x] Fixed, transformed into proxy
 
 ### Medium. Bug in continue
 ```
@@ -67,7 +67,7 @@ As a result, if the first service in the range is not activated (multisig = 0), 
             }
 
 ```
-[]
+[x] Fixed
 
 
 ### Medium/Notes. Double-check design
@@ -104,7 +104,7 @@ Keeping in mind that this function is executed only once
                     _updateAgentUri(serviceId, agentId, tokenUri);
                 }
 ```
-[]
+[x] Noted, checked in several iterations
 
 ### Low/Notes. Double-check in manager controlled function.
 ```
@@ -120,7 +120,7 @@ Always checked in ServiceManager (manager)?
 Ref: updateOrLinkServiceIdAgentIds - contradicts the hypothesis that the old multisig should be valid.
 oldMultisig != IServiceRegistry(serviceRegistry).mapServices(serviceId) by design updateOrLinkServiceIdAgentIds
 ```
-[]
+[x] Noted, verified
 
 ### Medium/Low. No Reentrancy protection
 ```
@@ -128,7 +128,7 @@ Missing in function:
 linkServiceIdAgentIds
 updateOrLinkServiceIdAgentIds
 ```
-[] 
+[x] Fixed 
 
 ### Low. Implementation 1271 more standard way. To discussion
 ```
@@ -165,7 +165,7 @@ function isValidSignature(bytes32 hash, bytes memory signature)
         return FAILVALUE;
     }
 ```
-[]
+[x] Fixed
 
 ### Low. Optional: return 0xffffffff
 ```
@@ -189,7 +189,6 @@ bytes4 internal constant _INTERFACE_ID_INVALID = 0xffffffff;
 Therefore, many SDKs/validators expect either 0x1626ba7e or 0xffffffff, but the standard doesn't require it.
 Not MUST by standard!!!
 ```
-[]
-
+[x] Fixed
 
 
