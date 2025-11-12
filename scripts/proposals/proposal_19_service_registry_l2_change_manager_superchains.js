@@ -9,80 +9,80 @@ async function buildCalldataForChain({
     l2Label,
 }) {
 
-  // Load per-chain globals
-  const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
-  const parsedData = JSON.parse(dataFromJSON);
+// Load per-chain globals
+const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
+const parsedData = JSON.parse(dataFromJSON);
 
-  // L2 provider
-  const l2URL = parsedData.networkURL;
-  const l2Provider = new ethers.providers.JsonRpcProvider(l2URL);
-  await l2Provider.getBlockNumber().then((n) =>
-    console.log(`Current block number ${l2Label}: ${n}`)
-  );
-
-
-  // L1 CrossDomainMessenger proxy (on mainnet/L1)
-  const CDMProxyAddress = parsedData.L1CrossDomainMessengerProxyAddress;
-  const CDMProxyJSON = "abis/bridges/optimism/L1CrossDomainMessenger.json";
-  const CDMProxyABI = JSON.parse(fs.readFileSync(CDMProxyJSON, "utf8"));
-  const CDMProxy = new ethers.Contract(CDMProxyAddress, CDMProxyABI, mainnetProvider);
-
-  // L2 messenger (bridge mediator) on the target L2
-  const optimismMessengerAddress = parsedData.bridgeMediatorAddress;
-  const optimismMessengerJSON = "abis/bridges/optimism/OptimismMessenger.json";
-  const optimismMessengerABI = JSON.parse(fs.readFileSync(optimismMessengerJSON, "utf8"))["abi"];
-  const optimismMessenger = new ethers.Contract(
-    optimismMessengerAddress,
-    optimismMessengerABI,
-    l2Provider
-  );
-
-  // ServiceRegistryL2 on the target L2
-  const serviceRegistryAddress = parsedData.serviceRegistryAddress;
-  const serviceRegistryJSON = "artifacts/contracts/ServiceRegistryL2.sol/ServiceRegistryL2.json";
-  const serviceRegistryABI = JSON.parse(fs.readFileSync(serviceRegistryJSON, "utf8"))["abi"];
-  const serviceRegistry = new ethers.Contract(
-    serviceRegistryAddress,
-    serviceRegistryABI,
-    l2Provider
-  );
+// L2 provider
+const l2URL = parsedData.networkURL;
+const l2Provider = new ethers.providers.JsonRpcProvider(l2URL);
+await l2Provider.getBlockNumber().then((n) =>
+  console.log(`Current block number ${l2Label}: ${n}`)
+);
 
 
-  // Encode the local L2 call: ServiceRegistryL2.changeManager(serviceManagerAddress)
-  const rawPayload = serviceRegistry.interface.encodeFunctionData("changeManager", [
-    parsedData.serviceManagerTokenAddress,
-  ]);
+// L1 CrossDomainMessenger proxy (on mainnet/L1)
+const CDMProxyAddress = parsedData.L1CrossDomainMessengerProxyAddress;
+const CDMProxyJSON = "abis/bridges/optimism/L1CrossDomainMessenger.json";
+const CDMProxyABI = JSON.parse(fs.readFileSync(CDMProxyJSON, "utf8"));
+const CDMProxy = new ethers.Contract(CDMProxyAddress, CDMProxyABI, mainnetProvider);
 
-  // Pack data for Timelock’s L2 batch format (address, uint96 value, uint32 len, bytes payload)
-  const target = serviceRegistryAddress;
-  const value = 0;
-  const payload = ethers.utils.arrayify(rawPayload);
-  const packedData = ethers.utils.solidityPack(
-    ["address", "uint96", "uint32", "bytes"],
-    [target, value, payload.length, payload]
-  );
+// L2 messenger (bridge mediator) on the target L2
+const optimismMessengerAddress = parsedData.bridgeMediatorAddress;
+const optimismMessengerJSON = "abis/bridges/optimism/OptimismMessenger.json";
+const optimismMessengerABI = JSON.parse(fs.readFileSync(optimismMessengerJSON, "utf8"))["abi"];
+const optimismMessenger = new ethers.Contract(
+  optimismMessengerAddress,
+  optimismMessengerABI,
+  l2Provider
+);
 
-  // Wrap in L2 messenger call
-  const messengerPayload = optimismMessenger.interface.encodeFunctionData(
-    "processMessageFromSource",
-    [packedData]
-  );
+// ServiceRegistryL2 on the target L2
+const serviceRegistryAddress = parsedData.serviceRegistryAddress;
+const serviceRegistryJSON = "artifacts/contracts/ServiceRegistryL2.sol/ServiceRegistryL2.json";
+const serviceRegistryABI = JSON.parse(fs.readFileSync(serviceRegistryJSON, "utf8"))["abi"];
+const serviceRegistry = new ethers.Contract(
+  serviceRegistryAddress,
+  serviceRegistryABI,
+  l2Provider
+);
 
-  // Wrap in L1 messenger sendMessage
-  const minGasLimit = "2000000";
-  const timelockPayload = CDMProxy.interface.encodeFunctionData("sendMessage", [
-    optimismMessengerAddress,
-    messengerPayload,
-    minGasLimit,
-  ]);
 
-  return {
-    l2Label,
-    targetL1: CDMProxyAddress,
-    valueL1: 0,
-    callDataL1: timelockPayload,
-    descriptionPart: `Change manager in ServiceRegistryL2 on ${l2Label}`,
-  };
+// Encode the local L2 call: ServiceRegistryL2.changeManager(serviceManagerAddress)
+const rawPayload = serviceRegistry.interface.encodeFunctionData("changeManager", [
+  parsedData.serviceManagerTokenAddress,
+]);
+
+// Pack data for Timelock’s L2 batch format (address, uint96 value, uint32 len, bytes payload)
+const target = serviceRegistryAddress;
+const value = 0;
+const payload = ethers.utils.arrayify(rawPayload);
+const packedData = ethers.utils.solidityPack(
+  ["address", "uint96", "uint32", "bytes"],
+  [target, value, payload.length, payload]
+);
+
+// Wrap in L2 messenger call
+const messengerPayload = optimismMessenger.interface.encodeFunctionData(
+  "processMessageFromSource",
+  [packedData]
+);
+
+// Wrap in L1 messenger sendMessage
+const minGasLimit = "2000000";
+const timelockPayload = CDMProxy.interface.encodeFunctionData("sendMessage", [
+  optimismMessengerAddress,
+  messengerPayload,
+  minGasLimit,
+]);
+
+return {
+  l2Label,
+  targetL1: CDMProxyAddress,
+  valueL1: 0,
+  callDataL1: timelockPayload,
+  descriptionPart: `Change manager in ServiceRegistryL2 on ${l2Label}`,
+};
 }
 
 async function main() {
