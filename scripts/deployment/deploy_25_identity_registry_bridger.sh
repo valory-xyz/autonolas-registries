@@ -14,28 +14,29 @@ derivationPath=$(jq -r '.derivationPath' $globals)
 chainId=$(jq -r '.chainId' $globals)
 networkURL=$(jq -r '.networkURL' $globals)
 
-# Check for Polygon keys only since on other networks those are not needed
-if [ $chainId == 137 ]; then
-  API_KEY=$ALCHEMY_API_KEY_MATIC
+# Getting L1 API key
+if [ $chainId == 1 ]; then
+  API_KEY=$ALCHEMY_API_KEY_MAINNET
   if [ "$API_KEY" == "" ]; then
-      echo "set ALCHEMY_API_KEY_MATIC env variable"
+      echo "set ALCHEMY_API_KEY_MAINNET env variable"
       exit 0
   fi
-elif [ $chainId == 80002 ]; then
-    API_KEY=$ALCHEMY_API_KEY_AMOY
+elif [ $chainId == 11155111 ]; then
+    API_KEY=$ALCHEMY_API_KEY_SEPOLIA
     if [ "$API_KEY" == "" ]; then
-        echo "set ALCHEMY_API_KEY_AMOY env variable"
+        echo "set ALCHEMY_API_KEY_SEPOLIA env variable"
         exit 0
     fi
 fi
 
 identityRegistryAddress=$(jq -r '.identityRegistryAddress' $globals)
+reputationRegistryAddress=$(jq -r '.reputationRegistryAddress' $globals)
+validationRegistryAddress=$(jq -r '.validationRegistryAddress' $globals)
 serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' $globals)
-erc8004OperatorProxyAddress=$(jq -r '.erc8004OperatorProxyAddress' $globals)
 
 contractName="IdentityRegistryBridger"
 contractPath="contracts/8004/$contractName.sol:$contractName"
-constructorArgs="$identityRegistryAddress $serviceRegistryAddress $erc8004OperatorProxyAddress"
+constructorArgs="$identityRegistryAddress $reputationRegistryAddress $validationRegistryAddress $serviceRegistryAddress"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
 # Get deployer based on the ledger flag
@@ -71,7 +72,7 @@ echo "$(jq '. += {"identityRegistryBridgerAddress":"'$identityRegistryBridgerAdd
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
-  contractParams="$identityRegistryBridgerAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address,address)" $constructorArgs)"
+  contractParams="$identityRegistryBridgerAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address,address,address)" $constructorArgs)"
   echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."

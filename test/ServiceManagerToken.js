@@ -95,10 +95,10 @@ describe("ServiceManagerToken", function () {
 
         const IdentityRegistryBridger = await ethers.getContractFactory("IdentityRegistryBridger");
         identityRegistryBridger = await IdentityRegistryBridger.deploy(identityRegistry.address,
-            serviceRegistry.address);
+            identityRegistry.address, identityRegistry.address, serviceRegistry.address);
         await identityRegistryBridger.deployed();
 
-        const proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", []);
+        let proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", []);
         // Deploy identityRegistryBridger proxy based on the needed identityRegistryBridger initialization
         const IdentityRegistryBridgerProxy = await ethers.getContractFactory("IdentityRegistryBridgerProxy");
         const identityRegistryBridgerProxy = await IdentityRegistryBridgerProxy.deploy(identityRegistryBridger.address,
@@ -108,22 +108,33 @@ describe("ServiceManagerToken", function () {
         // Wrap identityRegistryBridger proxy contract
         identityRegistryBridger = await ethers.getContractAt("IdentityRegistryBridger", identityRegistryBridgerProxy.address);
 
-        const ERC8004Operator = await ethers.getContractFactory("ERC8004Operator");
-        erc8004Operator = await ERC8004Operator.deploy(identityRegistry.address, identityRegistry.address,
-            identityRegistryBridger.address);
-        await erc8004Operator.deployed();
-
         const ServiceManager = await ethers.getContractFactory("ServiceManager");
-        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address,
-            identityRegistryBridger.address, operatorWhitelist.address);
+        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
         await serviceManager.deployed();
 
-        await identityRegistryBridger.changeManager(serviceManager.address);
-        await identityRegistryBridger.changeOperator(erc8004Operator.address);
+        proxyData = serviceManager.interface.encodeFunctionData("initialize", []);
+        // Deploy serviceManager proxy based on the needed serviceManager initialization
+        const ServiceManagerProxy = await ethers.getContractFactory("ServiceManagerProxy");
+        const serviceManagerProxy = await ServiceManagerProxy.deploy(serviceManager.address, proxyData);
+        await serviceManagerProxy.deployed();
 
-        serviceManagerL2 = await ServiceManager.deploy(serviceRegistryL2.address, serviceRegistryTokenUtilityL2.address,
-            identityRegistryBridger.address, operatorWhitelistL2.address);
+        // Wrap serviceManager proxy contract
+        serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerProxy.address);
+
+        await identityRegistryBridger.changeManager(serviceManager.address);
+        await serviceManager.setIdentityRegistryBridger(identityRegistryBridger.address);
+        await serviceManager.setOperatorWhitelist(operatorWhitelist.address);
+
+        serviceManagerL2 = await ServiceManager.deploy(serviceRegistryL2.address, serviceRegistryTokenUtilityL2.address);
         await serviceManagerL2.deployed();
+
+        const serviceManagerProxyL2 = await ServiceManagerProxy.deploy(serviceManagerL2.address, proxyData);
+        await serviceManagerProxyL2.deployed();
+
+        // Wrap serviceManagerL2 proxy contract
+        serviceManagerL2 = await ethers.getContractAt("ServiceManager", serviceManagerProxyL2.address);
+
+        await serviceManagerL2.setOperatorWhitelist(operatorWhitelistL2.address);
 
         const Token = await ethers.getContractFactory("ERC20Token");
         token = await Token.deploy();
@@ -145,11 +156,11 @@ describe("ServiceManagerToken", function () {
             const ServiceManager = await ethers.getContractFactory("ServiceManager");
 
             await expect(
-                ServiceManager.deploy(AddressZero, AddressZero, AddressZero, AddressZero)
+                ServiceManager.deploy(AddressZero, AddressZero)
             ).to.be.revertedWithCustomError(serviceManager, "ZeroAddress");
 
             await expect(
-                ServiceManager.deploy(serviceRegistry.address, AddressZero, AddressZero, AddressZero)
+                ServiceManager.deploy(serviceRegistry.address, AddressZero)
             ).to.be.revertedWithCustomError(serviceManager, "ZeroAddress");
         });
 
@@ -381,6 +392,7 @@ describe("ServiceManagerToken", function () {
                 // Set the operator whitelist checker contract
                 // Whitelist a random operator address for the service
                 await operatorWhitelist.setOperatorsStatuses(serviceIds[0], [signers[15].address], [true], true);
+
                 // Try to register agents with the non-whitelited operator address
                 await expect(
                     serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[1]],
@@ -451,7 +463,7 @@ describe("ServiceManagerToken", function () {
                 const newAgentParams = [[1, regBond]];
 
                 // Remove the operator whitelist check completely
-                serviceManager.connect(deployer).setOperatorWhitelist(AddressZero);
+                await serviceManager.connect(deployer).setOperatorWhitelist(AddressZero);
 
                 // Creating one service with the ERC20 token bond
                 await serviceManager.create(deployer.address, token.address, configHash, newAgentIds, newAgentParams, threshold);
@@ -958,7 +970,7 @@ describe("ServiceManagerToken", function () {
             const newAgentParams = [[1, regBond]];
 
             // Remove the operator whitelist check completely
-            serviceManager.connect(deployer).setOperatorWhitelist(AddressZero);
+            await serviceManager.connect(deployer).setOperatorWhitelist(AddressZero);
 
             // Creating one service with the ERC20 token bond
             await serviceManager.create(deployer.address, reentrancyAttacker.address, configHash, newAgentIds, newAgentParams, threshold);

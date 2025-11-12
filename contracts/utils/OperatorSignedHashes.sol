@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.30;
 
 interface ISignatureValidator {
     /// @dev Should return whether the signature provided is valid for the provided hash.
@@ -39,9 +39,10 @@ error HashNotApproved(address operator, bytes32 msgHash, bytes signature);
 error WrongOperatorAddress(address provided, address expected);
 
 /// @title OperatorSignedHashes - Smart contract for managing operator signed hashes
-/// @author AL
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
-contract OperatorSignedHashes {
+/// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
+/// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
+abstract contract OperatorSignedHashes {
     event OperatorHashApproved(address indexed operator, bytes32 hash);
 
     // Value for the contract signature validation: bytes4(keccak256("isValidSignature(bytes32,bytes)")
@@ -55,19 +56,11 @@ contract OperatorSignedHashes {
     // Register agents type hash
     bytes32 public constant REGISTER_AGENTS_TYPE_HASH =
         keccak256("RegisterAgents(address operator,address serviceOwner,uint256 serviceId,bytes32 agentsData,uint256 nonce)");
-    // Original domain separator value
-    bytes32 public immutable domainSeparator;
-    // Original chain Id
-    uint256 public immutable chainId;
+
     // Name hash
     bytes32 public immutable nameHash;
     // Version hash
     bytes32 public immutable versionHash;
-
-    // Name of a signing domain
-    string public name;
-    // Version of a signing domain
-    string public version;
 
     // Map of operator address and serviceId => unbond nonce
     mapping(uint256 => uint256) public mapOperatorUnbondNonces;
@@ -76,16 +69,12 @@ contract OperatorSignedHashes {
     // Mapping operator address => approved hashes status
     mapping(address => mapping(bytes32 => bool)) public mapOperatorApprovedHashes;
 
-    /// @dev Contract constructor.
+    /// @dev OperatorSignedHashes constructor.
     /// @param _name Name of a signing domain.
     /// @param _version Version of a signing domain.
     constructor(string memory _name, string memory _version) {
-        name = _name;
-        version = _version;
         nameHash = keccak256(bytes(_name));
         versionHash = keccak256(bytes(_version));
-        chainId = block.chainid;
-        domainSeparator = _computeDomainSeparator();
     }
 
     /// @dev Verifies provided message hash against its signature.
@@ -170,10 +159,10 @@ contract OperatorSignedHashes {
         );
     }
 
-    /// @dev Gets the already computed domain separator of recomputes one if the chain Id is different.
+    /// @dev Gets domain separator hash.
     /// @return Original or recomputed domain separator.
-    function getDomainSeparator() public view returns (bytes32) {
-        return block.chainid == chainId ? domainSeparator : _computeDomainSeparator();
+    function getDomainSeparator() external view returns (bytes32) {
+        return _computeDomainSeparator();
     }
 
     /// @dev Gets the unbond message hash for the operator.
@@ -192,7 +181,7 @@ contract OperatorSignedHashes {
         return keccak256(
             abi.encodePacked(
                 "\x19\x01",
-                getDomainSeparator(),
+                _computeDomainSeparator(),
                 keccak256(
                     abi.encode(
                         UNBOND_TYPE_HASH,
@@ -226,7 +215,7 @@ contract OperatorSignedHashes {
         return keccak256(
             abi.encodePacked(
                 "\x19\x01",
-                getDomainSeparator(),
+                _computeDomainSeparator(),
                 keccak256(
                     abi.encode(
                         REGISTER_AGENTS_TYPE_HASH,

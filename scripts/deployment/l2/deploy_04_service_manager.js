@@ -14,7 +14,6 @@ async function main() {
     const gasPriceInGwei = parsedData.gasPriceInGwei;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
-    const operatorWhitelistAddress = parsedData.operatorWhitelistAddress;
 
     let networkURL = parsedData.networkURL;
     if (providerName === "polygon") {
@@ -51,7 +50,7 @@ async function main() {
     const ServiceManager = await ethers.getContractFactory("ServiceManager");
     console.log("You are signing the following transaction: ServiceManager.connect(EOA).deploy()");
     const serviceManager = await ServiceManager.connect(EOA).deploy(serviceRegistryAddress,
-        serviceRegistryTokenUtilityAddress, operatorWhitelistAddress, { gasPrice });
+        serviceRegistryTokenUtilityAddress, { gasPrice });
     const result = await serviceManager.deployed();
 
     // Transaction details
@@ -69,7 +68,7 @@ async function main() {
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_04_service_manager_token.js --network " + providerName + " " + serviceManager.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/l2/verify_04_service_manager.js --network " + providerName + " " + serviceManager.address, { encoding: "utf-8" });
     }
 }
 

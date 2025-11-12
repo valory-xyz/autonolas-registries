@@ -87,6 +87,10 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     event ImplementationUpdated(address indexed implementation);
     event CreateMultisig(address indexed multisig);
 
+    // Name of a signing domain
+    string public constant NAME = "OLAS Service Manager";
+    // Version number
+    string public constant VERSION = "1.2.0";
     // Service Manager proxy address slot
     // keccak256("PROXY_SERVICE_MANAGER") = "0xe39e69948a448ce9239ad71b908b6c5b46225f86ffa735b25a8cd64080315855"
     bytes32 public constant PROXY_SERVICE_MANAGER = 0xe39e69948a448ce9239ad71b908b6c5b46225f86ffa735b25a8cd64080315855;
@@ -108,15 +112,11 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @dev ServiceManager constructor.
     /// @param _serviceRegistry Service Registry address.
     /// @param _serviceRegistryTokenUtility Service Registry Token Utility address.
-    /// @param _identityRegistryBridger 8004 Identity Registry Bridger address.
-    /// @param _operatorWhitelist Operator Whitelist address (optional).
     constructor(
         address _serviceRegistry,
-        address _serviceRegistryTokenUtility,
-        address _identityRegistryBridger,
-        address _operatorWhitelist
+        address _serviceRegistryTokenUtility
     )
-        OperatorSignedHashes("OLAS Service Manager", "1.2.0")
+        OperatorSignedHashes(NAME, VERSION)
     {
         // Check for the Service Registry related contract zero addresses
         if (_serviceRegistry == address(0) || _serviceRegistryTokenUtility == address(0)) {
@@ -125,8 +125,6 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
 
         serviceRegistry = _serviceRegistry;
         serviceRegistryTokenUtility = _serviceRegistryTokenUtility;
-        identityRegistryBridger = _identityRegistryBridger;
-        operatorWhitelist = _operatorWhitelist;
     }
 
     /// @dev Initializes proxy contract storage.
