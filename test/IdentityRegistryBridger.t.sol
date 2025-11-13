@@ -34,7 +34,7 @@ contract BaseSetup is Test {
     // Contract addresses
     address internal constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address internal constant REGISTRIES_MANAGER = 0x13bb1605DDD353Ff4da9a9b1a70e20B4B1C48fC4;
-    address internal constant SERVICE_MANAGER = 0x7910ea7f9303074048807eE778d13D4297BcD2E3;
+    address internal constant SERVICE_MANAGER = 0x22808322414594A2a4b8F46Af5760E193D316b5B;
     address internal constant safeMultisigWithRecoveryModule = 0x164e1CA068afeF66EFbB9cA19d904c44E8386fd9;
     address internal constant IDENTITY_REGISTRY_BRIDGER = 0xC68b98C7417969c761659634CaE445d605CE0D5B;
     address internal constant IDENTITY_REGISTRY = 0x8004a6090Cd10A7288092483047B097295Fb8847;
