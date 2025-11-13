@@ -40,6 +40,6 @@
   "stakingFactoryAddress": "",
   "recoveryModuleAddress": "0x0a40C5ff1EB345E92DaAB5981Fc05219cCe4463E",
   "safeMultisigWithRecoveryModuleAddress": "0x164e1CA068afeF66EFbB9cA19d904c44E8386fd9",
-  "identityRegistryBridgerAddress": "0x9b66Fd682D6BC3974b75CEcA8D9C1281A86DC9B9",
+  "identityRegistryBridgerAddress": "0x9E403D86EDa62358EEF7B22707E3aA2302917D26",
   "identityRegistryBridgerProxyAddress": "0xC68b98C7417969c761659634CaE445d605CE0D5B"
 }

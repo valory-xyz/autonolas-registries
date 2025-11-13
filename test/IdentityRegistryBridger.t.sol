@@ -107,7 +107,7 @@ contract IdentityRegistry is BaseSetup {
 
         // Create agents and link services in 2 sets
         identityRegistryBridger.linkServiceIdAgentIds(numServices / 2);
-        identityRegistryBridger.linkServiceIdAgentIds(numServices / 2);
+        identityRegistryBridger.linkServiceIdAgentIds(numServices / 2 + 1);
     }
 
     /// @dev Signs feedback requests by 8004 operator and leave feedback.
