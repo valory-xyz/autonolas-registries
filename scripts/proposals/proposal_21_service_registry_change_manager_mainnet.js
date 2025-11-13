@@ -23,10 +23,10 @@ async function main() {
 
     // Proposal preparation
     console.log("Proposal 21. Change manager in ServiceRegistry");
-    const targets = serviceRegistryAddress;
-    const values = 0;
+    const target = serviceRegistryAddress;
+    const value = 0;
     // TODO: replace serviceManagerTokenAddress with serviceManagerProxyAddress
-    const callDatas = serviceRegistry.interface.encodeFunctionData("changeManager", parsedData.serviceManagerTokenAddress);
+    const callData = serviceRegistry.interface.encodeFunctionData("changeManager", [parsedData.serviceManagerTokenAddress]);
     const description = "Change manager in ServiceRegistry";
 
     // Proposal details
