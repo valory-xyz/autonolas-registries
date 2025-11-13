@@ -132,7 +132,7 @@ contract IdentityRegistry is BaseSetup {
 
         // Deploy
         vm.prank(deployer);
-        address multisig = serviceManager.deploy(serviceId, safeMultisigWithRecoveryModule, "");
+        serviceManager.deploy(serviceId, safeMultisigWithRecoveryModule, "");
 
         // Create agent and link service
         uint256[] memory agentIds = identityRegistryBridger.linkServiceIdAgentIds(serviceId);
