@@ -97,8 +97,9 @@ describe("ServiceManagerNative", function () {
         // Wrap serviceManager proxy contract
         serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerProxy.address);
 
-        await identityRegistryBridger.changeManager(serviceManager.address);
-        await serviceManager.setIdentityRegistryBridger(identityRegistryBridger.address);
+        // TODO revert back when IRB is operational
+        //await identityRegistryBridger.changeManager(serviceManager.address);
+        //await serviceManager.setIdentityRegistryBridger(identityRegistryBridger.address);
 
         signers = await ethers.getSigners();
         await componentRegistry.changeManager(signers[0].address);

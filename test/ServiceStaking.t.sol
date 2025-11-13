@@ -120,8 +120,10 @@ contract BaseSetup is Test {
 
         serviceRegistry.changeManager(address(serviceManager));
         serviceRegistryTokenUtility.changeManager(address(serviceManager));
-        identityRegistryBridger.changeManager(address(serviceManager));
-        serviceManager.setIdentityRegistryBridger(address(identityRegistryBridger));
+
+        // TODO revert back when IRB is operational
+        //identityRegistryBridger.changeManager(address(serviceManager));
+        //serviceManager.setIdentityRegistryBridger(address(identityRegistryBridger));
 
         // Deploying multisig contracts and multisig implementation
         gnosisSafe = new GnosisSafe();
