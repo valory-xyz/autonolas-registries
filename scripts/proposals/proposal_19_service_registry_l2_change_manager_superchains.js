@@ -116,7 +116,7 @@ async function main() {
     // --- Print individual proposal details ---
     for (const entry of [op, base, mode]) {
         console.log(
-            `\nProposal 17. ${entry.descriptionPart}\n` +
+            `\nProposal. ${entry.descriptionPart}\n` +
                 `target: ${entry.targetL1}\nvalue: ${entry.valueL1}\ncallData: ${entry.callDataL1}\n`
         );
     }
