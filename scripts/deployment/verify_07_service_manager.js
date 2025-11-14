@@ -3,7 +3,9 @@ const globalsFile = "globals.json";
 const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
 const parsedData = JSON.parse(dataFromJSON);
 const serviceRegistryAddress = parsedData.serviceRegistryAddress;
+const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
 
 module.exports = [
-    serviceRegistryAddress
+    serviceRegistryAddress,
+    serviceRegistryTokenUtilityAddress
 ];

@@ -536,3 +536,4 @@ f6bd4e8d54f430ff12bd9a022ef777fa2b4a5425:scripts/deployment/l2/globals_gnosis_ma
 6b21432b62441cc05c10d849cc297082e17b769a:scripts/deployment/l2/globals_optimism_sepolia.json:generic-api-key:1
 6b21432b62441cc05c10d849cc297082e17b769a:scripts/deployment/l2/globals_polygon_amoy.json:generic-api-key:1
 6b21432b62441cc05c10d849cc297082e17b769a:scripts/deployment/l2/wormhole/globals_celo_mainnet.json:generic-api-key:1
+36f401643c4d6d840d4deda9c69a33add09bde12:scripts/deployment/globals_sepolia.json:generic-api-key:29

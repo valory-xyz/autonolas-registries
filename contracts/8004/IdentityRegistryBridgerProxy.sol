@@ -15,7 +15,7 @@ error ZeroValue();
 * Proxy implementation is created based on the Universal Upgradeable Proxy Standard (UUPS) EIP-1822.
 * The implementation address must be located in a unique storage slot of the proxy contract.
 * The upgrade logic must be located in the implementation contract.
-* Specialidentity registry bridger implementation address slot is produced by hashing the "PROXY_IDENTITY_REGISTRY_BRIDGER"
+* Special identity registry bridger implementation address slot is produced by hashing the "PROXY_IDENTITY_REGISTRY_BRIDGER"
 * string in order to make the slot unique.
 * The fallback() implementation for all the delegatecall-s is inspired by the Gnosis Safe set of contracts.
 */
@@ -46,7 +46,7 @@ contract IdentityRegistryBridgerProxy {
         assembly {
             sstore(PROXY_IDENTITY_REGISTRY_BRIDGER, identityRegistryBridger)
         }
-        // Initialize proxy liquidity manager storage
+        // Initialize proxy storage
         (bool success, ) = identityRegistryBridger.delegatecall(identityRegistryBridgerData);
         if (!success) {
             revert InitializationFailed();
@@ -54,10 +54,11 @@ contract IdentityRegistryBridgerProxy {
     }
 
     /// @dev Delegatecall to all the incoming data.
-    fallback() external {
+    fallback() external payable {
+        // solhint-disable-next-line avoid-low-level-calls
         assembly {
             let identityRegistryBridger := sload(PROXY_IDENTITY_REGISTRY_BRIDGER)
-            // Otherwise continue with the delegatecall to the liquidity manager implementation
+            // Otherwise continue with the delegatecall to implementation
             calldatacopy(0, 0, calldatasize())
             let success := delegatecall(gas(), identityRegistryBridger, 0, calldatasize(), 0, 0)
             returndatacopy(0, 0, returndatasize())
@@ -65,6 +66,15 @@ contract IdentityRegistryBridgerProxy {
                 revert(0, returndatasize())
             }
             return(0, returndatasize())
+        }
+    }
+
+    /// @dev Gets implementation address.
+    /// @return implementation Implementation address.
+    function getImplementation() external view returns (address implementation) {
+        // solhint-disable-next-line avoid-low-level-calls
+        assembly {
+            implementation := sload(PROXY_IDENTITY_REGISTRY_BRIDGER)
         }
     }
 }
