@@ -15,29 +15,6 @@ interface IOperatorWhitelist {
     function isOperatorWhitelisted(uint256 serviceId, address operator) external view returns (bool status);
 }
 
-interface IServiceRegistry {
-    enum ServiceState {
-        NonExistent,
-        PreRegistration,
-        ActiveRegistration,
-        FinishedRegistration,
-        Deployed,
-        TerminatedBonded
-    }
-
-    /// @dev Gets service instance params.
-    /// @param serviceId Service Id.
-    /// @return securityDeposit Registration activation deposit.
-    /// @return multisig Service multisig address.
-    /// @return configHash IPFS hashes pointing to the config metadata.
-    /// @return threshold Agent instance signers threshold.
-    /// @return maxNumAgentInstances Total number of agent instances.
-    /// @return numAgentInstances Actual number of agent instances.
-    /// @return state Service state.
-    function mapServices(uint256 serviceId) external view returns (uint96 securityDeposit, address multisig,
-        bytes32 configHash, uint32 threshold, uint32 maxNumAgentInstances, uint32 numAgentInstances, ServiceState state);
-}
-
 // ERC721 interface
 interface IERC721 {
     /// @dev Gets the owner of the token Id.
@@ -57,6 +34,10 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     event OperatorWhitelistUpdated(address indexed operatorWhitelist);
     event ImplementationUpdated(address indexed implementation);
     event CreateMultisig(address indexed multisig);
+    event UnbondWithSignatureExecuted(address indexed operator, uint256 indexed serviceId, uint256 refund);
+    event RegisterAgentsWithSignatureExecuted(
+        address indexed operator, uint256 indexed serviceId, address[] agentInstances, uint256[] agentIds
+    );
 
     // Name of a signing domain
     string public constant NAME = "OLAS Service Manager";
@@ -81,12 +62,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @dev ServiceManager constructor.
     /// @param _serviceRegistry Service Registry address.
     /// @param _serviceRegistryTokenUtility Service Registry Token Utility address.
-    constructor(
-        address _serviceRegistry,
-        address _serviceRegistryTokenUtility
-    )
-        OperatorSignedHashes(NAME, VERSION)
-    {
+    constructor(address _serviceRegistry, address _serviceRegistryTokenUtility) OperatorSignedHashes(NAME, VERSION) {
         // Check for the Service Registry related contract zero addresses
         if (_serviceRegistry == address(0) || _serviceRegistryTokenUtility == address(0)) {
             revert ZeroAddress();
@@ -154,8 +130,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         uint32[] memory agentIds,
         IService.AgentParams[] memory agentParams,
         uint32 threshold
-    ) external returns (uint256 serviceId)
-    {
+    ) external returns (uint256 serviceId) {
         // Check if the minting is paused
         if (paused) {
             revert Paused();
@@ -209,8 +184,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         IService.AgentParams[] memory agentParams,
         uint32 threshold,
         uint256 serviceId
-    ) external returns (bool success)
-    {
+    ) external returns (bool success) {
         // Check for the zero address
         if (token == address(0)) {
             revert ZeroAddress();
@@ -222,11 +196,14 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
             for (uint256 i = 0; i < numAgents; ++i) {
                 // Check for the zero bond value
                 if (agentParams[i].slots > 0 && agentParams[i].bond == 0) {
-                        revert ZeroValue();
+                    revert ZeroValue();
                 }
             }
+
             // Call the original ServiceRegistry contract function
-            success = IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams, threshold, serviceId);
+            success =
+                IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams, threshold, serviceId);
+
             // Reset the service token-based data
             // This function still needs to be called as the previous token could be a custom ERC20 token
             IServiceTokenUtility(serviceRegistryTokenUtility).resetServiceToken(serviceId);
@@ -248,7 +225,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
             }
 
             // Call the original ServiceRegistry contract function
-            success = IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams, threshold, serviceId);
+            success =
+                IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams, threshold, serviceId);
+
             // Update relevant data in the ServiceRegistryTokenUtility contract
             // We follow the optimistic design where existing bonds are just overwritten without a clearing
             // bond values of agent Ids that are not going to be used in the service. This is coming from the fact
@@ -262,7 +241,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @return success True, if function executed successfully.
     function activateRegistration(uint256 serviceId) external payable returns (bool success) {
         // Record the actual ERC20 security deposit
-        bool isTokenSecured = IServiceTokenUtility(serviceRegistryTokenUtility).activateRegistrationTokenDeposit(serviceId);
+        bool isTokenSecured =
+            IServiceTokenUtility(serviceRegistryTokenUtility).activateRegistrationTokenDeposit(serviceId);
 
         // Activate registration in the original ServiceRegistry contract
         if (isTokenSecured) {
@@ -284,11 +264,11 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @param agentInstances Agent instance addresses.
     /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
     /// @return success True, if function executed successfully.
-    function registerAgents(
-        uint256 serviceId,
-        address[] memory agentInstances,
-        uint32[] memory agentIds
-    ) external payable returns (bool success) {
+    function registerAgents(uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds)
+        external
+        payable
+        returns (bool success)
+    {
         if (operatorWhitelist != address(0)) {
             // Check if the operator is whitelisted
             if (!IOperatorWhitelist(operatorWhitelist).isOperatorWhitelisted(serviceId, msg.sender)) {
@@ -297,8 +277,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         }
 
         // Record the actual ERC20 bond
-        bool isTokenSecured = IServiceTokenUtility(serviceRegistryTokenUtility).registerAgentsTokenDeposit(msg.sender,
-            serviceId, agentIds);
+        bool isTokenSecured = IServiceTokenUtility(serviceRegistryTokenUtility)
+            .registerAgentsTokenDeposit(msg.sender, serviceId, agentIds);
 
         // Register agent instances in a main ServiceRegistry contract
         if (isTokenSecured) {
@@ -311,10 +291,14 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
 
             // If the service Id is based on the ERC20 token, the provided value to the standard registration is 1
             // multiplied by the number of agent instances
-            success = IService(serviceRegistry).registerAgents{value: totalBond}(msg.sender, serviceId, agentInstances, agentIds);
+            success = IService(serviceRegistry).registerAgents{value: totalBond}(
+                msg.sender, serviceId, agentInstances, agentIds
+            );
         } else {
             // Otherwise follow the standard msg.value path
-            success = IService(serviceRegistry).registerAgents{value: msg.value}(msg.sender, serviceId, agentInstances, agentIds);
+            success = IService(serviceRegistry).registerAgents{value: msg.value}(
+                msg.sender, serviceId, agentInstances, agentIds
+            );
         }
     }
 
@@ -323,11 +307,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @param multisigImplementation Multisig implementation address.
     /// @param data Data payload for the multisig creation.
     /// @return multisig Address of the created multisig.
-    function deploy(
-        uint256 serviceId,
-        address multisigImplementation,
-        bytes memory data
-    ) external returns (address multisig)
+    function deploy(uint256 serviceId, address multisigImplementation, bytes memory data)
+        external
+        returns (address multisig)
     {
         // Create or update multisig instance
         multisig = IService(serviceRegistry).deploy(msg.sender, serviceId, multisigImplementation, data);
@@ -381,11 +363,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @param signature Signature byte array associated with operator message hash signature.
     /// @return success True, if the function executed successfully.
     /// @return refund The amount of refund returned to the operator.
-    function unbondWithSignature(
-        address operator,
-        uint256 serviceId,
-        bytes memory signature
-    ) external returns (bool success, uint256 refund)
+    function unbondWithSignature(address operator, uint256 serviceId, bytes memory signature)
+        external
+        returns (bool success, uint256 refund)
     {
         // Check the service owner
         address serviceOwner = IERC721(serviceRegistry).ownerOf(serviceId);
@@ -421,6 +401,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         if (tokenRefund > 0) {
             refund = tokenRefund;
         }
+
+        emit UnbondWithSignatureExecuted(operator, serviceId, refund);
     }
 
     /// @dev Registers agent instances of the operator by the service owner via the operator's pre-signed message hash.
@@ -468,18 +450,23 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         mapOperatorRegisterAgentsNonces[operatorService] = nonce;
 
         // Record the actual ERC20 bond
-        bool isTokenSecured = IServiceTokenUtility(serviceRegistryTokenUtility).registerAgentsTokenDeposit(operator,
-            serviceId, agentIds);
+        bool isTokenSecured =
+            IServiceTokenUtility(serviceRegistryTokenUtility).registerAgentsTokenDeposit(operator, serviceId, agentIds);
 
         // Register agent instances in a main ServiceRegistry contract
         if (isTokenSecured) {
             // If the service Id is based on the ERC20 token, the provided value to the standard registration is 1
             // multiplied by the number of agent instances
-            success = IService(serviceRegistry).registerAgents{value: agentInstances.length * BOND_WRAPPER}(operator,
-                serviceId, agentInstances, agentIds);
+            success = IService(serviceRegistry).registerAgents{value: agentInstances.length * BOND_WRAPPER}(
+                operator, serviceId, agentInstances, agentIds
+            );
         } else {
             // Otherwise follow the standard msg.value path
-            success = IService(serviceRegistry).registerAgents{value: msg.value}(operator, serviceId, agentInstances, agentIds);
+            success = IService(serviceRegistry).registerAgents{value: msg.value}(
+                operator, serviceId, agentInstances, agentIds
+            );
         }
+
+        emit RegisterAgentsWithSignatureExecuted(operator, serviceId, agentInstances, agentIds);
     }
 }
