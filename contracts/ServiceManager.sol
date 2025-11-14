@@ -36,7 +36,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     event CreateMultisig(address indexed multisig);
     event UnbondWithSignatureExecuted(address indexed operator, uint256 indexed serviceId, uint256 refund);
     event RegisterAgentsWithSignatureExecuted(
-        address indexed operator, uint256 indexed serviceId, address[] agentInstances, uint256[] agentIds
+        address indexed operator, uint256 indexed serviceId, address[] agentInstances, uint32[] agentIds
     );
 
     // Name of a signing domain
