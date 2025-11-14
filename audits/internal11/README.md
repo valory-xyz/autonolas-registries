@@ -192,3 +192,16 @@ Not MUST by standard!!!
 [x] Fixed
 
 
+### Update. Audit ServiceManager proxy/implementation 14.11.25
+The review has been performed based on the contract code in the following repository:<br>
+`https://github.com/valory-xyz/autonolas-registries` <br>
+commit: ffd82745c94d840d46c82983e927783ca411b586 <br>
+
+### Storage
+```
+sol2uml storage contracts/ -f png -c ServiceManager -o audits/internal11/ServiceManager.png
+```
+[ServiceManager](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal11/ServiceManager.png)
+
+### Issue.
+No issue
