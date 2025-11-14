@@ -13,6 +13,7 @@ remappings = [
 
 [lint]
 ignore = [
+    "test/IdentityRegistryBridger.t.sol",
     "test/ServiceStaking.t.sol",
 ]
 exclude_lints = [
