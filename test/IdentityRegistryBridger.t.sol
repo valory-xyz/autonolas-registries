@@ -4,8 +4,9 @@ import {Test, console} from "forge-std/Test.sol";
 import {Utils} from "./utils/Utils.sol";
 import {IToken} from "../contracts/interfaces/IToken.sol";
 import {IService} from "../contracts/interfaces/IService.sol";
+import {IRegistry} from "../contracts/interfaces/IRegistry.sol";
 import {IdentityRegistryBridger} from "../contracts/8004/IdentityRegistryBridger.sol";
-import {ERC8004Operator} from "../contracts/8004/ERC8004Operator.sol";
+import {RegistriesManager} from "../contracts/RegistriesManager.sol";
 import {ServiceManager} from "../contracts/ServiceManager.sol";
 
 interface IReputationRegistry {
@@ -24,8 +25,7 @@ contract BaseSetup is Test {
     Utils internal utils;
     IdentityRegistryBridger internal identityRegistryBridger;
     ServiceManager internal serviceManager;
-    ERC8004Operator internal erc8004Operator;
-
+    RegistriesManager internal registriesManager;
 
     address payable[] internal users;
     address internal deployer;
@@ -33,10 +33,10 @@ contract BaseSetup is Test {
 
     // Contract addresses
     address internal constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-    address internal constant SERVICE_MANAGER = 0x52beace64D3E5e59A03d8e5c7a1fC7b59f635b22;
+    address internal constant REGISTRIES_MANAGER = 0x13bb1605DDD353Ff4da9a9b1a70e20B4B1C48fC4;
+    address internal constant SERVICE_MANAGER = 0x22808322414594A2a4b8F46Af5760E193D316b5B;
     address internal constant safeMultisigWithRecoveryModule = 0x164e1CA068afeF66EFbB9cA19d904c44E8386fd9;
-    address internal constant IDENTITY_REGISTRY_BRIDGER = 0x293b030678996ac600CAF53854177F60894DAF7A;
-    address internal constant ERC8004_OPERATOR = 0x6C4C45B5005547e9465Ac61B771cC9712BE44ae0;
+    address internal constant IDENTITY_REGISTRY_BRIDGER = 0xC68b98C7417969c761659634CaE445d605CE0D5B;
     address internal constant IDENTITY_REGISTRY = 0x8004a6090Cd10A7288092483047B097295Fb8847;
     address internal constant REPUTATION_REGISTRY = 0x8004B8FD1A363aa02fDC07635C0c5F94f6Af5B7E;
     uint96 internal constant SECURITY_DEPOSIT = 1;
@@ -53,10 +53,10 @@ contract BaseSetup is Test {
         operator = users[1];
         vm.label(operator, "Operator");
 
-        // Deploy V2 oracle
+        // Get contracts
         serviceManager = ServiceManager(SERVICE_MANAGER);
         identityRegistryBridger = IdentityRegistryBridger(IDENTITY_REGISTRY_BRIDGER);
-        erc8004Operator = ERC8004Operator(ERC8004_OPERATOR);
+        registriesManager = RegistriesManager(REGISTRIES_MANAGER);
 
         // Get funds for deployer and operator
         vm.deal(deployer, 5 ether);
@@ -65,6 +65,10 @@ contract BaseSetup is Test {
         // Default agent Ids
         agentIds = new uint32[](1);
         agentIds[0] = 1;
+
+        // Create component and agent
+        registriesManager.create(IRegistry.UnitType.Component, deployer, configHash, new uint32[](0));
+        registriesManager.create(IRegistry.UnitType.Agent, deployer, configHash, agentIds);
     }
 }
 
@@ -103,7 +107,7 @@ contract IdentityRegistry is BaseSetup {
 
         // Create agents and link services in 2 sets
         identityRegistryBridger.linkServiceIdAgentIds(numServices / 2);
-        identityRegistryBridger.linkServiceIdAgentIds(numServices / 2);
+        identityRegistryBridger.linkServiceIdAgentIds(numServices / 2 + 1);
     }
 
     /// @dev Signs feedback requests by 8004 operator and leave feedback.
@@ -128,7 +132,7 @@ contract IdentityRegistry is BaseSetup {
 
         // Deploy
         vm.prank(deployer);
-        address multisig = serviceManager.deploy(serviceId, safeMultisigWithRecoveryModule, "");
+        serviceManager.deploy(serviceId, safeMultisigWithRecoveryModule, "");
 
         // Create agent and link service
         uint256[] memory agentIds = identityRegistryBridger.linkServiceIdAgentIds(serviceId);
@@ -137,8 +141,6 @@ contract IdentityRegistry is BaseSetup {
         address clientAddress = users[3];
         uint64 indexLimit = 2;
         uint256 expiry = block.timestamp + 1000;
-        vm.prank(multisig);
-        erc8004Operator.authorizeFeedback(clientAddress, indexLimit, expiry);
 
         // Leave feedback
         uint256 agentId = agentIds[0];
@@ -148,16 +150,10 @@ contract IdentityRegistry is BaseSetup {
         string memory feedbackUri;
         bytes32 feedbackHash;
 
+        // TODO
         // Encode first 224 bytes
         bytes memory feedbackAuth = abi.encode(agentId, clientAddress, indexLimit, expiry, block.chainid,
-            IDENTITY_REGISTRY, address(erc8004Operator));
-
-        // We need signature of 65 bytes with v == 27 / 28
-        bytes32 r = bytes32(uint256(1));
-        bytes32 s = bytes32(uint256(1));
-        uint8 v = 27;
-        bytes memory signature = abi.encodePacked(r, s, v);
-        feedbackAuth = bytes.concat(feedbackAuth, signature);
+            IDENTITY_REGISTRY, address(identityRegistryBridger));
 
         // Try to leave feedback not by authorized client
         vm.prank(deployer);

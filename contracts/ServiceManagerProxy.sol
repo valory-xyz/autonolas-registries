@@ -54,7 +54,7 @@ contract ServiceManagerProxy {
     }
 
     /// @dev Delegatecall to all the incoming data.
-    fallback() external {
+    fallback() external payable {
         // solhint-disable-next-line avoid-low-level-calls
         assembly {
             let serviceManager := sload(PROXY_SERVICE_MANAGER)

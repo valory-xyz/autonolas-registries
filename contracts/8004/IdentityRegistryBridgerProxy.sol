@@ -54,7 +54,7 @@ contract IdentityRegistryBridgerProxy {
     }
 
     /// @dev Delegatecall to all the incoming data.
-    fallback() external {
+    fallback() external payable {
         // solhint-disable-next-line avoid-low-level-calls
         assembly {
             let identityRegistryBridger := sload(PROXY_IDENTITY_REGISTRY_BRIDGER)

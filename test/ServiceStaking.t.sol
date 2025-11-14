@@ -12,10 +12,10 @@ import {ServiceRegistryL2} from "../contracts/ServiceRegistryL2.sol";
 import {ServiceRegistryTokenUtility} from "../contracts/ServiceRegistryTokenUtility.sol";
 import {OperatorWhitelist} from "../contracts/utils/OperatorWhitelist.sol";
 import {ServiceManager} from "../contracts/ServiceManager.sol";
+import {ServiceManagerProxy} from "../contracts/ServiceManagerProxy.sol";
 import {MockIdentityRegistry} from "../contracts/test/MockIdentityRegistry.sol";
 import {IdentityRegistryBridger} from "../contracts/8004/IdentityRegistryBridger.sol";
 import {IdentityRegistryBridgerProxy} from "../contracts/8004/IdentityRegistryBridgerProxy.sol";
-import {ERC8004Operator} from "../contracts/8004/ERC8004Operator.sol";
 import "../contracts/staking/StakingNativeToken.sol";
 import {StakingToken} from "../contracts/staking/StakingToken.sol";
 import {StakingVerifier} from "../contracts/staking/StakingVerifier.sol";
@@ -36,7 +36,6 @@ contract BaseSetup is Test {
     ServiceManager internal serviceManager;
     MockIdentityRegistry internal identityRegistry;
     IdentityRegistryBridger internal identityRegistryBridger;
-    ERC8004Operator internal erc8004Operator;
     StakingNativeToken internal stakingNativeTokenImplementation;
     StakingNativeToken internal stakingNativeToken;
     StakingToken internal stakingTokenImplementation;
@@ -107,22 +106,24 @@ contract BaseSetup is Test {
         operatorWhitelist = new OperatorWhitelist(address(serviceRegistry));
 
         identityRegistry = new MockIdentityRegistry();
-        identityRegistryBridger = new IdentityRegistryBridger(address(identityRegistry), address(serviceRegistry));
+        identityRegistryBridger = new IdentityRegistryBridger(address(identityRegistry), address(identityRegistry),
+            address(identityRegistry), address(serviceRegistry));
         bytes memory proxyData = abi.encodeWithSelector(identityRegistryBridger.initialize.selector, "");
         IdentityRegistryBridgerProxy identityRegistryBridgerProxy =
             new IdentityRegistryBridgerProxy(address(identityRegistryBridger), proxyData);
         identityRegistryBridger = IdentityRegistryBridger(address(identityRegistryBridgerProxy));
 
-        erc8004Operator = new ERC8004Operator(address(identityRegistry), address(identityRegistry),
-            address(identityRegistryBridger));
-
-        serviceManager = new ServiceManager(address(serviceRegistry), address(serviceRegistryTokenUtility),
-            address(identityRegistryBridger), address(operatorWhitelist));
+        serviceManager = new ServiceManager(address(serviceRegistry), address(serviceRegistryTokenUtility));
+        proxyData = abi.encodeWithSelector(serviceManager.initialize.selector, "");
+        ServiceManagerProxy serviceManagerProxy = new ServiceManagerProxy(address(serviceManager), proxyData);
+        serviceManager = ServiceManager(address(serviceManagerProxy));
 
         serviceRegistry.changeManager(address(serviceManager));
         serviceRegistryTokenUtility.changeManager(address(serviceManager));
-        identityRegistryBridger.changeManager(address(serviceManager));
-        identityRegistryBridger.changeOperator(address(erc8004Operator));
+
+        // TODO revert back when IRB is operational
+        //identityRegistryBridger.changeManager(address(serviceManager));
+        //serviceManager.setIdentityRegistryBridger(address(identityRegistryBridger));
 
         // Deploying multisig contracts and multisig implementation
         gnosisSafe = new GnosisSafe();

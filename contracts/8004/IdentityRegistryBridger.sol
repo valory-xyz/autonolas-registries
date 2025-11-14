@@ -4,9 +4,6 @@ pragma solidity ^0.8.30;
 import {ERC721TokenReceiver} from "../../lib/solmate/src/tokens/ERC721.sol";
 
 interface IERC721 {
-    /// @dev Gives permission to `spender` to transfer `tokenId` token to another account.
-    function approve(address spender, uint256 id) external;
-
     /// @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
     function tokenURI(uint256 tokenId) external view returns (string memory);
 }
@@ -24,6 +21,15 @@ interface IIdentityRegistry {
     function setAgentUri(uint256 agentId, string calldata newUri) external;
 
     function getMetadata(uint256 agentId, string memory key) external view returns (bytes memory);
+}
+
+interface IValidationRegistry {
+    function validationRequest(
+        address validatorAddress,
+        uint256 agentId,
+        string calldata requestUri,
+        bytes32 requestHash
+    ) external;
 }
 
 interface IServiceRegistry {
@@ -79,6 +85,10 @@ error AgentIdAlreadyAssigned(uint256 agentId, uint256 serviceId);
 /// @dev Caught reentrancy violation.
 error ReentrancyGuard();
 
+/// @dev Provided wrong agent Id.
+/// @param agentId Agent Id.
+error WrongAgentId(uint256 agentId);
+
 /// @dev Provided wrong service Id.
 /// @param serviceId Service Id.
 error WrongServiceId(uint256 serviceId);
@@ -90,11 +100,12 @@ error WrongServiceId(uint256 serviceId);
 contract IdentityRegistryBridger is ERC721TokenReceiver {
     event OwnerUpdated(address indexed owner);
     event ManagerUpdated(address indexed manager);
-    event OperatorUpdated(address indexed operator);
     event ImplementationUpdated(address indexed implementation);
     event ServiceAgentLinked(uint256 indexed serviceId, uint256 indexed agentId, address multisig);
     event AgentUriUpdated(uint256 indexed serviceId, uint256 indexed agentId, string tokenUri);
     event AgentMultisigUpdated(uint256 indexed serviceId, uint256 indexed agentId, address oldMultisig, address indexed newMultisig);
+    event ValidationRequestSubmitted(address indexed sender, uint256 indexed agentId, address indexed validatorAddress,
+        string requestUri, bytes32 requestHash);
     event StartLinkServiceIdUpdated(uint256 indexed serviceId);
 
     // Version number
@@ -113,12 +124,14 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     // keccak256("PROXY_IDENTITY_REGISTRY_BRIDGER") = "0x03684189c8fb7a536ac4dbd4b7ad063c37db21bcd0f9c51fe45a4eb16359c165"
     bytes32 public constant PROXY_IDENTITY_REGISTRY_BRIDGER = 0x03684189c8fb7a536ac4dbd4b7ad063c37db21bcd0f9c51fe45a4eb16359c165;
 
-    // Identity Registry 8004 address
+    // 8004 Identity Registry address
     address public immutable identityRegistry;
+    // 8004 Reputation Registry address
+    address public immutable reputationRegistry;
+    // 8004 Validation Registry address
+    address public immutable validationRegistry;
     // Service Registry address
     address public immutable serviceRegistry;
-    // 8004 Operator address
-    address public immutable operator;
 
     // Owner address
     address public owner;
@@ -138,17 +151,27 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
     /// @dev IdentityRegistryBridger constructor.
     /// @param _identityRegistry 8004 Identity Registry address.
+    /// @param _reputationRegistry 8004 Reputation Registry address.
+    /// @param _validationRegistry 8004 Validation Registry address.
     /// @param _serviceRegistry Service Registry address.
-    /// @param _operator ERC-8004 Operator address.
-    constructor (address _identityRegistry, address _serviceRegistry, address _operator) {
+    constructor(
+        address _identityRegistry,
+        address _reputationRegistry,
+        address _validationRegistry,
+        address _serviceRegistry
+    ) {
         // Check for zero addresses
-        if (_identityRegistry == address(0) || _serviceRegistry == address(0) || _operator == address(0)) {
+        if (
+            _identityRegistry == address(0) || _reputationRegistry == address(0) || _validationRegistry == address(0) ||
+            _serviceRegistry == address(0)
+        ) {
             revert ZeroAddress();
         }
 
         identityRegistry = _identityRegistry;
+        reputationRegistry = _reputationRegistry;
+        validationRegistry = _validationRegistry;
         serviceRegistry = _serviceRegistry;
-        operator = _operator;
     }
 
     /// @dev Registers 8004 agent Id corresponding to service Id.
@@ -183,9 +206,6 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         mapServiceIdAgentIds[serviceId] = agentId;
         // Link multisig and agentId
         mapMultisigAgentIds[multisig] = agentId;
-
-        // Approve agentId operator
-        IERC721(identityRegistry).approve(operator, agentId);
 
         emit ServiceAgentLinked(serviceId, agentId, multisig);
     }
@@ -367,6 +387,39 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         _locked = 1;
     }
 
+    /// @dev Agent validation request.
+    /// @param validatorAddress Validator address.
+    /// @param agentId Agent Id.
+    /// @param requestUri Request URI.
+    /// @param requestHash Request hash.
+    function validationRequest(
+        address validatorAddress,
+        uint256 agentId,
+        string calldata requestUri,
+        bytes32 requestHash
+    ) external {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
+        // Check for msg.sender to be agent Id wallet
+        uint256 checkAgentId = mapMultisigAgentIds[msg.sender];
+
+        // Check for access
+        if (agentId != checkAgentId) {
+            revert WrongAgentId(agentId);
+        }
+
+        // Call validation request on behalf of agent
+        IValidationRegistry(validationRegistry).validationRequest(validatorAddress, agentId, requestUri, requestHash);
+
+        emit ValidationRequestSubmitted(msg.sender, agentId, validatorAddress, requestUri, requestHash);
+
+        _locked = 1;
+    }
+
     /// @dev Links service Ids with registered 8004 agent Ids.
     /// @param numServices Number of services to link.
     /// @return agentIds Set of 8004 agent Ids.
@@ -383,8 +436,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         }
 
         // Get max available service Id
-        // service Id numbering starts from id == 1, so last service Id is totalSupply + 1
-        uint256 maxServiceId = IServiceRegistry(serviceRegistry).totalSupply() + 1;
+        // service Id numbering starts from id == 1, so last service Id is totalSupply
+        uint256 maxServiceId = IServiceRegistry(serviceRegistry).totalSupply();
 
         // Get first and last service Ids bound
         uint256 startServiceId = startLinkServiceId;
@@ -393,9 +446,9 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         uint256 lastServiceId = startServiceId + numServices;
 
         // Adjust last service Id if needed
-        if (lastServiceId - 1 > maxServiceId) {
-            numServices = lastServiceId - maxServiceId;
-            lastServiceId = startServiceId + numServices;
+        if (lastServiceId > maxServiceId) {
+            lastServiceId = maxServiceId + 1;
+            numServices = lastServiceId - startServiceId;
         }
 
         // Allocate agentIds array
@@ -454,7 +507,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Get max available service Id
         // service Id numbering starts from id == 1, so last service Id is totalSupply + 1
-        uint256 maxServiceId = IServiceRegistry(serviceRegistry).totalSupply() + 1;
+        uint256 maxServiceId = IServiceRegistry(serviceRegistry).totalSupply();
 
         uint256 lastId;
         // Traverse services and update or create corresponding 8004 agents

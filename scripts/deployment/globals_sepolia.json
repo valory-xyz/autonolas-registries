@@ -28,8 +28,8 @@
   "serviceRegistryAddress": "0xAD558bcD056FD36137fabf2146F69434B8c8BFAF",
   "serviceRegistryTokenUtilityAddress": "0x5e2e409Fdc1DdafD2cC602806f56530eADD609C4",
   "operatorWhitelistAddress": "0x0a515a9BB75c29Fd7B4768294cfe9688332ad221",
-  "serviceManagerAddress": "0xb384da8e7D5372F3A4386351d08f9e91f6926926",
-  "serviceManagerProxyAddress": "0xB7c798726e88BcC61F1aA14cBeE38D8A94013fEF",
+  "serviceManagerAddress": "0xfEF17c2dcF365a331a28dB90090ECe71Db1C2892",
+  "serviceManagerProxyAddress": "0x22808322414594A2a4b8F46Af5760E193D316b5B",
   "stakingNativeTokenAddress": "",
   "stakingTokenAddress": "",
   "minStakingDepositLimit": "10000000000000000000000",
@@ -40,7 +40,6 @@
   "stakingFactoryAddress": "",
   "recoveryModuleAddress": "0x0a40C5ff1EB345E92DaAB5981Fc05219cCe4463E",
   "safeMultisigWithRecoveryModuleAddress": "0x164e1CA068afeF66EFbB9cA19d904c44E8386fd9",
-  "identityRegistryBridgerAddress": "0x787Ef8cb931f670aDE21f806A8e8A3553999689c",
-  "identityRegistryBridgerProxyAddress": "0x293b030678996ac600CAF53854177F60894DAF7A",
-  "erc8004OperatorAddress": "0x6C4C45B5005547e9465Ac61B771cC9712BE44ae0"
+  "identityRegistryBridgerAddress": "0x9E403D86EDa62358EEF7B22707E3aA2302917D26",
+  "identityRegistryBridgerProxyAddress": "0xC68b98C7417969c761659634CaE445d605CE0D5B"
 }

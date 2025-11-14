@@ -24,8 +24,8 @@ derivationPath=$(jq -r '.derivationPath' $globals)
 chainId=$(jq -r '.chainId' $globals)
 networkURL=$(jq -r '.networkURL' $globals)
 
-identityRegistryBridgerProxyAddress=$(jq -r '.identityRegistryBridgerProxyAddress' $globals)
-erc8004OperatorProxyAddress=$(jq -r '.erc8004OperatorProxyAddress' $globals)
+serviceManagerAddress=$(jq -r '.serviceManagerAddress' $globals)
+serviceManagerProxyAddress=$(jq -r '.serviceManagerProxyAddress' $globals)
 
 # Getting L1 API key
 if [ $chainId == 1 ]; then
@@ -54,8 +54,8 @@ fi
 
 castSendHeader="cast send --rpc-url $networkURL$API_KEY $walletArgs"
 
-echo "${green}Change operator in IdentityRegistryBridgerProxy${reset}"
-castArgs="$erc8004OperatorProxyAddress changeIdentityRegistryBridger(address) $identityRegistryBridgerProxyAddress"
+echo "${green}Change ServiceManager implementation in its proxy${reset}"
+castArgs="$serviceManagerProxyAddress changeImplementation(address) $serviceManagerAddress"
 echo $castArgs
 castCmd="$castSendHeader $castArgs"
 result=$($castCmd)

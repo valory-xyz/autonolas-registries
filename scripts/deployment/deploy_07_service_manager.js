@@ -13,7 +13,6 @@ async function main() {
     const providerName = parsedData.providerName;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
-    const operatorWhitelistAddress = parsedData.operatorWhitelistAddress;
     let EOA;
 
     const provider = await ethers.providers.getDefaultProvider(providerName);
@@ -33,7 +32,7 @@ async function main() {
     const ServiceManager = await ethers.getContractFactory("ServiceManager");
     console.log("You are signing the following transaction: ServiceManager.connect(EOA).deploy()");
     const serviceManager = await ServiceManager.connect(EOA).deploy(serviceRegistryAddress,
-        serviceRegistryTokenUtilityAddress, operatorWhitelistAddress);
+        serviceRegistryTokenUtilityAddress);
     const result = await serviceManager.deployed();
 
     // Transaction details
@@ -53,7 +52,7 @@ async function main() {
     // Contract verification
     if (parsedData.contractVerification) {
         const execSync = require("child_process").execSync;
-        execSync("npx hardhat verify --constructor-args scripts/deployment/verify_17_service_manager_token.js --network " + providerName + " " + serviceManager.address, { encoding: "utf-8" });
+        execSync("npx hardhat verify --constructor-args scripts/deployment/verify_07_service_manager.js --network " + providerName + " " + serviceManager.address, { encoding: "utf-8" });
     }
 }
 
