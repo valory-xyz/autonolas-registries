@@ -60,7 +60,7 @@ async function main() {
     // Mock Timelock contract across the bridge must change the manager address
     const globalsFile = fs.readFileSync("globals.json", "utf8");
     parsedFile = JSON.parse(globalsFile);
-    const rawPayload = serviceRegistryL2.interface.encodeFunctionData("changeManager", [parsedFile.serviceManagerTokenAddress]);
+    const rawPayload = serviceRegistryL2.interface.encodeFunctionData("changeManager", [parsedFile.serviceManagerAddress]);
     // Pack the second part of data
     const target = serviceRegistryL2Address;
     const value = 0;

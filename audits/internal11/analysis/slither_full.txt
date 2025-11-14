@@ -1,0 +1,59 @@
+INFO:Detectors:
+Reentrancy in IdentityRegistryBridger.linkServiceIdAgentIds(uint256) (IdentityRegistryBridger-flatten.sol#619-672):
+	External calls:
+	- agentIds[i] = _register(serviceId,multisig,tokenUri) (IdentityRegistryBridger-flatten.sol#661)
+		- agentId = IIdentityRegistry(identityRegistry).register(tokenUri,metadataEntries) (IdentityRegistryBridger-flatten.sol#411)
+		- IERC721(identityRegistry).approve(operator,agentId) (IdentityRegistryBridger-flatten.sol#419)
+	State variables written after the call(s):
+	- startLinkServiceId = lastServiceId (IdentityRegistryBridger-flatten.sol#669)
+	IdentityRegistryBridger.startLinkServiceId (IdentityRegistryBridger-flatten.sol#362) can be used in cross function reentrancies:
+	- IdentityRegistryBridger.initialize() (IdentityRegistryBridger-flatten.sol#453-461)
+	- IdentityRegistryBridger.linkServiceIdAgentIds(uint256) (IdentityRegistryBridger-flatten.sol#619-672)
+	- IdentityRegistryBridger.startLinkServiceId (IdentityRegistryBridger-flatten.sol#362)
+
+Reentrancy in IdentityRegistryBridger.updateOrLinkServiceIdAgentIds(uint256[]) (IdentityRegistryBridger-flatten.sol#678-754):
+	External calls:
+	- agentIds[i] = _register(serviceId,multisig,tokenUri) (IdentityRegistryBridger-flatten.sol#725)
+		- agentId = IIdentityRegistry(identityRegistry).register(tokenUri,metadataEntries) (IdentityRegistryBridger-flatten.sol#411)
+		- IERC721(identityRegistry).approve(operator,agentId) (IdentityRegistryBridger-flatten.sol#419)
+	- _updateAgentWallet(serviceId,agentId,oldMultisig,multisig) (IdentityRegistryBridger-flatten.sol#741)
+		- IIdentityRegistry(identityRegistry).setMetadata(agentId,AGENT_WALLET_METADATA_KEY,abi.encode(newMultisig)) (IdentityRegistryBridger-flatten.sol#442)
+	- _updateAgentUri(serviceId,agentId,tokenUri) (IdentityRegistryBridger-flatten.sol#750)
+		- IIdentityRegistry(identityRegistry).setAgentUri(agentId,tokenUri) (IdentityRegistryBridger-flatten.sol#430)
+	State variables written after the call(s):
+	- agentIds[i] = _register(serviceId,multisig,tokenUri) (IdentityRegistryBridger-flatten.sol#725)
+		- mapMultisigAgentIds[multisig] = agentId (IdentityRegistryBridger-flatten.sol#416)
+	IdentityRegistryBridger.mapMultisigAgentIds (IdentityRegistryBridger-flatten.sol#370) can be used in cross function reentrancies:
+	- IdentityRegistryBridger._register(uint256,address,string) (IdentityRegistryBridger-flatten.sol#390-422)
+	- IdentityRegistryBridger._updateAgentWallet(uint256,uint256,address,address) (IdentityRegistryBridger-flatten.sol#440-450)
+	- IdentityRegistryBridger.mapMultisigAgentIds (IdentityRegistryBridger-flatten.sol#370)
+	- IdentityRegistryBridger.updateOrLinkServiceIdAgentIds(uint256[]) (IdentityRegistryBridger-flatten.sol#678-754)
+	- _updateAgentWallet(serviceId,agentId,oldMultisig,multisig) (IdentityRegistryBridger-flatten.sol#741)
+		- mapMultisigAgentIds[oldMultisig] = 0 (IdentityRegistryBridger-flatten.sol#445)
+		- mapMultisigAgentIds[newMultisig] = agentId (IdentityRegistryBridger-flatten.sol#447)
+	IdentityRegistryBridger.mapMultisigAgentIds (IdentityRegistryBridger-flatten.sol#370) can be used in cross function reentrancies:
+	- IdentityRegistryBridger._register(uint256,address,string) (IdentityRegistryBridger-flatten.sol#390-422)
+	- IdentityRegistryBridger._updateAgentWallet(uint256,uint256,address,address) (IdentityRegistryBridger-flatten.sol#440-450)
+	- IdentityRegistryBridger.mapMultisigAgentIds (IdentityRegistryBridger-flatten.sol#370)
+	- IdentityRegistryBridger.updateOrLinkServiceIdAgentIds(uint256[]) (IdentityRegistryBridger-flatten.sol#678-754)
+	- agentIds[i] = _register(serviceId,multisig,tokenUri) (IdentityRegistryBridger-flatten.sol#725)
+		- mapServiceIdAgentIds[serviceId] = agentId (IdentityRegistryBridger-flatten.sol#414)
+	IdentityRegistryBridger.mapServiceIdAgentIds (IdentityRegistryBridger-flatten.sol#368) can be used in cross function reentrancies:
+	- IdentityRegistryBridger._register(uint256,address,string) (IdentityRegistryBridger-flatten.sol#390-422)
+	- IdentityRegistryBridger.linkServiceIdAgentIds(uint256) (IdentityRegistryBridger-flatten.sol#619-672)
+	- IdentityRegistryBridger.mapServiceIdAgentIds (IdentityRegistryBridger-flatten.sol#368)
+	- IdentityRegistryBridger.register(uint256,address,string) (IdentityRegistryBridger-flatten.sol#540-562)
+	- IdentityRegistryBridger.updateAgentUri(uint256,string) (IdentityRegistryBridger-flatten.sol#567-587)
+	- IdentityRegistryBridger.updateAgentWallet(uint256,address,address) (IdentityRegistryBridger-flatten.sol#593-614)
+	- IdentityRegistryBridger.updateOrLinkServiceIdAgentIds(uint256[]) (IdentityRegistryBridger-flatten.sol#678-754)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
+
+
+
+
+
+
+
+
+
+

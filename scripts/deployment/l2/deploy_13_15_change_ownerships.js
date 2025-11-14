@@ -14,7 +14,7 @@ async function main() {
     const gasPriceInGwei = parsedData.gasPriceInGwei;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
-    const serviceManagerTokenAddress = parsedData.serviceManagerTokenAddress;
+    const serviceManagerProxyAddress = parsedData.serviceManagerProxyAddress;
     let bridgeMediatorAddress = parsedData.bridgeMediatorAddress;
 
     let networkURL = parsedData.networkURL;
@@ -47,7 +47,7 @@ async function main() {
     // Get all the contracts
     const serviceRegistry = await ethers.getContractAt("ServiceRegistryL2", serviceRegistryAddress);
     const serviceRegistryTokenUtility = await ethers.getContractAt("ServiceRegistryTokenUtility", serviceRegistryTokenUtilityAddress);
-    const serviceManagerToken = await ethers.getContractAt("ServiceManagerToken", serviceManagerTokenAddress);
+    const serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerProxyAddress);
 
     // Gas pricing
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
@@ -67,11 +67,11 @@ async function main() {
     console.log("Contract address:", serviceRegistryTokenUtilityAddress);
     console.log("Transaction:", result.hash);
 
-    // 15. EOA to transfer ownership rights of ServiceManagerToken to BridgeMediator calling `changeOwner(BridgeMediator)`.
-    console.log("15. You are signing the following transaction: serviceManagerToken.connect(EOA).changeOwner()");
-    result = await serviceManagerToken.connect(EOA).changeOwner(bridgeMediatorAddress, { gasPrice });
+    // 15. EOA to transfer ownership rights of ServiceManager to BridgeMediator calling `changeOwner(BridgeMediator)`.
+    console.log("15. You are signing the following transaction: serviceManager.connect(EOA).changeOwner()");
+    result = await serviceManager.connect(EOA).changeOwner(bridgeMediatorAddress, { gasPrice });
     // Transaction details
-    console.log("Contract address:", serviceManagerTokenAddress);
+    console.log("Contract address:", serviceManagerProxyAddress);
     console.log("Transaction:", result.hash);
 }
 

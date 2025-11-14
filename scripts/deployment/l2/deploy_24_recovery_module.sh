@@ -11,7 +11,6 @@ fi
 contractVerification=$(jq -r '.contractVerification' $globals)
 useLedger=$(jq -r '.useLedger' $globals)
 derivationPath=$(jq -r '.derivationPath' $globals)
-gasPriceInGwei=$(jq -r '.gasPriceInGwei' $globals)
 chainId=$(jq -r '.chainId' $globals)
 networkURL=$(jq -r '.networkURL' $globals)
 
@@ -33,7 +32,8 @@ elif [ $chainId == 80002 ]; then
     fi
 fi
 
-contractPath="contracts/multisigs/RecoveryModule.sol:RecoveryModule"
+contractName="RecoveryModule"
+contractPath="contracts/multisigs/$contractName.sol:$contractName"
 constructorArgs="$multiSendCallOnlyAddress $serviceRegistryAddress"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
@@ -83,4 +83,4 @@ if [ "$contractVerification" == "true" ]; then
   fi
 fi
 
-echo "Contract deployed at: $recoveryModuleAddress"
+echo "$contractName deployed at: $recoveryModuleAddress"

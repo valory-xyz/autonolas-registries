@@ -45,6 +45,7 @@ async function main() {
 
     // Proposal preparation
     console.log("Proposal 8. Change manager for polygon ServiceRegistryL2\n");
+    // TODO: serviceManagerTokenAddress to be replaced with serviceManagerProxyAddress
     const rawPayload = serviceRegistry.interface.encodeFunctionData("changeManager", [serviceManagerTokenAddress]);
     // Pack the second part of data
     const target = serviceRegistryAddress;

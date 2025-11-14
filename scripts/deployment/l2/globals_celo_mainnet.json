@@ -20,7 +20,7 @@
   "serviceRegistryAddress": "0xE3607b00E75f6405248323A9417ff6b39B244b50",
   "operatorWhitelistAddress": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE",
   "serviceRegistryTokenUtilityAddress": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44",
-  "serviceManagerTokenAddress": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5",
+  "serviceManagerAddress": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5",
   "gnosisSafeMultisigImplementationAddress": "0xD421f433e36465B3e558B1121F584ac09Fc33DF8",
   "gnosisSafeSameAddressMultisigImplementationAddress": "0xBb7e1D6Cb6F243D6bdE81CE92a9f2aFF7Fbe7eac",
   "stakingTokenAddress": "0xe1E1B286EbE95b39F785d8069f2248ae9C41b7a9",

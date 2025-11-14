@@ -1,0 +1,85 @@
+'solc --version' running
+'solc ./ERC8004Operator-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal11/analysis/contracts' running
+'solc --version' running
+'solc ./IdentityRegistryBridger-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal11/analysis/contracts' running
+INFO:Printers:
++ Contract IIdentityRegistry (Most derived contract)
+  - From IIdentityRegistry
+    - getMetadata(uint256,string) (external)
+
++ Contract IIdentityRegistryBridger (Most derived contract)
+  - From IIdentityRegistryBridger
+    - mapMultisigAgentIds(address) (external)
+
++ Contract IValidationRegistry (Most derived contract)
+  - From IValidationRegistry
+    - validationRequest(address,uint256,string,bytes32) (external)
+
++ Contract ERC8004Operator (Most derived contract)
+  - From ERC8004Operator
+    - _checkAgentWallet(uint256) (internal)
+    - authorizeFeedback(address,uint64,uint256) (external)
+    - changeOwner(address) (external)
+    - constructor(address,address,address) (public)
+    - isValidSignature(bytes32,bytes) (external)
+    - validationRequest(address,uint256,string,bytes32) (external)
+
+INFO:Printers:
++ Contract ERC721 (Most derived contract)
+  - From ERC721
+    - _burn(uint256) (internal)
+    - _mint(address,uint256) (internal)
+    - _safeMint(address,uint256) (internal)
+    - _safeMint(address,uint256,bytes) (internal)
+    - approve(address,uint256) (public)
+    - balanceOf(address) (public)
+    - constructor(string,string) (internal)
+    - ownerOf(uint256) (public)
+    - safeTransferFrom(address,address,uint256) (public)
+    - safeTransferFrom(address,address,uint256,bytes) (public)
+    - setApprovalForAll(address,bool) (public)
+    - supportsInterface(bytes4) (public)
+    - tokenURI(uint256) (public)
+    - transferFrom(address,address,uint256) (public)
+
++ Contract ERC721TokenReceiver
+  - From ERC721TokenReceiver
+    - onERC721Received(address,address,uint256,bytes) (external)
+
++ Contract IERC721 (Most derived contract)
+  - From IERC721
+    - approve(address,uint256) (external)
+    - tokenURI(uint256) (external)
+
++ Contract IIdentityRegistry (Most derived contract)
+  - From IIdentityRegistry
+    - getMetadata(uint256,string) (external)
+    - register(string,IIdentityRegistry.MetadataEntry[]) (external)
+    - setAgentUri(uint256,string) (external)
+    - setMetadata(uint256,string,bytes) (external)
+
++ Contract IServiceRegistry (Most derived contract)
+  - From IServiceRegistry
+    - mapServices(uint256) (external)
+    - totalSupply() (external)
+
++ Contract IdentityRegistryBridger (Most derived contract)
+  - From ERC721TokenReceiver
+    - onERC721Received(address,address,uint256,bytes) (external)
+  - From IdentityRegistryBridger
+    - _register(uint256,address,string) (internal)
+    - _updateAgentUri(uint256,uint256,string) (internal)
+    - _updateAgentWallet(uint256,uint256,address,address) (internal)
+    - changeImplementation(address) (external)
+    - changeManager(address) (external)
+    - changeOperator(address) (external)
+    - changeOwner(address) (external)
+    - constructor(address,address) (public)
+    - initialize() (external)
+    - linkServiceIdAgentIds(uint256) (external)
+    - register(uint256,address,string) (external)
+    - updateAgentUri(uint256,string) (external)
+    - updateAgentWallet(uint256,address,address) (external)
+    - updateOrLinkServiceIdAgentIds(uint256[]) (public)
+
+INFO:Slither:. analyzed (10 contracts)
