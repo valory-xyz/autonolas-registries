@@ -436,8 +436,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         }
 
         // Get max available service Id
-        // service Id numbering starts from id == 1, so last service Id is totalSupply + 1
-        uint256 maxServiceId = IServiceRegistry(serviceRegistry).totalSupply() + 1;
+        // service Id numbering starts from id == 1, so last service Id is totalSupply
+        uint256 maxServiceId = IServiceRegistry(serviceRegistry).totalSupply();
 
         // Get first and last service Ids bound
         uint256 startServiceId = startLinkServiceId;
@@ -446,9 +446,9 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         uint256 lastServiceId = startServiceId + numServices;
 
         // Adjust last service Id if needed
-        if (lastServiceId - 1 > maxServiceId) {
-            numServices = lastServiceId - maxServiceId;
-            lastServiceId = startServiceId + numServices;
+        if (lastServiceId > maxServiceId) {
+            lastServiceId = maxServiceId + 1;
+            numServices = lastServiceId - startServiceId;
         }
 
         // Allocate agentIds array
@@ -507,7 +507,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Get max available service Id
         // service Id numbering starts from id == 1, so last service Id is totalSupply + 1
-        uint256 maxServiceId = IServiceRegistry(serviceRegistry).totalSupply() + 1;
+        uint256 maxServiceId = IServiceRegistry(serviceRegistry).totalSupply();
 
         uint256 lastId;
         // Traverse services and update or create corresponding 8004 agents

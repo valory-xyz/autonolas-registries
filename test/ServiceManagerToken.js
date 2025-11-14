@@ -121,8 +121,10 @@ describe("ServiceManagerToken", function () {
         // Wrap serviceManager proxy contract
         serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerProxy.address);
 
-        await identityRegistryBridger.changeManager(serviceManager.address);
-        await serviceManager.setIdentityRegistryBridger(identityRegistryBridger.address);
+        // TODO revert back when IRB is operational
+        //wait identityRegistryBridger.changeManager(serviceManager.address);
+        //await serviceManager.setIdentityRegistryBridger(identityRegistryBridger.address);
+
         await serviceManager.setOperatorWhitelist(operatorWhitelist.address);
 
         serviceManagerL2 = await ServiceManager.deploy(serviceRegistryL2.address, serviceRegistryTokenUtilityL2.address);
