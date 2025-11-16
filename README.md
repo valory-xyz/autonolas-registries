@@ -49,8 +49,7 @@ The following list represents registries contracts:
   - [ServiceRegistryTokenUtility](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceRegistryTokenUtility.sol)
 - Periphery contracts:
   - [RegistriesManager](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/RegistriesManager.sol)
-  - [ServiceManagerToken](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceManagerToken.sol)
-  - [ServiceManager (deprecated)](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceManager.sol)
+  - [ServiceManager](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/ServiceManager.sol)
 - Utility contracts:
   - [OperatorSignedHashes](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/utils/OperatorSignedHashes.sol)
   - [OperatorWhitelist](https://github.com/valory-xyz/autonolas-registries/blob/main/contracts/utils/OperatorWhitelist.sol)
@@ -112,17 +111,32 @@ test
 ```
 
 ### Compile the code and run
-Compile the code:
+#### Hardhat
+Compile the code with Hardhat:
 ```
-npx hardhat compile
+yarn compile
 ```
-Run the tests:
+Run tests with Hardhat:
 ```
-npx hardhat test
+yarn test
 ```
-Run tests with forge:
+Run coverage with Hardhat:
 ```
-forge test --hh -vvv
+yarn coverage
+```
+
+#### Forge
+Compile the code with Forge:
+```
+forge build
+```
+Run tests with Forge (skip fork testing):
+```
+forge test --match-contract Staking -vvv
+```
+Run fork tests with Forge:
+```
+forge test -f $FORK_NODE_URL --match-contract IdentityRegistry -vvv
 ```
 
 ### Test with instrumented code

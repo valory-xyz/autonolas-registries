@@ -34,7 +34,8 @@ elif [ $chainId == 80002 ]; then
     fi
 fi
 
-contractPath="contracts/multisigs/SafeMultisigWithRecoveryModule.sol:SafeMultisigWithRecoveryModule"
+contractName="SafeMultisigWithRecoveryModule"
+contractPath="contracts/multisigs/$contractName.sol:$contractName"
 constructorArgs="$gnosisSafeAddress $gnosisSafeProxyFactoryAddress $recoveryModuleAddress"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
@@ -84,4 +85,4 @@ if [ "$contractVerification" == "true" ]; then
   fi
 fi
 
-echo "Contract deployed at: $safeMultisigWithRecoveryModuleAddress"
+echo "$contractName deployed at: $safeMultisigWithRecoveryModuleAddress"

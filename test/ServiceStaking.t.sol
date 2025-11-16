@@ -7,11 +7,15 @@ import {GnosisSafeProxyFactory} from "@gnosis.pm/safe-contracts/contracts/proxie
 import {Test} from "forge-std/Test.sol";
 import {Utils} from "./utils/Utils.sol";
 import {ERC20Token} from "../contracts/test/ERC20Token.sol";
+import {GnosisSafeMultisig} from "../contracts/multisigs/GnosisSafeMultisig.sol";
 import {ServiceRegistryL2} from "../contracts/ServiceRegistryL2.sol";
 import {ServiceRegistryTokenUtility} from "../contracts/ServiceRegistryTokenUtility.sol";
-import {ServiceManagerToken} from "../contracts/ServiceManagerToken.sol";
 import {OperatorWhitelist} from "../contracts/utils/OperatorWhitelist.sol";
-import {GnosisSafeMultisig} from "../contracts/multisigs/GnosisSafeMultisig.sol";
+import {ServiceManager} from "../contracts/ServiceManager.sol";
+import {ServiceManagerProxy} from "../contracts/ServiceManagerProxy.sol";
+import {MockIdentityRegistry} from "../contracts/test/MockIdentityRegistry.sol";
+import {IdentityRegistryBridger} from "../contracts/8004/IdentityRegistryBridger.sol";
+import {IdentityRegistryBridgerProxy} from "../contracts/8004/IdentityRegistryBridgerProxy.sol";
 import "../contracts/staking/StakingNativeToken.sol";
 import {StakingToken} from "../contracts/staking/StakingToken.sol";
 import {StakingVerifier} from "../contracts/staking/StakingVerifier.sol";
@@ -22,14 +26,16 @@ import {SafeNonceLib} from "../contracts/test/SafeNonceLib.sol";
 contract BaseSetup is Test {
     Utils internal utils;
     ERC20Token internal token;
-    ServiceRegistryL2 internal serviceRegistry;
-    ServiceRegistryTokenUtility internal serviceRegistryTokenUtility;
-    OperatorWhitelist internal operatorWhitelist;
-    ServiceManagerToken internal serviceManagerToken;
     GnosisSafe internal gnosisSafe;
     GnosisSafeProxy internal gnosisSafeProxy;
     GnosisSafeProxyFactory internal gnosisSafeProxyFactory;
     GnosisSafeMultisig internal gnosisSafeMultisig;
+    ServiceRegistryL2 internal serviceRegistry;
+    ServiceRegistryTokenUtility internal serviceRegistryTokenUtility;
+    OperatorWhitelist internal operatorWhitelist;
+    ServiceManager internal serviceManager;
+    MockIdentityRegistry internal identityRegistry;
+    IdentityRegistryBridger internal identityRegistryBridger;
     StakingNativeToken internal stakingNativeTokenImplementation;
     StakingNativeToken internal stakingNativeToken;
     StakingToken internal stakingTokenImplementation;
@@ -98,9 +104,26 @@ contract BaseSetup is Test {
         serviceRegistry = new ServiceRegistryL2("Service Registry", "SERVICE", "https://localhost/service/");
         serviceRegistryTokenUtility = new ServiceRegistryTokenUtility(address(serviceRegistry));
         operatorWhitelist = new OperatorWhitelist(address(serviceRegistry));
-        serviceManagerToken = new ServiceManagerToken(address(serviceRegistry), address(serviceRegistryTokenUtility), address(operatorWhitelist));
-        serviceRegistry.changeManager(address(serviceManagerToken));
-        serviceRegistryTokenUtility.changeManager(address(serviceManagerToken));
+
+        identityRegistry = new MockIdentityRegistry();
+        identityRegistryBridger = new IdentityRegistryBridger(address(identityRegistry), address(identityRegistry),
+            address(identityRegistry), address(serviceRegistry));
+        bytes memory proxyData = abi.encodeWithSelector(identityRegistryBridger.initialize.selector, "");
+        IdentityRegistryBridgerProxy identityRegistryBridgerProxy =
+            new IdentityRegistryBridgerProxy(address(identityRegistryBridger), proxyData);
+        identityRegistryBridger = IdentityRegistryBridger(address(identityRegistryBridgerProxy));
+
+        serviceManager = new ServiceManager(address(serviceRegistry), address(serviceRegistryTokenUtility));
+        proxyData = abi.encodeWithSelector(serviceManager.initialize.selector, "");
+        ServiceManagerProxy serviceManagerProxy = new ServiceManagerProxy(address(serviceManager), proxyData);
+        serviceManager = ServiceManager(address(serviceManagerProxy));
+
+        serviceRegistry.changeManager(address(serviceManager));
+        serviceRegistryTokenUtility.changeManager(address(serviceManager));
+
+        // TODO revert back when IRB is operational
+        //identityRegistryBridger.changeManager(address(serviceManager));
+        //serviceManager.setIdentityRegistryBridger(address(identityRegistryBridger));
 
         // Deploying multisig contracts and multisig implementation
         gnosisSafe = new GnosisSafe();
@@ -160,23 +183,23 @@ contract BaseSetup is Test {
         // Create services, activate them, register agent instances and deploy
         for (uint256 i = 0; i < numServices; ++i) {
             // Create a service
-            serviceManagerToken.create(deployer, serviceManagerToken.ETH_TOKEN_ADDRESS(), unitHash, agentIds,
+            serviceManager.create(deployer, serviceManager.ETH_TOKEN_ADDRESS(), unitHash, agentIds,
                 agentParams, threshold);
 
             uint256 serviceId = i + 1;
             // Activate registration
             vm.prank(deployer);
-            serviceManagerToken.activateRegistration{value: regDeposit}(serviceId);
+            serviceManager.activateRegistration{value: regDeposit}(serviceId);
 
             // Register agent instances
             address[] memory agentInstancesService = new address[](1);
             agentInstancesService[0] = agentInstances[i];
             vm.prank(operator);
-            serviceManagerToken.registerAgents{value: regBond}(serviceId, agentInstancesService, agentIds);
+            serviceManager.registerAgents{value: regBond}(serviceId, agentInstancesService, agentIds);
 
             // Deploy the service
             vm.prank(deployer);
-            serviceManagerToken.deploy(serviceId, address(gnosisSafeMultisig), payload);
+            serviceManager.deploy(serviceId, address(gnosisSafeMultisig), payload);
         }
 
         // Create services with ERC20 token, activate them, register agent instances and deploy
@@ -186,22 +209,22 @@ contract BaseSetup is Test {
         token.approve(address(serviceRegistryTokenUtility), initialMint);
         for (uint256 i = 0; i < numServices; ++i) {
             // Create a service
-            serviceManagerToken.create(deployer, address(token), unitHash, agentIds, agentParams, threshold);
+            serviceManager.create(deployer, address(token), unitHash, agentIds, agentParams, threshold);
 
             uint256 serviceId = i + numServices + 1;
             // Activate registration
             vm.prank(deployer);
-            serviceManagerToken.activateRegistration{value: 1}(serviceId);
+            serviceManager.activateRegistration{value: 1}(serviceId);
 
             // Register agent instances
             address[] memory agentInstancesService = new address[](1);
             agentInstancesService[0] = agentInstances[i + numServices];
             vm.prank(operator);
-            serviceManagerToken.registerAgents{value: 1}(serviceId, agentInstancesService, agentIds);
+            serviceManager.registerAgents{value: 1}(serviceId, agentInstancesService, agentIds);
 
             // Deploy the service
             vm.prank(deployer);
-            serviceManagerToken.deploy(serviceId, address(gnosisSafeMultisig), payload);
+            serviceManager.deploy(serviceId, address(gnosisSafeMultisig), payload);
         }
     }
 }

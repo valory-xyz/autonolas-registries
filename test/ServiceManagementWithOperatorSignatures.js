@@ -9,6 +9,8 @@ describe("ServiceManagementWithOperatorSignatures", function () {
     let agentRegistry;
     let serviceRegistry;
     let serviceRegistryTokenUtility;
+    let identityRegistry;
+    let identityRegistryBridger;
     let serviceManager;
     let gnosisSafe;
     let gnosisSafeMultisig;
@@ -82,10 +84,41 @@ describe("ServiceManagementWithOperatorSignatures", function () {
         serviceRegistryTokenUtility = await ServiceRegistryTokenUtility.deploy(serviceRegistry.address);
         await serviceRegistryTokenUtility.deployed();
 
-        const ServiceManager = await ethers.getContractFactory("ServiceManagerToken");
-        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address,
-            AddressZero);
+        const IdentityRegistry = await ethers.getContractFactory("MockIdentityRegistry");
+        identityRegistry = await IdentityRegistry.deploy();
+        await identityRegistry.deployed();
+
+        const IdentityRegistryBridger = await ethers.getContractFactory("IdentityRegistryBridger");
+        identityRegistryBridger = await IdentityRegistryBridger.deploy(identityRegistry.address,
+            identityRegistry.address, identityRegistry.address, serviceRegistry.address);
+        await identityRegistryBridger.deployed();
+
+        let proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", []);
+        // Deploy identityRegistryBridger proxy based on the needed identityRegistryBridger initialization
+        const IdentityRegistryBridgerProxy = await ethers.getContractFactory("IdentityRegistryBridgerProxy");
+        const identityRegistryBridgerProxy = await IdentityRegistryBridgerProxy.deploy(identityRegistryBridger.address,
+            proxyData);
+        await identityRegistryBridgerProxy.deployed();
+
+        // Wrap identityRegistryBridger proxy contract
+        identityRegistryBridger = await ethers.getContractAt("IdentityRegistryBridger", identityRegistryBridgerProxy.address);
+
+        const ServiceManager = await ethers.getContractFactory("ServiceManager");
+        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
         await serviceManager.deployed();
+
+        proxyData = serviceManager.interface.encodeFunctionData("initialize", []);
+        // Deploy serviceManager proxy based on the needed serviceManager initialization
+        const ServiceManagerProxy = await ethers.getContractFactory("ServiceManagerProxy");
+        const serviceManagerProxy = await ServiceManagerProxy.deploy(serviceManager.address, proxyData);
+        await serviceManagerProxy.deployed();
+
+        // Wrap serviceManager proxy contract
+        serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerProxy.address);
+
+        // TODO revert back when IRB is operational
+        //await identityRegistryBridger.changeManager(serviceManager.address);
+        //await serviceManager.setIdentityRegistryBridger(identityRegistryBridger.address);
 
         const Token = await ethers.getContractFactory("ERC20Token");
         token = await Token.deploy();
@@ -193,8 +226,8 @@ describe("ServiceManagementWithOperatorSignatures", function () {
                 ]
             };
 
-            const managerName = await serviceManager.name();
-            const managerVersion = await serviceManager.version();
+            const managerName = await serviceManager.NAME();
+            const managerVersion = await serviceManager.VERSION();
             const EIP712_DOMAIN = { name: managerName, version: managerVersion, chainId: chainId, verifyingContract: serviceManager.address };
             // Get the signature of an unbond transaction
             let signatureBytes = await operator._signTypedData(EIP712_DOMAIN, EIP712_UNBOND_TX_TYPE, unbondTx);
@@ -205,6 +238,7 @@ describe("ServiceManagementWithOperatorSignatures", function () {
             signMessageData = [await safeContracts.safeSignMessage(serviceOwnerOwners[0], serviceOwnerMultisig, txHashData, 0),
                 await safeContracts.safeSignMessage(serviceOwnerOwners[1], serviceOwnerMultisig, txHashData, 0)];
             await safeContracts.executeTx(serviceOwnerMultisig, txHashData, signMessageData, 0);
+
             // Check that the unbond nonce has changed
             expect(await serviceManager.getOperatorUnbondNonce(operator.address, serviceId)).to.equal(unbondNonce + 1);
 
@@ -404,8 +438,8 @@ describe("ServiceManagementWithOperatorSignatures", function () {
                 ]
             };
 
-            const managerName = await serviceManager.name();
-            const managerVersion = await serviceManager.version();
+            const managerName = await serviceManager.NAME();
+            const managerVersion = await serviceManager.VERSION();
             const EIP712_DOMAIN = { name: managerName, version: managerVersion, chainId: chainId, verifyingContract: serviceManager.address };
             // Get the signature of an unbond transaction
             let signatureBytes = await operator._signTypedData(EIP712_DOMAIN, EIP712_UNBOND_TX_TYPE, unbondTx);
@@ -669,8 +703,8 @@ describe("ServiceManagementWithOperatorSignatures", function () {
                 ]
             };
 
-            const managerName = await serviceManager.name();
-            const managerVersion = await serviceManager.version();
+            const managerName = await serviceManager.NAME();
+            const managerVersion = await serviceManager.VERSION();
             const EIP712_DOMAIN = { name: managerName, version: managerVersion, chainId: chainId, verifyingContract: serviceManager.address };
             // Get the signature of an unbond transaction
             let signatureBytes = await operator._signTypedData(EIP712_DOMAIN, EIP712_UNBOND_TX_TYPE, unbondTx);

@@ -31,6 +31,10 @@ contracts is located in this folder: [internal audit 9](https://github.com/valor
 An internal audit with a focus on next update of StakingBase
 contracts is located in this folder: [internal audit 10](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal10).
 
+An internal audit with a focus on next update of ERC-8004 bridge
+contracts is located in this folder: [internal audit 11](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal11).
+
+
 ### External audit
 
 Following the initial contracts [audit report](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/Valory%20Review%20Final.pdf),

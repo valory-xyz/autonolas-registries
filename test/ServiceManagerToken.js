@@ -12,6 +12,9 @@ describe("ServiceManagerToken", function () {
     let serviceRegistryL2;
     let serviceRegistryTokenUtility;
     let serviceRegistryTokenUtilityL2;
+    let identityRegistry;
+    let identityRegistryBridger;
+    let erc8004Operator;
     let serviceManager;
     let serviceManagerL2;
     let gnosisSafeMultisig;
@@ -86,14 +89,54 @@ describe("ServiceManagerToken", function () {
         operatorWhitelistL2 = await OperatorWhitelist.deploy(serviceRegistryL2.address);
         await operatorWhitelistL2.deployed();
 
-        const ServiceManager = await ethers.getContractFactory("ServiceManagerToken");
-        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address,
-            operatorWhitelist.address);
+        const IdentityRegistry = await ethers.getContractFactory("MockIdentityRegistry");
+        identityRegistry = await IdentityRegistry.deploy();
+        await identityRegistry.deployed();
+
+        const IdentityRegistryBridger = await ethers.getContractFactory("IdentityRegistryBridger");
+        identityRegistryBridger = await IdentityRegistryBridger.deploy(identityRegistry.address,
+            identityRegistry.address, identityRegistry.address, serviceRegistry.address);
+        await identityRegistryBridger.deployed();
+
+        let proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", []);
+        // Deploy identityRegistryBridger proxy based on the needed identityRegistryBridger initialization
+        const IdentityRegistryBridgerProxy = await ethers.getContractFactory("IdentityRegistryBridgerProxy");
+        const identityRegistryBridgerProxy = await IdentityRegistryBridgerProxy.deploy(identityRegistryBridger.address,
+            proxyData);
+        await identityRegistryBridgerProxy.deployed();
+
+        // Wrap identityRegistryBridger proxy contract
+        identityRegistryBridger = await ethers.getContractAt("IdentityRegistryBridger", identityRegistryBridgerProxy.address);
+
+        const ServiceManager = await ethers.getContractFactory("ServiceManager");
+        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
         await serviceManager.deployed();
 
-        serviceManagerL2 = await ServiceManager.deploy(serviceRegistryL2.address, serviceRegistryTokenUtilityL2.address,
-            operatorWhitelistL2.address);
+        proxyData = serviceManager.interface.encodeFunctionData("initialize", []);
+        // Deploy serviceManager proxy based on the needed serviceManager initialization
+        const ServiceManagerProxy = await ethers.getContractFactory("ServiceManagerProxy");
+        const serviceManagerProxy = await ServiceManagerProxy.deploy(serviceManager.address, proxyData);
+        await serviceManagerProxy.deployed();
+
+        // Wrap serviceManager proxy contract
+        serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerProxy.address);
+
+        // TODO revert back when IRB is operational
+        //wait identityRegistryBridger.changeManager(serviceManager.address);
+        //await serviceManager.setIdentityRegistryBridger(identityRegistryBridger.address);
+
+        await serviceManager.setOperatorWhitelist(operatorWhitelist.address);
+
+        serviceManagerL2 = await ServiceManager.deploy(serviceRegistryL2.address, serviceRegistryTokenUtilityL2.address);
         await serviceManagerL2.deployed();
+
+        const serviceManagerProxyL2 = await ServiceManagerProxy.deploy(serviceManagerL2.address, proxyData);
+        await serviceManagerProxyL2.deployed();
+
+        // Wrap serviceManagerL2 proxy contract
+        serviceManagerL2 = await ethers.getContractAt("ServiceManager", serviceManagerProxyL2.address);
+
+        await serviceManagerL2.setOperatorWhitelist(operatorWhitelistL2.address);
 
         const Token = await ethers.getContractFactory("ERC20Token");
         token = await Token.deploy();
@@ -112,14 +155,14 @@ describe("ServiceManagerToken", function () {
 
     context("Initialization", async function () {
         it("Constructor must fail with zero provided addresses", async function () {
-            const ServiceManager = await ethers.getContractFactory("ServiceManagerToken");
+            const ServiceManager = await ethers.getContractFactory("ServiceManager");
 
             await expect(
-                ServiceManager.deploy(AddressZero, AddressZero, AddressZero)
+                ServiceManager.deploy(AddressZero, AddressZero)
             ).to.be.revertedWithCustomError(serviceManager, "ZeroAddress");
 
             await expect(
-                ServiceManager.deploy(serviceRegistry.address, AddressZero, AddressZero)
+                ServiceManager.deploy(serviceRegistry.address, AddressZero)
             ).to.be.revertedWithCustomError(serviceManager, "ZeroAddress");
         });
 
@@ -217,7 +260,7 @@ describe("ServiceManagerToken", function () {
             await serviceManager.connect(owner).activateRegistration(serviceIds[0], {value: regDeposit});
             await serviceManager.connect(owner).activateRegistration(serviceIds[1], {value: regDeposit});
             await serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[2]],
-                [agentIds[0], agentIds[0]], {value: 2*regBond});
+                [agentIds[0], agentIds[0]], {value: 2 * regBond});
             await serviceManager.connect(operator).registerAgents(serviceIds[1], [agentInstances[1]], [agentIds[1]], {value: regBond});
 
             expect(await serviceRegistry.exists(2)).to.equal(true);
@@ -265,7 +308,7 @@ describe("ServiceManagerToken", function () {
             ).to.be.revertedWithCustomError(serviceManager, "ZeroAddress");
         });
     });
-    
+
     context("Service creation and update via manager", async function () {
         it("Creating services, updating one of them", async function () {
             const manager = signers[4];
@@ -296,6 +339,7 @@ describe("ServiceManagerToken", function () {
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
                     operatorWhitelist = operatorWhitelistL2;
+                    identityRegistryBridger.changeManager(serviceManager.address);
                 }
 
                 const manager = signers[4];
@@ -350,6 +394,7 @@ describe("ServiceManagerToken", function () {
                 // Set the operator whitelist checker contract
                 // Whitelist a random operator address for the service
                 await operatorWhitelist.setOperatorsStatuses(serviceIds[0], [signers[15].address], [true], true);
+
                 // Try to register agents with the non-whitelited operator address
                 await expect(
                     serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[1]],
@@ -369,7 +414,7 @@ describe("ServiceManagerToken", function () {
                 await token.connect(operator).approve(serviceRegistryTokenUtility.address, 2 * regBond);
                 // Registering agents for the service Id
                 await serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[1]],
-                    agentIds, {value: 2*regBond});
+                    agentIds, {value: 2});
                 service = await serviceRegistry.getService(serviceIds[0]);
                 expect(service.state).to.equal(3);
 
@@ -397,6 +442,7 @@ describe("ServiceManagerToken", function () {
                     serviceRegistry = serviceRegistryL2;
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
+                    identityRegistryBridger.changeManager(serviceManager.address);
                 }
 
                 const manager = signers[4];
@@ -419,7 +465,7 @@ describe("ServiceManagerToken", function () {
                 const newAgentParams = [[1, regBond]];
 
                 // Remove the operator whitelist check completely
-                serviceManager.connect(deployer).setOperatorWhitelist(AddressZero);
+                await serviceManager.connect(deployer).setOperatorWhitelist(AddressZero);
 
                 // Creating one service with the ERC20 token bond
                 await serviceManager.create(deployer.address, token.address, configHash, newAgentIds, newAgentParams, threshold);
@@ -436,7 +482,7 @@ describe("ServiceManagerToken", function () {
                 await token.connect(operator).approve(serviceRegistryTokenUtility.address, regBond);
                 // Registering agents for the service Id
                 await serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstance.address],
-                    newAgentIds, {value: regBond});
+                    newAgentIds, {value: 1});
                 service = await serviceRegistry.getService(serviceIds[0]);
                 expect(service.state).to.equal(3);
 
@@ -496,6 +542,7 @@ describe("ServiceManagerToken", function () {
                     serviceRegistry = serviceRegistryL2;
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
+                    identityRegistryBridger.changeManager(serviceManager.address);
                 }
 
                 const manager = signers[4];
@@ -543,7 +590,7 @@ describe("ServiceManagerToken", function () {
 
                 // Registering agents for service Id == 1
                 await serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[2]],
-                    [newAgentIds[0], newAgentIds[0]], {value: 2*regBond});
+                    [newAgentIds[0], newAgentIds[0]], {value: 2 * regBond});
                 // After the update, service has only 2 slots for canonical agent 1 and 1 slot for canonical agent 3
                 await expect(
                     serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstances[3]], [newAgentIds[0]], {value: regBond})
@@ -573,6 +620,7 @@ describe("ServiceManagerToken", function () {
                     serviceRegistry = serviceRegistryL2;
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
+                    identityRegistryBridger.changeManager(serviceManager.address);
                 }
 
                 const manager = signers[4];
@@ -609,6 +657,7 @@ describe("ServiceManagerToken", function () {
                     serviceRegistry = serviceRegistryL2;
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
+                    identityRegistryBridger.changeManager(serviceManager.address);
                 }
 
                 const manager = signers[4];
@@ -636,7 +685,7 @@ describe("ServiceManagerToken", function () {
 
                 // Registering agents for service Id == 1
                 await serviceManager.connect(operators[0]).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[1]],
-                    [newAgentIds[0], newAgentIds[1]], {value: 2*regBond});
+                    [newAgentIds[0], newAgentIds[1]], {value: 2 * regBond});
 
                 // Whitelist gnosis multisig implementation
                 await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
@@ -684,6 +733,7 @@ describe("ServiceManagerToken", function () {
                     serviceRegistry = serviceRegistryL2;
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
+                    identityRegistryBridger.changeManager(serviceManager.address);
                 }
 
                 const manager = signers[4];
@@ -747,6 +797,7 @@ describe("ServiceManagerToken", function () {
                     serviceRegistry = serviceRegistryL2;
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
+                    identityRegistryBridger.changeManager(serviceManager.address);
                 }
 
                 const mechManager = signers[3];
@@ -797,6 +848,7 @@ describe("ServiceManagerToken", function () {
                     serviceRegistry = serviceRegistryL2;
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
+                    identityRegistryBridger.changeManager(serviceManager.address);
                 }
 
                 const manager = signers[4];
@@ -920,7 +972,7 @@ describe("ServiceManagerToken", function () {
             const newAgentParams = [[1, regBond]];
 
             // Remove the operator whitelist check completely
-            serviceManager.connect(deployer).setOperatorWhitelist(AddressZero);
+            await serviceManager.connect(deployer).setOperatorWhitelist(AddressZero);
 
             // Creating one service with the ERC20 token bond
             await serviceManager.create(deployer.address, reentrancyAttacker.address, configHash, newAgentIds, newAgentParams, threshold);
@@ -932,7 +984,7 @@ describe("ServiceManagerToken", function () {
 
             // Registering agents for the service Id
             await serviceManager.connect(operator).registerAgents(serviceIds[0], [agentInstance.address],
-                newAgentIds, {value: regBond});
+                newAgentIds, {value: 1});
             service = await serviceRegistry.getService(serviceIds[0]);
             expect(service.state).to.equal(3);
 
