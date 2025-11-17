@@ -195,7 +195,7 @@ Not MUST by standard!!!
 ### Update. Audit ServiceManager proxy/implementation 14.11.25
 The review has been performed based on the contract code in the following repository:<br>
 `https://github.com/valory-xyz/autonolas-registries` <br>
-commit: ffd82745c94d840d46c82983e927783ca411b586 <br>
+commit: 25ccb64ea162382c5e817cd065ad88361cd9295e <br>
 
 ### Storage
 ```
@@ -205,3 +205,29 @@ sol2uml storage contracts/ -f png -c ServiceManager -o audits/internal11/Service
 
 ### Issue.
 No issue
+
+### Update. Audit ServiceManager implementation with 8004 bridge 17.11.25
+The review has been performed based on the contract code in the following repository:<br>
+`https://github.com/valory-xyz/autonolas-registries` <br>
+commit: ffd82745c94d840d46c82983e927783ca411b586 <br>
+
+### Audit scope
+https://github.com/valory-xyz/autonolas-registries/blob/8004_extension/contracts/ServiceManager.sol and imported contracts <br>
+https://github.com/valory-xyz/autonolas-registries/tree/8004_extension/contracts/8004 <br>
+
+### Storage
+```
+sol2uml storage contracts/ -f png -c ServiceManager -o audits/internal11/ServiceManagerWith8004.png
+```
+[ServiceManagerWith8004](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal11/ServiceManagerWith8004.png)
+OK.
+
+### Issue.
+### Low/Notes. Fixing comments
+```
+        // service Id numbering starts from id == 1, so last service Id is totalSupply + 1
+        ->
+        // ... so last service Id is totalSupply
+```
+[]
+
