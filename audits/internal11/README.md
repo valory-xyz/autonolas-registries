@@ -195,7 +195,7 @@ Not MUST by standard!!!
 ### Update. Audit ServiceManager proxy/implementation 14.11.25
 The review has been performed based on the contract code in the following repository:<br>
 `https://github.com/valory-xyz/autonolas-registries` <br>
-commit: 25ccb64ea162382c5e817cd065ad88361cd9295e <br>
+commit: ffd82745c94d840d46c82983e927783ca411b586 <br>
 
 ### Storage
 ```
@@ -209,7 +209,7 @@ No issue
 ### Update. Audit ServiceManager implementation with 8004 bridge 17.11.25
 The review has been performed based on the contract code in the following repository:<br>
 `https://github.com/valory-xyz/autonolas-registries` <br>
-commit: ffd82745c94d840d46c82983e927783ca411b586 <br>
+commit: 25ccb64ea162382c5e817cd065ad88361cd9295e <br>
 
 ### Audit scope
 https://github.com/valory-xyz/autonolas-registries/blob/8004_extension/contracts/ServiceManager.sol and imported contracts <br>
