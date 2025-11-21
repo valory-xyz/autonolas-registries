@@ -20,7 +20,7 @@
   "gnosisSafeSameAddressMultisigImplementationAddress": "0xBb7e1D6Cb6F243D6bdE81CE92a9f2aFF7Fbe7eac",
   "operatorWhitelistAddress": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE",
   "serviceRegistryTokenUtilityAddress": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44",
-  "serviceManagerAddress": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5",
+  "serviceManagerAddress": "0x984cf72FDe8B5aA910e9e508aC5e007ae5BDcC9C",
   "olasAddress": "0x064F8B858C2A603e1b106a2039f5446D32dc81c1",
   "multisigProxyHash130": "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000",
   "stakingTokenAddress": "0x04b0007b2aFb398015B76e5f22993a1fddF83644",
@@ -32,5 +32,6 @@
   "stakingVerifierAddress": "0x7Fd1F4b764fA41d19fe3f63C85d12bf64d2bbf68",
   "stakingFactoryAddress": "0xEB5638eefE289691EcE01943f768EDBF96258a80",
   "recoveryModuleAddress": "0xD0863340f947bE329c67e196e192705e53A1338f",
-  "safeMultisigWithRecoveryModuleAddress": "0x17B2198872216D8469AdeBC1227D0d4824940821"
+  "safeMultisigWithRecoveryModuleAddress": "0x17B2198872216D8469AdeBC1227D0d4824940821",
+  "serviceManagerProxyAddress": "0xD421f433e36465B3e558B1121F584ac09Fc33DF8"
 }

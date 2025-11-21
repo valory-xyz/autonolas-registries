@@ -31,7 +31,8 @@ async function buildCalldataForChain({ globalsFile, mainnetProvider, l2Label }) 
         l2Provider
     );
 
-    // ServiceRegistryL2 on the target L2
+    // ServiceRegistryL2 and S on the target L2 
+    const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceRegistryJSON = "artifacts/contracts/ServiceRegistryL2.sol/ServiceRegistryL2.json";
     const serviceRegistryABI = JSON.parse(fs.readFileSync(serviceRegistryJSON, "utf8"))["abi"];
@@ -43,24 +44,33 @@ async function buildCalldataForChain({ globalsFile, mainnetProvider, l2Label }) 
 
     // Encode the local L2 call: ServiceRegistryL2.changeManager(serviceManagerAddress)
     //TODO: replace serviceManagerTokenAddress with serviceManagerProxyAddress
-    const rawPayload = serviceRegistry.interface.encodeFunctionData("changeManager", [
-        parsedData.serviceManagerTokenAddress
-    ]);
+    const rawPayloads = [serviceRegistry.interface.encodeFunctionData("changeManager", [
+        parsedData.serviceManagerProxyAddress]), serviceRegistry.interface.encodeFunctionData("changeManager", [
+        parsedData.serviceManagerProxyAddress])
+    ];
+
+    const localTargets = [serviceRegistryAddress, serviceRegistryTokenUtilityAddress];
+    const localValues = [0, 0];
+
 
     // Pack data for Timelock’s L2 batch format (address, uint96 value, uint32 len, bytes payload)
-    const target = serviceRegistryAddress;
-    const value = 0;
-    const payload = ethers.utils.arrayify(rawPayload);
-    const packedData = ethers.utils.solidityPack(
-        ["address", "uint96", "uint32", "bytes"],
-        [target, value, payload.length, payload]
-    );
+    let data = "0x";
+    for (let i = 0; i < rawPayloads.length; i++) {
+        const payload = ethers.utils.arrayify(rawPayloads[i]);
+        const encoded = ethers.utils.solidityPack(
+            ["address", "uint96", "uint32", "bytes"],
+            [localTargets[i], localValues[i], payload.length, payload]
+        );
+        data += encoded.slice(2);
+    }
 
+    // Proposal preparation
+    console.log("Proposal 19. Change manager in ServiceRegistryL2 and ServiceRegistryTokenUtility on Optimism / Base / Mode / Celo\n");
+    // Build the bridge payload
     // Wrap in L2 messenger call
-    const messengerPayload = optimismMessenger.interface.encodeFunctionData(
-        "processMessageFromSource",
-        [packedData]
-    );
+        
+    const messengerPayload = await optimismMessenger.interface.encodeFunctionData("processMessageFromSource", [data]);
+
 
     // Wrap in L1 messenger sendMessage
     const minGasLimit = "2000000";
@@ -75,7 +85,7 @@ async function buildCalldataForChain({ globalsFile, mainnetProvider, l2Label }) 
         targetL1: CDMProxyAddress,
         valueL1: 0,
         callDataL1: timelockPayload,
-        descriptionPart: `Change manager in ServiceRegistryL2 on ${l2Label}`
+        descriptionPart: `Change manager in ServiceRegistryL2 and in ServiceRegistryTokenUtility on ${l2Label}`
     };
 }
 
@@ -125,7 +135,7 @@ async function main() {
     const targets = [op.targetL1, base.targetL1, mode.targetL1];
     const values = [op.valueL1, base.valueL1, mode.valueL1];
     const callDatas = [op.callDataL1, base.callDataL1, mode.callDataL1];
-    const description = "Change manager in ServiceRegistryL2 on Optimism / Base / Mode / Celo";
+    const description = "Change manager in ServiceRegistryL2 and in ServiceRegistryTokenUtility on Optimism / Base / Mode / Celo";
 
     console.log("\n=== Aggregated Proposal ===");
     console.log("targets:", targets);

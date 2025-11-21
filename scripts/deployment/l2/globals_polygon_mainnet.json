@@ -17,7 +17,7 @@
   "serviceRegistryName": "Service Registry L2",
   "serviceRegistrySymbol": "AUTONOLAS-SERVICE-L2-V1",
   "serviceRegistryAddress": "0xE3607b00E75f6405248323A9417ff6b39B244b50",
-  "serviceManagerAddress": "0x04b0007b2aFb398015B76e5f22993a1fddF83644",
+  "serviceManagerAddress": "0xA123748Ce7609F507060F947b70298D0bde621E6",
   "gnosisSafeMultisigImplementationAddress": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44",
   "gnosisSafeSameAddressMultisigImplementationAddress": "0xd8BCC126ff31d2582018715d5291A508530587b0",
   "multisigProxyHash130": "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000",
@@ -33,5 +33,6 @@
   "stakingVerifierAddress": "0x8Bc0a5c5B1612A16983B01ecd7ae130E728390CB",
   "stakingFactoryAddress": "0x46C0D07F55d4F9B5Eed2Fc9680B5953e5fd7b461",
   "recoveryModuleAddress": "0x02C26437B292D86c5F4F21bbCcE0771948274f84",
-  "safeMultisigWithRecoveryModuleAddress": "0x1a0bFCC27051BCcDDc444578f56A4F5920e0E083"
+  "safeMultisigWithRecoveryModuleAddress": "0x1a0bFCC27051BCcDDc444578f56A4F5920e0E083",
+  "serviceManagerProxyAddress": "0xE3e5Df46060370af5Fd37B2aA11e7dac3cCB4bd0"
 }

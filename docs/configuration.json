@@ -29,6 +29,16 @@
         "address": "0x3Fb926116D454b95c669B6Bf2E7c3bad8d19affA"
       },
       {
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0x64721b7EfbA7866daD8aB48D220eA70337ba9688"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0x94a1892D91c05D0C61c3f49F42205D2285b914c9"
+      },
+      {
         "name": "ServiceManagerToken",
         "artifact": "abis/0.8.19/ServiceManagerToken.json",
         "address": "0x2EA682121f815FBcF86EA3F3CaFdd5d67F2dB143"
@@ -90,14 +100,19 @@
         "address": "0xE3607b00E75f6405248323A9417ff6b39B244b50"
       },
       {
-        "name": "ServiceManager",
-        "artifact": "abis/0.8.19/ServiceManager.json",
-        "address": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE"
-      },
-      {
         "name": "ServiceRegistryTokenUtility",
         "artifact": "abis/0.8.23/ServiceRegistryTokenUtility.json",
         "address": "0xa45E64d13A30a51b91ae0eb182e88a40e9b18eD8"
+      },
+      {
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0xA123748Ce7609F507060F947b70298D0bde621E6"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0xE3e5Df46060370af5Fd37B2aA11e7dac3cCB4bd0"
       },
       {
         "name": "ServiceManagerToken",
@@ -159,6 +174,16 @@
         "name": "ServiceRegistryTokenUtility",
         "artifact": "abis/0.8.19/ServiceRegistryTokenUtility.json",
         "address": "0xa45E64d13A30a51b91ae0eb182e88a40e9b18eD8"
+      },
+      {
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0xEcF09235AaDEabF4E756B4a532DeD8616b4a2108"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0x068a4f0946cF8c7f9C1B58a3b5243Ac8843bf473"
       },
       {
         "name": "ServiceManagerToken",
@@ -227,6 +252,16 @@
         "address": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44"
       },
       {
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0x984cf72FDe8B5aA910e9e508aC5e007ae5BDcC9C"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0xD421f433e36465B3e558B1121F584ac09Fc33DF8"
+      },
+      {
         "name": "ServiceManagerToken",
         "artifact": "abis/0.8.23/ServiceManagerToken.json",
         "address": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5"
@@ -288,6 +323,16 @@
         "address": "0xBb7e1D6Cb6F243D6bdE81CE92a9f2aFF7Fbe7eac"
       },
       {
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0x92499E80f50f06C4078794C179986907e7822Ea1"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0xA5C7FbCCFf28441b7d250412b0Fb87AA1c8b14AD"
+      },
+      {
         "name": "ServiceManagerToken",
         "artifact": "abis/0.8.23/ServiceManagerToken.json",
         "address": "0xFbBEc0C8b13B38a9aC0499694A69a10204c5E2aB"
@@ -347,6 +392,16 @@
         "name": "ServiceRegistryTokenUtility",
         "artifact": "abis/0.8.23/ServiceRegistryTokenUtility.json",
         "address": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5"
+      },
+      {
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0xE6e03DD62D11f88A11D65663B398ED2B3Be2070c"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0x1262136cac6a06A782DC94eb3a3dF0b4d09FF6A6"
       },
       {
         "name": "ServiceManagerToken",
@@ -474,6 +529,16 @@
         "name": "ServiceRegistryTokenUtility",
         "artifact": "abis/0.8.28/ServiceRegistryTokenUtility.json",
         "address": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5"
+      },
+      {
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0x1cEe30D08943EB58EFF84DD1AB44a6ee6FEff63a"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0xcDdD9D9ABaB36fFa882530D69c73FeE5D4001C2d"
       },
       {
         "name": "ServiceManagerToken",
