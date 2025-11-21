@@ -16,23 +16,27 @@ async function main() {
     const deployer = await EOA.getAddress();
     console.log("EOA is:", deployer);
 
+    
+
     // Get all the necessary contract addresses
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
-
-    const serviceRegistry = await ethers.getContractAt("ServiceRegistry", serviceRegistryAddress);
+    const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
+    const serviceRegistry = await ethers.getContractAt("ServiceRegistry", serviceRegistryAddress); 
+    const serviceRegistryTokenUtility = await ethers.getContractAt("ServiceRegistryTokenUtility", serviceRegistryTokenUtilityAddress);
 
     // Proposal preparation
-    console.log("Proposal 21. Change manager in ServiceRegistry");
-    const target = serviceRegistryAddress;
-    const value = 0;
-    // TODO: replace serviceManagerTokenAddress with serviceManagerProxyAddress
-    const callData = serviceRegistry.interface.encodeFunctionData("changeManager", [parsedData.serviceManagerTokenAddress]);
-    const description = "Change manager in ServiceRegistry";
+    console.log("Proposal 21. Change manager in ServiceRegistry and in serviceRegistryTokenUtility");
+    const target1 = serviceRegistryAddress;
+    const target2 = serviceRegistryTokenUtilityAddress;
+    const values = [0,0];
+    const callData1 = serviceRegistry.interface.encodeFunctionData("changeManager", [parsedData.serviceManagerProxyAddress]);
+    const callData2 = serviceRegistryTokenUtility.interface.encodeFunctionData("changeManager", [parsedData.serviceManagerProxyAddress]);
+    const description = "Change manager in ServiceRegistry and in serviceRegistryTokenUtility";
 
     // Proposal details
-    console.log("target:", target);
-    console.log("value:", value);
-    console.log("call data:", callData);
+    console.log("targets:", [target1,target2]);
+    console.log("value:", values);
+    console.log("call data:", [callData1,callData2]);
     console.log("description:", description);
 }
 
