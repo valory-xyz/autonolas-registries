@@ -43,7 +43,7 @@ async function main() {
 
     // Service manager token address on polygon
     const bridgeMediatorAddress = parsedData.bridgeMediatorAddress;
-    const serviceManagerTokenAddress = parsedData.serviceManagerTokenAddress;
+    const serviceManagerProxyAddress = parsedData.serviceManagerProxyAddress;
 
     // Proposal preparation
     console.log("Proposal 8. Change manager for polygon ServiceRegistryL2\n");

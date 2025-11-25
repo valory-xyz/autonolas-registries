@@ -43,7 +43,6 @@ async function buildCalldataForChain({ globalsFile, mainnetProvider, l2Label }) 
     );
 
     // Encode the local L2 call: ServiceRegistryL2.changeManager(serviceManagerAddress)
-    //TODO: replace serviceManagerTokenAddress with serviceManagerProxyAddress
     const rawPayloads = [serviceRegistry.interface.encodeFunctionData("changeManager", [
         parsedData.serviceManagerProxyAddress]), serviceRegistry.interface.encodeFunctionData("changeManager", [
         parsedData.serviceManagerProxyAddress])

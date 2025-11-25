@@ -45,7 +45,7 @@ async function main() {
     const contractAddresses = [
         parsedData.serviceRegistryAddress,
         parsedData.serviceRegistryTokenUtilityAddress,
-        parsedData.serviceManagerTokenAddress,
+        parsedData.serviceManagerProxyAddress,
         parsedData.stakingVerifierAddress,
         parsedData.stakingFactoryAddress,
         "0xb4096d181C08DDF75f1A63918cCa0d1023C4e6C7" // WormholeTargetDispenserL2 on Celo
