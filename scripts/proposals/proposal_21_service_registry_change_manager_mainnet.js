@@ -7,7 +7,6 @@ async function main() {
     const globalsFile = "scripts/deployment/globals_mainnet.json";
     const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
     let parsedData = JSON.parse(dataFromJSON);
-    const providerName = parsedData.providerName;
 
     const signers = await ethers.getSigners();
 

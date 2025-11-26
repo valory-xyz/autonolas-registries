@@ -47,7 +47,8 @@ async function main() {
 
     // Proposal preparation
     console.log("Proposal 8. Change manager for polygon ServiceRegistryL2\n");
-    const rawPayloads = [serviceRegistry.interface.encodeFunctionData("changeManager", [parsedData.serviceManagerProxyAddress]),serviceRegistry.interface.encodeFunctionData("changeManager", [parsedData.serviceManagerProxyAddress])];
+    const rawPayloads = [serviceRegistry.interface.encodeFunctionData("changeManager", [serviceManagerProxyAddress]),
+        serviceRegistry.interface.encodeFunctionData("changeManager", [serviceManagerProxyAddress])];
     // Pack the second part of data
     const localTargets = [serviceRegistryAddress, serviceRegistryTokenUtilityAddress];
     const localValues = [0, 0];
