@@ -5,7 +5,7 @@ const { ethers } = require("ethers");
 async function main() {
     const fs = require("fs");
     // Mainnet globals file
-    const globalsFile = "globals.json";
+    const globalsFile = "scripts/deployment/l2/globals_gnosis_mainnet.json";
     const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
     const parsedData = JSON.parse(dataFromJSON);
 
@@ -38,7 +38,8 @@ async function main() {
     const homeMediatorABI = parsedFile["abi"];
     const homeMediator = new ethers.Contract(homeMediatorAddress, homeMediatorABI, gnosisProvider);
 
-    // ServiceRegistryL2 address on gnosis
+    // ServiceRegistryL2 and ServiceRegistryTokenUtility addresses on gnosis
+    const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceRegistryJSON = "artifacts/contracts/ServiceRegistryL2.sol/ServiceRegistryL2.json";
     contractFromJSON = fs.readFileSync(serviceRegistryJSON, "utf8");
@@ -46,20 +47,25 @@ async function main() {
     const serviceRegistryABI = parsedFile["abi"];
     const serviceRegistry = new ethers.Contract(serviceRegistryAddress, serviceRegistryABI, gnosisProvider);
 
+
     // Timelock contract across the bridge must change the manager address
-    // TODO: replace serviceManagerTokenAddress with serviceManagerProxyAddress
-    const rawPayload = serviceRegistry.interface.encodeFunctionData("changeManager", [parsedData.serviceManagerTokenAddress]);
+    const rawPayloads = [serviceRegistry.interface.encodeFunctionData("changeManager", [parsedData.serviceManagerProxyAddress]),serviceRegistry.interface.encodeFunctionData("changeManager", [parsedData.serviceManagerProxyAddress])];
     // Pack the second part of data
-    const target = serviceRegistryAddress;
-    const value = 0;
-    const payload = ethers.utils.arrayify(rawPayload);
-    const data = ethers.utils.solidityPack(
-        ["address", "uint96", "uint32", "bytes"],
-        [target, value, payload.length, payload]
-    );
+    const localTargets = [serviceRegistryAddress,serviceRegistryTokenUtilityAddress];
+    const localValues = [0,0];
+    // Pack the data into one contiguous buffer (to be consumed by Timelock along with a batch of unpacked L1 transactions)
+    let data = "0x";
+    for (let i = 0; i < rawPayloads.length; i++) {
+        const payload = ethers.utils.arrayify(rawPayloads[i]);
+        const encoded = ethers.utils.solidityPack(
+            ["address", "uint96", "uint32", "bytes"],
+            [localTargets[i], localValues[i], payload.length, payload]
+        );
+        data += encoded.slice(2);
+    }
 
     // Proposal preparation
-    console.log("Proposal 4. Change manager for gnosis ServiceRegistryL2\n");
+    console.log("Proposal 4. Change manager for gnosis ServiceRegistryL2 and ServiceRegistryTokenUtility\n");
     const mediatorPayload = await homeMediator.interface.encodeFunctionData("processMessageFromForeign", [data]);
 
     // AMBContractProxyHomeAddress on gnosis mainnet: 0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59
@@ -70,15 +76,15 @@ async function main() {
     const timelockPayload = await AMBProxy.interface.encodeFunctionData("requireToPassMessage", [homeMediatorAddress,
         mediatorPayload, requestGasLimit]);
 
-    const targets = [AMBProxyAddress];
-    const values = [0];
-    const callDatas = [timelockPayload];
-    const description = "Change Manager in ServiceRegistryL2 on gnosis";
+    const target = [AMBProxyAddress];
+    const value = [0];
+    const callData = [timelockPayload];
+    const description = "Change Manager in ServiceRegistryL2 and in ServiceRegistryTokenUtility on gnosis";
 
     // Proposal details
-    console.log("targets:", targets);
-    console.log("values:", values);
-    console.log("call datas:", callDatas);
+    console.log("target:", target);
+    console.log("value:", value);
+    console.log("call data:", callData);
     console.log("description:", description);
 }
 
