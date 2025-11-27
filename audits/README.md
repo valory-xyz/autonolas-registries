@@ -35,7 +35,7 @@ An internal audit with a focus on next update of ERC-8004 bridge
 contracts is located in this folder: [internal audit 11](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal11).
 
 An internal audit with a focus on next update of ApplicationClassifier
-contracts is located in this folder: [internal audit 11](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal12).
+contracts is located in this folder: [internal audit 12](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal12).
 
 
 ### External audit
