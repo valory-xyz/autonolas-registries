@@ -1,0 +1,12 @@
+'solc --version' running
+'solc ./ApplicationClassifier-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal12/analysis/contracts' running
+INFO:Printers:
++ Contract ApplicationClassifier (Most derived contract)
+  - From ApplicationClassifier
+    - changeImplementation(address) (external)
+    - changeMaintainer(address) (external)
+    - changeOwner(address) (external)
+    - initialize() (external)
+    - recordApplicationType(uint256,ApplicationType) (external)
+
+INFO:Slither:. analyzed (1 contracts)

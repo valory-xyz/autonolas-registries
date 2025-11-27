@@ -1,0 +1,6 @@
+'solc --version' running
+'solc ./ApplicationClassifier-flatten.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/andrey/valory/autonolas-registries/audits/internal12/analysis/contracts' running
+INFO:Printers:Call Graph: ./ApplicationClassifier-flatten.sol.all_contracts.call-graph.dot
+Call Graph: ./ApplicationClassifier-flatten.sol.ApplicationClassifier.call-graph.dot
+
+INFO:Slither:. analyzed (1 contracts)

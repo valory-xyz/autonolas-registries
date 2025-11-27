@@ -1,4 +1,10 @@
+// Sources flattened with hardhat v2.27.0 https://hardhat.org
+
 // SPDX-License-Identifier: MIT
+
+// File contracts/utils/ApplicationClassifier.sol
+
+// Original license: SPDX_License_Identifier: MIT
 pragma solidity ^0.8.30;
 
 /// @dev Only `owner` has a privilege, but the `sender` was provided.
