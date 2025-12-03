@@ -181,7 +181,7 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
     // Check manager
     const manager = await serviceRegistry.manager();
     // ServiceRegistryManagerToken
-    customExpect(manager, globalsInstance["serviceManagerAddress"], log + ", function: manager()");
+    customExpect(manager, globalsInstance["serviceManagerProxyAddress"], log + ", function: manager()");
 
     // Check drainer
     const drainer = await serviceRegistry.drainer();
@@ -258,7 +258,7 @@ async function checkServiceRegistryTokenUtility(chainId, provider, globalsInstan
     log += ", address: " + serviceRegistryTokenUtility.address;
     // Check manager
     const manager = await serviceRegistryTokenUtility.manager();
-    customExpect(manager, globalsInstance["serviceManagerAddress"], log + ", function: manager()");
+    customExpect(manager, globalsInstance["serviceManagerProxyAddress"], log + ", function: manager()");
 
     // Check drainer
     const drainer = await serviceRegistryTokenUtility.drainer();
