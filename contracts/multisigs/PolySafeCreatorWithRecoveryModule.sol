@@ -187,8 +187,7 @@ contract PolySafeCreatorWithRecoveryModule {
             .execTransaction(
                 multisig, 0, execData, ISafe.Operation.Call, 0, 0, 0, address(0), payable(address(0)), enableModuleSig
             );
-
-        // TODO Check for event compatibility
+        
         emit MultisigCreated(multisig, owners[0]);
     }
 
