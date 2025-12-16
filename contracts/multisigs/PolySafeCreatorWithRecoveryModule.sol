@@ -16,6 +16,9 @@ interface IPolySafeProxyFactory {
 
     /// @dev Computes Poly Safe proxy address based on owner account.
     function computeProxyAddress(address owner) external view returns (address);
+
+    /// @dev Gets domain separator
+    function domainSeparator() external view returns (bytes32);
 }
 
 // Generic Safe multisig interface
@@ -100,6 +103,13 @@ contract PolySafeCreatorWithRecoveryModule {
     // );
     bytes32 private constant SAFE_TX_TYPEHASH = 0xbb8310d486368db6bd6f849402fdd73ad53d316b5a4b2644ad6efe0f941286d8;
 
+    // keccak256(
+    //     "CreateProxy(address paymentToken,uint256 payment,address paymentReceiver)"
+    // );
+    bytes32 public constant CREATE_PROXY_TYPEHASH = 0xdee5f5588156b735c3bff14a54c9acefc845807cec91b7fd0809fa3deccab363;
+
+    // Poly Safe Proxy Factory domain separator value
+    bytes32 public immutable polySafeProxyFactoryDomainSeparator;
     // Poly Safe Factory address
     address public immutable polySafeProxyFactory;
     // Recovery Module address
@@ -113,6 +123,7 @@ contract PolySafeCreatorWithRecoveryModule {
             revert ZeroAddress();
         }
 
+        polySafeProxyFactoryDomainSeparator = IPolySafeProxyFactory(_polySafeProxyFactory).domainSeparator();
         polySafeProxyFactory = _polySafeProxyFactory;
         recoveryModule = _recoveryModule;
     }
@@ -141,7 +152,7 @@ contract PolySafeCreatorWithRecoveryModule {
             revert MultisigAlreadyExists(multisig);
         }
 
-        // Create a poly safe multisig via its proxy factory with all payment related values equal to zero
+        // Create a poly safe multisig via its proxy factory with all payment related values being equal to zero
         IPolySafeProxyFactory(polySafeProxyFactory).createProxy(address(0), 0, payable(address(0)), safeCreateSig);
 
         // Check for zero address
@@ -179,6 +190,14 @@ contract PolySafeCreatorWithRecoveryModule {
 
         // TODO Check for event compatibility
         emit MultisigCreated(multisig, owners[0]);
+    }
+
+    /// @dev Gets hash that is required to be signed by multisig owner in order to create Poly Safe multisig proxy.
+    function getPolySafeCreateTransactionHash() external view returns (bytes32) {
+        // All payment related values are equal to zero
+        bytes32 structHash = keccak256(abi.encode(CREATE_PROXY_TYPEHASH, address(0), 0, payable(address(0))));
+
+        return keccak256(abi.encodePacked("\x19\x01", polySafeProxyFactoryDomainSeparator, structHash));
     }
 
     /// @dev Gets hash that is required to be signed by multisig owner in order to enable Recovery Module.

@@ -47,9 +47,7 @@ contract PolySafeCreator is BaseSetup {
     /// @dev Create Poly Safe multisig with recovery module.
     function testCreatePolySafeWithRecoveryModule() public {
         // Get Poly Safe factory digest
-        bytes32 structHash = keccak256(abi.encode(polySafeProxyFactory.CREATE_PROXY_TYPEHASH(), address(0), 0,
-            payable(address(0))));
-        bytes32 polySafeDigest = keccak256(abi.encodePacked("\x19\x01", polySafeProxyFactory.domainSeparator(), structHash));
+        bytes32 polySafeDigest = polySafeCreatorWithRecoveryModule.getPolySafeCreateTransactionHash();
 
         (address user, uint256 userPk) = makeAddrAndKey("user");
         emit log_address(user);
