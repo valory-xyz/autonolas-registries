@@ -46,11 +46,16 @@ contract PolySafeCreator is BaseSetup {
 
     /// @dev Create Poly Safe multisig with recovery module.
     function testCreatePolySafeWithRecoveryModule() public {
-        // Get Poly Safe factory digest
-        bytes32 polySafeDigest = polySafeCreatorWithRecoveryModule.getPolySafeCreateTransactionHash();
-
+        // Get user address and PK
         (address user, uint256 userPk) = makeAddrAndKey("user");
         emit log_address(user);
+
+        // Get multisig owners
+        address[] memory owners = new address[](1);
+        owners[0] = user;
+
+        // Get Poly Safe factory digest
+        bytes32 polySafeDigest = polySafeCreatorWithRecoveryModule.getPolySafeCreateTransactionHash();
 
         // Get Poly Safe creation signature
         PolySafeProxyFactory.Sig memory safeCreateSig;
@@ -60,10 +65,6 @@ contract PolySafeCreator is BaseSetup {
         bytes32 enableModuleDigest = polySafeCreatorWithRecoveryModule.getEnableModuleTransactionHash(user);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, enableModuleDigest);
         bytes memory enableModuleSignature = abi.encodePacked(r, s, v);
-
-        // Set multisig owners
-        address[] memory owners = new address[](1);
-        owners[0] = user;
 
         // Encode signatures
         bytes memory data = abi.encode(safeCreateSig, enableModuleSignature);
