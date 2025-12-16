@@ -61,8 +61,10 @@ contract PolySafeCreator is BaseSetup {
         PolySafeProxyFactory.Sig memory safeCreateSig;
         (safeCreateSig.v, safeCreateSig.r, safeCreateSig.s) = vm.sign(userPk, polySafeDigest);
 
-        // Get enable module signature
+        // Get enable module digest
         bytes32 enableModuleDigest = polySafeCreatorWithRecoveryModule.getEnableModuleTransactionHash(user);
+
+        // Get enable module signature
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, enableModuleDigest);
         bytes memory enableModuleSignature = abi.encodePacked(r, s, v);
 
