@@ -18,8 +18,42 @@ interface IPolySafeProxyFactory {
     function computeProxyAddress(address owner) external view returns (address);
 }
 
-// Safe Master Copy corresponding to Polygon mainnet: https://polygonscan.com/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552#code
+// Generic Safe multisig interface
 interface ISafe {
+    enum Operation {
+        Call,
+        DelegateCall
+    }
+
+    /// @dev Allows to execute a Safe transaction confirmed by required number of owners and then pays the account that submitted the transaction.
+    ///      Note: The fees are always transferred, even if the user transaction fails.
+    /// @param to Destination address of Safe transaction.
+    /// @param value Ether value of Safe transaction.
+    /// @param data Data payload of Safe transaction.
+    /// @param operation Operation type of Safe transaction.
+    /// @param safeTxGas Gas that should be used for the Safe transaction.
+    /// @param baseGas Gas costs that are independent of the transaction execution(e.g. base transaction fee, signature check, payment of the refund)
+    /// @param gasPrice Gas price that should be used for the payment calculation.
+    /// @param gasToken Token address (or 0 if ETH) that is used for the payment.
+    /// @param refundReceiver Address of receiver of gas payment (or 0 if tx.origin).
+    /// @param signatures Packed signature data ({bytes32 r}{bytes32 s}{uint8 v})
+    function execTransaction(
+        address to,
+        uint256 value,
+        bytes calldata data,
+        Operation operation,
+        uint256 safeTxGas,
+        uint256 baseGas,
+        uint256 gasPrice,
+        address gasToken,
+        address payable refundReceiver,
+        bytes memory signatures
+    ) external payable returns (bool success);
+
+    /// @dev Allows to add a module to the whitelist.
+    /// @param module Module to be whitelisted.
+    function enableModule(address module) external;
+
     /// @dev Gets Safe's set of owners.
     function getOwners() external view returns (address[] memory);
 
@@ -55,6 +89,17 @@ error WrongOwner(address provided);
 contract PolySafeCreatorWithRecoveryModule {
     event MultisigCreated(address indexed multisig, address indexed owner);
 
+    // keccak256(
+    //     "EIP712Domain(uint256 chainId,address verifyingContract)"
+    // );
+    bytes32 private constant DOMAIN_SEPARATOR_TYPEHASH =
+        0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218;
+
+    // keccak256(
+    //     "SafeTx(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,uint256 nonce)"
+    // );
+    bytes32 private constant SAFE_TX_TYPEHASH = 0xbb8310d486368db6bd6f849402fdd73ad53d316b5a4b2644ad6efe0f941286d8;
+
     // Poly Safe Factory address
     address public immutable polySafeProxyFactory;
     // Recovery Module address
@@ -72,7 +117,8 @@ contract PolySafeCreatorWithRecoveryModule {
         recoveryModule = _recoveryModule;
     }
 
-    /// @dev Creates poly safe multisig.
+    /// @dev Creates Poly Safe multisig.
+    /// @notice Number of owners and threshold is required to be 1.
     /// @param owners Set of multisig owners.
     /// @param threshold Number of required confirmations for a multisig transaction.
     /// @param data Packed data related to the creation of a chosen multisig.
@@ -84,8 +130,8 @@ contract PolySafeCreatorWithRecoveryModule {
         }
 
         // Decode provided data
-        (address paymentToken, uint256 payment, address payable paymentReceiver, IPolySafeProxyFactory.Sig memory sig) =
-            abi.decode(data, (address, uint256, address, IPolySafeProxyFactory.Sig));
+        (IPolySafeProxyFactory.Sig memory safeCreateSig, bytes memory enableModuleSig) =
+            abi.decode(data, (IPolySafeProxyFactory.Sig, bytes));
 
         // Calculate multisig address
         multisig = IPolySafeProxyFactory(polySafeProxyFactory).computeProxyAddress(owners[0]);
@@ -95,8 +141,8 @@ contract PolySafeCreatorWithRecoveryModule {
             revert MultisigAlreadyExists(multisig);
         }
 
-        // Create a poly safe multisig via its proxy factory
-        IPolySafeProxyFactory(polySafeProxyFactory).createProxy(paymentToken, payment, paymentReceiver, sig);
+        // Create a poly safe multisig via its proxy factory with all payment related values equal to zero
+        IPolySafeProxyFactory(polySafeProxyFactory).createProxy(address(0), 0, payable(address(0)), safeCreateSig);
 
         // Check for zero address
         if (multisig == address(0)) {
@@ -121,6 +167,41 @@ contract PolySafeCreatorWithRecoveryModule {
             revert WrongOwner(owners[0]);
         }
 
+        // Enable module payload
+        bytes memory execData = abi.encodeCall(ISafe.enableModule, (recoveryModule));
+
+        // Enable Recovery Module
+        // to = multisig, value = 0, operation = Call, all payment related = 0
+        ISafe(multisig)
+            .execTransaction(
+                multisig, 0, execData, ISafe.Operation.Call, 0, 0, 0, address(0), payable(address(0)), enableModuleSig
+            );
+
+        // TODO Check for event compatibility
         emit MultisigCreated(multisig, owners[0]);
+    }
+
+    /// @dev Gets hash that is required to be signed by multisig owner in order to enable Recovery Module.
+    /// @param owner Multisig owner.
+    /// @return Transaction hash bytes.
+    function getEnableModuleTransactionHash(address owner) external view returns (bytes32) {
+        // Enable module payload
+        bytes memory data = abi.encodeCall(ISafe.enableModule, (recoveryModule));
+
+        // Calculate multisig address
+        address multisig = IPolySafeProxyFactory(polySafeProxyFactory).computeProxyAddress(owner);
+
+        // Get domain separator value using calculated multisig address
+        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_SEPARATOR_TYPEHASH, block.chainid, multisig));
+
+        // Get SafeTx hash
+        // to = multisig, value = 0, operation = Call, all payment related = 0, nonce = 0
+        bytes32 safeTxHash = keccak256(
+            abi.encode(
+                SAFE_TX_TYPEHASH, multisig, 0, keccak256(data), ISafe.Operation.Call, 0, 0, 0, address(0), address(0), 0
+            )
+        );
+
+        return keccak256(abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator, safeTxHash));
     }
 }
