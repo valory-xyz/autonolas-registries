@@ -24,9 +24,6 @@ derivationPath=$(jq -r '.derivationPath' $globals)
 chainId=$(jq -r '.chainId' $globals)
 networkURL=$(jq -r '.networkURL' $globals)
 
-componentRegistryAddress=$(jq -r '.componentRegistryAddress' $globals)
-agentRegistryAddress=$(jq -r '.agentRegistryAddress' $globals)
-registriesManagerAddress=$(jq -r '.registriesManagerAddress' $globals)
 serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' $globals)
 serviceRegistryTokenUtilityAddress=$(jq -r '.serviceRegistryTokenUtilityAddress' $globals)
 serviceManagerProxyAddress=$(jq -r '.serviceManagerProxyAddress' $globals)
@@ -57,20 +54,6 @@ else
 fi
 
 castSendHeader="cast send --rpc-url $networkURL$API_KEY $walletArgs"
-
-echo "${green}Change manager for ComponentRegistry${reset}"
-castArgs="$componentRegistryAddress changeManager(address) $registriesManagerAddress"
-echo $castArgs
-castCmd="$castSendHeader $castArgs"
-result=$($castCmd)
-echo "$result" | grep "status"
-
-echo "${green}Change manager for AgentRegistry${reset}"
-castArgs="$agentRegistryAddress changeManager(address) $registriesManagerAddress"
-echo $castArgs
-castCmd="$castSendHeader $castArgs"
-result=$($castCmd)
-echo "$result" | grep "status"
 
 echo "${green}Change manager for ServiceRegistry${reset}"
 castArgs="$serviceRegistryAddress changeManager(address) $serviceManagerProxyAddress"
