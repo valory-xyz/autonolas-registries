@@ -67,6 +67,13 @@ interface ISafe {
 /// @dev Provided zero address.
 error ZeroAddress();
 
+/// @dev Provided zero value.
+error ZeroValue();
+
+/// @dev Multisig proxy bytecode hash is incorrect.
+/// @param multisig Address of a multisig proxy.
+error UnauthorizedMultisig(address multisig);
+
 /// @dev Multisig already exists.
 /// @param multisig Multisig address.
 error MultisigAlreadyExists(address multisig);
@@ -110,6 +117,8 @@ contract PolySafeCreatorWithRecoveryModule {
 
     // Poly Safe Proxy Factory domain separator value
     bytes32 public immutable polySafeProxyFactoryDomainSeparator;
+    // Poly Safe proxy bytecode hash
+    bytes32 public immutable polySafeProxyBytecodeHash;
     // Poly Safe Factory address
     address public immutable polySafeProxyFactory;
     // Recovery Module address
@@ -118,14 +127,21 @@ contract PolySafeCreatorWithRecoveryModule {
     /// @dev PolySafeCreator constructor.
     /// @param _polySafeProxyFactory Poly Safe proxy factory address.
     /// @param _recoveryModule Recovery Module address.
-    constructor(address _polySafeProxyFactory, address _recoveryModule) {
+    constructor(address _polySafeProxyFactory, address _recoveryModule, bytes32 _polySafeProxyBytecodeHash) {
+        // Check for zero addresses
         if (_polySafeProxyFactory == address(0) || _recoveryModule == address(0)) {
             revert ZeroAddress();
+        }
+
+        // Check for zero value
+        if (_polySafeProxyBytecodeHash == 0) {
+            revert ZeroValue();
         }
 
         polySafeProxyFactoryDomainSeparator = IPolySafeProxyFactory(_polySafeProxyFactory).domainSeparator();
         polySafeProxyFactory = _polySafeProxyFactory;
         recoveryModule = _recoveryModule;
+        polySafeProxyBytecodeHash = _polySafeProxyBytecodeHash;
     }
 
     /// @dev Creates Poly Safe multisig.
@@ -155,9 +171,9 @@ contract PolySafeCreatorWithRecoveryModule {
         // Create a poly safe multisig via its proxy factory with all payment related values being equal to zero
         IPolySafeProxyFactory(polySafeProxyFactory).createProxy(address(0), 0, payable(address(0)), safeCreateSig);
 
-        // Check for zero address
-        if (multisig == address(0)) {
-            revert ZeroAddress();
+        // Check for code hash
+        if (multisig.codehash != polySafeProxyBytecodeHash) {
+            revert UnauthorizedMultisig(multisig);
         }
 
         // Get provided proxy multisig owners and threshold
@@ -168,9 +184,8 @@ contract PolySafeCreatorWithRecoveryModule {
         if (threshold != checkThreshold) {
             revert WrongThreshold(checkThreshold, threshold);
         }
-        uint256 numOwners = owners.length;
-        if (numOwners != checkOwners.length) {
-            revert WrongNumOwners(checkOwners.length, numOwners);
+        if (owners.length != checkOwners.length) {
+            revert WrongNumOwners(owners.length, checkOwners.length);
         }
 
         // Check for owner address match
@@ -187,7 +202,7 @@ contract PolySafeCreatorWithRecoveryModule {
             .execTransaction(
                 multisig, 0, execData, ISafe.Operation.Call, 0, 0, 0, address(0), payable(address(0)), enableModuleSig
             );
-        
+
         emit MultisigCreated(multisig, owners[0]);
     }
 

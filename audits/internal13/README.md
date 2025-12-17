@@ -17,7 +17,7 @@ File                                 |  % Stmts | % Branch |  % Funcs |  % Lines
 PolySafeCreatorWithRecoveryModule.sol |        0 |        0 |        0 |        0 |... 214,218,224 |
 ```
 - Needed test for PolySafeCreatorWithRecoveryModule
-[]  
+[x] forge test  
 
 ### Issue
 #### Notes/Low. Useless check
@@ -41,4 +41,4 @@ We can be sure if:
 
 Warning: We don't check safeCreateSig vs owners, but Factorty always calculate owner based on sign: address owner = _getSigner(paymentToken, payment, paymentReceiver, createSig);
 ```
-[] 
+[x] Fixed 

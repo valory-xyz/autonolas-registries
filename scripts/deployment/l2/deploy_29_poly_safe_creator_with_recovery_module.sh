@@ -16,6 +16,7 @@ networkURL=$(jq -r '.networkURL' $globals)
 
 polySafeProxyFactoryAddress=$(jq -r '.polySafeProxyFactoryAddress' $globals)
 recoveryModuleAddress=$(jq -r '.recoveryModuleAddress' $globals)
+polySafeProxyBytecodeHash=$(jq -r '.polySafeProxyBytecodeHash' $globals)
 
 # Check for Polygon keys only since on other networks those are not needed
 if [ $chainId == 137 ]; then
@@ -34,7 +35,7 @@ fi
 
 contractName="PolySafeCreatorWithRecoveryModule"
 contractPath="contracts/multisigs/$contractName.sol:$contractName"
-constructorArgs="$polySafeProxyFactoryAddress $recoveryModuleAddress"
+constructorArgs="$polySafeProxyFactoryAddress $recoveryModuleAddress $polySafeProxyBytecodeHash"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
 # Get deployer based on the ledger flag
@@ -70,7 +71,7 @@ echo "$(jq '. += {"polySafeCreatorWithRecoveryModuleAddress":"'$polySafeCreatorW
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
-  contractParams="$polySafeCreatorWithRecoveryModuleAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address)" $constructorArgs)"
+  contractParams="$polySafeCreatorWithRecoveryModuleAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address,bytes32)" $constructorArgs)"
   echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."

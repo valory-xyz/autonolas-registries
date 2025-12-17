@@ -17,8 +17,7 @@ contract BaseSetup is Test {
     address payable[] internal users;
     address internal deployer;
 
-    bytes32 internal configHash = keccak256(abi.encode(deployer));
-    uint32[] internal agentIds;
+    bytes32 internal testPolySafeProxyBytecodeHash = 0xc2ece159be6635c94f47e29adcd7a113dd700a7ab2c08e5fd5e0a3b6903c35bc;
 
     function setUp() public virtual {
         utils = new Utils();
@@ -30,9 +29,11 @@ contract BaseSetup is Test {
         gnosisSafe = new GnosisSafe();
         fallbackHandler = new DefaultCallbackHandler();
         polySafeProxyFactory = new PolySafeProxyFactory(address(gnosisSafe), address(fallbackHandler));
+        // For fork usage: polySafeProxyFactory = PolySafeProxyFactory(0xaacFeEa03eb1561C4e67d661e40682Bd20E3541b);
+
         // RecoveryModule address is just GnosisSafe as its value is not really relevant for testing
         polySafeCreatorWithRecoveryModule = new PolySafeCreatorWithRecoveryModule(address(polySafeProxyFactory),
-            address(gnosisSafe));
+            address(gnosisSafe), testPolySafeProxyBytecodeHash);
 
         // Get funds for deployer and operator
         vm.deal(deployer, 5 ether);
@@ -71,8 +72,8 @@ contract PolySafeCreator is BaseSetup {
         // Encode signatures
         bytes memory data = abi.encode(safeCreateSig, enableModuleSignature);
 
-        polySafeCreatorWithRecoveryModule.create(owners, 1, data);
+        address multisig = polySafeCreatorWithRecoveryModule.create(owners, 1, data);
 
-
+        assertEq(multisig.codehash, testPolySafeProxyBytecodeHash);
     }
 }
