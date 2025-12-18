@@ -14,9 +14,6 @@ derivationPath=$(jq -r '.derivationPath' $globals)
 chainId=$(jq -r '.chainId' $globals)
 networkURL=$(jq -r '.networkURL' $globals)
 
-multiSendCallOnlyAddress=$(jq -r '.multiSendCallOnlyAddress' $globals)
-serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' $globals)
-
 # Check for Polygon keys only since on other networks those are not needed
 if [ $chainId == 137 ]; then
   API_KEY=$ALCHEMY_API_KEY_MATIC
@@ -31,6 +28,9 @@ elif [ $chainId == 80002 ]; then
         exit 0
     fi
 fi
+
+multiSendCallOnlyAddress=$(jq -r '.multiSendCallOnlyAddress' $globals)
+serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' $globals)
 
 contractName="RecoveryModule"
 contractPath="contracts/multisigs/$contractName.sol:$contractName"

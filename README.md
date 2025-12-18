@@ -133,6 +133,7 @@ forge build
 Run tests with Forge (skip fork testing):
 ```
 forge test --match-contract Staking -vvv
+forge test --match-contract PolySafeCreator -vvv
 ```
 Run fork tests with Forge:
 ```

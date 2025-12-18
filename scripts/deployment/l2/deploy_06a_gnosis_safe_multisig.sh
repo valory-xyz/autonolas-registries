@@ -14,10 +14,6 @@ derivationPath=$(jq -r '.derivationPath' $globals)
 chainId=$(jq -r '.chainId' $globals)
 networkURL=$(jq -r '.networkURL' $globals)
 
-gnosisSafeAddress=$(jq -r '.gnosisSafeAddress' $globals)
-gnosisSafeProxyFactoryAddress=$(jq -r '.gnosisSafeProxyFactoryAddress' $globals)
-recoveryModuleAddress=$(jq -r '.recoveryModuleAddress' $globals)
-
 # Check for Polygon keys only since on other networks those are not needed
 if [ $chainId == 137 ]; then
   API_KEY=$ALCHEMY_API_KEY_MATIC
@@ -33,9 +29,12 @@ elif [ $chainId == 80002 ]; then
     fi
 fi
 
-contractName="SafeMultisigWithRecoveryModule"
+gnosisSafeAddress=$(jq -r '.gnosisSafeAddress' $globals)
+gnosisSafeProxyFactoryAddress=$(cast calldata "initialize()")
+
+contractName="GnosisSafeMultisig"
 contractPath="contracts/multisigs/$contractName.sol:$contractName"
-constructorArgs="$gnosisSafeAddress $gnosisSafeProxyFactoryAddress $recoveryModuleAddress"
+constructorArgs="$gnosisSafeAddress $gnosisSafeProxyFactoryAddress"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
 # Get deployer based on the ledger flag
@@ -55,10 +54,10 @@ echo "Deployment of: $contractArgs"
 # Deploy the contract and capture the address
 execCmd="forge create --broadcast --rpc-url $networkURL$API_KEY $walletArgs $contractArgs"
 deploymentOutput=$($execCmd)
-safeMultisigWithRecoveryModuleAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
+gnosisSafeMultisigAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
 
 # Get output length
-outputLength=${#safeMultisigWithRecoveryModuleAddress}
+outputLength=${#gnosisSafeMultisigAddress}
 
 # Check for the deployed address
 if [ $outputLength != 42 ]; then
@@ -67,11 +66,11 @@ if [ $outputLength != 42 ]; then
 fi
 
 # Write new deployed contract back into JSON
-echo "$(jq '. += {"safeMultisigWithRecoveryModuleAddress":"'$safeMultisigWithRecoveryModuleAddress'"}' $globals)" > $globals
+echo "$(jq '. += {"gnosisSafeMultisigAddress":"'$gnosisSafeMultisigAddress'"}' $globals)" > $globals
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
-  contractParams="$safeMultisigWithRecoveryModuleAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address,address)" $constructorArgs)"
+  contractParams="$gnosisSafeMultisigAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address)" $constructorArgs)"
   echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."
@@ -84,4 +83,4 @@ if [ "$contractVerification" == "true" ]; then
   fi
 fi
 
-echo "$contractName deployed at: $safeMultisigWithRecoveryModuleAddress"
+echo "$contractName deployed at: $gnosisSafeMultisigAddress"
