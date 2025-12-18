@@ -19,7 +19,7 @@
   "olasAddress": "0xFEF5d947472e72Efbb2E388c730B7428406F2F95",
   "minStakingDepositLimit": "10000000000000000000000",
   "timeForEmissionsLimit": "2592000",
-  "numServicesLimit": "500",
+  "numServicesLimit": "100",
   "apyLimit": "3000000000000000000",
   "polySafeProxyFactoryAddress": "0xaacFeEa03eb1561C4e67d661e40682Bd20E3541b",
   "polySafeProxyBytecodeHash": "0x92565062fdea8761e07d9df2fcdbd66c0582af6ddf0e0355bc07754ad97400b0",
