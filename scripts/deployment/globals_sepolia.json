@@ -34,7 +34,7 @@
   "stakingTokenAddress": "",
   "minStakingDepositLimit": "10000000000000000000000",
   "timeForEmissionsLimit": "2592000",
-  "numServicesLimit": "500",
+  "numServicesLimit": "100",
   "apyLimit": "3000000000000000000",
   "stakingVerifierAddress": "",
   "stakingFactoryAddress": "",

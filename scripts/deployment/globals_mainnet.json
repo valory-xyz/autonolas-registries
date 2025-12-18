@@ -31,7 +31,7 @@
   "olasAddress": "0x0001A500A6B18995B03f44bb040A5fFc28E45CB0",
   "minStakingDepositLimit": "10000000000000000000000",
   "timeForEmissionsLimit": "2592000",
-  "numServicesLimit": "500",
+  "numServicesLimit": "100",
   "apyLimit": "3000000000000000000",
   "stakingVerifierAddress": "0x4503b79d468e81Ad2d4bd6Db991810da269bA777",
   "stakingFactoryAddress": "0xEBdde456EA288b49f7D5975E7659bA1Ccf607efc",
