@@ -36,5 +36,7 @@
   "safeMultisigWithRecoveryModuleAddress": "0x1a0bFCC27051BCcDDc444578f56A4F5920e0E083",
   "serviceManagerProxyAddress": "0xE3e5Df46060370af5Fd37B2aA11e7dac3cCB4bd0",
   "polySafeProxyFactoryAddress": "0xaacFeEa03eb1561C4e67d661e40682Bd20E3541b",
-  "polySafeProxyBytecodeHash": "0x92565062fdea8761e07d9df2fcdbd66c0582af6ddf0e0355bc07754ad97400b0"
+  "polySafeProxyBytecodeHash": "0x92565062fdea8761e07d9df2fcdbd66c0582af6ddf0e0355bc07754ad97400b0",
+  "polySafeCreatorWithRecoveryModuleAddress": "0xA749f605D93B3efcc207C54270d83C6E8fa70fF8",
+  "polySafeSameAddressMultisigAddress": "0xBcb1BAC84B5BcAb350C89c50ADc9064eD15a4485"
 }
