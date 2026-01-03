@@ -13,6 +13,18 @@ Key terminology (see docs/definitions.md for details):
 - **Service**: Defines a set of canonical agents, number of instances per agent, and operator slots. Deployed as a multisig.
 - **Operator**: Individual operating agent instance(s) with a key-pair separate from the agent's keys.
 
+### Consumer-Facing Terminology
+
+**Important:** The smart contracts use the terminology above, but the marketplace UI at https://marketplace.olas.network/ uses different consumer-facing names:
+
+| Smart Contract Term | Marketplace UI Term |
+|---------------------|---------------------|
+| Component | Component |
+| Agent (Canonical Agent) | AI Agent Blueprint |
+| Service | AI Agent |
+
+When reading code, documentation, or contract names, use the smart contract terminology. When discussing the user-facing application, use the marketplace terminology.
+
 ## Common Development Commands
 
 ### Build and Compile
