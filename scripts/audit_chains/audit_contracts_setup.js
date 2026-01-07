@@ -442,6 +442,28 @@ async function checkSafeMultisigWithRecoveryModule(chainId, provider, globalsIns
     customExpect(recoveryModule, globalsInstance["recoveryModuleAddress"], log + ", function: safe()");
 }
 
+// Check checkPolySafeCreatorWithRecoveryModule: chain Id, provider, parsed globals, configuration contracts, contract name
+async function checkPolySafeCreatorWithRecoveryModule(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    // Get the contract instance
+    const polySafeCreatorWithRecoveryModule = await findContractInstance(provider, configContracts, contractName);
+
+    log += ", address: " + polySafeCreatorWithRecoveryModule.address;
+    // Check Safe master address
+    const polySafeProxyFactory = await polySafeCreatorWithRecoveryModule.polySafeProxyFactory();
+    customExpect(polySafeProxyFactory, globalsInstance["polySafeProxyFactoryAddress"], log + ", function: polySafeProxyFactory()");
+
+    // Check Safe Factory address
+    const polySafeProxyBytecodeHash = await polySafeCreatorWithRecoveryModule.polySafeProxyBytecodeHash();
+    customExpect(polySafeProxyBytecodeHash, globalsInstance["polySafeProxyBytecodeHash"], log + ", function: polySafeProxyBytecodeHash()");
+
+    // Check Recovery Module address
+    const recoveryModule = await polySafeCreatorWithRecoveryModule.recoveryModule();
+    customExpect(recoveryModule, globalsInstance["recoveryModuleAddress"], log + ", function: safe()");
+}
+
 
 async function main() {
     // Check for the API keys
@@ -573,6 +595,11 @@ async function main() {
 
             log = initLog + ", contract: " + "SafeMultisigWithRecoveryModule";
             await checkSafeMultisigWithRecoveryModule(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "SafeMultisigWithRecoveryModule", log);
+
+            if (configs[i]["name"] === "polygon") {
+                log = initLog + ", contract: " + "PolySafeCreatorWithRecoveryModule";
+                await checkPolySafeCreatorWithRecoveryModule(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "PolySafeCreatorWithRecoveryModule", log);
+            }
         }
     }
     // ################################# /VERIFY CONTRACTS SETUP #################################

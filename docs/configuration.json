@@ -148,6 +148,16 @@
         "name": "SafeMultisigWithRecoveryModule",
         "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
         "address": "0x1a0bFCC27051BCcDDc444578f56A4F5920e0E083"
+      },
+      {
+        "name": "PolySafeCreatorWithRecoveryModule",
+        "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
+        "address": "0xA749f605D93B3efcc207C54270d83C6E8fa70fF8"
+      },
+      {
+        "name": "PolySafeSameAddressMultisig",
+        "artifact": "abis/0.8.19/GnosisSafeSameAddressMultisig.json",
+        "address": "0xBcb1BAC84B5BcAb350C89c50ADc9064eD15a4485"
       }
     ]
   },
