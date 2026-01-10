@@ -158,6 +158,16 @@
         "name": "PolySafeSameAddressMultisig",
         "artifact": "abis/0.8.19/GnosisSafeSameAddressMultisig.json",
         "address": "0xBcb1BAC84B5BcAb350C89c50ADc9064eD15a4485"
+      },
+      {
+        "name": "HashCheckpoint",
+        "artifact": "abis/0.8.21/HashCheckpoint.json",
+        "address": "0x820ca542d5876FDEf240584F6f3924852D527FED"
+      },
+      {
+        "name": "ComplementaryServiceMetadata",
+        "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
+        "address": "0xDC175E77d11246c79B23D7088750eb59160DD6b7"
       }
     ]
   },
@@ -224,6 +234,11 @@
         "name": "SafeMultisigWithRecoveryModule",
         "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
         "address": "0xB4eB492bbfDcE5ccc11d675797cCF090eB0bCbd6"
+      },
+      {
+        "name": "HashCheckpoint",
+        "artifact": "abis/0.8.21/HashCheckpoint.json",
+        "address": "0x694e62BDF7Ff510A4EE66662cf4866A961a31653"
       },
       {
         "name": "ComplementaryServiceMetadata",
@@ -361,6 +376,16 @@
         "name": "SafeMultisigWithRecoveryModule",
         "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
         "address": "0x4be7A91e67be963806FeFA9C1FD6C53DfC358d94"
+      },
+      {
+        "name": "HashCheckpoint",
+        "artifact": "abis/0.8.21/HashCheckpoint.json",
+        "address": "0x4E82BC73BFB9647074aA71CBF467e66c1808C571"
+      },
+      {
+        "name": "ComplementaryServiceMetadata",
+        "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
+        "address": "0x11949cBC85d8793B360029E26b18ae759708e28b"
       }
     ]
   },
@@ -427,6 +452,16 @@
         "name": "SafeMultisigWithRecoveryModule",
         "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
         "address": "0x8c534420Db046d6801A1A8bE6fb602cC8F257453"
+      },
+      {
+        "name": "ComplementaryServiceMetadata",
+        "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
+        "address": "0x28C1edC7CEd549F7f80B732fDC19f0370160707d"
+      },
+      {
+        "name": "HashCheckpoint",
+        "artifact": "abis/0.8.21/HashCheckpoint.json",
+        "address": "0x69E679AF02D7F18157A8730189f9aFa8cf9c9a2a"
       },
       {
         "name": "ComplementaryServiceMetadata",
