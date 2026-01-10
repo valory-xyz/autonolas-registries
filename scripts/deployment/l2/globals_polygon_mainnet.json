@@ -39,5 +39,6 @@
   "polySafeProxyBytecodeHash": "0x92565062fdea8761e07d9df2fcdbd66c0582af6ddf0e0355bc07754ad97400b0",
   "polySafeCreatorWithRecoveryModuleAddress": "0xA749f605D93B3efcc207C54270d83C6E8fa70fF8",
   "polySafeSameAddressMultisigAddress": "0xBcb1BAC84B5BcAb350C89c50ADc9064eD15a4485",
-  "hashCheckpointAddress": "0x820ca542d5876FDEf240584F6f3924852D527FED"
+  "hashCheckpointAddress": "0x820ca542d5876FDEf240584F6f3924852D527FED",
+  "complementaryServiceMetadataAddress": "0xDC175E77d11246c79B23D7088750eb59160DD6b7"
 }
