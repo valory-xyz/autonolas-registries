@@ -21,6 +21,13 @@ interface IIdentityRegistry {
     function setAgentUri(uint256 agentId, string calldata newUri) external;
 
     function getMetadata(uint256 agentId, string memory key) external view returns (bytes memory);
+
+    function setAgentWallet(
+        uint256 agentId,
+        address newWallet,
+        uint256 deadline,
+        bytes calldata signature
+    ) external;
 }
 
 interface IValidationRegistry {
@@ -114,8 +121,6 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     string public constant ECOSYSTEM_METADATA_KEY = "ecosystem";
     // Ecosystem metadata value
     bytes public constant ECOSYSTEM_METADATA_VALUE = abi.encode("OLAS V1");
-    // Agent wallet multisig metadata key
-    string public constant AGENT_WALLET_METADATA_KEY = "agentWallet";
     // Service Registry metadata key
     string public constant SERVICE_REGISTRY_METADATA_KEY = "serviceRegistry";
     // Service Id metadata key
@@ -181,20 +186,16 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @return agentId Corresponding 8004 agent Id.
     function _register(uint256 serviceId, address multisig, string memory tokenUri) internal returns (uint256 agentId)  {
         // Assemble OLAS specific metadata entry
-        IIdentityRegistry.MetadataEntry[] memory metadataEntries = new IIdentityRegistry.MetadataEntry[](4);
+        IIdentityRegistry.MetadataEntry[] memory metadataEntries = new IIdentityRegistry.MetadataEntry[](3);
         metadataEntries[0] = IIdentityRegistry.MetadataEntry({
             key: ECOSYSTEM_METADATA_KEY,
             value: ECOSYSTEM_METADATA_VALUE
         });
         metadataEntries[1] = IIdentityRegistry.MetadataEntry({
-            key: AGENT_WALLET_METADATA_KEY,
-            value: abi.encode(multisig)
-        });
-        metadataEntries[2] = IIdentityRegistry.MetadataEntry({
             key: SERVICE_REGISTRY_METADATA_KEY,
             value: abi.encode(serviceRegistry)
         });
-        metadataEntries[3] = IIdentityRegistry.MetadataEntry({
+        metadataEntries[2] = IIdentityRegistry.MetadataEntry({
             key: SERVICE_ID_METADATA_KEY,
             value: abi.encode(serviceId)
         });
@@ -227,8 +228,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @param oldMultisig Old multisig address.
     /// @param newMultisig New multisig address.
     function _updateAgentWallet(uint256 serviceId, uint256 agentId, address oldMultisig, address newMultisig) internal {
-        // Update agent wallet metadata entry
-        IIdentityRegistry(identityRegistry).setMetadata(agentId, AGENT_WALLET_METADATA_KEY, abi.encode(newMultisig));
+        // Update agent wallet and metadata entry
+        IIdentityRegistry(identityRegistry).setAgentWallet(agentId, newMultisig, block.timestamp, "");
 
         // Unlink old multisig and agentId
         mapMultisigAgentIds[oldMultisig] = 0;
@@ -550,9 +551,9 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
                 // Check for agent Id difference
                 if (checkAgentId != agentId) {
+                    // TODO
                     // Check agentWallet metadata
-                    bytes memory agentWallet =
-                        IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
+                    bytes memory agentWallet;
                     // Decode multisig value
                     address oldMultisig = abi.decode(agentWallet, (address));
 

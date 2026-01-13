@@ -416,10 +416,11 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
                 string memory tokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
                 // Register corresponding 8004 agent Id
                 IIdentityRegistryBridger(identityRegistryBridger).register(serviceId, multisig, tokenUri);
-            } else if (lastMultisig != multisig) {
-                // Update corresponding metadata in 8004 agent Id
-                IIdentityRegistryBridger(identityRegistryBridger).updateAgentWallet(serviceId, lastMultisig, multisig);
             }
+
+            // TODO Correct this
+            // Update corresponding metadata in 8004 agent Id
+            IIdentityRegistryBridger(identityRegistryBridger).updateAgentWallet(serviceId, lastMultisig, multisig);
         }
 
         emit CreateMultisig(multisig);

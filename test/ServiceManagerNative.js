@@ -9,11 +9,16 @@ describe("ServiceManagerNative", function () {
     let gnosisSafe;
     let gnosisSafeProxyFactory;
     let gnosisSafeMultisig;
+    let multiSend;
+    let signMessageLib;
+    let recoveryModule;
+    let safeMultisigWithRecoveryModule;
+    let safeMultisigWithRecoveryModule8004;
+    let fallbackHandler;
     let serviceRegistry;
     let serviceRegistryTokenUtility;
     let identityRegistry;
     let identityRegistryBridger;
-    let erc8004Operator;
     let serviceManager;
     let signers;
     const configHash = "0x" + "5".repeat(64);
@@ -52,6 +57,14 @@ describe("ServiceManagerNative", function () {
         gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deploy();
         await gnosisSafeProxyFactory.deployed();
 
+        const MultiSend = await ethers.getContractFactory("MultiSend");
+        multiSend = await MultiSend.deploy();
+        await multiSend.deployed();
+
+        const SignMessageLib = await ethers.getContractFactory("SignMessageLib");
+        signMessageLib = await SignMessageLib.deploy();
+        await signMessageLib.deployed();
+
         const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
         gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
         await gnosisSafeMultisig.deployed();
@@ -65,9 +78,19 @@ describe("ServiceManagerNative", function () {
         serviceRegistryTokenUtility = await ServiceRegistryTokenUtility.deploy(serviceRegistry.address);
         await serviceRegistryTokenUtility.deployed();
 
+        const RecoveryModule = await ethers.getContractFactory("RecoveryModule");
+        recoveryModule = await RecoveryModule.deploy(multiSend.address, serviceRegistry.address);
+        await recoveryModule.deployed();
+
+        const SafeMultisigWithRecoveryModule = await ethers.getContractFactory("SafeMultisigWithRecoveryModule");
+        safeMultisigWithRecoveryModule = await SafeMultisigWithRecoveryModule.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address,
+            recoveryModule.address);
+        await safeMultisigWithRecoveryModule.deployed();
+
         const IdentityRegistry = await ethers.getContractFactory("MockIdentityRegistry");
         identityRegistry = await IdentityRegistry.deploy();
         await identityRegistry.deployed();
+        await identityRegistry.initialize();
 
         const IdentityRegistryBridger = await ethers.getContractFactory("IdentityRegistryBridger");
         identityRegistryBridger = await IdentityRegistryBridger.deploy(identityRegistry.address,
@@ -84,6 +107,15 @@ describe("ServiceManagerNative", function () {
         // Wrap identityRegistryBridger proxy contract
         identityRegistryBridger = await ethers.getContractAt("IdentityRegistryBridger", identityRegistryBridgerProxy.address);
 
+        const SafeMultisigWithRecoveryModule8004 = await ethers.getContractFactory("SafeMultisigWithRecoveryModule8004");
+        safeMultisigWithRecoveryModule8004 = await SafeMultisigWithRecoveryModule8004.deploy(safeMultisigWithRecoveryModule.address,
+            multiSend.address, signMessageLib.address, identityRegistry.address, identityRegistryBridger.address);
+        await safeMultisigWithRecoveryModule8004.deployed();
+
+        const FallbackHandler = await ethers.getContractFactory("CompatibilityFallbackHandler");
+        fallbackHandler = await FallbackHandler.deploy();
+        await fallbackHandler.deployed();
+
         const ServiceManager = await ethers.getContractFactory("ServiceManager");
         serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
         await serviceManager.deployed();
@@ -97,9 +129,8 @@ describe("ServiceManagerNative", function () {
         // Wrap serviceManager proxy contract
         serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerProxy.address);
 
-        // TODO revert back when IRB is operational
-        //await identityRegistryBridger.changeManager(serviceManager.address);
-        //await serviceManager.setIdentityRegistryBridger(identityRegistryBridger.address);
+        await identityRegistryBridger.changeManager(serviceManager.address);
+        await serviceManager.setIdentityRegistryBridger(identityRegistryBridger.address);
 
         signers = await ethers.getSigners();
         await componentRegistry.changeManager(signers[0].address);
@@ -349,8 +380,11 @@ describe("ServiceManagerNative", function () {
             await serviceManager.connect(operators[0]).registerAgents(serviceIds[0], [agentInstances[0], agentInstances[1]],
                 [newAgentIds[0], newAgentIds[1]], {value: 2*regBond});
 
-            // Whitelist gnosis multisig implementation
+            // Whitelist gnosis multisig implementations
             await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+            await serviceRegistry.changeMultisigPermission(recoveryModule.address, true);
+            await serviceRegistry.changeMultisigPermission(safeMultisigWithRecoveryModule.address, true);
+            await serviceRegistry.changeMultisigPermission(safeMultisigWithRecoveryModule8004.address, true);
 
             // Safe is not possible without all the registered agent instances
             await expect(
@@ -528,13 +562,22 @@ describe("ServiceManagerNative", function () {
             const contractBalance = Number(await ethers.provider.getBalance(serviceRegistry.address));
             expect(contractBalance).to.equal(expectedContractBalance);
 
-            // Whitelist gnosis multisig implementation
+            // Whitelist gnosis multisig implementations
             await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
+            await serviceRegistry.changeMultisigPermission(recoveryModule.address, true);
+            await serviceRegistry.changeMultisigPermission(safeMultisigWithRecoveryModule.address, true);
+            await serviceRegistry.changeMultisigPermission(safeMultisigWithRecoveryModule8004.address, true);
 
             // Create multisig
-            const safe = await serviceManager.connect(owner).deploy(serviceIds[0], gnosisSafeMultisig.address, payload);
+            const payloadWithFallback = ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [fallbackHandler.address, 0]);
+            const safe = await serviceManager.connect(owner).deploy(serviceIds[0],
+                safeMultisigWithRecoveryModule8004.address, payloadWithFallback);
             const result = await safe.wait();
             const proxyAddress = result.events[0].address;
+
+            // Check 8004 agent correspondence
+            const walletMetadata = await identityRegistry.getMetadata(1, "agentWallet");
+            expect(walletMetadata.toLowerCase()).to.equal(proxyAddress.toLowerCase());
 
             // Check initial operator's balance
             const balanceOperator = Number(await serviceRegistry.getOperatorBalance(operator.address, serviceIds[0]));
