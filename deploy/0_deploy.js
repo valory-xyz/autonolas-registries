@@ -80,9 +80,10 @@ module.exports = async () => {
         "https://gateway.autonolas.tech/ipfs/", agentRegistry.address);
     await serviceRegistry.deployed();
 
-    const ServiceManager = await ethers.getContractFactory("ServiceManager");
-    const serviceManager = await ServiceManager.deploy(serviceRegistry.address);
-    await serviceManager.deployed();
+    // Deploying service registry and service registry token utility along with the service manager token contracts
+    const ServiceRegistryTokenUtility = await ethers.getContractFactory("ServiceRegistryTokenUtility");
+    const serviceRegistryTokenUtility = await ServiceRegistryTokenUtility.deploy(serviceRegistry.address);
+    await serviceRegistryTokenUtility.deployed();
 
     // Gnosis Safe deployment
     const GnosisSafe = await ethers.getContractFactory("GnosisSafe");
@@ -110,19 +111,19 @@ module.exports = async () => {
         "https://gateway.autonolas.tech/ipfs/");
     await serviceRegistryL2.deployed();
 
-    // Deploying service registry and service registry token utility along with the service manager token contracts
-    const ServiceRegistryTokenUtility = await ethers.getContractFactory("ServiceRegistryTokenUtility");
-    const serviceRegistryTokenUtility = await ServiceRegistryTokenUtility.deploy(serviceRegistry.address);
-    await serviceRegistryTokenUtility.deployed();
+    const ServiceManager = await ethers.getContractFactory("ServiceManager");
+    const serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
+    await serviceManager.deployed();
 
     const OperatorWhitelist = await ethers.getContractFactory("OperatorWhitelist");
     const operatorWhitelist = await OperatorWhitelist.deploy(serviceRegistry.address);
     await operatorWhitelist.deployed();
 
-    const ServiceManagerToken = await ethers.getContractFactory("ServiceManagerToken");
-    const serviceManagerToken = await ServiceManagerToken.deploy(serviceRegistry.address,
-        serviceRegistryTokenUtility.address, operatorWhitelist.address);
-    await serviceManagerToken.deployed();
+    const proxyData = serviceManager.interface.encodeFunctionData("initialize", []);
+    // Deploy serviceManager proxy based on the needed serviceManager initialization
+    const ServiceManagerProxy = await ethers.getContractFactory("ServiceManagerProxy");
+    const serviceManagerProxy = await ServiceManagerProxy.deploy(serviceManager.address, proxyData);
+    await serviceManagerProxy.deployed();
 
     const Token = await ethers.getContractFactory("ERC20Token");
     const token = await Token.deploy();
@@ -142,10 +143,10 @@ module.exports = async () => {
     console.log("AgentRegistry deployed to:", agentRegistry.address);
     console.log("RegistriesManager deployed to:", registriesManager.address);
     console.log("ServiceRegistry deployed to:", serviceRegistry.address);
-    console.log("ServiceRegistryTokenUtility deployed to:", serviceRegistryTokenUtility.address);
-    console.log("ServiceManagerToken deployed to:", serviceManagerToken.address);
     console.log("ServiceRegistryL2 deployed to:", serviceRegistryL2.address);
+    console.log("ServiceRegistryTokenUtility deployed to:", serviceRegistryTokenUtility.address);
     console.log("ServiceManager deployed to:", serviceManager.address);
+    console.log("ServiceManagerProxy deployed to:", serviceManagerProxy.address);
     console.log("OperatorWhitelist deployed to:", operatorWhitelist.address);
     console.log("ERC20Token deployed to:", token.address);
     console.log("Gnosis Safe master copy deployed to:", gnosisSafe.address);
@@ -302,10 +303,10 @@ module.exports = async () => {
     await componentRegistry.changeManager(registriesManager.address);
     await agentRegistry.changeManager(registriesManager.address);
     console.log("RegistriesManager is now a manager of ComponentRegistry and AgentRegistry contracts");
-    await serviceRegistry.changeManager(serviceManagerToken.address);
-    console.log("ServiceManagerToken is now a manager of ServiceRegistry contract");
-    await serviceRegistryTokenUtility.changeManager(serviceManagerToken.address);
-    console.log("ServiceManagerToken is now a manager of ServiceRegistryTokenUtility contract");
+    await serviceRegistry.changeManager(serviceManagerProxy.address);
+    console.log("ServiceManagerProxy is now a manager of ServiceRegistry contract");
+    await serviceRegistryTokenUtility.changeManager(serviceManagerProxy.address);
+    console.log("ServiceManagerProxy is now a manager of ServiceRegistryTokenUtility contract");
     await serviceRegistryL2.changeManager(serviceManager.address);
     console.log("ServiceManager is now a manager of ServiceRegistryL2 contract");
 
@@ -318,7 +319,7 @@ module.exports = async () => {
         "serviceManager": serviceManager.address,
         "serviceRegistryL2": serviceRegistryL2.address,
         "serviceRegistryTokenUtility": serviceRegistryTokenUtility.address,
-        "serviceManagerToken": serviceManagerToken.address,
+        "serviceManagerProxy": serviceManagerProxy.address,
         "operatorWhitelist": operatorWhitelist.address,
         "ERC20Token": token.address,
         "gnosisSafe": gnosisSafe.address,

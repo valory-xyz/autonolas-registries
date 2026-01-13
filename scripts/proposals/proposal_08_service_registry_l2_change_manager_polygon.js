@@ -5,7 +5,7 @@ const { ethers } = require("ethers");
 async function main() {
     const fs = require("fs");
     // Mainnet globals file
-    const globalsFile = "globals.json";
+    const globalsFile = "scripts/deployment/l2/globals_polygon_mainnet.json";
     const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
     const parsedData = JSON.parse(dataFromJSON);
 
@@ -31,7 +31,9 @@ async function main() {
     const fxRootABI = parsedFile["abi"];
     const fxRoot = new ethers.Contract(fxRootAddress, fxRootABI, mainnetProvider);
 
-    // serviceRegistry address on polygon
+
+    // ServiceRegistryL2 and ServiceRegistryTokenUtility addresses on polygon
+    const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceRegistryJSON = "artifacts/contracts/ServiceRegistryL2.sol/ServiceRegistryL2.json";
     contractFromJSON = fs.readFileSync(serviceRegistryJSON, "utf8");
@@ -41,20 +43,25 @@ async function main() {
 
     // Service manager token address on polygon
     const bridgeMediatorAddress = parsedData.bridgeMediatorAddress;
-    const serviceManagerTokenAddress = parsedData.serviceManagerTokenAddress;
+    const serviceManagerProxyAddress = parsedData.serviceManagerProxyAddress;
 
     // Proposal preparation
     console.log("Proposal 8. Change manager for polygon ServiceRegistryL2\n");
-    // TODO: serviceManagerTokenAddress to be replaced with serviceManagerProxyAddress
-    const rawPayload = serviceRegistry.interface.encodeFunctionData("changeManager", [serviceManagerTokenAddress]);
+    const rawPayloads = [serviceRegistry.interface.encodeFunctionData("changeManager", [serviceManagerProxyAddress]),
+        serviceRegistry.interface.encodeFunctionData("changeManager", [serviceManagerProxyAddress])];
     // Pack the second part of data
-    const target = serviceRegistryAddress;
-    const value = 0;
-    const payload = ethers.utils.arrayify(rawPayload);
-    const data = ethers.utils.solidityPack(
-        ["address", "uint96", "uint32", "bytes"],
-        [target, value, payload.length, payload]
-    );
+    const localTargets = [serviceRegistryAddress, serviceRegistryTokenUtilityAddress];
+    const localValues = [0, 0];
+    // Pack the data into one contiguous buffer (to be consumed by Timelock along with a batch of unpacked L1 transactions)
+    let data = "0x";
+    for (let i = 0; i < rawPayloads.length; i++) {
+        const payload = ethers.utils.arrayify(rawPayloads[i]);
+        const encoded = ethers.utils.solidityPack(
+            ["address", "uint96", "uint32", "bytes"],
+            [localTargets[i], localValues[i], payload.length, payload]
+        );
+        data += encoded.slice(2);
+    }
 
     // fxChild address polygon mainnet: 0x8397259c983751DAf40400790063935a11afa28a
     // Function to call by bridgeMediatorAddress: processMessageFromRoot
@@ -64,15 +71,15 @@ async function main() {
     // Send the message to mumbai receiver from the timelock
     const timelockPayload = await fxRoot.interface.encodeFunctionData("sendMessageToChild", [bridgeMediatorAddress, data]);
 
-    const targets = [fxRootAddress];
-    const values = [0];
-    const callDatas = [timelockPayload];
-    const description = "Change manager in ServiceRegistryL2 on polygon";
+    const target = [fxRootAddress];
+    const value = [0];
+    const callData = [timelockPayload];
+    const description = "Change manager in ServiceRegistryL2 and in ServiceRegistryTokenUtility on polygon";
 
     // Proposal details
-    console.log("targets:", targets);
-    console.log("values:", values);
-    console.log("call datas:", callDatas);
+    console.log("target:", target);
+    console.log("value:", value);
+    console.log("call data:", callData);
     console.log("description:", description);
 }
 

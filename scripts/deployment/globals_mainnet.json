@@ -25,17 +25,18 @@
   "gnosisSafeSameAddressMultisigImplementationAddress": "0xfa517d01DaA100cB1932FA4345F68874f7E7eF46",
   "operatorWhitelistAddress": "0x42042799B0DE38AdD2a70dc996f69f98E1a85260",
   "serviceRegistryTokenUtilityAddress": "0x3Fb926116D454b95c669B6Bf2E7c3bad8d19affA",
-  "serviceManagerAddress": "0x2EA682121f815FBcF86EA3F3CaFdd5d67F2dB143",
+  "serviceManagerAddress": "0x64721b7EfbA7866daD8aB48D220eA70337ba9688",
   "treasuryAddress": "0xa0DA53447C0f6C4987964d8463da7e6628B30f82",
   "multisigProxyHash130": "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000",
   "olasAddress": "0x0001A500A6B18995B03f44bb040A5fFc28E45CB0",
   "minStakingDepositLimit": "10000000000000000000000",
   "timeForEmissionsLimit": "2592000",
-  "numServicesLimit": "500",
+  "numServicesLimit": "100",
   "apyLimit": "3000000000000000000",
   "stakingVerifierAddress": "0x4503b79d468e81Ad2d4bd6Db991810da269bA777",
   "stakingFactoryAddress": "0xEBdde456EA288b49f7D5975E7659bA1Ccf607efc",
   "recoveryModuleAddress": "0x69D97b5c4F35fd3A72FA83b6B1eB911c6A8a2e3c",
   "safeMultisigWithRecoveryModuleAddress": "0xCb728aefD88FCA806d638EAEeEAcFC03Dd985d70",
-  "complementaryServiceMetadataAddress": "0x0561cE39A1ab785B02DE0D9903125702559993A1"
+  "complementaryServiceMetadataAddress": "0x0561cE39A1ab785B02DE0D9903125702559993A1",
+  "serviceManagerProxyAddress": "0x94a1892D91c05D0C61c3f49F42205D2285b914c9"
 }

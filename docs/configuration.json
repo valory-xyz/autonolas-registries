@@ -29,9 +29,14 @@
         "address": "0x3Fb926116D454b95c669B6Bf2E7c3bad8d19affA"
       },
       {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.19/ServiceManagerToken.json",
-        "address": "0x2EA682121f815FBcF86EA3F3CaFdd5d67F2dB143"
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0x64721b7EfbA7866daD8aB48D220eA70337ba9688"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0x94a1892D91c05D0C61c3f49F42205D2285b914c9"
       },
       {
         "name": "OperatorWhitelist",
@@ -90,19 +95,19 @@
         "address": "0xE3607b00E75f6405248323A9417ff6b39B244b50"
       },
       {
-        "name": "ServiceManager",
-        "artifact": "abis/0.8.19/ServiceManager.json",
-        "address": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE"
-      },
-      {
         "name": "ServiceRegistryTokenUtility",
         "artifact": "abis/0.8.23/ServiceRegistryTokenUtility.json",
         "address": "0xa45E64d13A30a51b91ae0eb182e88a40e9b18eD8"
       },
       {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.23/ServiceManagerToken.json",
-        "address": "0x04b0007b2aFb398015B76e5f22993a1fddF83644"
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0xA123748Ce7609F507060F947b70298D0bde621E6"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0xE3e5Df46060370af5Fd37B2aA11e7dac3cCB4bd0"
       },
       {
         "name": "GnosisSafeMultisig",
@@ -143,6 +148,26 @@
         "name": "SafeMultisigWithRecoveryModule",
         "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
         "address": "0x1a0bFCC27051BCcDDc444578f56A4F5920e0E083"
+      },
+      {
+        "name": "PolySafeCreatorWithRecoveryModule",
+        "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
+        "address": "0xA749f605D93B3efcc207C54270d83C6E8fa70fF8"
+      },
+      {
+        "name": "PolySafeSameAddressMultisig",
+        "artifact": "abis/0.8.19/GnosisSafeSameAddressMultisig.json",
+        "address": "0xBcb1BAC84B5BcAb350C89c50ADc9064eD15a4485"
+      },
+      {
+        "name": "HashCheckpoint",
+        "artifact": "abis/0.8.21/HashCheckpoint.json",
+        "address": "0x820ca542d5876FDEf240584F6f3924852D527FED"
+      },
+      {
+        "name": "ComplementaryServiceMetadata",
+        "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
+        "address": "0xDC175E77d11246c79B23D7088750eb59160DD6b7"
       }
     ]
   },
@@ -161,9 +186,14 @@
         "address": "0xa45E64d13A30a51b91ae0eb182e88a40e9b18eD8"
       },
       {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.19/ServiceManagerToken.json",
-        "address": "0x04b0007b2aFb398015B76e5f22993a1fddF83644"
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0xEcF09235AaDEabF4E756B4a532DeD8616b4a2108"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0x068a4f0946cF8c7f9C1B58a3b5243Ac8843bf473"
       },
       {
         "name": "OperatorWhitelist",
@@ -206,6 +236,11 @@
         "address": "0xB4eB492bbfDcE5ccc11d675797cCF090eB0bCbd6"
       },
       {
+        "name": "HashCheckpoint",
+        "artifact": "abis/0.8.21/HashCheckpoint.json",
+        "address": "0x694e62BDF7Ff510A4EE66662cf4866A961a31653"
+      },
+      {
         "name": "ComplementaryServiceMetadata",
         "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
         "address": "0x0598081D48FB80B0A7E52FAD2905AE9beCd6fC69"
@@ -227,9 +262,14 @@
         "address": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44"
       },
       {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.23/ServiceManagerToken.json",
-        "address": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5"
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0x984cf72FDe8B5aA910e9e508aC5e007ae5BDcC9C"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0xD421f433e36465B3e558B1121F584ac09Fc33DF8"
       },
       {
         "name": "OperatorWhitelist",
@@ -288,9 +328,14 @@
         "address": "0xBb7e1D6Cb6F243D6bdE81CE92a9f2aFF7Fbe7eac"
       },
       {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.23/ServiceManagerToken.json",
-        "address": "0xFbBEc0C8b13B38a9aC0499694A69a10204c5E2aB"
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0x92499E80f50f06C4078794C179986907e7822Ea1"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0xA5C7FbCCFf28441b7d250412b0Fb87AA1c8b14AD"
       },
       {
         "name": "OperatorWhitelist",
@@ -331,6 +376,16 @@
         "name": "SafeMultisigWithRecoveryModule",
         "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
         "address": "0x4be7A91e67be963806FeFA9C1FD6C53DfC358d94"
+      },
+      {
+        "name": "HashCheckpoint",
+        "artifact": "abis/0.8.21/HashCheckpoint.json",
+        "address": "0x4E82BC73BFB9647074aA71CBF467e66c1808C571"
+      },
+      {
+        "name": "ComplementaryServiceMetadata",
+        "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
+        "address": "0x11949cBC85d8793B360029E26b18ae759708e28b"
       }
     ]
   },
@@ -349,9 +404,14 @@
         "address": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5"
       },
       {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.23/ServiceManagerToken.json",
-        "address": "0x63e66d7ad413C01A7b49C7FF4e3Bb765C4E4bd1b"
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0xE6e03DD62D11f88A11D65663B398ED2B3Be2070c"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0x1262136cac6a06A782DC94eb3a3dF0b4d09FF6A6"
       },
       {
         "name": "OperatorWhitelist",
@@ -392,6 +452,11 @@
         "name": "SafeMultisigWithRecoveryModule",
         "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
         "address": "0x8c534420Db046d6801A1A8bE6fb602cC8F257453"
+      },
+      {
+        "name": "HashCheckpoint",
+        "artifact": "abis/0.8.21/HashCheckpoint.json",
+        "address": "0x69E679AF02D7F18157A8730189f9aFa8cf9c9a2a"
       },
       {
         "name": "ComplementaryServiceMetadata",
@@ -476,9 +541,14 @@
         "address": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5"
       },
       {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.28/ServiceManagerToken.json",
-        "address": "0x63e66d7ad413C01A7b49C7FF4e3Bb765C4E4bd1b"
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0x1cEe30D08943EB58EFF84DD1AB44a6ee6FEff63a"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0xcDdD9D9ABaB36fFa882530D69c73FeE5D4001C2d"
       },
       {
         "name": "OperatorWhitelist",

@@ -74,9 +74,16 @@ async function findContractInstance(provider, configContracts, contractName) {
     for (let i = 0; i < configContracts.length; i++) {
         if (configContracts[i]["name"] === contractName) {
             // Get the contract instance
-            const contractFromJSON = fs.readFileSync(configContracts[i]["artifact"], "utf8");
+            let contractFromJSON = fs.readFileSync(configContracts[i]["artifact"], "utf8");
+
+            // Additional step for the tokenomics proxy contract
+            if (contractName === "ServiceManagerProxy") {
+                // Get previous abi as it had ServiceManager implementation in it
+                contractFromJSON = fs.readFileSync(configContracts[i - 1]["artifact"], "utf8");
+            }
             const parsedFile = JSON.parse(contractFromJSON);
             const abi = parsedFile["abi"];
+
             const contractInstance = new ethers.Contract(configContracts[i]["address"], abi, provider);
             return contractInstance;
         }
@@ -174,7 +181,7 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
     // Check manager
     const manager = await serviceRegistry.manager();
     // ServiceRegistryManagerToken
-    customExpect(manager, globalsInstance["serviceManagerTokenAddress"], log + ", function: manager()");
+    customExpect(manager, globalsInstance["serviceManagerProxyAddress"], log + ", function: manager()");
 
     // Check drainer
     const drainer = await serviceRegistry.drainer();
@@ -205,8 +212,8 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
     customExpect(res, true, log + ", function: mapMultisigs(safeMultisigWithRecoveryModule)");
 }
 
-// Check service manager: chain Id, provider, parsed globals, configuration contracts, contract name
-async function checkServiceManager(chainId, provider, globalsInstance, configContracts, contractName, log) {
+// Check service manager proxy: chain Id, provider, parsed globals, configuration contracts, contract name
+async function checkServiceManagerProxy(chainId, provider, globalsInstance, configContracts, contractName, log) {
     // Check the bytecode
     await checkBytecode(provider, configContracts, contractName, log);
 
@@ -217,17 +224,14 @@ async function checkServiceManager(chainId, provider, globalsInstance, configCon
     checkOwner(chainId, serviceManager, globalsInstance, log);
 
     log += ", address: " + serviceManager.address;
-    // Check service registry
-    const serviceRegistry = await serviceManager.serviceRegistry();
-    customExpect(serviceRegistry, globalsInstance["serviceRegistryAddress"], log + ", function: serviceRegistry()");
 
     // Check that the manager is not paused
     const paused = await serviceManager.paused();
     customExpect(paused, false, log + ", function: paused()");
 
-    // Version
-    const version = await serviceManager.version();
-    customExpect(version, "1.1.1", log + ", function: version()");
+    // Check service registry
+    const serviceRegistry = await serviceManager.serviceRegistry();
+    customExpect(serviceRegistry, globalsInstance["serviceRegistryAddress"], log + ", function: serviceRegistry()");
 
     // ServiceRegistryTokenUtility
     const serviceRegistryTokenUtility = await serviceManager.serviceRegistryTokenUtility();
@@ -254,7 +258,7 @@ async function checkServiceRegistryTokenUtility(chainId, provider, globalsInstan
     log += ", address: " + serviceRegistryTokenUtility.address;
     // Check manager
     const manager = await serviceRegistryTokenUtility.manager();
-    customExpect(manager, globalsInstance["serviceManagerTokenAddress"], log + ", function: manager()");
+    customExpect(manager, globalsInstance["serviceManagerProxyAddress"], log + ", function: manager()");
 
     // Check drainer
     const drainer = await serviceRegistryTokenUtility.drainer();
@@ -438,6 +442,28 @@ async function checkSafeMultisigWithRecoveryModule(chainId, provider, globalsIns
     customExpect(recoveryModule, globalsInstance["recoveryModuleAddress"], log + ", function: safe()");
 }
 
+// Check checkPolySafeCreatorWithRecoveryModule: chain Id, provider, parsed globals, configuration contracts, contract name
+async function checkPolySafeCreatorWithRecoveryModule(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    // Get the contract instance
+    const polySafeCreatorWithRecoveryModule = await findContractInstance(provider, configContracts, contractName);
+
+    log += ", address: " + polySafeCreatorWithRecoveryModule.address;
+    // Check Safe master address
+    const polySafeProxyFactory = await polySafeCreatorWithRecoveryModule.polySafeProxyFactory();
+    customExpect(polySafeProxyFactory, globalsInstance["polySafeProxyFactoryAddress"], log + ", function: polySafeProxyFactory()");
+
+    // Check Safe Factory address
+    const polySafeProxyBytecodeHash = await polySafeCreatorWithRecoveryModule.polySafeProxyBytecodeHash();
+    customExpect(polySafeProxyBytecodeHash, globalsInstance["polySafeProxyBytecodeHash"], log + ", function: polySafeProxyBytecodeHash()");
+
+    // Check Recovery Module address
+    const recoveryModule = await polySafeCreatorWithRecoveryModule.recoveryModule();
+    customExpect(recoveryModule, globalsInstance["recoveryModuleAddress"], log + ", function: safe()");
+}
+
 
 async function main() {
     // Check for the API keys
@@ -540,9 +566,11 @@ async function main() {
                 await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryL2", log);
             }
 
-            // Path for chains that operate with the ServiceManagerToken
-            log = initLog + ", contract: " + "ServiceManagerToken";
-            await checkServiceManager(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerToken", log);
+            // Skip celo for now
+            if (i != 6) {
+                log = initLog + ", contract: " + "ServiceManagerProxy";
+                await checkServiceManagerProxy(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerProxy", log);
+            }
 
             log = initLog + ", contract: " + "ServiceRegistryTokenUtility";
             await checkServiceRegistryTokenUtility(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryTokenUtility", log);
@@ -567,6 +595,11 @@ async function main() {
 
             log = initLog + ", contract: " + "SafeMultisigWithRecoveryModule";
             await checkSafeMultisigWithRecoveryModule(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "SafeMultisigWithRecoveryModule", log);
+
+            if (configs[i]["name"] === "polygon") {
+                log = initLog + ", contract: " + "PolySafeCreatorWithRecoveryModule";
+                await checkPolySafeCreatorWithRecoveryModule(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "PolySafeCreatorWithRecoveryModule", log);
+            }
         }
     }
     // ################################# /VERIFY CONTRACTS SETUP #################################

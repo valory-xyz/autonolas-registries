@@ -784,7 +784,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
 
         // Check that the multisig address corresponds to the authorized multisig proxy bytecode hash
-        bytes32 multisigProxyHash = keccak256(service.multisig.code);
+        bytes32 multisigProxyHash = service.multisig.codehash;
         if (proxyHash != multisigProxyHash) {
             revert UnauthorizedMultisig(service.multisig);
         }

@@ -29,7 +29,8 @@ async function main() {
     const timelockAddress = parsedData.timelockAddress;
     const arbitrumTimelockAddress = parsedData.bridgeMediatorAddress;
 
-    // ServiceRegistry address on celo
+    // Registries address
+    const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
     const serviceRegistryAddress = parsedData.serviceRegistryAddress;
     const serviceRegistryJSON = "artifacts/contracts/ServiceRegistryL2.sol/ServiceRegistryL2.json";
     const contractFromJSON = fs.readFileSync(serviceRegistryJSON, "utf8");
@@ -49,10 +50,10 @@ async function main() {
     //console.log(l1ToL2MessageGasEstimate);
 
     // Proposal preparation
-    console.log("Proposal 20. Change multisig implementation statuses in ServiceRegistryL2 on Arbitrum\n");
+    console.log("Proposal 20. Change manager in ServiceRegistryL2 and ServiceRegistryTokenUtility on Arbitrum\n");
     // To be able to estimate the gas related params to our L1-L2 message, we need to know how many bytes of calldata out
     // retryable ticket will require
-    const calldata = serviceRegistry.interface.encodeFunctionData("changeMultisigPermission", [parsedData.recoveryModuleAddress, true]);
+    const calldata = serviceRegistry.interface.encodeFunctionData("changeManager", [parsedData.serviceManagerProxyAddress]);
 
     // Users can override the estimated gas params when sending an L1-L2 message
     // Note that this is totally optional
@@ -104,15 +105,33 @@ async function main() {
         L1ToL2MessageGasParams.maxSubmissionCost, arbitrumTimelockAddress, AddressZero,
         L1ToL2MessageGasParams.gasLimit, gasPriceBid, calldata]);
 
-    const target = inboxAddress;
-    const value = L1ToL2MessageGasParams.deposit.mul(10);
-    const callData = timelockCalldata;
-    const description = "Change manager in ServiceRegistryL2 on arbitrum";
+    const L1ToL2MessageGasParams2 = await l1ToL2MessageGasEstimate.estimateAll(
+        {
+            from: timelockAddress,
+            to: serviceRegistryTokenUtilityAddress,
+            l2CallValue,
+            excessFeeRefundAddress: arbitrumTimelockAddress,
+            callValueRefundAddress: AddressZero,
+            data: calldata,
+        },
+        await getBaseFee(mainnetProvider),
+        mainnetProvider,
+        RetryablesGasOverrides
+    );
+
+    const timelockCalldata2 = iface.encodeFunctionData("createRetryableTicket", [serviceRegistryTokenUtilityAddress, l2CallValue,
+        L1ToL2MessageGasParams.maxSubmissionCost, arbitrumTimelockAddress, AddressZero,
+        L1ToL2MessageGasParams.gasLimit, gasPriceBid, calldata]);
+
+    const targets = [inboxAddress, inboxAddress];
+    const values = [L1ToL2MessageGasParams.deposit.mul(10), L1ToL2MessageGasParams2.deposit.mul(10)];
+    const callDatas = [timelockCalldata, timelockCalldata2];
+    const description = "Change manager in ServiceRegistryL2 and ServiceRegistryTokenUtility on arbitrum";
 
     // Proposal details
-    console.log("targets:", target);
-    console.log("values:", value);
-    console.log("call datas:", callData);
+    console.log("targets:", targets);
+    console.log("values:", values);
+    console.log("call datas:", callDatas);
     console.log("description:", description);
 }
 

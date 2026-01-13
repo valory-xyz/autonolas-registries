@@ -14,6 +14,8 @@ error MaintainerOnly(address sender, address maintainer);
 /// @dev Provided zero address.
 error ZeroAddress();
 
+/// @dev Storage is already initialized.
+error AlreadyInitialized();
 
 enum ApplicationType {
     NON_EXISTENT,
@@ -30,8 +32,8 @@ contract ApplicationClassifier {
 
     // Version number
     string public constant VERSION = "0.1.0";
-    // Code position in storage is keccak256("AGENT_CLASSIFICATION_PROXY") = "bb9cd7ad5e1f45908e302afd60ca4d516c3f75bb78697bb109cf197c033960cc"
-    bytes32 public constant AGENT_CLASSIFICATION_PROXY = 0xbb9cd7ad5e1f45908e302afd60ca4d516c3f75bb78697bb109cf197c033960cc;
+    // Code position in storage is keccak256("PROXY_AGENT_CLASSIFICATION") = "3156bf5f7008ff6ac7744ba73e3b52cb758b203026fe9cebdc25e74b8f5ff199"
+    bytes32 public constant PROXY_AGENT_CLASSIFICATION = 0x3156bf5f7008ff6ac7744ba73e3b52cb758b203026fe9cebdc25e74b8f5ff199;
 
     // Owner address
     address public owner;
@@ -40,6 +42,16 @@ contract ApplicationClassifier {
 
     // Mapping of service Id => application type
     mapping(uint256 => ApplicationType) public mapServiceIdStatuses;
+
+    /// @dev Initializes proxy contract storage.
+    function initialize() external {
+        // Check if contract is already initialized
+        if (owner != address(0)) {
+            revert AlreadyInitialized();
+        }
+
+        owner = msg.sender;
+    }
 
     /// @dev Changes the owner address.
     /// @param newOwner New owner address.
@@ -89,7 +101,7 @@ contract ApplicationClassifier {
 
         // Store the implementation address
         assembly {
-            sstore(AGENT_CLASSIFICATION_PROXY, newImplementation)
+            sstore(PROXY_AGENT_CLASSIFICATION, newImplementation)
         }
 
         emit ImplementationUpdated(newImplementation);
