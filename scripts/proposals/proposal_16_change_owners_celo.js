@@ -21,6 +21,7 @@ async function main() {
     const optimismMessengerAddress = parsedData.optimismMessengerAddress;
     const wormholeL1MessageRelayerAddress = parsedData.wormholeL1MessageRelayerAddress;
     const timelockAddress = parsedData.timelockAddress;
+    const CM = "0x04C06323Fe3D53Deb7364c0055E1F68458Cc2570";
 
     // WormholeRelayer contract
     const wormholeRelayerJSON = "abis/bridges/wormhole/WormholeRelayer.json";
@@ -45,14 +46,15 @@ async function main() {
     const contractAddresses = [
         parsedData.serviceRegistryAddress,
         parsedData.serviceRegistryTokenUtilityAddress,
-        parsedData.serviceManagerProxyAddress,
+        parsedData.serviceManagerAddress,
         parsedData.stakingVerifierAddress,
         parsedData.stakingFactoryAddress,
         "0xb4096d181C08DDF75f1A63918cCa0d1023C4e6C7" // WormholeTargetDispenserL2 on Celo
     ];
 
     // Get change owner payload which is the same for all the contracts
-    const serviceRegistry = await ethers.getContractAt("ServiceRegistryL2", parsedData.serviceRegistryAddress);
+    // Use ServiceRegistry address from mainnet
+    const serviceRegistry = await ethers.getContractAt("ServiceRegistryL2", "0x48b6af7B12C71f09e2fC8aF4855De4Ff54e775cA");
     const rawPayload = serviceRegistry.interface.encodeFunctionData("changeOwner", [optimismMessengerAddress]);
     const payload = ethers.utils.arrayify(rawPayload);
 
@@ -88,17 +90,27 @@ async function main() {
         timelockPayload, HashZero, HashZero]);
 
     // Schedule and execute
+    console.log("\nTX1");
     console.log("to:", timelockAddress);
     console.log("value:", 0);
     console.log("Schedule payload:", schedulePayload);
 
+    console.log("\nTX2");
     console.log("to:", timelockAddress);
     console.log("value:", whValue);
     console.log("Execute payload:", executePayload);
 
-    // Multisend assembling
+    const multisig = await ethers.getContractAt("GnosisSafe", "0x04C06323Fe3D53Deb7364c0055E1F68458Cc2570");
+    const msPayload = multisig.interface.encodeFunctionData("setGuard", ["0x7bB7998b210cFfE10ca1e41f16341Abe53f76f3a"]);
+    console.log(msPayload);
+
+    console.log("\nTX3");
+    console.log("to:", CM);
+    console.log("value:", 0);
+    console.log("Current guard set payload:", msPayload);
+
+    // Multisend assembling: not possible over Safe App UI that does not allow selecting delegatecall explicityly
     //const safeContracts = require("@gnosis.pm/safe-contracts");
-    //const CM = "0x04C06323Fe3D53Deb7364c0055E1F68458Cc2570";
     //const multisig = await ethers.getContractAt("GnosisSafe", CM);
     //const multiSend = await ethers.getContractAt("MultiSendCallOnly", parsedData.multiSendCallOnlyAddress);
     //const nonce = await multisig.nonce();
