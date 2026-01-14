@@ -19,9 +19,8 @@ interface IIdentityRegistryBridger {
     /// @dev Registers 8004 agent Id corresponding to service Id.
     /// @param serviceId Service Id.
     /// @param multisig Service multisig.
-    /// @param tokenUri Service tokenUri.
     /// @return agentId Corresponding 8004 agent Id.
-    function register(uint256 serviceId, address multisig, string memory tokenUri) external returns (uint256 agentId);
+    function register(uint256 serviceId, address multisig) external returns (uint256 agentId);
 
     /// @dev Updated agent URI according to provided service URI.
     /// @param serviceId Service Id.
@@ -33,11 +32,6 @@ interface IIdentityRegistryBridger {
     /// @param oldMultisig Old multisig address.
     /// @param newMultisig New multisig address.
     function updateAgentWallet(uint256 serviceId, address oldMultisig, address newMultisig) external;
-
-    /// @dev Gets agentId for provided serviceId.
-    /// @param serviceId Service Id.
-    /// @return agentId Corresponding 8004 agent Id.
-    function mapServiceIdAgentIds(uint256 serviceId) external returns (uint256 agentId);
 }
 
 interface IServiceRegistry {
@@ -312,14 +306,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
 
             // Check if tokenUri has changed
             if (keccak256(bytes(curServiceTokenUri)) != keccak256(bytes(updatedTokenUri))) {
-                // Check if serviceId has a corresponding 8004 agentId
-                uint256 agentId = IIdentityRegistryBridger(identityRegistryBridger).mapServiceIdAgentIds(serviceId);
-
-                // If agentId is zero - service was not initially deployed yet
-                if (agentId > 0) {
-                    // Updated tokenUri in 8004 Identity Registry
-                    IIdentityRegistryBridger(identityRegistryBridger).updateAgentUri(serviceId, updatedTokenUri);
-                }
+                // Updated tokenUri in 8004 Identity Registry, if required
+                IIdentityRegistryBridger(identityRegistryBridger).updateAgentUri(serviceId, updatedTokenUri);
             }
         }
     }
@@ -407,20 +395,14 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
 
         // 8004 Identity Registry workflow
         if (identityRegistryBridger != address(0)) {
-            // Check if serviceId has a corresponding 8004 agentId
-            uint256 agentId = IIdentityRegistryBridger(identityRegistryBridger).mapServiceIdAgentIds(serviceId);
+            // Register corresponding 8004 agent Id, if required
+            IIdentityRegistryBridger(identityRegistryBridger).register(serviceId, multisig);
 
-            // Check if 8004 agentId exists
-            if (agentId == 0) {
-                // Get service token URI
-                string memory tokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
-                // Register corresponding 8004 agent Id
-                IIdentityRegistryBridger(identityRegistryBridger).register(serviceId, multisig, tokenUri);
+            // Check if current and lust multisigs are different
+            if (multisig != lastMultisig) {
+                // Update corresponding metadata in 8004 agent Id
+                IIdentityRegistryBridger(identityRegistryBridger).updateAgentWallet(serviceId, lastMultisig, multisig);
             }
-
-            // TODO Correct this
-            // Update corresponding metadata in 8004 agent Id
-            IIdentityRegistryBridger(identityRegistryBridger).updateAgentWallet(serviceId, lastMultisig, multisig);
         }
 
         emit CreateMultisig(multisig);

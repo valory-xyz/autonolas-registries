@@ -84,11 +84,6 @@ error ManagerOnly(address sender, address manager);
 /// @dev Storage is already initialized.
 error AlreadyInitialized();
 
-/// @dev Agent Id is already assigned to service Id.
-/// @param agentId Agent Id.
-/// @param serviceId Service Id.
-error AgentIdAlreadyAssigned(uint256 agentId, uint256 serviceId);
-
 /// @dev Caught reentrancy violation.
 error ReentrancyGuard();
 
@@ -231,8 +226,10 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         // Update agent wallet and metadata entry
         IIdentityRegistry(identityRegistry).setAgentWallet(agentId, newMultisig, block.timestamp, "");
 
-        // Unlink old multisig and agentId
-        mapMultisigAgentIds[oldMultisig] = 0;
+        if (oldMultisig != address(0)) {
+            // Unlink old multisig and agentId
+            mapMultisigAgentIds[oldMultisig] = 0;
+        }
         // Link new multisig and agentId
         mapMultisigAgentIds[newMultisig] = agentId;
 
@@ -309,9 +306,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @dev Registers 8004 agent Id corresponding to service Id.
     /// @param serviceId Service Id.
     /// @param multisig Service multisig.
-    /// @param tokenUri Service tokenUri.
     /// @return agentId Corresponding 8004 agent Id.
-    function register(uint256 serviceId, address multisig, string memory tokenUri) external returns (uint256 agentId) {
+    function register(uint256 serviceId, address multisig) external returns (uint256 agentId) {
         // Reentrancy guard
         if (_locked > 1) {
             revert ReentrancyGuard();
@@ -325,12 +321,14 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Get corresponding 8004 agent Id
         agentId = mapServiceIdAgentIds[serviceId];
-        // Only allow one agentId per serviceId
-        if (agentId > 0) {
-            revert AgentIdAlreadyAssigned(agentId, serviceId);
-        }
+        // Only allow one agentId per serviceId: skip if agentId has its corresponding serviceId
+        if (agentId == 0) {
+            // Get service token URI
+            string memory tokenUri = IERC721(serviceRegistry).tokenURI(serviceId);
 
-        agentId = _register(serviceId, multisig, tokenUri);
+            // Register new agentId
+            agentId = _register(serviceId, multisig, tokenUri);
+        }
 
         _locked = 1;
     }
@@ -354,6 +352,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         uint256 agentId = mapServiceIdAgentIds[serviceId];
 
         // Modify only if agent Id is already defined, otherwise skip
+        // Note that if agentId is zero - service was not initially deployed yet
         if (agentId > 0) {
             _updateAgentUri(serviceId, agentId, tokenUri);
         }
