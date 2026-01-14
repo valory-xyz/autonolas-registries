@@ -100,6 +100,11 @@ interface ISafe {
 /// @dev Provided zero address.
 error ZeroAddress();
 
+/// @dev Incorrect multisig params.
+/// @param numOwners Number of owners.
+/// @param threshold Threshold.
+error IncorrectMultisigParams(uint256 numOwners, uint256 threshold);
+
 /// @dev Execution has failed.
 /// @param target Target address.
 /// @param payload Payload data.
@@ -124,11 +129,15 @@ contract SafeMultisigWithRecoveryModule8004 {
     address public immutable multiSend;
     // Safe sign message lib address
     address public immutable signMessageLib;
+    // Safe fallback handler address: must provide contract verification functionality
+    address public immutable fallbackHandler;
     // 8004 identity registry address
     address public immutable identityRegistry;
     // Identity registry bridger address
     address public immutable identityRegistryBridger;
 
+    // Nonce
+    uint256 internal _nonce;
     // Reentrancy lock
     uint256 internal _locked = 1;
 
@@ -137,18 +146,20 @@ contract SafeMultisigWithRecoveryModule8004 {
         address _safeMultisigWithRecoveryModule,
         address _multiSend,
         address _signMessageLib,
+        address _fallbackHandler,
         address _identityRegistry,
         address _identityRegistryBridger
     ) {
         // Check for zero addresses
         if (_safeMultisigWithRecoveryModule == address(0) || _multiSend == address(0) || _signMessageLib == address(0)
-            || _identityRegistry == address(0) || _identityRegistryBridger == address(0)) {
+            || _fallbackHandler == address(0) || _identityRegistry == address(0) || _identityRegistryBridger == address(0)) {
             revert ZeroAddress();
         }
 
         safeMultisigWithRecoveryModule = _safeMultisigWithRecoveryModule;
         multiSend = _multiSend;
         signMessageLib = _signMessageLib;
+        fallbackHandler = _fallbackHandler;
         identityRegistry = _identityRegistry;
         identityRegistryBridger = _identityRegistryBridger;
     }
@@ -175,9 +186,8 @@ contract SafeMultisigWithRecoveryModule8004 {
         return keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
     }
 
-    function computeIdentityRegistryDigest(address multisig) internal view returns (bytes32) {
-        // TODO fix when public function is available
-        uint256 agentId = 1;//IIdentityRegistry(identityRegistry).totalSupply();
+    function computeIdentityRegistryDigest(address multisig, uint256 agentId) internal view returns (bytes32) {
+        //uint256 agentId = 1;//IIdentityRegistry(identityRegistry).totalSupply();
 
         (, string memory name, string memory version,,,,) = IIdentityRegistry(identityRegistry).eip712Domain();
 
@@ -206,19 +216,31 @@ contract SafeMultisigWithRecoveryModule8004 {
         }
         _locked = 2;
 
-        // TODO Check for owners length and threshold to be 1?
-        // TODO decode nonce and add more randomness to it?
+        // Check for owners length and threshold to be 1
+        if (owners.length != 1 || threshold != 1) {
+            revert IncorrectMultisigParams(owners.length, threshold);
+        }
+
+        // TODO fix when public function is available
+        // Get agent Id
+        uint256 agentId = abi.decode(data, (uint256));
+
+        // Prepare Safe multisig data
+        uint256 localNonce = _nonce;
+        // Need to get unique nonce since initial owner is always the same - address(this)
+        uint256 randomNonce = uint256(keccak256(abi.encodePacked(block.timestamp, localNonce)));
+        // Encode data for safeMultisigWithRecoveryModule multisig creation
+        data = abi.encode(fallbackHandler, randomNonce);
+
+        // Update global nonce
+        _nonce = localNonce + 1;
 
         // Create Safe with self as owner
         address[] memory initOwners = new address[](1);
         initOwners[0] = address(this);
         multisig = ISafeMultisigWithRecoveryModule(safeMultisigWithRecoveryModule).create(initOwners, threshold, data);
 
-        // Construct signature for contract execution: works as approved hash tx execution
-        bytes32 r = bytes32(uint256(uint160(address(this))));
-        bytes memory signature = abi.encodePacked(r, bytes32(0), uint8(1));
-
-        bytes32 digest = computeIdentityRegistryDigest(multisig);
+        bytes32 digest = computeIdentityRegistryDigest(multisig, agentId);
 
         // Encode sign message function call
         data = abi.encodeCall(ISignMessageLib.signMessage, (abi.encode(digest)));
@@ -233,6 +255,10 @@ contract SafeMultisigWithRecoveryModule8004 {
 
         // Multisend call to execute all the payloads
         msPayload = abi.encodeCall(IMultiSend.multiSend, (msPayload));
+
+        // Construct signature for contract execution: works as approved hash tx execution
+        bytes32 r = bytes32(uint256(uint160(address(this))));
+        bytes memory signature = abi.encodePacked(r, bytes32(0), uint8(1));
 
         // Execute multisig transaction
         bool success = ISafe(multisig)

@@ -107,14 +107,15 @@ describe("ServiceManagerNative", function () {
         // Wrap identityRegistryBridger proxy contract
         identityRegistryBridger = await ethers.getContractAt("IdentityRegistryBridger", identityRegistryBridgerProxy.address);
 
-        const SafeMultisigWithRecoveryModule8004 = await ethers.getContractFactory("SafeMultisigWithRecoveryModule8004");
-        safeMultisigWithRecoveryModule8004 = await SafeMultisigWithRecoveryModule8004.deploy(safeMultisigWithRecoveryModule.address,
-            multiSend.address, signMessageLib.address, identityRegistry.address, identityRegistryBridger.address);
-        await safeMultisigWithRecoveryModule8004.deployed();
-
         const FallbackHandler = await ethers.getContractFactory("CompatibilityFallbackHandler");
         fallbackHandler = await FallbackHandler.deploy();
         await fallbackHandler.deployed();
+
+        const SafeMultisigWithRecoveryModule8004 = await ethers.getContractFactory("SafeMultisigWithRecoveryModule8004");
+        safeMultisigWithRecoveryModule8004 = await SafeMultisigWithRecoveryModule8004.deploy(safeMultisigWithRecoveryModule.address,
+            multiSend.address, signMessageLib.address, fallbackHandler.address, identityRegistry.address,
+            identityRegistryBridger.address);
+        await safeMultisigWithRecoveryModule8004.deployed();
 
         const ServiceManager = await ethers.getContractFactory("ServiceManager");
         serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
@@ -569,9 +570,11 @@ describe("ServiceManagerNative", function () {
             await serviceRegistry.changeMultisigPermission(safeMultisigWithRecoveryModule8004.address, true);
 
             // Create multisig
-            const payloadWithFallback = ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [fallbackHandler.address, 0]);
+            // Mint of agentId-s starts from 1
+            const agentId = 1;
+            const payloadWithAgentId = ethers.utils.defaultAbiCoder.encode(["uint256"], [agentId]);
             const safe = await serviceManager.connect(owner).deploy(serviceIds[0],
-                safeMultisigWithRecoveryModule8004.address, payloadWithFallback);
+                safeMultisigWithRecoveryModule8004.address, payloadWithAgentId);
             const result = await safe.wait();
             const proxyAddress = result.events[0].address;
 
