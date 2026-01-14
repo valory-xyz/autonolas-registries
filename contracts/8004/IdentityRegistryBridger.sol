@@ -120,6 +120,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     // Identity Registry Bridger proxy address slot
     // keccak256("PROXY_IDENTITY_REGISTRY_BRIDGER") = "0x03684189c8fb7a536ac4dbd4b7ad063c37db21bcd0f9c51fe45a4eb16359c165"
     bytes32 public constant PROXY_IDENTITY_REGISTRY_BRIDGER = 0x03684189c8fb7a536ac4dbd4b7ad063c37db21bcd0f9c51fe45a4eb16359c165;
+    // Address type bytes size
+    uint256 public constant ADDRESS_BYTES_SIZE = 20;
 
     // 8004 Identity Registry address
     address public immutable identityRegistry;
@@ -406,8 +408,24 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
             revert WrongAgentId(agentId);
         }
 
-        uint256 serviceId = IIdentityRegistry(identityRegistry).getMetadata(agentId, SERVICE_ID_METADATA_KEY);
-        address oldMultisig = IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
+        // Get service Id
+        bytes memory metadata = IIdentityRegistry(identityRegistry).getMetadata(agentId, SERVICE_ID_METADATA_KEY);
+        // This must never happen as existing agent Id in mapMultisigAgentIds always has corresponding service Id
+        if (metadata.length == 0) {
+            revert ZeroValue();
+        }
+        uint256 serviceId = abi.decode(metadata, (uint256));
+
+        // Get old multisig address
+        metadata = IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
+        // Decode multisig value
+        address oldMultisig;
+        if (metadata.length == ADDRESS_BYTES_SIZE) {
+            // solhint-disable-next-line avoid-low-level-calls
+            assembly {
+                oldMultisig := mload(add(data, ADDRESS_BYTES_SIZE))
+            }
+        }
 
         // Set agent wallet on behalf of agent
         IIdentityRegistry(identityRegistry).setAgentWallet(agentId, msg.sender, deadline, "");
@@ -538,7 +556,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         agentIds = new uint256[](numServices);
 
         // Get max available service Id
-        // service Id numbering starts from id == 1, so last service Id is totalSupply + 1
+        // service Id numbering starts from id == 1, so last service Id is totalSupply
         uint256 maxServiceId = IServiceRegistry(serviceRegistry).totalSupply();
 
         uint256 lastId;
@@ -582,11 +600,18 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
                 // Check for agent Id difference
                 if (checkAgentId != agentId) {
-                    // TODO
                     // Check agentWallet metadata
-                    bytes memory agentWallet;
-                    // Decode multisig value
-                    address oldMultisig = abi.decode(agentWallet, (address));
+                    bytes memory agentWallet =
+                        IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
+
+                    // Decode old multisig value
+                    address oldMultisig;
+                    if (agentWallet.length == ADDRESS_BYTES_SIZE) {
+                        // solhint-disable-next-line avoid-low-level-calls
+                        assembly {
+                            oldMultisig := mload(add(data, ADDRESS_BYTES_SIZE))
+                        }
+                    }
 
                     // Update agentWallet metadata and mapping
                     _updateAgentWallet(serviceId, agentId, oldMultisig, multisig);
