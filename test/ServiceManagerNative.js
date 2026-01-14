@@ -405,6 +405,9 @@ describe("ServiceManagerNative", function () {
                     [newAgentIds[1]], {value: regBond})
             ).to.be.revertedWithCustomError(serviceManager, "WrongServiceState");
 
+            // Unlink IdentityRegistryBridger for this test case
+            await serviceManager.setIdentityRegistryBridger(AddressZero);
+
             // Creating Safe with blanc safe parameters for the test
             const safe = await serviceManager.connect(owner).deploy(serviceIds[0], gnosisSafeMultisig.address, payload);
             const result = await safe.wait();
