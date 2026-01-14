@@ -22,12 +22,7 @@ interface IIdentityRegistry {
 
     function getMetadata(uint256 agentId, string memory key) external view returns (bytes memory);
 
-    function setAgentWallet(
-        uint256 agentId,
-        address newWallet,
-        uint256 deadline,
-        bytes calldata signature
-    ) external;
+    function setAgentWallet(uint256 agentId, address newWallet, uint256 deadline, bytes calldata signature) external;
 }
 
 interface IValidationRegistry {
@@ -120,6 +115,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     string public constant SERVICE_REGISTRY_METADATA_KEY = "serviceRegistry";
     // Service Id metadata key
     string public constant SERVICE_ID_METADATA_KEY = "serviceId";
+    // Agent wallet multisig metadata key
+    string public constant AGENT_WALLET_METADATA_KEY = "agentWallet";
     // Identity Registry Bridger proxy address slot
     // keccak256("PROXY_IDENTITY_REGISTRY_BRIDGER") = "0x03684189c8fb7a536ac4dbd4b7ad063c37db21bcd0f9c51fe45a4eb16359c165"
     bytes32 public constant PROXY_IDENTITY_REGISTRY_BRIDGER = 0x03684189c8fb7a536ac4dbd4b7ad063c37db21bcd0f9c51fe45a4eb16359c165;
@@ -334,6 +331,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     }
 
     /// @dev Updated agent URI according to provided service URI.
+    /// @notice This function access is restricted to manager contract that controls agent deployments.
     /// @param serviceId Service Id.
     /// @param tokenUri Service tokenUri.
     function updateAgentUri(uint256 serviceId, string memory tokenUri) external {
@@ -361,6 +359,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     }
 
     /// @dev Updates 8004 agent Id wallet corresponding to service Id multisig.
+    /// @notice This function access is restricted to manager contract that controls agent deployments.
     /// @param serviceId Service Id.
     /// @param oldMultisig Old multisig address.
     /// @param newMultisig New multisig address.
@@ -387,7 +386,40 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         _locked = 1;
     }
 
+    /// @dev Sets agent wallet.
+    /// @notice This is wrapper function that calls IdentityRegistry's one by address(this) as agent Id owner.
+    ///         Needs to be called by agent multisig.
+    /// @param agentId Agent Id.
+    /// @param deadline Specified deadline for signature validation.
+    function setAgentWallet(uint256 agentId, uint256 deadline) external {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
+        // Check for msg.sender to be agent Id wallet
+        uint256 checkAgentId = mapMultisigAgentIds[msg.sender];
+
+        // Check for access
+        if (agentId != checkAgentId) {
+            revert WrongAgentId(agentId);
+        }
+
+        uint256 serviceId = IIdentityRegistry(identityRegistry).getMetadata(agentId, SERVICE_ID_METADATA_KEY);
+        address oldMultisig = IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
+
+        // Set agent wallet on behalf of agent
+        IIdentityRegistry(identityRegistry).setAgentWallet(agentId, msg.sender, deadline, "");
+
+        emit AgentMultisigUpdated(serviceId, agentId, oldMultisig, msg.sender);
+
+        _locked = 1;
+    }
+
     /// @dev Agent validation request.
+    /// @notice This is wrapper function that calls IdentityRegistry's one by address(this) as agent Id owner.
+    ///         Needs to be called by agent multisig.
     /// @param validatorAddress Validator address.
     /// @param agentId Agent Id.
     /// @param requestUri Request URI.
