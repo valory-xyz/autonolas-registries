@@ -423,7 +423,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         if (metadata.length == ADDRESS_BYTES_SIZE) {
             // solhint-disable-next-line avoid-low-level-calls
             assembly {
-                oldMultisig := mload(add(data, ADDRESS_BYTES_SIZE))
+                oldMultisig := mload(add(metadata, ADDRESS_BYTES_SIZE))
             }
         }
 
@@ -609,7 +609,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
                     if (agentWallet.length == ADDRESS_BYTES_SIZE) {
                         // solhint-disable-next-line avoid-low-level-calls
                         assembly {
-                            oldMultisig := mload(add(data, ADDRESS_BYTES_SIZE))
+                            oldMultisig := mload(add(agentWallet, ADDRESS_BYTES_SIZE))
                         }
                     }
 
