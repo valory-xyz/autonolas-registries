@@ -138,7 +138,7 @@ forge test --match-contract PolySafeCreator -vvv
 Run fork tests with Forge:
 ```
 forge test -f $FORK_NODE_URL --match-contract IdentityRegistry -vvv
-forge test -f $FORK_NODE_URL --match-contract StakePolySafeCreator.sol -vvv
+forge test -f $FORK_NODE_URL --match-contract StakePolySafe -vvv
 ```
 
 ### Test with instrumented code
