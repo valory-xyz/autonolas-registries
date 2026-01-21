@@ -102,6 +102,9 @@ interface ISafe {
 /// @dev Provided zero address.
 error ZeroAddress();
 
+/// @dev Provided zero value.
+error ZeroValue();
+
 /// @dev Incorrect multisig params.
 /// @param numOwners Number of owners.
 /// @param threshold Threshold.
@@ -226,6 +229,10 @@ contract SafeMultisigWithRecoveryModule8004 {
 
         // Get corresponding 8004 agent Id
         uint256 agentId = IIdentityRegistryBridger(identityRegistryBridger).mapServiceIdAgentIds(serviceId);
+        // Check for zero value
+        if (agentId == 0) {
+            revert ZeroValue();
+        }
 
         // Prepare Safe multisig data
         uint256 localNonce = _nonce;
