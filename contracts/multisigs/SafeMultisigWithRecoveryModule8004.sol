@@ -14,8 +14,10 @@ interface IIdentityRegistry {
         bytes32 salt,
         uint256[] memory extensions
     );
+}
 
-    function totalSupply() external view returns (uint256);
+interface IIdentityRegistryBridger {
+    function mapServiceIdAgentIds(uint256 serviceId) external view returns (uint256 agentId);
 }
 
 // SafeMultisigWithRecoveryModule interface
@@ -187,8 +189,6 @@ contract SafeMultisigWithRecoveryModule8004 {
     }
 
     function computeIdentityRegistryDigest(address multisig, uint256 agentId) internal view returns (bytes32) {
-        //uint256 agentId = 1;//IIdentityRegistry(identityRegistry).totalSupply();
-
         (, string memory name, string memory version,,,,) = IIdentityRegistry(identityRegistry).eip712Domain();
 
         bytes32 structHash = keccak256(
@@ -221,9 +221,11 @@ contract SafeMultisigWithRecoveryModule8004 {
             revert IncorrectMultisigParams(owners.length, threshold);
         }
 
-        // TODO fix when public function is available
-        // Get agent Id
-        uint256 agentId = abi.decode(data, (uint256));
+        // Get service Id
+        uint256 serviceId = abi.decode(data, (uint256));
+
+        // Get corresponding 8004 agent Id
+        uint256 agentId = IIdentityRegistryBridger(identityRegistryBridger).mapServiceIdAgentIds(serviceId);
 
         // Prepare Safe multisig data
         uint256 localNonce = _nonce;

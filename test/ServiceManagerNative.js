@@ -573,11 +573,9 @@ describe("ServiceManagerNative", function () {
             await serviceRegistry.changeMultisigPermission(safeMultisigWithRecoveryModule8004.address, true);
 
             // Create multisig
-            // Mint of agentId-s starts from 1
-            const agentId = 1;
-            const payloadWithAgentId = ethers.utils.defaultAbiCoder.encode(["uint256"], [agentId]);
+            const payloadWithServiceId = ethers.utils.defaultAbiCoder.encode(["uint256"], [serviceId]);
             const safe = await serviceManager.connect(owner).deploy(serviceIds[0],
-                safeMultisigWithRecoveryModule8004.address, payloadWithAgentId);
+                safeMultisigWithRecoveryModule8004.address, payloadWithServiceId);
             const result = await safe.wait();
             const proxyAddress = result.events[0].address;
 
