@@ -12,8 +12,6 @@ interface IIdentityRegistry {
 
     function register(string memory tokenUri, MetadataEntry[] memory metadata) external returns (uint256 agentId);
 
-    function setAgentUri(uint256 agentId, string calldata newUri) external;
-
     function getMetadata(uint256 agentId, string memory key) external view returns (bytes memory);
 
     function setAgentWallet(uint256 agentId, address newWallet, uint256 deadline, bytes calldata signature) external;
@@ -34,8 +32,11 @@ interface IServiceRegistry {
     /// @dev Gets service instance params.
     /// @param serviceId Service Id.
     /// @return multisig Service multisig address.
-    function mapServices(uint256 serviceId) external view returns (uint96, address multisig, bytes32, uint32, uint32, uint32, uint8);
-    
+    function mapServices(uint256 serviceId)
+        external
+        view
+        returns (uint96, address multisig, bytes32, uint32, uint32, uint32, uint8);
+
     /// @dev Gets total supply of services.
     function totalSupply() external view returns (uint256);
 }
@@ -81,9 +82,16 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     event BaseURIUpdated(string baseURI);
     event ServiceAgentLinked(uint256 indexed serviceId, uint256 indexed agentId);
     event AgentUriUpdated(uint256 indexed serviceId, uint256 indexed agentId, string tokenUri);
-    event AgentMultisigUpdated(uint256 indexed serviceId, uint256 indexed agentId, address oldMultisig, address indexed newMultisig);
-    event ValidationRequestSubmitted(address indexed sender, uint256 indexed agentId, address indexed validatorAddress,
-        string requestUri, bytes32 requestHash);
+    event AgentMultisigUpdated(
+        uint256 indexed serviceId, uint256 indexed agentId, address oldMultisig, address indexed newMultisig
+    );
+    event ValidationRequestSubmitted(
+        address indexed sender,
+        uint256 indexed agentId,
+        address indexed validatorAddress,
+        string requestUri,
+        bytes32 requestHash
+    );
     event StartLinkServiceIdUpdated(uint256 indexed serviceId);
 
     // Version number
@@ -100,7 +108,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     string public constant AGENT_WALLET_METADATA_KEY = "agentWallet";
     // Identity Registry Bridger proxy address slot
     // keccak256("PROXY_IDENTITY_REGISTRY_BRIDGER") = "0x03684189c8fb7a536ac4dbd4b7ad063c37db21bcd0f9c51fe45a4eb16359c165"
-    bytes32 public constant PROXY_IDENTITY_REGISTRY_BRIDGER = 0x03684189c8fb7a536ac4dbd4b7ad063c37db21bcd0f9c51fe45a4eb16359c165;
+    bytes32 public constant PROXY_IDENTITY_REGISTRY_BRIDGER =
+        0x03684189c8fb7a536ac4dbd4b7ad063c37db21bcd0f9c51fe45a4eb16359c165;
     // Address type bytes size
     uint256 public constant ADDRESS_BYTES_SIZE = 20;
 
@@ -145,8 +154,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     ) {
         // Check for zero addresses
         if (
-            _identityRegistry == address(0) || _reputationRegistry == address(0) || _validationRegistry == address(0) ||
-            _serviceRegistry == address(0)
+            _identityRegistry == address(0) || _reputationRegistry == address(0) || _validationRegistry == address(0)
+                || _serviceRegistry == address(0)
         ) {
             revert ZeroAddress();
         }
@@ -167,21 +176,15 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @dev Registers 8004 agent Id corresponding to service Id.
     /// @param serviceId Service Id.
     /// @return agentId Corresponding 8004 agent Id.
-    function _register(uint256 serviceId) internal returns (uint256 agentId)  {
+    function _register(uint256 serviceId) internal returns (uint256 agentId) {
         // Assemble OLAS specific metadata entry
         IIdentityRegistry.MetadataEntry[] memory metadataEntries = new IIdentityRegistry.MetadataEntry[](3);
-        metadataEntries[0] = IIdentityRegistry.MetadataEntry({
-            key: ECOSYSTEM_METADATA_KEY,
-            value: ECOSYSTEM_METADATA_VALUE
-        });
-        metadataEntries[1] = IIdentityRegistry.MetadataEntry({
-            key: SERVICE_REGISTRY_METADATA_KEY,
-            value: abi.encode(serviceRegistry)
-        });
-        metadataEntries[2] = IIdentityRegistry.MetadataEntry({
-            key: SERVICE_ID_METADATA_KEY,
-            value: abi.encode(serviceId)
-        });
+        metadataEntries[0] =
+            IIdentityRegistry.MetadataEntry({key: ECOSYSTEM_METADATA_KEY, value: ECOSYSTEM_METADATA_VALUE});
+        metadataEntries[1] =
+            IIdentityRegistry.MetadataEntry({key: SERVICE_REGISTRY_METADATA_KEY, value: abi.encode(serviceRegistry)});
+        metadataEntries[2] =
+            IIdentityRegistry.MetadataEntry({key: SERVICE_ID_METADATA_KEY, value: abi.encode(serviceId)});
 
         // Get agent URI
         string memory agentURI = _getAgentURI(serviceId);
@@ -409,11 +412,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @param validatorAddress Validator address.
     /// @param requestUri Request URI.
     /// @param requestHash Request hash.
-    function validationRequest(
-        address validatorAddress,
-        string calldata requestUri,
-        bytes32 requestHash
-    ) external {
+    function validationRequest(address validatorAddress, string calldata requestUri, bytes32 requestHash) external {
         // Reentrancy guard
         if (_locked > 1) {
             revert ReentrancyGuard();
@@ -483,7 +482,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
                 agentIds[i] = _register(serviceId);
 
                 // Get service multisig
-                (,address multisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
+                (, address multisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
 
                 // Check for multisig existence
                 if (multisig != address(0)) {

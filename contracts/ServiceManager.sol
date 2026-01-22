@@ -52,8 +52,18 @@ interface IServiceRegistry {
     /// @return maxNumAgentInstances Total number of agent instances.
     /// @return numAgentInstances Actual number of agent instances.
     /// @return state Service state.
-    function mapServices(uint256 serviceId) external view returns (uint96 securityDeposit, address multisig,
-        bytes32 configHash, uint32 threshold, uint32 maxNumAgentInstances, uint32 numAgentInstances, ServiceState state);
+    function mapServices(uint256 serviceId)
+        external
+        view
+        returns (
+            uint96 securityDeposit,
+            address multisig,
+            bytes32 configHash,
+            uint32 threshold,
+            uint32 maxNumAgentInstances,
+            uint32 numAgentInstances,
+            ServiceState state
+        );
 }
 
 // ERC721 interface
@@ -378,7 +388,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         returns (address multisig)
     {
         // Get current service multisig
-        (,address lastMultisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
+        (, address lastMultisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
 
         // Create or update multisig instance
         multisig = IService(serviceRegistry).deploy(msg.sender, serviceId, multisigImplementation, data);
