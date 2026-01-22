@@ -13,7 +13,6 @@ describe("ServiceManagerNative", function () {
     let signMessageLib;
     let recoveryModule;
     let safeMultisigWithRecoveryModule;
-    let safeMultisigWithRecoveryModule8004;
     let fallbackHandler;
     let serviceRegistry;
     let serviceRegistryTokenUtility;
@@ -110,12 +109,6 @@ describe("ServiceManagerNative", function () {
         const FallbackHandler = await ethers.getContractFactory("CompatibilityFallbackHandler");
         fallbackHandler = await FallbackHandler.deploy();
         await fallbackHandler.deployed();
-
-        const SafeMultisigWithRecoveryModule8004 = await ethers.getContractFactory("SafeMultisigWithRecoveryModule8004");
-        safeMultisigWithRecoveryModule8004 = await SafeMultisigWithRecoveryModule8004.deploy(safeMultisigWithRecoveryModule.address,
-            multiSend.address, signMessageLib.address, fallbackHandler.address, identityRegistry.address,
-            identityRegistryBridger.address);
-        await safeMultisigWithRecoveryModule8004.deployed();
 
         const ServiceManager = await ethers.getContractFactory("ServiceManager");
         serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
@@ -385,7 +378,6 @@ describe("ServiceManagerNative", function () {
             await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
             await serviceRegistry.changeMultisigPermission(recoveryModule.address, true);
             await serviceRegistry.changeMultisigPermission(safeMultisigWithRecoveryModule.address, true);
-            await serviceRegistry.changeMultisigPermission(safeMultisigWithRecoveryModule8004.address, true);
 
             // Safe is not possible without all the registered agent instances
             await expect(
@@ -570,16 +562,104 @@ describe("ServiceManagerNative", function () {
             await serviceRegistry.changeMultisigPermission(gnosisSafeMultisig.address, true);
             await serviceRegistry.changeMultisigPermission(recoveryModule.address, true);
             await serviceRegistry.changeMultisigPermission(safeMultisigWithRecoveryModule.address, true);
-            await serviceRegistry.changeMultisigPermission(safeMultisigWithRecoveryModule8004.address, true);
 
-            // Create multisig
-            // Mint of agentId-s starts from 1
-            const agentId = 1;
-            const payloadWithAgentId = ethers.utils.defaultAbiCoder.encode(["uint256"], [agentId]);
+            // Deploy service
+            // Encode fallbackHandler with isValidSignature() function and nonce (0)
+            const safePayload = ethers.utils.defaultAbiCoder.encode(["address", "uint256"],
+                [fallbackHandler.address, 0]);
             const safe = await serviceManager.connect(owner).deploy(serviceIds[0],
-                safeMultisigWithRecoveryModule8004.address, payloadWithAgentId);
+                safeMultisigWithRecoveryModule.address, safePayload);
             const result = await safe.wait();
             const proxyAddress = result.events[0].address;
+
+            // ***************** MIDDLEWARE WORKFLOW TO SET UP AGENT WALLET IN 8004 AGENT *******************
+
+            // Set multisig wallet
+            // Get required hash constants
+            const EIP712DOMAIN_TYPEHASH = ethers.utils.keccak256(
+                ethers.utils.toUtf8Bytes(
+                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                )
+            );
+
+            const AGENT_WALLET_SET_TYPEHASH = ethers.utils.keccak256(
+                ethers.utils.toUtf8Bytes(
+                    "AgentWalletSet(uint256 agentId,address newWallet,address owner,uint256 deadline)"
+                )
+            );
+
+            // Get created agent Id
+            const agentId = await identityRegistryBridger.mapServiceIdAgentIds(serviceIds[0]);
+
+            // Get domain info
+            const domain = await identityRegistry.eip712Domain();
+            const name = domain[1];
+            const version = domain[2];
+            const chainId = domain[3];
+
+            const block = await ethers.provider.getBlock("latest");
+            const deadline = block.timestamp + 100;
+
+            // Get struct hash
+            const structHash = ethers.utils.keccak256(
+                ethers.utils.defaultAbiCoder.encode(
+                    ["bytes32", "uint256", "address", "address", "uint256"],
+                    [
+                        AGENT_WALLET_SET_TYPEHASH,
+                        agentId,
+                        proxyAddress,
+                        identityRegistryBridger.address,
+                        deadline
+                    ]
+                )
+            );
+
+            // Get domain separator
+            const domainSeparator = ethers.utils.keccak256(
+                ethers.utils.defaultAbiCoder.encode(
+                    ["bytes32", "bytes32", "bytes32", "uint256", "address"],
+                    [
+                        EIP712DOMAIN_TYPEHASH,
+                        ethers.utils.keccak256(ethers.utils.toUtf8Bytes(name)),
+                        ethers.utils.keccak256(ethers.utils.toUtf8Bytes(version)),
+                        chainId,
+                        identityRegistry.address
+                    ]
+                )
+            );
+
+            // Get digest
+            const digest = ethers.utils.keccak256(
+                ethers.utils.solidityPack(
+                    ["string", "bytes32", "bytes32"],
+                    ["\x19\x01", domainSeparator, structHash]
+                )
+            );
+
+            // Sign digest by multisig to become agent wallet in 8004 registry
+            const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
+            const safeContracts = require("@gnosis.pm/safe-contracts");
+
+            // Prepare sign message tx via a signMessageLib delegatecall
+            let nonce = await multisig.nonce();
+            let txHashData = await safeContracts.buildContractCall(signMessageLib, "signMessage",
+                [digest], nonce, 1, 0);
+            let signMessageData = await safeContracts.safeSignMessage(agentInstance, multisig, txHashData, 0);
+
+            // Execute sign message tx
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // Set agent wallet, must be called by multisig
+            // Prepare tx
+            nonce = await multisig.nonce();
+            txHashData = await safeContracts.buildContractCall(identityRegistryBridger, "setAgentWallet",
+                [deadline], nonce, 0, 0);
+            signMessageData = await safeContracts.safeSignMessage(agentInstance, multisig, txHashData, 0);
+
+            // Execute tx
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // ***************** END FOR MIDDLEWARE WORKFLOW TO SET UP AGENT WALLET IN 8004 AGENT *******************
 
             // Check 8004 agent correspondence
             const walletMetadata = await identityRegistry.getMetadata(1, "agentWallet");
@@ -590,12 +670,10 @@ describe("ServiceManagerNative", function () {
             expect(balanceOperator).to.equal(regBond);
 
             // Get all the necessary info about multisig and slash the operator
-            const multisig = await ethers.getContractAt("GnosisSafe", proxyAddress);
-            const safeContracts = require("@gnosis.pm/safe-contracts");
-            const nonce = await multisig.nonce();
-            const txHashData = await safeContracts.buildContractCall(serviceRegistry, "slash",
+            nonce = await multisig.nonce();
+            txHashData = await safeContracts.buildContractCall(serviceRegistry, "slash",
                 [[agentInstance.address], [regFine], serviceIds[0]], nonce, 0, 0);
-            const signMessageData = await safeContracts.safeSignMessage(agentInstance, multisig, txHashData, 0);
+            signMessageData = await safeContracts.safeSignMessage(agentInstance, multisig, txHashData, 0);
 
             // Slash the agent instance operator with the correct multisig
             await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);

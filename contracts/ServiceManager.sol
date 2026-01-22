@@ -398,9 +398,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
             // Register corresponding 8004 agent Id, if required
             IIdentityRegistryBridger(identityRegistryBridger).register(serviceId, multisig);
 
-            // Check if current and lust multisigs are different
+            // Check if current and last multisigs are different
             if (multisig != lastMultisig) {
-                // Update corresponding metadata in 8004 agent Id
+                // Update corresponding multisig records and unset wallet in 8004 agent Id
                 IIdentityRegistryBridger(identityRegistryBridger).updateAgentWallet(serviceId, lastMultisig, multisig);
             }
         }
