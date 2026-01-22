@@ -36,7 +36,7 @@ describe("ServiceManagerNative", function () {
     const payload = "0x";
     const AddressZero = "0x" + "0".repeat(40);
     const ETHAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-    const baseURI = "https://localhost/erc8004/service/"
+    const baseURI = "https://localhost/erc8004/service/";
     
     beforeEach(async function () {
         const ComponentRegistry = await ethers.getContractFactory("ComponentRegistry");
