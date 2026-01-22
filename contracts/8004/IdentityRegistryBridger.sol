@@ -364,7 +364,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @notice This is wrapper function that calls IdentityRegistry's one by address(this) as agent Id owner.
     ///         Needs to be called by agent multisig.
     /// @param deadline Specified deadline for signature validation.
-    function setAgentWallet(uint256 deadline) external {
+    /// @param signature Signature bytes.
+    function setAgentWallet(uint256 deadline, bytes memory signature) external {
         // Reentrancy guard
         if (_locked > 1) {
             revert ReentrancyGuard();
@@ -399,7 +400,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         }
 
         // Set agent wallet on behalf of agent
-        IIdentityRegistry(identityRegistry).setAgentWallet(agentId, msg.sender, deadline, "");
+        IIdentityRegistry(identityRegistry).setAgentWallet(agentId, msg.sender, deadline, signature);
 
         emit AgentMultisigUpdated(serviceId, agentId, oldMultisig, msg.sender);
 

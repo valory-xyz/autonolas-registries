@@ -660,7 +660,7 @@ describe("ServiceManagerNative", function () {
             // Prepare tx
             nonce = await multisig.nonce();
             txHashData = await safeContracts.buildContractCall(identityRegistryBridger, "setAgentWallet",
-                [deadline], nonce, 0, 0);
+                [deadline, "0x"], nonce, 0, 0);
             signMessageData = await safeContracts.safeSignMessage(agentInstance, multisig, txHashData, 0);
 
             // Execute tx
