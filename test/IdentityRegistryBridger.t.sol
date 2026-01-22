@@ -13,11 +13,11 @@ interface IReputationRegistry {
     function giveFeedback(
         uint256 agentId,
         uint8 score,
-        bytes32 tag1,
-        bytes32 tag2,
-        string calldata feedbackUri,
-        bytes32 feedbackHash,
-        bytes calldata feedbackAuth
+        string calldata tag1,
+        string calldata tag2,
+        string calldata endpoint,
+        string calldata feedbackURI,
+        bytes32 feedbackHash
     ) external;
 }
 
@@ -37,8 +37,8 @@ contract BaseSetup is Test {
     address internal constant SERVICE_MANAGER = 0x22808322414594A2a4b8F46Af5760E193D316b5B;
     address internal constant safeMultisigWithRecoveryModule = 0x164e1CA068afeF66EFbB9cA19d904c44E8386fd9;
     address internal constant IDENTITY_REGISTRY_BRIDGER = 0xC68b98C7417969c761659634CaE445d605CE0D5B;
-    address internal constant IDENTITY_REGISTRY = 0x8004a6090Cd10A7288092483047B097295Fb8847;
-    address internal constant REPUTATION_REGISTRY = 0x8004B8FD1A363aa02fDC07635C0c5F94f6Af5B7E;
+    address internal constant IDENTITY_REGISTRY = 0x8004A818BFB912233c491871b3d84c89A494BD9e;
+    address internal constant REPUTATION_REGISTRY = 0x8004B663056A597Dffe9eCcC1965A193B7388713;
     uint96 internal constant SECURITY_DEPOSIT = 1;
     uint32 internal constant THRESHOLD = 1;
 
@@ -110,8 +110,8 @@ contract IdentityRegistry is BaseSetup {
         identityRegistryBridger.linkServiceIdAgentIds(numServices / 2 + 1);
     }
 
-    /// @dev Signs feedback requests by 8004 operator and leave feedback.
-        function testSignFeedbackRequestsAndExecute() public {
+    /// @dev Gives feedback to agents.
+    function testGiveFeedback() public {
         IService.AgentParams[] memory agentParams = new IService.AgentParams[](1);
         agentParams[0] = IService.AgentParams({slots: 1, bond: SECURITY_DEPOSIT});
 
@@ -135,43 +135,28 @@ contract IdentityRegistry is BaseSetup {
         serviceManager.deploy(serviceId, safeMultisigWithRecoveryModule, "");
 
         // Create agent and link service
-        uint256[] memory agentIds = identityRegistryBridger.linkServiceIdAgentIds(serviceId);
+        uint256[] memory agentIds = identityRegistryBridger.linkServiceIdAgentIds(1);
 
         // Authorize feedback
         address clientAddress = users[3];
-        uint64 indexLimit = 2;
-        uint256 expiry = block.timestamp + 1000;
 
         // Leave feedback
         uint256 agentId = agentIds[0];
         uint8 score = 100;
-        bytes32 tag1;
-        bytes32 tag2;
+        string memory tag1;
+        string memory tag2;
+        string memory endpoint;
         string memory feedbackUri;
         bytes32 feedbackHash;
 
-        // TODO
-        // Encode first 224 bytes
-        bytes memory feedbackAuth = abi.encode(agentId, clientAddress, indexLimit, expiry, block.chainid,
-            IDENTITY_REGISTRY, address(identityRegistryBridger));
-
-        // Try to leave feedback not by authorized client
-        vm.prank(deployer);
-        vm.expectRevert("Client mismatch");
-        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, tag1, tag2, feedbackUri, feedbackHash,
-            feedbackAuth);
-
-        // Give 2 feedbacks by client
+        // Give 3 feedbacks by client
         vm.startPrank(clientAddress);
-        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, tag1, tag2, feedbackUri, feedbackHash,
-            feedbackAuth);
-        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, tag1, tag2, feedbackUri, feedbackHash,
-            feedbackAuth);
-
-        vm.expectRevert("IndexLimit exceeded");
-        // The 3rd is reverted as limit index is 2
-        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, tag1, tag2, feedbackUri, feedbackHash,
-            feedbackAuth);
+        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, tag1, tag2, feedbackUri, endpoint,
+            feedbackHash);
+        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, tag1, tag2, feedbackUri, endpoint,
+            feedbackHash);
+        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, tag1, tag2, feedbackUri, endpoint,
+            feedbackHash);
         vm.stopPrank();
     }
 }
