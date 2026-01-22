@@ -5451,6 +5451,20 @@ contract MockIdentityRegistry is
         emit MetadataSet(agentId, "agentWallet", "agentWallet", abi.encodePacked(newWallet));
     }
 
+    function unsetAgentWallet(uint256 agentId) external {
+        address owner = ownerOf(agentId);
+        require(
+            msg.sender == owner ||
+            isApprovedForAll(owner, msg.sender) ||
+            msg.sender == getApproved(agentId),
+            "Not authorized"
+        );
+
+        IdentityRegistryStorage storage $ = _getIdentityRegistryStorage();
+        $._metadata[agentId]["agentWallet"] = "";
+        emit MetadataSet(agentId, "agentWallet", "agentWallet", "");
+    }
+
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     /**

@@ -16,13 +16,13 @@ interface IIdentityRegistry {
 
     function register(string memory tokenUri, MetadataEntry[] memory metadata) external returns (uint256 agentId);
 
-    function setMetadata(uint256 agentId, string memory key, bytes memory value) external;
-
     function setAgentUri(uint256 agentId, string calldata newUri) external;
 
     function getMetadata(uint256 agentId, string memory key) external view returns (bytes memory);
 
     function setAgentWallet(uint256 agentId, address newWallet, uint256 deadline, bytes calldata signature) external;
+
+    function unsetAgentWallet(uint256 agentId) external;
 }
 
 interface IValidationRegistry {
@@ -197,6 +197,9 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         // Create new agent Id
         agentId = IIdentityRegistry(identityRegistry).register(tokenUri, metadataEntries);
 
+        // Unset agent wallet because msg.sender is recorded as such in register() function
+        IIdentityRegistry(identityRegistry).unsetAgentWallet(agentId);
+
         // Link service Id and agent Id
         mapServiceIdAgentIds[serviceId] = agentId;
         // Link multisig and agentId
@@ -216,18 +219,18 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         emit AgentUriUpdated(serviceId, agentId, tokenUri);
     }
 
-    /// @dev Updates 8004 agent Id wallet corresponding to service Id multisig.
+    /// @dev Updates corresponding multisig records and unsets 8004 agent Id old wallet, if it is no longer in use.
     /// @param serviceId Service Id.
     /// @param agentId Corresponding agent Id.
     /// @param oldMultisig Old multisig address.
     /// @param newMultisig New multisig address.
     function _updateAgentWallet(uint256 serviceId, uint256 agentId, address oldMultisig, address newMultisig) internal {
-        // Update agent wallet and metadata entry
-        IIdentityRegistry(identityRegistry).setAgentWallet(agentId, newMultisig, block.timestamp, "");
-
         if (oldMultisig != address(0)) {
             // Unlink old multisig and agentId
             mapMultisigAgentIds[oldMultisig] = 0;
+
+            // Unset old agent wallet
+            IIdentityRegistry(identityRegistry).unsetAgentWallet(agentId);
         }
         // Link new multisig and agentId
         mapMultisigAgentIds[newMultisig] = agentId;
@@ -360,7 +363,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         _locked = 1;
     }
 
-    /// @dev Updates 8004 agent Id wallet corresponding to service Id multisig.
+    /// @dev Updates corresponding multisig records and unsets 8004 agent Id old wallet, if it is no longer in use.
     /// @notice This function access is restricted to manager contract that controls agent deployments.
     /// @param serviceId Service Id.
     /// @param oldMultisig Old multisig address.
@@ -382,6 +385,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Modify only if agent Id is already defined, otherwise skip
         if (agentId > 0) {
+            // Update agent wallet in local mapping
             _updateAgentWallet(serviceId, agentId, oldMultisig, newMultisig);
         }
 
@@ -391,21 +395,20 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @dev Sets agent wallet.
     /// @notice This is wrapper function that calls IdentityRegistry's one by address(this) as agent Id owner.
     ///         Needs to be called by agent multisig.
-    /// @param agentId Agent Id.
     /// @param deadline Specified deadline for signature validation.
-    function setAgentWallet(uint256 agentId, uint256 deadline) external {
+    function setAgentWallet(uint256 deadline) external {
         // Reentrancy guard
         if (_locked > 1) {
             revert ReentrancyGuard();
         }
         _locked = 2;
 
-        // Check for msg.sender to be agent Id wallet
-        uint256 checkAgentId = mapMultisigAgentIds[msg.sender];
+        // Get agent Id by msg.sender as its wallet
+        uint256 agentId = mapMultisigAgentIds[msg.sender];
 
-        // Check for access
-        if (agentId != checkAgentId) {
-            revert WrongAgentId(agentId);
+        // Check for zero value
+        if (agentId == 0) {
+            revert ZeroValue();
         }
 
         // Get service Id
@@ -439,12 +442,10 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     /// @notice This is wrapper function that calls IdentityRegistry's one by address(this) as agent Id owner.
     ///         Needs to be called by agent multisig.
     /// @param validatorAddress Validator address.
-    /// @param agentId Agent Id.
     /// @param requestUri Request URI.
     /// @param requestHash Request hash.
     function validationRequest(
         address validatorAddress,
-        uint256 agentId,
         string calldata requestUri,
         bytes32 requestHash
     ) external {
@@ -454,12 +455,12 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         }
         _locked = 2;
 
-        // Check for msg.sender to be agent Id wallet
-        uint256 checkAgentId = mapMultisigAgentIds[msg.sender];
+        // Get agent Id by msg.sender as its wallet
+        uint256 agentId = mapMultisigAgentIds[msg.sender];
 
-        // Check for access
-        if (agentId != checkAgentId) {
-            revert WrongAgentId(agentId);
+        // Check for zero value
+        if (agentId == 0) {
+            revert ZeroValue();
         }
 
         // Call validation request on behalf of agent
@@ -604,17 +605,17 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
                     bytes memory agentWallet =
                         IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
 
-                    // Decode old multisig value
-                    address oldMultisig;
+                    // Decode last multisig value
+                    address lastMultisig;
                     if (agentWallet.length == ADDRESS_BYTES_SIZE) {
                         // solhint-disable-next-line avoid-low-level-calls
                         assembly {
-                            oldMultisig := mload(add(agentWallet, ADDRESS_BYTES_SIZE))
+                            lastMultisig := mload(add(agentWallet, ADDRESS_BYTES_SIZE))
                         }
                     }
 
                     // Update agentWallet metadata and mapping
-                    _updateAgentWallet(serviceId, agentId, oldMultisig, multisig);
+                    _updateAgentWallet(serviceId, agentId, lastMultisig, multisig);
                 }
 
                 // Get tokenUri
