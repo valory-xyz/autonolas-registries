@@ -572,6 +572,8 @@ describe("ServiceManagerNative", function () {
             const result = await safe.wait();
             const proxyAddress = result.events[0].address;
 
+            // ***************** MIDDLEWARE WORKFLOW TO SET UP AGENT WALLET IN 8004 AGENT *******************
+
             // Set multisig wallet
             // Get required hash constants
             const EIP712DOMAIN_TYPEHASH = ethers.utils.keccak256(
@@ -656,6 +658,8 @@ describe("ServiceManagerNative", function () {
 
             // Execute tx
             await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+            // ***************** END FOR MIDDLEWARE WORKFLOW TO SET UP AGENT WALLET IN 8004 AGENT *******************
 
             // Check 8004 agent correspondence
             const walletMetadata = await identityRegistry.getMetadata(1, "agentWallet");
