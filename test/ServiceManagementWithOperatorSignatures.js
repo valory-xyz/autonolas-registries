@@ -31,6 +31,7 @@ describe("ServiceManagementWithOperatorSignatures", function () {
     const agentId = 1;
     const AddressZero = "0x" + "0".repeat(40);
     const ETHAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+    const baseURI = "https://localhost/erc8004/service/";
     const payload = "0x";
     let bytecodeHash;
 
@@ -93,7 +94,7 @@ describe("ServiceManagementWithOperatorSignatures", function () {
             identityRegistry.address, identityRegistry.address, serviceRegistry.address);
         await identityRegistryBridger.deployed();
 
-        let proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", []);
+        let proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", [baseURI]);
         // Deploy identityRegistryBridger proxy based on the needed identityRegistryBridger initialization
         const IdentityRegistryBridgerProxy = await ethers.getContractFactory("IdentityRegistryBridgerProxy");
         const identityRegistryBridgerProxy = await IdentityRegistryBridgerProxy.deploy(identityRegistryBridger.address,
