@@ -14,7 +14,6 @@ describe("ServiceManagerToken", function () {
     let serviceRegistryTokenUtilityL2;
     let identityRegistry;
     let identityRegistryBridger;
-    let erc8004Operator;
     let serviceManager;
     let serviceManagerL2;
     let gnosisSafeMultisig;
