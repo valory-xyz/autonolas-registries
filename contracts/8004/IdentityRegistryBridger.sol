@@ -69,10 +69,6 @@ error ReentrancyGuard();
 /// @param metadataKey Metadata key.
 error WrongMetadataKey(string metadataKey);
 
-/// @dev Provided wrong service Id.
-/// @param serviceId Service Id.
-error WrongServiceId(uint256 serviceId);
-
 /// @title Identity Registry Bridger - Smart contract for bridging OLAS AI Agent Registry with 8004 Identity Registry
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
