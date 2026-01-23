@@ -98,7 +98,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     // Ecosystem metadata key
     string public constant ECOSYSTEM_METADATA_KEY = "ecosystem";
     // Ecosystem metadata value
-    bytes public constant ECOSYSTEM_METADATA_VALUE = abi.encode("OLAS V1");
+    bytes public constant ECOSYSTEM_METADATA_VALUE = abi.encode("Olas");
     // Service Registry metadata key
     string public constant SERVICE_REGISTRY_METADATA_KEY = "serviceRegistry";
     // Service Id metadata key
