@@ -14,7 +14,6 @@ describe("ServiceManagerToken", function () {
     let serviceRegistryTokenUtilityL2;
     let identityRegistry;
     let identityRegistryBridger;
-    let erc8004Operator;
     let serviceManager;
     let serviceManagerL2;
     let gnosisSafeMultisig;
@@ -40,6 +39,7 @@ describe("ServiceManagerToken", function () {
     const payload = "0x";
     const AddressZero = "0x" + "0".repeat(40);
     const ETHAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+    const baseURI = "https://localhost/erc8004/service/";
     const initSupply = "5" + "0".repeat(26);
     const serviceRegistryImplementations = ["l1", "l2"];
 
@@ -98,7 +98,7 @@ describe("ServiceManagerToken", function () {
             identityRegistry.address, identityRegistry.address, serviceRegistry.address);
         await identityRegistryBridger.deployed();
 
-        let proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", []);
+        let proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", [baseURI]);
         // Deploy identityRegistryBridger proxy based on the needed identityRegistryBridger initialization
         const IdentityRegistryBridgerProxy = await ethers.getContractFactory("IdentityRegistryBridgerProxy");
         const identityRegistryBridgerProxy = await IdentityRegistryBridgerProxy.deploy(identityRegistryBridger.address,

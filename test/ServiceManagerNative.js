@@ -36,6 +36,7 @@ describe("ServiceManagerNative", function () {
     const payload = "0x";
     const AddressZero = "0x" + "0".repeat(40);
     const ETHAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+    const baseURI = "https://localhost/erc8004/service/";
     
     beforeEach(async function () {
         const ComponentRegistry = await ethers.getContractFactory("ComponentRegistry");
@@ -96,7 +97,7 @@ describe("ServiceManagerNative", function () {
             identityRegistry.address, identityRegistry.address, serviceRegistry.address);
         await identityRegistryBridger.deployed();
 
-        let proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", []);
+        let proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", [baseURI]);
         // Deploy identityRegistryBridger proxy based on the needed identityRegistryBridger initialization
         const IdentityRegistryBridgerProxy = await ethers.getContractFactory("IdentityRegistryBridgerProxy");
         const identityRegistryBridgerProxy = await IdentityRegistryBridgerProxy.deploy(identityRegistryBridger.address,
@@ -545,8 +546,14 @@ describe("ServiceManagerNative", function () {
             await serviceRegistry.changeManager(serviceManager.address);
             await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
-            // Creating a service and activating registration
+            // Create service
             await serviceManager.create(owner.address, ETHAddress, configHash, [1], [[1, regBond]], 1);
+
+            // Check for agent URI
+            const agentURI = await identityRegistryBridger.getAgentURI(serviceIds[0]);
+            expect(agentURI).to.equal(baseURI + serviceIds[0].toString());
+
+            // Activate registration
             await serviceManager.connect(owner).activateRegistration(serviceIds[0], {value: regDeposit});
 
             // Registering agent instance
@@ -653,7 +660,7 @@ describe("ServiceManagerNative", function () {
             // Prepare tx
             nonce = await multisig.nonce();
             txHashData = await safeContracts.buildContractCall(identityRegistryBridger, "setAgentWallet",
-                [deadline], nonce, 0, 0);
+                [deadline, "0x"], nonce, 0, 0);
             signMessageData = await safeContracts.safeSignMessage(agentInstance, multisig, txHashData, 0);
 
             // Execute tx
