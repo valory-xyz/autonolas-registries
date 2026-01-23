@@ -12,11 +12,13 @@ interface IIdentityRegistry {
 
     function register(string memory tokenUri, MetadataEntry[] memory metadata) external returns (uint256 agentId);
 
-    function getMetadata(uint256 agentId, string memory key) external view returns (bytes memory);
+    function setMetadata(uint256 agentId, string memory metadataKey, bytes memory metadataValue) external;
 
     function setAgentWallet(uint256 agentId, address newWallet, uint256 deadline, bytes calldata signature) external;
 
     function unsetAgentWallet(uint256 agentId) external;
+
+    function getMetadata(uint256 agentId, string memory key) external view returns (bytes memory);
 }
 
 interface IValidationRegistry {
@@ -63,9 +65,9 @@ error AlreadyInitialized();
 /// @dev Caught reentrancy violation.
 error ReentrancyGuard();
 
-/// @dev Provided wrong agent Id.
-/// @param agentId Agent Id.
-error WrongAgentId(uint256 agentId);
+/// @dev Provided wrong metadata key.
+/// @param metadataKey Metadata key.
+error WrongMetadataKey(string metadataKey);
 
 /// @dev Provided wrong service Id.
 /// @param serviceId Service Id.
@@ -84,6 +86,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     event AgentMultisigUpdated(
         uint256 indexed serviceId, uint256 indexed agentId, address oldMultisig, address indexed newMultisig
     );
+    event MetadataSet(uint256 indexed agentId, string metadataKey, bytes metadataValue);
     event ValidationRequestSubmitted(
         address indexed sender,
         uint256 indexed agentId,
@@ -91,7 +94,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         string requestUri,
         bytes32 requestHash
     );
-    event StartLinkServiceIdUpdated(uint256 indexed serviceId);
+    event StartLinkServiceIdUpdated(uint256 indexed serviceId, bool linkedAll);
 
     // Version number
     string public constant VERSION = "0.1.0";
@@ -109,8 +112,6 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     // keccak256("PROXY_IDENTITY_REGISTRY_BRIDGER") = "0x03684189c8fb7a536ac4dbd4b7ad063c37db21bcd0f9c51fe45a4eb16359c165"
     bytes32 public constant PROXY_IDENTITY_REGISTRY_BRIDGER =
         0x03684189c8fb7a536ac4dbd4b7ad063c37db21bcd0f9c51fe45a4eb16359c165;
-    // Address type bytes size
-    uint256 public constant ADDRESS_BYTES_SIZE = 20;
 
     // 8004 Identity Registry address
     address public immutable identityRegistry;
@@ -389,19 +390,48 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Get old multisig address
         metadata = IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
+        // TODO Is this also correct when metadata == "0x"?
         // Decode multisig value
-        address oldMultisig;
-        if (metadata.length == ADDRESS_BYTES_SIZE) {
-            // solhint-disable-next-line avoid-low-level-calls
-            assembly {
-                oldMultisig := mload(add(metadata, ADDRESS_BYTES_SIZE))
-            }
-        }
+        address oldMultisig = address(bytes20(metadata));
 
         // Set agent wallet on behalf of agent
         IIdentityRegistry(identityRegistry).setAgentWallet(agentId, msg.sender, deadline, signature);
 
         emit AgentMultisigUpdated(serviceId, agentId, oldMultisig, msg.sender);
+
+        _locked = 1;
+    }
+
+    /// @dev Sets metadata value corresponding to its key.
+    /// @param metadataKey Metadata key.
+    /// @param metadataValue Metadata value.
+    function setMetadata(string memory metadataKey, bytes memory metadataValue) external {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
+        // Get agent Id by msg.sender as its wallet
+        uint256 agentId = mapMultisigAgentIds[msg.sender];
+
+        // Check for zero value
+        if (agentId == 0) {
+            revert ZeroValue();
+        }
+
+        // Check for default immutable metadata
+        if (keccak256(bytes(metadataKey)) == keccak256(bytes(ECOSYSTEM_METADATA_KEY)) ||
+            keccak256(bytes(metadataKey)) == keccak256(bytes(SERVICE_REGISTRY_METADATA_KEY)) ||
+            keccak256(bytes(metadataKey)) == keccak256(bytes(SERVICE_ID_METADATA_KEY))
+        ) {
+            revert WrongMetadataKey(metadataKey);
+        }
+
+        // Set metadata
+        IIdentityRegistry(identityRegistry).setMetadata(agentId, metadataKey, metadataValue);
+
+        emit MetadataSet(agentId, metadataKey, metadataValue);
 
         _locked = 1;
     }
@@ -456,6 +486,11 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Get first and last service Ids bound
         uint256 startServiceId = startLinkServiceId;
+        // Check for zero value: only possible when all legacy services are linked
+        if (startServiceId == 0) {
+            revert ZeroValue();
+        }
+
         // Note that lastServiceId is not going to be processed, as there is a strict (< numServices) condition
         // lastServiceId is going to be starting service Id in next iteration: processing [serviceId, lastServiceId)
         uint256 lastServiceId = startServiceId + numServices;
@@ -470,6 +505,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         agentIds = new uint256[](numServices);
 
         // Assign agent Ids
+        bool linkedAll;
         for (uint256 i = 0; i < numServices; ++i) {
             // Get service Id
             uint256 serviceId = startServiceId + i;
@@ -489,13 +525,23 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
                     // Update agent wallet in local mapping
                     _updateAgentWallet(serviceId, agentIds[i], address(0), multisig);
                 }
+            } else {
+                // Record that all legacy services are linked
+                linkedAll = true;
+                break;
             }
         }
 
-        // Record start link service Id for next iteration
-        startLinkServiceId = lastServiceId;
+        // Check if linked all legacy services
+        if (linkedAll) {
+            // Reset service Id counter such that this function cannot be called anymore
+            startLinkServiceId = 0;
+        } else {
+            // Record start link service Id for next iteration
+            startLinkServiceId = lastServiceId;
+        }
 
-        emit StartLinkServiceIdUpdated(lastServiceId);
+        emit StartLinkServiceIdUpdated(lastServiceId, linkedAll);
 
         _locked = 1;
     }

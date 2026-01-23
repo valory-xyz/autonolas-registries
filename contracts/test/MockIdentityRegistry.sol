@@ -5291,11 +5291,6 @@ library ECDSA {
 // Original license: SPDX_License_Identifier: MIT
 pragma solidity ^0.8.20;
 
-
-
-
-
-
 contract MockIdentityRegistry is
     ERC721URIStorageUpgradeable,
     OwnableUpgradeable,
@@ -5310,10 +5305,8 @@ contract MockIdentityRegistry is
     /// @custom:storage-location erc7201:erc8004.identity.registry
     struct IdentityRegistryStorage {
         uint256 _lastId;
-        // agentId => metadataKey => metadataValue
+        // agentId => metadataKey => metadataValue (includes "agentWallet")
         mapping(uint256 => mapping(string => bytes)) _metadata;
-        // agentId => verified agent wallet (address-typed convenience)
-        mapping(uint256 => address) _agentWallet;
     }
 
     // keccak256(abi.encode(uint256(keccak256("erc8004.identity.registry")) - 1)) & ~bytes32(uint256(0xff))
@@ -5348,29 +5341,32 @@ contract MockIdentityRegistry is
     function register() external returns (uint256 agentId) {
         IdentityRegistryStorage storage $ = _getIdentityRegistryStorage();
         agentId = $._lastId++;
+        $._metadata[agentId]["agentWallet"] = abi.encodePacked(msg.sender);
         _safeMint(msg.sender, agentId);
-        $._agentWallet[agentId] = msg.sender;
         emit Registered(agentId, "", msg.sender);
+        emit MetadataSet(agentId, "agentWallet", "agentWallet", abi.encodePacked(msg.sender));
     }
 
     function register(string memory agentURI) external returns (uint256 agentId) {
         IdentityRegistryStorage storage $ = _getIdentityRegistryStorage();
         agentId = $._lastId++;
+        $._metadata[agentId]["agentWallet"] = abi.encodePacked(msg.sender);
         _safeMint(msg.sender, agentId);
-        $._agentWallet[agentId] = msg.sender;
         _setTokenURI(agentId, agentURI);
         emit Registered(agentId, agentURI, msg.sender);
+        emit MetadataSet(agentId, "agentWallet", "agentWallet", abi.encodePacked(msg.sender));
     }
 
     function register(string memory agentURI, MetadataEntry[] memory metadata) external returns (uint256 agentId) {
         IdentityRegistryStorage storage $ = _getIdentityRegistryStorage();
         agentId = $._lastId++;
+        $._metadata[agentId]["agentWallet"] = abi.encodePacked(msg.sender);
         _safeMint(msg.sender, agentId);
-        $._agentWallet[agentId] = msg.sender;
         _setTokenURI(agentId, agentURI);
         emit Registered(agentId, agentURI, msg.sender);
+        emit MetadataSet(agentId, "agentWallet", "agentWallet", abi.encodePacked(msg.sender));
 
-        for (uint256 i = 0; i < metadata.length; i++) {
+        for (uint256 i; i < metadata.length; i++) {
             require(keccak256(bytes(metadata[i].metadataKey)) != RESERVED_AGENT_WALLET_KEY_HASH, "reserved key");
             $._metadata[agentId][metadata[i].metadataKey] = metadata[i].metadataValue;
             emit MetadataSet(agentId, metadata[i].metadataKey, metadata[i].metadataKey, metadata[i].metadataValue);
@@ -5383,9 +5379,10 @@ contract MockIdentityRegistry is
     }
 
     function setMetadata(uint256 agentId, string memory metadataKey, bytes memory metadataValue) external {
+        address agentOwner = _ownerOf(agentId);
         require(
-            msg.sender == _ownerOf(agentId) ||
-            isApprovedForAll(_ownerOf(agentId), msg.sender) ||
+            msg.sender == agentOwner ||
+            isApprovedForAll(agentOwner, msg.sender) ||
             msg.sender == getApproved(agentId),
             "Not authorized"
         );
@@ -5408,10 +5405,9 @@ contract MockIdentityRegistry is
     }
 
     function getAgentWallet(uint256 agentId) external view returns (address) {
-        // Ensure token exists (consistent with other identity reads)
-        ownerOf(agentId);
         IdentityRegistryStorage storage $ = _getIdentityRegistryStorage();
-        return $._agentWallet[agentId];
+        bytes memory walletData = $._metadata[agentId]["agentWallet"];
+        return address(bytes20(walletData));
     }
 
     function setAgentWallet(
@@ -5435,18 +5431,17 @@ contract MockIdentityRegistry is
         bytes32 structHash = keccak256(abi.encode(AGENT_WALLET_SET_TYPEHASH, agentId, newWallet, owner, deadline));
         bytes32 digest = _hashTypedDataV4(structHash);
 
-        if (newWallet.code.length == 0) {
-            address recovered = ECDSA.recover(digest, signature);
-            require(recovered == newWallet, "invalid wallet sig");
-        } else {
-            bytes4 result = IERC1271(newWallet).isValidSignature(digest, signature);
-            require(result == ERC1271_MAGICVALUE, "invalid wallet sig");
+        // Try ECDSA first (EOAs + EIP-7702 delegated EOAs)
+        (address recovered, ECDSA.RecoverError err, ) = ECDSA.tryRecover(digest, signature);
+        if (err != ECDSA.RecoverError.NoError || recovered != newWallet) {
+            // ECDSA failed, try ERC1271 (smart contract wallets)
+            (bool ok, bytes memory res) = newWallet.staticcall(
+                abi.encodeCall(IERC1271.isValidSignature, (digest, signature))
+            );
+            require(ok && res.length >= 32 && abi.decode(res, (bytes4)) == ERC1271_MAGICVALUE, "invalid wallet sig");
         }
 
         IdentityRegistryStorage storage $ = _getIdentityRegistryStorage();
-        $._agentWallet[agentId] = newWallet;
-
-        // Also store as reserved metadata for discoverability/indexers.
         $._metadata[agentId]["agentWallet"] = abi.encodePacked(newWallet);
         emit MetadataSet(agentId, "agentWallet", "agentWallet", abi.encodePacked(newWallet));
     }
@@ -5470,25 +5465,31 @@ contract MockIdentityRegistry is
     /**
      * @dev Override _update to clear agentWallet on transfer.
      * This ensures the verified wallet doesn't persist to new owners.
+     * Clear BEFORE super._update() to follow Checks-Effects-Interactions pattern.
      */
     function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
         address from = _ownerOf(tokenId);
 
-        // Call parent implementation
-        address result = super._update(to, tokenId, auth);
-
-        // If this is a transfer (not mint), clear agentWallet
+        // If this is a transfer (not mint), clear agentWallet BEFORE external call
         if (from != address(0) && to != address(0)) {
             IdentityRegistryStorage storage $ = _getIdentityRegistryStorage();
-            $._agentWallet[tokenId] = address(0);
             $._metadata[tokenId]["agentWallet"] = "";
             emit MetadataSet(tokenId, "agentWallet", "agentWallet", "");
         }
 
-        return result;
+        return super._update(to, tokenId, auth);
+    }
+
+    /**
+     * @notice Checks if spender is owner or approved for the agent
+     * @dev Reverts with ERC721NonexistentToken if agent doesn't exist
+     */
+    function isAuthorizedOrOwner(address spender, uint256 agentId) external view returns (bool) {
+        address owner = ownerOf(agentId);
+        return _isAuthorized(owner, spender, agentId);
     }
 
     function getVersion() external pure returns (string memory) {
-        return "1.1.0";
+        return "2.0.0";
     }
 }
