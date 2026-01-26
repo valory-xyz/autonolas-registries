@@ -16,7 +16,7 @@ describe("ServiceManagerToken", function () {
     let serviceManagerL2;
     let identityRegistry;
     let identityRegistryBridger;
-    let identityRegistryBridgerL2
+    let identityRegistryBridgerL2;
     let gnosisSafeMultisig;
     let token;
     let operatorWhitelist;
