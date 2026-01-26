@@ -21,11 +21,6 @@ interface IIdentityRegistryBridger {
     /// @return agentId Corresponding 8004 agent Id.
     function register(uint256 serviceId) external returns (uint256 agentId);
 
-    /// @dev Updated agent URI according to provided service URI.
-    /// @param serviceId Service Id.
-    /// @param tokenUri Service tokenUri.
-    function updateAgentUri(uint256 serviceId, string memory tokenUri) external;
-
     /// @dev Updates 8004 agent Id wallet corresponding to service Id multisig.
     /// @param serviceId Service Id.
     /// @param oldMultisig Old multisig address.
@@ -72,9 +67,6 @@ interface IERC721 {
     /// @param tokenId Token Id.
     /// @return Token Id owner address.
     function ownerOf(uint256 tokenId) external view returns (address);
-
-    /// @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
-    function tokenURI(uint256 tokenId) external view returns (string memory);
 }
 
 /// @dev Storage is already initialized.
