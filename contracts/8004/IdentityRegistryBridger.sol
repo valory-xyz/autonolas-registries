@@ -78,7 +78,6 @@ error WrongMetadataKey(string metadataKey);
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract IdentityRegistryBridger is ERC721TokenReceiver {
     event OwnerUpdated(address indexed owner);
-    event ManagerUpdated(address indexed manager);
     event ImplementationUpdated(address indexed implementation);
     event BaseURIUpdated(string baseURI);
     event ServiceAgentLinked(uint256 indexed serviceId, uint256 indexed agentId);

@@ -33,11 +33,12 @@ contract BaseSetup is Test {
     address internal operator;
 
     // Contract addresses
+    address internal constant CONTRACT_OWNER = 0x52370eE170c0E2767B32687166791973a0dE7966;
     address internal constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address internal constant REGISTRIES_MANAGER = 0x13bb1605DDD353Ff4da9a9b1a70e20B4B1C48fC4;
     address internal constant SERVICE_MANAGER = 0x22808322414594A2a4b8F46Af5760E193D316b5B;
     address internal constant safeMultisigWithRecoveryModule = 0x164e1CA068afeF66EFbB9cA19d904c44E8386fd9;
-    address internal constant IDENTITY_REGISTRY_BRIDGER = 0xd9921b2102783fd5A0CcC61383913C60a47FedaC;
+    address internal constant IDENTITY_REGISTRY_BRIDGER = 0x2c5c0a88c86b8E672673F2f4B1bbA4B83F2C64BA;
     address internal constant IDENTITY_REGISTRY = 0x8004A818BFB912233c491871b3d84c89A494BD9e;
     address internal constant REPUTATION_REGISTRY = 0x8004B663056A597Dffe9eCcC1965A193B7388713;
     uint96 internal constant SECURITY_DEPOSIT = 1;
@@ -84,19 +85,21 @@ contract IdentityRegistry is BaseSetup {
         agentParams[0] = IService.AgentParams({slots: 1, bond: SECURITY_DEPOSIT});
 
         uint256 numServices = 10;
+        uint256 serviceId;
+        address[] memory agentInstances;
 
         // Create services, activate, register and deploy
         for (uint256 i = 0; i < numServices; ++i) {
             vm.startPrank(deployer);
             // Create
-            uint256 serviceId = serviceManager.create(deployer, ETH_ADDRESS, configHash, agentIds, agentParams, THRESHOLD);
+            serviceId = serviceManager.create(deployer, ETH_ADDRESS, configHash, agentIds, agentParams, THRESHOLD);
 
             // Activate registration
             serviceManager.activateRegistration{value: SECURITY_DEPOSIT}(serviceId);
             vm.stopPrank();
 
             // Register agent instances
-            address[] memory agentInstances = new address[](1);
+            agentInstances = new address[](1);
             agentInstances[0] = users[i + 2];
             vm.prank(operator);
             serviceManager.registerAgents{value: SECURITY_DEPOSIT}(serviceId, agentInstances, agentIds);
@@ -110,7 +113,28 @@ contract IdentityRegistry is BaseSetup {
         identityRegistryBridger.linkServiceIdAgentIds(numServices / 2);
         identityRegistryBridger.linkServiceIdAgentIds(numServices / 2 + 1);
 
-        // Link ServiceManager and
+        // Link ServiceManager and IRB
+        vm.prank(CONTRACT_OWNER);
+        serviceManager.setIdentityRegistryBridger(IDENTITY_REGISTRY_BRIDGER);
+
+        // Create one more service which is already 8004 compatible
+        vm.startPrank(deployer);
+        // Create
+        serviceId = serviceManager.create(deployer, ETH_ADDRESS, configHash, agentIds, agentParams, THRESHOLD);
+
+        // Activate registration
+        serviceManager.activateRegistration{value: SECURITY_DEPOSIT}(serviceId);
+        vm.stopPrank();
+
+        // Register agent instances
+        agentInstances = new address[](1);
+        agentInstances[0] = users[numServices + 2];
+        vm.prank(operator);
+        serviceManager.registerAgents{value: SECURITY_DEPOSIT}(serviceId, agentInstances, agentIds);
+
+        // Deploy
+        vm.prank(deployer);
+        serviceManager.deploy(serviceId, safeMultisigWithRecoveryModule, "");
 
         // Perform one more link try
         identityRegistryBridger.linkServiceIdAgentIds(1);
