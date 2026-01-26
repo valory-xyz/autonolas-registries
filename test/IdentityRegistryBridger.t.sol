@@ -12,7 +12,8 @@ import {ServiceManager} from "../contracts/ServiceManager.sol";
 interface IReputationRegistry {
     function giveFeedback(
         uint256 agentId,
-        uint8 score,
+        int128 value,
+        uint8 valueDecimals,
         string calldata tag1,
         string calldata tag2,
         string calldata endpoint,
@@ -36,7 +37,7 @@ contract BaseSetup is Test {
     address internal constant REGISTRIES_MANAGER = 0x13bb1605DDD353Ff4da9a9b1a70e20B4B1C48fC4;
     address internal constant SERVICE_MANAGER = 0x22808322414594A2a4b8F46Af5760E193D316b5B;
     address internal constant safeMultisigWithRecoveryModule = 0x164e1CA068afeF66EFbB9cA19d904c44E8386fd9;
-    address internal constant IDENTITY_REGISTRY_BRIDGER = 0xC68b98C7417969c761659634CaE445d605CE0D5B;
+    address internal constant IDENTITY_REGISTRY_BRIDGER = 0xd9921b2102783fd5A0CcC61383913C60a47FedaC;
     address internal constant IDENTITY_REGISTRY = 0x8004A818BFB912233c491871b3d84c89A494BD9e;
     address internal constant REPUTATION_REGISTRY = 0x8004B663056A597Dffe9eCcC1965A193B7388713;
     uint96 internal constant SECURITY_DEPOSIT = 1;
@@ -82,7 +83,7 @@ contract IdentityRegistry is BaseSetup {
         IService.AgentParams[] memory agentParams = new IService.AgentParams[](1);
         agentParams[0] = IService.AgentParams({slots: 1, bond: SECURITY_DEPOSIT});
 
-        uint256 numServices = 20;
+        uint256 numServices = 10;
 
         // Create services, activate, register and deploy
         for (uint256 i = 0; i < numServices; ++i) {
@@ -108,6 +109,15 @@ contract IdentityRegistry is BaseSetup {
         // Create agents and link services in 2 sets
         identityRegistryBridger.linkServiceIdAgentIds(numServices / 2);
         identityRegistryBridger.linkServiceIdAgentIds(numServices / 2 + 1);
+
+        // Link ServiceManager and
+
+        // Perform one more link try
+        identityRegistryBridger.linkServiceIdAgentIds(1);
+
+        // Next time it reverts because first service is set to zero
+        vm.expectRevert();
+        identityRegistryBridger.linkServiceIdAgentIds(1);
     }
 
     /// @dev Gives feedback to agents.
@@ -142,7 +152,8 @@ contract IdentityRegistry is BaseSetup {
 
         // Leave feedback
         uint256 agentId = agentIds[0];
-        uint8 score = 100;
+        int128 score = 100;
+        uint8 decimals = 1;
         string memory tag1;
         string memory tag2;
         string memory endpoint;
@@ -151,12 +162,12 @@ contract IdentityRegistry is BaseSetup {
 
         // Give 3 feedbacks by client
         vm.startPrank(clientAddress);
-        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, tag1, tag2, feedbackUri, endpoint,
-            feedbackHash);
-        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, tag1, tag2, feedbackUri, endpoint,
-            feedbackHash);
-        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, tag1, tag2, feedbackUri, endpoint,
-            feedbackHash);
+        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, decimals, tag1, tag2, feedbackUri,
+            endpoint, feedbackHash);
+        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, decimals, tag1, tag2, feedbackUri,
+            endpoint, feedbackHash);
+        IReputationRegistry(REPUTATION_REGISTRY).giveFeedback(agentId, score, decimals, tag1, tag2, feedbackUri,
+            endpoint, feedbackHash);
         vm.stopPrank();
     }
 }

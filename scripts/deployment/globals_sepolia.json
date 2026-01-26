@@ -41,6 +41,7 @@
   "stakingFactoryAddress": "",
   "recoveryModuleAddress": "0x0a40C5ff1EB345E92DaAB5981Fc05219cCe4463E",
   "safeMultisigWithRecoveryModuleAddress": "0x164e1CA068afeF66EFbB9cA19d904c44E8386fd9",
-  "identityRegistryBridgerAddress": "0xe51d8d6012Fd310474384BCd1Bdb8Bf5C38C61bf",
-  "identityRegistryBridgerProxyAddress": "0xC68b98C7417969c761659634CaE445d605CE0D5B"
+  "agent8004BaseURI": "https://gateway.autonolas.tech/erc8004/ethereum/service/",
+  "identityRegistryBridgerAddress": "0x0135226264C815617C353728Cd9e78A392420cC1",
+  "identityRegistryBridgerProxyAddress": "0xd9921b2102783fd5A0CcC61383913C60a47FedaC"
 }

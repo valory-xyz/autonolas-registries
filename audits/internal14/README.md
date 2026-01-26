@@ -272,7 +272,7 @@ Recommendation (after adjustment):
 
 if (numServices == 0) revert ZeroValue(); // or NoServicesToLink()
 ```
-[]
+[x] Fixed
 
 #### Medium. incorrect lastServiceID with linkedAll = true;
 ```
@@ -296,7 +296,7 @@ break;
 ...
 emit StartLinkServiceIdUpdated(cutoffServiceId, linkedAll);
 ```
-[]
+[x] Fixed
 
 #### Medium. Document the invariant directly in the code
 ```
@@ -310,7 +310,7 @@ If mapServiceIdAgentIds[startLinkServiceId] != 0, then the migration is complete
 
 This is important for auditing.
 ```
-[]
+[x] Fixed
 
 #### Notes. baseURI must contain a trailing /
 ```

@@ -16,9 +16,9 @@ describe("ServiceManagerNative", function () {
     let fallbackHandler;
     let serviceRegistry;
     let serviceRegistryTokenUtility;
+    let serviceManager;
     let identityRegistry;
     let identityRegistryBridger;
-    let serviceManager;
     let signers;
     const configHash = "0x" + "5".repeat(64);
     const regBond = 1000;
@@ -78,6 +78,22 @@ describe("ServiceManagerNative", function () {
         serviceRegistryTokenUtility = await ServiceRegistryTokenUtility.deploy(serviceRegistry.address);
         await serviceRegistryTokenUtility.deployed();
 
+        const ServiceManager = await ethers.getContractFactory("ServiceManager");
+        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
+        await serviceManager.deployed();
+
+        let proxyData = serviceManager.interface.encodeFunctionData("initialize", []);
+        // Deploy serviceManager proxy based on the needed serviceManager initialization
+        const ServiceManagerProxy = await ethers.getContractFactory("ServiceManagerProxy");
+        const serviceManagerProxy = await ServiceManagerProxy.deploy(serviceManager.address, proxyData);
+        await serviceManagerProxy.deployed();
+
+        // Wrap serviceManager proxy contract
+        serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerProxy.address);
+
+        await serviceRegistry.changeManager(serviceManager.address);
+        await serviceRegistryTokenUtility.changeManager(serviceManager.address);
+
         const RecoveryModule = await ethers.getContractFactory("RecoveryModule");
         recoveryModule = await RecoveryModule.deploy(multiSend.address, serviceRegistry.address);
         await recoveryModule.deployed();
@@ -97,7 +113,7 @@ describe("ServiceManagerNative", function () {
             identityRegistry.address, identityRegistry.address, serviceRegistry.address);
         await identityRegistryBridger.deployed();
 
-        let proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", [baseURI]);
+        proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", [baseURI]);
         // Deploy identityRegistryBridger proxy based on the needed identityRegistryBridger initialization
         const IdentityRegistryBridgerProxy = await ethers.getContractFactory("IdentityRegistryBridgerProxy");
         const identityRegistryBridgerProxy = await IdentityRegistryBridgerProxy.deploy(identityRegistryBridger.address,
@@ -107,25 +123,11 @@ describe("ServiceManagerNative", function () {
         // Wrap identityRegistryBridger proxy contract
         identityRegistryBridger = await ethers.getContractAt("IdentityRegistryBridger", identityRegistryBridgerProxy.address);
 
+        await serviceManager.setIdentityRegistryBridger(identityRegistryBridger.address);
+
         const FallbackHandler = await ethers.getContractFactory("CompatibilityFallbackHandler");
         fallbackHandler = await FallbackHandler.deploy();
         await fallbackHandler.deployed();
-
-        const ServiceManager = await ethers.getContractFactory("ServiceManager");
-        serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
-        await serviceManager.deployed();
-
-        proxyData = serviceManager.interface.encodeFunctionData("initialize", []);
-        // Deploy serviceManager proxy based on the needed serviceManager initialization
-        const ServiceManagerProxy = await ethers.getContractFactory("ServiceManagerProxy");
-        const serviceManagerProxy = await ServiceManagerProxy.deploy(serviceManager.address, proxyData);
-        await serviceManagerProxy.deployed();
-
-        // Wrap serviceManager proxy contract
-        serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerProxy.address);
-
-        await identityRegistryBridger.changeManager(serviceManager.address);
-        await serviceManager.setIdentityRegistryBridger(identityRegistryBridger.address);
 
         signers = await ethers.getSigners();
         await componentRegistry.changeManager(signers[0].address);
@@ -163,8 +165,6 @@ describe("ServiceManagerNative", function () {
             await agentRegistry.changeManager(manager.address);
             await agentRegistry.connect(manager).create(owner, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner, unitHash1, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
-            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
             // Try to pause not from the owner of the service manager
             await expect(
@@ -194,6 +194,10 @@ describe("ServiceManagerNative", function () {
 
         it("Should fail when creating a service without a manager being white listed", async function () {
             const owner = signers[4].address;
+
+            await serviceRegistry.changeManager(owner);
+            await serviceRegistryTokenUtility.changeManager(owner);
+
             await expect(
                 serviceManager.create(owner, ETHAddress, configHash, agentIds, agentParams, threshold)
             ).to.be.revertedWithCustomError(serviceManager, "ManagerOnly");
@@ -205,8 +209,6 @@ describe("ServiceManagerNative", function () {
             await agentRegistry.changeManager(manager.address);
             await agentRegistry.connect(manager).create(owner, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner, unitHash1, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
-            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
             await serviceManager.create(owner, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
             expect(await serviceRegistry.exists(serviceIds[0])).to.equal(true);
@@ -220,8 +222,6 @@ describe("ServiceManagerNative", function () {
             await agentRegistry.changeManager(manager.address);
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
-            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
             await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
             await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
@@ -242,8 +242,6 @@ describe("ServiceManagerNative", function () {
 
             await agentRegistry.changeManager(manager.address);
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
-            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
             // Pause the contract
             await serviceManager.pause();
@@ -269,8 +267,6 @@ describe("ServiceManagerNative", function () {
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
-            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
             await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
             await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
@@ -294,8 +290,6 @@ describe("ServiceManagerNative", function () {
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
-            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
             // Creating two services
             await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
@@ -360,8 +354,6 @@ describe("ServiceManagerNative", function () {
             // Creating 2 canonical agents
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
-            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
             // Creating a service
             const newAgentIds = [1, 2];
@@ -429,8 +421,6 @@ describe("ServiceManagerNative", function () {
             // Creating 2 canonical agents
             await agentRegistry.connect(manager).create(owner, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner, unitHash1, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
-            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
             // Creating two services
             await serviceManager.create(owner, ETHAddress, configHash, agentIds, agentParams,
@@ -482,8 +472,6 @@ describe("ServiceManagerNative", function () {
             await agentRegistry.changeManager(mechManager.address);
             await agentRegistry.connect(mechManager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(mechManager).create(owner.address, unitHash1, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
-            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
             await serviceManager.connect(owner).create(owner.address, ETHAddress, configHash, [agentIds[0]],
                 [[maxThreshold, regBond]], maxThreshold);
 
@@ -519,8 +507,6 @@ describe("ServiceManagerNative", function () {
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
-            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
             await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
             await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
@@ -543,8 +529,6 @@ describe("ServiceManagerNative", function () {
             // Creating 2 canonical agents
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
-            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
             // Create service
             await serviceManager.create(owner.address, ETHAddress, configHash, [1], [[1, regBond]], 1);

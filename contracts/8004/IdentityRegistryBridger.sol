@@ -41,6 +41,9 @@ interface IServiceRegistry {
 
     /// @dev Gets total supply of services.
     function totalSupply() external view returns (uint256);
+
+    /// @dev Service Manager address.
+    function manager() external view returns (address);
 }
 
 /// @dev Provided zero address.
@@ -115,6 +118,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     address public immutable reputationRegistry;
     // 8004 Validation Registry address
     address public immutable validationRegistry;
+    // Service Manager address
+    address public immutable serviceManager;
     // Service Registry address
     address public immutable serviceRegistry;
 
@@ -160,6 +165,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         reputationRegistry = _reputationRegistry;
         validationRegistry = _validationRegistry;
         serviceRegistry = _serviceRegistry;
+        serviceManager = IServiceRegistry(_serviceRegistry).manager();
     }
 
     /// @dev Gets agent URI.
@@ -217,6 +223,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     }
 
     /// @dev Initializes proxy contract storage.
+    /// @notice baseURI must contain a trailing `/`.
+    /// @param  _baseURI 8004 agent Base URI.
     function initialize(string memory _baseURI) external {
         // Check if contract is already initialized
         if (owner != address(0)) {
@@ -243,23 +251,6 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         owner = newOwner;
         emit OwnerUpdated(newOwner);
-    }
-
-    /// @dev Changes contract manager address.
-    /// @param newManager New contract manager address.
-    function changeManager(address newManager) external {
-        // Check for ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for zero address
-        if (newManager == address(0)) {
-            revert ZeroAddress();
-        }
-
-        manager = newManager;
-        emit ManagerUpdated(newManager);
     }
 
     /// @dev Changes implementation contract address.
@@ -312,7 +303,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         _locked = 2;
 
         // Check for access
-        if (msg.sender != manager) {
+        if (msg.sender != serviceManager) {
             revert ManagerOnly(msg.sender, manager);
         }
 
@@ -340,7 +331,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         _locked = 2;
 
         // Check for access
-        if (msg.sender != manager) {
+        if (msg.sender != serviceManager) {
             revert ManagerOnly(msg.sender, manager);
         }
 
@@ -462,6 +453,10 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     }
 
     /// @dev Links service Ids with registered 8004 agent Ids.
+    /// @notice 8004 not bounded services are in range of [1 .. L] without any gaps.
+    ///         `startLinkServiceId` always points to next unbound legacy service Id.
+    ///         Once mapServiceIdAgentIds[startLinkServiceId] > 0, meaning discovered service Id is 8004 bound,
+    ///         migration is complete and startLinkServiceId is set to zero.
     /// @param numServices Number of services to link.
     /// @return agentIds Set of 8004 agent Ids.
     function linkServiceIdAgentIds(uint256 numServices) external returns (uint256[] memory agentIds) {
@@ -497,14 +492,21 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
             numServices = lastServiceId - startServiceId;
         }
 
+        // Check for zero value
+        if (numServices == 0) {
+            revert ZeroValue();
+        }
+
         // Allocate agentIds array
         agentIds = new uint256[](numServices);
 
-        // Assign agent Ids
+        uint256 serviceId;
         bool linkedAll;
+
+        // Assign 8004 agent Ids
         for (uint256 i = 0; i < numServices; ++i) {
             // Get service Id
-            uint256 serviceId = startServiceId + i;
+            serviceId = startServiceId + i;
 
             // Get corresponding 8004 agent Id
             agentIds[i] = mapServiceIdAgentIds[serviceId];
@@ -522,8 +524,11 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
                     _updateAgentWallet(serviceId, agentIds[i], address(0), multisig);
                 }
             } else {
+                // Record last processed service Id
+                lastServiceId = serviceId;
                 // Record that all legacy services are linked
                 linkedAll = true;
+
                 break;
             }
         }
