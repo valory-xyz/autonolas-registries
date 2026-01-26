@@ -119,7 +119,7 @@ contract IdentityRegistry is BaseSetup {
 
         // Create one more service which is already 8004 compatible
         vm.startPrank(deployer);
-        // Create
+        // Create service
         serviceId = serviceManager.create(deployer, ETH_ADDRESS, configHash, agentIds, agentParams, THRESHOLD);
 
         // Activate registration
@@ -132,7 +132,7 @@ contract IdentityRegistry is BaseSetup {
         vm.prank(operator);
         serviceManager.registerAgents{value: SECURITY_DEPOSIT}(serviceId, agentInstances, agentIds);
 
-        // Deploy
+        // Deploy service
         vm.prank(deployer);
         serviceManager.deploy(serviceId, safeMultisigWithRecoveryModule, "");
 

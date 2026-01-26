@@ -258,7 +258,7 @@ Recommended audit wording (you can paste into your report)
 Finding: Address decoding from metadata may be incorrect due to format mismatch.
 The contract reads the agent wallet as address(bytes20(walletData)). If the metadata is absent (walletData == 0x), Solidity’s conversion zero-pads and returns address(0) without reverting, which may be acceptable. However, if the metadata is stored as a standard ABI-encoded address (abi.encode(address)), the payload is 32 bytes with the address in the last 20 bytes. Casting to bytes20 takes the first 20 bytes, resulting in address(0) (or an incorrect value) even when the wallet is properly set. This is a silent semantic bug that can lead to incorrect wallet reads, improper updates, and broken bridging logic. The contract should define and enforce a single storage format and decode using abi.decode for 32-byte ABI encoding or enforce a 20-byte packed format (or implement a strict flexible decoder supporting both 20 and 32 bytes and reverting otherwise).
 ```
-[]
+[x] Fixed
 
 #### Medium. numServices in linkServiceIdAgentIds
 ```
@@ -319,5 +319,5 @@ This is important for auditing.
     }
     The function does not care about the correctness of the baseURI. This is not a mistake. Perhaps this should be explicitly added in NatSpec. 
 ```
-[]
+[x] Fixed
 

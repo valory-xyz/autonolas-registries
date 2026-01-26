@@ -375,8 +375,15 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         // Get old multisig address
         metadata = IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
 
-        // Decode multisig value
-        address oldMultisig = address(bytes20(metadata));
+        // Get zero address old multisig by default, if metadata is empty
+        address oldMultisig;
+
+        // Check metadata length and decode accordingly
+        if (metadata.length == 20) {
+            oldMultisig= address(bytes20(metadata));
+        } else if (metadata.length == 32) {
+            oldMultisig= abi.decode(metadata, (address));
+        }
 
         // Set agent wallet on behalf of agent
         IIdentityRegistry(identityRegistry).setAgentWallet(agentId, msg.sender, deadline, signature);
