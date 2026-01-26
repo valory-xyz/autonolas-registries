@@ -40,7 +40,7 @@ describe("ServiceManagerToken", function () {
     const payload = "0x";
     const AddressZero = "0x" + "0".repeat(40);
     const ETHAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-    const baseURI = "https://localhost/erc8004/service/";
+    const baseURI = "https://localhost/erc8004/ethereum/service/";
     const initSupply = "5" + "0".repeat(26);
     const serviceRegistryImplementations = ["l1", "l2"];
 

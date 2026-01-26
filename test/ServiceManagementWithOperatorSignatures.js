@@ -29,7 +29,6 @@ describe("ServiceManagementWithOperatorSignatures", function () {
     const agentId = 1;
     const AddressZero = "0x" + "0".repeat(40);
     const ETHAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-    const baseURI = "https://localhost/erc8004/ethereum/";
     const payload = "0x";
     let bytecodeHash;
 
