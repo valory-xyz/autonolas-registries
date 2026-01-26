@@ -125,8 +125,6 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
     // Owner address
     address public owner;
-    // Manager address
-    address public manager;
 
     // Base URI
     string public baseURI;
@@ -304,7 +302,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Check for access
         if (msg.sender != serviceManager) {
-            revert ManagerOnly(msg.sender, manager);
+            revert ManagerOnly(msg.sender, serviceManager);
         }
 
         // Get corresponding 8004 agent Id
@@ -332,7 +330,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Check for access
         if (msg.sender != serviceManager) {
-            revert ManagerOnly(msg.sender, manager);
+            revert ManagerOnly(msg.sender, serviceManager);
         }
 
         // Get corresponding agent Id
@@ -377,7 +375,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Get old multisig address
         metadata = IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
-        // TODO Is this also correct when metadata == "0x"?
+
         // Decode multisig value
         address oldMultisig = address(bytes20(metadata));
 
