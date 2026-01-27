@@ -104,20 +104,20 @@ contract BaseSetup is Test {
         serviceRegistryTokenUtility = new ServiceRegistryTokenUtility(address(serviceRegistry));
         operatorWhitelist = new OperatorWhitelist(address(serviceRegistry));
 
-        identityRegistry = new MockIdentityRegistry();
-        identityRegistryBridger = new IdentityRegistryBridger(address(identityRegistry), address(serviceRegistry));
-        bytes memory proxyData = abi.encodeWithSelector(identityRegistryBridger.initialize.selector, "");
-        IdentityRegistryBridgerProxy identityRegistryBridgerProxy =
-            new IdentityRegistryBridgerProxy(address(identityRegistryBridger), proxyData);
-        identityRegistryBridger = IdentityRegistryBridger(address(identityRegistryBridgerProxy));
-
         serviceManager = new ServiceManager(address(serviceRegistry), address(serviceRegistryTokenUtility));
-        proxyData = abi.encodeWithSelector(serviceManager.initialize.selector, "");
+        bytes memory proxyData = abi.encodeWithSelector(serviceManager.initialize.selector, "");
         ServiceManagerProxy serviceManagerProxy = new ServiceManagerProxy(address(serviceManager), proxyData);
         serviceManager = ServiceManager(address(serviceManagerProxy));
 
         serviceRegistry.changeManager(address(serviceManager));
         serviceRegistryTokenUtility.changeManager(address(serviceManager));
+
+        identityRegistry = new MockIdentityRegistry();
+        identityRegistryBridger = new IdentityRegistryBridger(address(identityRegistry), address(serviceRegistry));
+        proxyData = abi.encodeWithSelector(identityRegistryBridger.initialize.selector, "");
+        IdentityRegistryBridgerProxy identityRegistryBridgerProxy =
+            new IdentityRegistryBridgerProxy(address(identityRegistryBridger), proxyData);
+        identityRegistryBridger = IdentityRegistryBridger(address(identityRegistryBridgerProxy));
 
         serviceManager.setIdentityRegistryBridger(address(identityRegistryBridger));
 
