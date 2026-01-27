@@ -24,6 +24,7 @@ derivationPath=$(jq -r '.derivationPath' $globals)
 chainId=$(jq -r '.chainId' $globals)
 networkURL=$(jq -r '.networkURL' $globals)
 
+serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' $globals)
 serviceManagerProxyAddress=$(jq -r '.serviceManagerProxyAddress' $globals)
 identityRegistryBridgerProxyAddress=$(jq -r '.identityRegistryBridgerProxyAddress' $globals)
 
@@ -55,10 +56,50 @@ fi
 # Cast message
 echo "Casting from: $deployer"
 
+echo "${green}VIEW FUNCTIONS EXECUTION${reset}"
+castSendHeader="cast call --rpc-url $networkURL$API_KEY $walletArgs"
+
+echo "${green}Get ServiceRegistry totalSupply${reset}"
+castArgs="$serviceRegistryAddress totalSupply()(uint256)"
+echo $castArgs
+castCmd="$castSendHeader $castArgs"
+result=$($castCmd)
+echo "$result"
+
+maxNumServicesPerTx=40
+numIter=$((result / maxNumServicesPerTx + 1))
+echo "Number of link steps: $numIter"
+
+
+echo "${green}WRITE FUNCTIONS EXECUTION${reset}"
 castSendHeader="cast send --rpc-url $networkURL$API_KEY $walletArgs"
 
-echo "${green}Set identity registry bridger for ServiceRManager${reset}"
+echo "${green}Pause ServiceManager${reset}"
+castArgs="$serviceManagerProxyAddress pause()"
+echo $castArgs
+castCmd="$castSendHeader $castArgs"
+result=$($castCmd)
+echo "$result" | grep "status"
+
+# Link service Ids and 8004 agent Ids
+for (( i=0; i < $numIter; i++ )); do
+  echo "${green}Linking step $i${reset}"
+  castArgs="$identityRegistryBridgerProxyAddress linkServiceIdAgentIds(uint256) 40"
+  echo $castArgs
+  castCmd="$castSendHeader $castArgs"
+  result=$($castCmd)
+  echo "$result" | grep "status"
+done
+
+echo "${green}Set identity registry bridger for ServiceManager${reset}"
 castArgs="$serviceManagerProxyAddress setIdentityRegistryBridger(address) $identityRegistryBridgerProxyAddress"
+echo $castArgs
+castCmd="$castSendHeader $castArgs"
+result=$($castCmd)
+echo "$result" | grep "status"
+
+echo "${green}Unpause ServiceManager${reset}"
+castArgs="$serviceManagerProxyAddress unpause()"
 echo $castArgs
 castCmd="$castSendHeader $castArgs"
 result=$($castCmd)

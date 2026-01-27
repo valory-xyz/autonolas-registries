@@ -41,6 +41,9 @@ interface IServiceRegistry {
 
     /// @dev Gets total supply of services.
     function totalSupply() external view returns (uint256);
+
+    /// @dev Service Manager address.
+    function manager() external view returns (address);
 }
 
 /// @dev Provided zero address.
@@ -75,7 +78,6 @@ error WrongMetadataKey(string metadataKey);
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract IdentityRegistryBridger is ERC721TokenReceiver {
     event OwnerUpdated(address indexed owner);
-    event ManagerUpdated(address indexed manager);
     event ImplementationUpdated(address indexed implementation);
     event BaseURIUpdated(string baseURI);
     event ServiceAgentLinked(uint256 indexed serviceId, uint256 indexed agentId);
@@ -115,13 +117,13 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     address public immutable reputationRegistry;
     // 8004 Validation Registry address
     address public immutable validationRegistry;
+    // Service Manager address
+    address public immutable serviceManager;
     // Service Registry address
     address public immutable serviceRegistry;
 
     // Owner address
     address public owner;
-    // Manager address
-    address public manager;
 
     // Base URI
     string public baseURI;
@@ -160,6 +162,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         reputationRegistry = _reputationRegistry;
         validationRegistry = _validationRegistry;
         serviceRegistry = _serviceRegistry;
+        serviceManager = IServiceRegistry(_serviceRegistry).manager();
     }
 
     /// @dev Gets agent URI.
@@ -217,6 +220,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     }
 
     /// @dev Initializes proxy contract storage.
+    /// @notice baseURI must contain a trailing `/`.
+    /// @param  _baseURI 8004 agent Base URI.
     function initialize(string memory _baseURI) external {
         // Check if contract is already initialized
         if (owner != address(0)) {
@@ -243,23 +248,6 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         owner = newOwner;
         emit OwnerUpdated(newOwner);
-    }
-
-    /// @dev Changes contract manager address.
-    /// @param newManager New contract manager address.
-    function changeManager(address newManager) external {
-        // Check for ownership
-        if (msg.sender != owner) {
-            revert OwnerOnly(msg.sender, owner);
-        }
-
-        // Check for zero address
-        if (newManager == address(0)) {
-            revert ZeroAddress();
-        }
-
-        manager = newManager;
-        emit ManagerUpdated(newManager);
     }
 
     /// @dev Changes implementation contract address.
@@ -312,8 +300,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         _locked = 2;
 
         // Check for access
-        if (msg.sender != manager) {
-            revert ManagerOnly(msg.sender, manager);
+        if (msg.sender != serviceManager) {
+            revert ManagerOnly(msg.sender, serviceManager);
         }
 
         // Get corresponding 8004 agent Id
@@ -340,8 +328,8 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         _locked = 2;
 
         // Check for access
-        if (msg.sender != manager) {
-            revert ManagerOnly(msg.sender, manager);
+        if (msg.sender != serviceManager) {
+            revert ManagerOnly(msg.sender, serviceManager);
         }
 
         // Get corresponding agent Id
@@ -386,9 +374,16 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
         // Get old multisig address
         metadata = IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
-        // TODO Is this also correct when metadata == "0x"?
-        // Decode multisig value
-        address oldMultisig = address(bytes20(metadata));
+
+        // Get zero address old multisig by default, if metadata is empty
+        address oldMultisig;
+
+        // Check metadata length and decode accordingly
+        if (metadata.length == 20) {
+            oldMultisig= address(bytes20(metadata));
+        } else if (metadata.length == 32) {
+            oldMultisig= abi.decode(metadata, (address));
+        }
 
         // Set agent wallet on behalf of agent
         IIdentityRegistry(identityRegistry).setAgentWallet(agentId, msg.sender, deadline, signature);
@@ -462,6 +457,10 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     }
 
     /// @dev Links service Ids with registered 8004 agent Ids.
+    /// @notice 8004 not bounded services are in range of [1 .. L] without any gaps.
+    ///         `startLinkServiceId` always points to next unbound legacy service Id.
+    ///         Once mapServiceIdAgentIds[startLinkServiceId] > 0, meaning discovered service Id is 8004 bound,
+    ///         migration is complete and startLinkServiceId is set to zero.
     /// @param numServices Number of services to link.
     /// @return agentIds Set of 8004 agent Ids.
     function linkServiceIdAgentIds(uint256 numServices) external returns (uint256[] memory agentIds) {
@@ -497,14 +496,21 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
             numServices = lastServiceId - startServiceId;
         }
 
+        // Check for zero value
+        if (numServices == 0) {
+            revert ZeroValue();
+        }
+
         // Allocate agentIds array
         agentIds = new uint256[](numServices);
 
-        // Assign agent Ids
+        uint256 serviceId;
         bool linkedAll;
+
+        // Assign 8004 agent Ids
         for (uint256 i = 0; i < numServices; ++i) {
             // Get service Id
-            uint256 serviceId = startServiceId + i;
+            serviceId = startServiceId + i;
 
             // Get corresponding 8004 agent Id
             agentIds[i] = mapServiceIdAgentIds[serviceId];
@@ -522,8 +528,11 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
                     _updateAgentWallet(serviceId, agentIds[i], address(0), multisig);
                 }
             } else {
+                // Record last processed service Id
+                lastServiceId = serviceId;
                 // Record that all legacy services are linked
                 linkedAll = true;
+
                 break;
             }
         }

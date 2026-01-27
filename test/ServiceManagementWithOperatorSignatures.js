@@ -9,8 +9,6 @@ describe("ServiceManagementWithOperatorSignatures", function () {
     let agentRegistry;
     let serviceRegistry;
     let serviceRegistryTokenUtility;
-    let identityRegistry;
-    let identityRegistryBridger;
     let serviceManager;
     let gnosisSafe;
     let gnosisSafeMultisig;
@@ -31,11 +29,14 @@ describe("ServiceManagementWithOperatorSignatures", function () {
     const agentId = 1;
     const AddressZero = "0x" + "0".repeat(40);
     const ETHAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-    const baseURI = "https://localhost/erc8004/ethereum/";
     const payload = "0x";
     let bytecodeHash;
 
     beforeEach(async function () {
+        signers = await ethers.getSigners();
+        deployer = signers[0];
+        operator = signers[1];
+
         const ComponentRegistry = await ethers.getContractFactory("ComponentRegistry");
         componentRegistry = await ComponentRegistry.deploy("agent components", "MECHCOMP",
             "https://localhost/component/");
@@ -85,30 +86,11 @@ describe("ServiceManagementWithOperatorSignatures", function () {
         serviceRegistryTokenUtility = await ServiceRegistryTokenUtility.deploy(serviceRegistry.address);
         await serviceRegistryTokenUtility.deployed();
 
-        const IdentityRegistry = await ethers.getContractFactory("MockIdentityRegistry");
-        identityRegistry = await IdentityRegistry.deploy();
-        await identityRegistry.deployed();
-
-        const IdentityRegistryBridger = await ethers.getContractFactory("IdentityRegistryBridger");
-        identityRegistryBridger = await IdentityRegistryBridger.deploy(identityRegistry.address,
-            identityRegistry.address, identityRegistry.address, serviceRegistry.address);
-        await identityRegistryBridger.deployed();
-
-        let proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", [baseURI]);
-        // Deploy identityRegistryBridger proxy based on the needed identityRegistryBridger initialization
-        const IdentityRegistryBridgerProxy = await ethers.getContractFactory("IdentityRegistryBridgerProxy");
-        const identityRegistryBridgerProxy = await IdentityRegistryBridgerProxy.deploy(identityRegistryBridger.address,
-            proxyData);
-        await identityRegistryBridgerProxy.deployed();
-
-        // Wrap identityRegistryBridger proxy contract
-        identityRegistryBridger = await ethers.getContractAt("IdentityRegistryBridger", identityRegistryBridgerProxy.address);
-
         const ServiceManager = await ethers.getContractFactory("ServiceManager");
         serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
         await serviceManager.deployed();
 
-        proxyData = serviceManager.interface.encodeFunctionData("initialize", []);
+        let proxyData = serviceManager.interface.encodeFunctionData("initialize", []);
         // Deploy serviceManager proxy based on the needed serviceManager initialization
         const ServiceManagerProxy = await ethers.getContractFactory("ServiceManagerProxy");
         const serviceManagerProxy = await ServiceManagerProxy.deploy(serviceManager.address, proxyData);
@@ -116,10 +98,6 @@ describe("ServiceManagementWithOperatorSignatures", function () {
 
         // Wrap serviceManager proxy contract
         serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerProxy.address);
-
-        // TODO revert back when IRB is operational
-        //await identityRegistryBridger.changeManager(serviceManager.address);
-        //await serviceManager.setIdentityRegistryBridger(identityRegistryBridger.address);
 
         const Token = await ethers.getContractFactory("ERC20Token");
         token = await Token.deploy();
@@ -133,17 +111,12 @@ describe("ServiceManagementWithOperatorSignatures", function () {
         timelock = await Timelock.deploy();
         await timelock.deployed();
 
-        signers = await ethers.getSigners();
-        deployer = signers[0];
-        operator = signers[1];
-
         // Change registries managers
         await componentRegistry.changeManager(deployer.address);
         await agentRegistry.changeManager(deployer.address);
         await serviceRegistry.changeManager(deployer.address);
         // Create one default component
         await componentRegistry.create(deployer.address, defaultHash, []);
-
     });
 
     context("Redeployment of services", async function () {

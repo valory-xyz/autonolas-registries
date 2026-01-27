@@ -12,10 +12,11 @@ describe("ServiceManagerToken", function () {
     let serviceRegistryL2;
     let serviceRegistryTokenUtility;
     let serviceRegistryTokenUtilityL2;
-    let identityRegistry;
-    let identityRegistryBridger;
     let serviceManager;
     let serviceManagerL2;
+    let identityRegistry;
+    let identityRegistryBridger;
+    let identityRegistryBridgerL2;
     let gnosisSafeMultisig;
     let token;
     let operatorWhitelist;
@@ -39,7 +40,7 @@ describe("ServiceManagerToken", function () {
     const payload = "0x";
     const AddressZero = "0x" + "0".repeat(40);
     const ETHAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-    const baseURI = "https://localhost/erc8004/service/";
+    const baseURI = "https://localhost/erc8004/ethereum/service/";
     const initSupply = "5" + "0".repeat(26);
     const serviceRegistryImplementations = ["l1", "l2"];
 
@@ -62,6 +63,10 @@ describe("ServiceManagerToken", function () {
         gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deploy();
         await gnosisSafeProxyFactory.deployed();
 
+        const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
+        gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
+        await gnosisSafeMultisig.deployed();
+
         const ServiceRegistry = await ethers.getContractFactory("ServiceRegistry");
         serviceRegistry = await ServiceRegistry.deploy("service registry", "SERVICE", "https://localhost/agent/",
             agentRegistry.address);
@@ -78,10 +83,6 @@ describe("ServiceManagerToken", function () {
         serviceRegistryTokenUtilityL2 = await ServiceRegistryTokenUtility.deploy(serviceRegistryL2.address);
         await serviceRegistryTokenUtilityL2.deployed();
 
-        const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeMultisig");
-        gnosisSafeMultisig = await GnosisSafeMultisig.deploy(gnosisSafe.address, gnosisSafeProxyFactory.address);
-        await gnosisSafeMultisig.deployed();
-
         const OperatorWhitelist = await ethers.getContractFactory("OperatorWhitelist");
         operatorWhitelist = await OperatorWhitelist.deploy(serviceRegistry.address);
         await operatorWhitelist.deployed();
@@ -89,30 +90,11 @@ describe("ServiceManagerToken", function () {
         operatorWhitelistL2 = await OperatorWhitelist.deploy(serviceRegistryL2.address);
         await operatorWhitelistL2.deployed();
 
-        const IdentityRegistry = await ethers.getContractFactory("MockIdentityRegistry");
-        identityRegistry = await IdentityRegistry.deploy();
-        await identityRegistry.deployed();
-
-        const IdentityRegistryBridger = await ethers.getContractFactory("IdentityRegistryBridger");
-        identityRegistryBridger = await IdentityRegistryBridger.deploy(identityRegistry.address,
-            identityRegistry.address, identityRegistry.address, serviceRegistry.address);
-        await identityRegistryBridger.deployed();
-
-        let proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", [baseURI]);
-        // Deploy identityRegistryBridger proxy based on the needed identityRegistryBridger initialization
-        const IdentityRegistryBridgerProxy = await ethers.getContractFactory("IdentityRegistryBridgerProxy");
-        const identityRegistryBridgerProxy = await IdentityRegistryBridgerProxy.deploy(identityRegistryBridger.address,
-            proxyData);
-        await identityRegistryBridgerProxy.deployed();
-
-        // Wrap identityRegistryBridger proxy contract
-        identityRegistryBridger = await ethers.getContractAt("IdentityRegistryBridger", identityRegistryBridgerProxy.address);
-
         const ServiceManager = await ethers.getContractFactory("ServiceManager");
         serviceManager = await ServiceManager.deploy(serviceRegistry.address, serviceRegistryTokenUtility.address);
         await serviceManager.deployed();
 
-        proxyData = serviceManager.interface.encodeFunctionData("initialize", []);
+        let proxyData = serviceManager.interface.encodeFunctionData("initialize", []);
         // Deploy serviceManager proxy based on the needed serviceManager initialization
         const ServiceManagerProxy = await ethers.getContractFactory("ServiceManagerProxy");
         const serviceManagerProxy = await ServiceManagerProxy.deploy(serviceManager.address, proxyData);
@@ -121,11 +103,9 @@ describe("ServiceManagerToken", function () {
         // Wrap serviceManager proxy contract
         serviceManager = await ethers.getContractAt("ServiceManager", serviceManagerProxy.address);
 
-        // TODO revert back when IRB is operational
-        //wait identityRegistryBridger.changeManager(serviceManager.address);
-        //await serviceManager.setIdentityRegistryBridger(identityRegistryBridger.address);
-
         await serviceManager.setOperatorWhitelist(operatorWhitelist.address);
+        await serviceRegistry.changeManager(serviceManager.address);
+        await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
         serviceManagerL2 = await ServiceManager.deploy(serviceRegistryL2.address, serviceRegistryTokenUtilityL2.address);
         await serviceManagerL2.deployed();
@@ -137,6 +117,41 @@ describe("ServiceManagerToken", function () {
         serviceManagerL2 = await ethers.getContractAt("ServiceManager", serviceManagerProxyL2.address);
 
         await serviceManagerL2.setOperatorWhitelist(operatorWhitelistL2.address);
+        await serviceRegistryL2.changeManager(serviceManagerL2.address);
+        await serviceRegistryTokenUtilityL2.changeManager(serviceManagerL2.address);
+
+        const IdentityRegistry = await ethers.getContractFactory("MockIdentityRegistry");
+        identityRegistry = await IdentityRegistry.deploy();
+        await identityRegistry.deployed();
+
+        const IdentityRegistryBridger = await ethers.getContractFactory("IdentityRegistryBridger");
+        identityRegistryBridger = await IdentityRegistryBridger.deploy(identityRegistry.address,
+            identityRegistry.address, identityRegistry.address, serviceRegistry.address);
+        await identityRegistryBridger.deployed();
+
+        proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", [baseURI]);
+        // Deploy identityRegistryBridger proxy based on the needed identityRegistryBridger initialization
+        const IdentityRegistryBridgerProxy = await ethers.getContractFactory("IdentityRegistryBridgerProxy");
+        const identityRegistryBridgerProxy = await IdentityRegistryBridgerProxy.deploy(identityRegistryBridger.address,
+            proxyData);
+        await identityRegistryBridgerProxy.deployed();
+
+        // Wrap identityRegistryBridger proxy contract
+        identityRegistryBridger = await ethers.getContractAt("IdentityRegistryBridger", identityRegistryBridgerProxy.address);
+
+        identityRegistryBridgerL2 = await IdentityRegistryBridger.deploy(identityRegistry.address,
+            identityRegistry.address, identityRegistry.address, serviceRegistryL2.address);
+        await identityRegistryBridgerL2.deployed();
+
+        const identityRegistryBridgerProxyL2 = await IdentityRegistryBridgerProxy.deploy(identityRegistryBridgerL2.address,
+            proxyData);
+        await identityRegistryBridgerProxyL2.deployed();
+
+        // Wrap identityRegistryBridgerL2 proxy contract
+        identityRegistryBridgerL2 = await ethers.getContractAt("IdentityRegistryBridger", identityRegistryBridgerProxyL2.address);
+
+        // Set IRB in ServiceManager
+        await serviceManager.setIdentityRegistryBridger(identityRegistryBridger.address);
 
         const Token = await ethers.getContractFactory("ERC20Token");
         token = await Token.deploy();
@@ -196,7 +211,6 @@ describe("ServiceManagerToken", function () {
             await agentRegistry.changeManager(manager.address);
             await agentRegistry.connect(manager).create(owner, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner, unitHash1, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
 
             // Try to pause not from the owner of the service manager
             await expect(
@@ -226,6 +240,10 @@ describe("ServiceManagerToken", function () {
 
         it("Should fail when creating a service without a manager being white listed", async function () {
             const owner = signers[4].address;
+
+            await serviceRegistry.changeManager(owner);
+            await serviceRegistryTokenUtility.changeManager(owner);
+
             await expect(
                 serviceManager.create(owner, ETHAddress, configHash, agentIds, agentParams, threshold)
             ).to.be.revertedWithCustomError(serviceManager, "ManagerOnly");
@@ -237,7 +255,6 @@ describe("ServiceManagerToken", function () {
             await agentRegistry.changeManager(manager.address);
             await agentRegistry.connect(manager).create(owner, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner, unitHash1, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
             await serviceManager.create(owner, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
             expect(await serviceRegistry.exists(serviceIds[0])).to.equal(true);
@@ -251,8 +268,6 @@ describe("ServiceManagerToken", function () {
             await agentRegistry.changeManager(manager.address);
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
-            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
             await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
             await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
@@ -273,7 +288,6 @@ describe("ServiceManagerToken", function () {
 
             await agentRegistry.changeManager(manager.address);
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
 
             // Pause the contract
             await serviceManager.pause();
@@ -317,8 +331,6 @@ describe("ServiceManagerToken", function () {
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
-            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
             await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                 maxThreshold);
             await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
@@ -339,7 +351,7 @@ describe("ServiceManagerToken", function () {
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
                     operatorWhitelist = operatorWhitelistL2;
-                    identityRegistryBridger.changeManager(serviceManager.address);
+                    identityRegistryBridger = identityRegistryBridgerL2;
                 }
 
                 const manager = signers[4];
@@ -354,8 +366,6 @@ describe("ServiceManagerToken", function () {
                     await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
                     await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
                 }
-                await serviceRegistry.changeManager(serviceManager.address);
-                await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
                 // Try to create a service with a token having specified at least one zero bond
                 let errAgentIds = [1, 4];
@@ -442,7 +452,7 @@ describe("ServiceManagerToken", function () {
                     serviceRegistry = serviceRegistryL2;
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
-                    identityRegistryBridger.changeManager(serviceManager.address);
+                    identityRegistryBridger = identityRegistryBridgerL2;
                 }
 
                 const manager = signers[4];
@@ -457,9 +467,6 @@ describe("ServiceManagerToken", function () {
                     await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
                     await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
                 }
-
-                await serviceRegistry.changeManager(serviceManager.address);
-                await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
                 const newAgentIds = [1];
                 const newAgentParams = [[1, regBond]];
@@ -542,7 +549,7 @@ describe("ServiceManagerToken", function () {
                     serviceRegistry = serviceRegistryL2;
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
-                    identityRegistryBridger.changeManager(serviceManager.address);
+                    identityRegistryBridger = identityRegistryBridgerL2;
                 }
 
                 const manager = signers[4];
@@ -557,9 +564,6 @@ describe("ServiceManagerToken", function () {
                     await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
                     await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
                 }
-
-                await serviceRegistry.changeManager(serviceManager.address);
-                await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
                 // Creating two services
                 await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
@@ -620,7 +624,7 @@ describe("ServiceManagerToken", function () {
                     serviceRegistry = serviceRegistryL2;
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
-                    identityRegistryBridger.changeManager(serviceManager.address);
+                    identityRegistryBridger = identityRegistryBridgerL2;
                 }
 
                 const manager = signers[4];
@@ -633,9 +637,6 @@ describe("ServiceManagerToken", function () {
                     await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
                     await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
                 }
-
-                await serviceRegistry.changeManager(serviceManager.address);
-                await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
                 // Creating a service
                 await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams, maxThreshold);
@@ -657,7 +658,7 @@ describe("ServiceManagerToken", function () {
                     serviceRegistry = serviceRegistryL2;
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
-                    identityRegistryBridger.changeManager(serviceManager.address);
+                    identityRegistryBridger = identityRegistryBridgerL2;
                 }
 
                 const manager = signers[4];
@@ -671,9 +672,6 @@ describe("ServiceManagerToken", function () {
                     await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
                     await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
                 }
-
-                await serviceRegistry.changeManager(serviceManager.address);
-                await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
                 // Creating a service
                 const newAgentIds = [1, 2];
@@ -733,7 +731,7 @@ describe("ServiceManagerToken", function () {
                     serviceRegistry = serviceRegistryL2;
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
-                    identityRegistryBridger.changeManager(serviceManager.address);
+                    identityRegistryBridger = identityRegistryBridgerL2;
                 }
 
                 const manager = signers[4];
@@ -746,9 +744,6 @@ describe("ServiceManagerToken", function () {
                     await agentRegistry.connect(manager).create(owner, unitHash, [1]);
                     await agentRegistry.connect(manager).create(owner, unitHash1, [1]);
                 }
-
-                await serviceRegistry.changeManager(serviceManager.address);
-                await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
                 // Creating two services
                 await serviceManager.create(owner, ETHAddress, configHash, agentIds, agentParams,
@@ -797,7 +792,7 @@ describe("ServiceManagerToken", function () {
                     serviceRegistry = serviceRegistryL2;
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
-                    identityRegistryBridger.changeManager(serviceManager.address);
+                    identityRegistryBridger = identityRegistryBridgerL2;
                 }
 
                 const mechManager = signers[3];
@@ -812,8 +807,6 @@ describe("ServiceManagerToken", function () {
                     await agentRegistry.connect(mechManager).create(owner.address, unitHash1, [1]);
                 }
 
-                await serviceRegistry.changeManager(serviceManager.address);
-                await serviceRegistryTokenUtility.changeManager(serviceManager.address);
                 await serviceManager.connect(owner).create(owner.address, ETHAddress, configHash, [agentIds[0]],
                     [[maxThreshold, regBond]], maxThreshold);
 
@@ -848,7 +841,7 @@ describe("ServiceManagerToken", function () {
                     serviceRegistry = serviceRegistryL2;
                     serviceManager = serviceManagerL2;
                     serviceRegistryTokenUtility = serviceRegistryTokenUtilityL2;
-                    identityRegistryBridger.changeManager(serviceManager.address);
+                    identityRegistryBridger = identityRegistryBridgerL2;
                 }
 
                 const manager = signers[4];
@@ -861,8 +854,6 @@ describe("ServiceManagerToken", function () {
                     await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
                 }
 
-                await serviceRegistry.changeManager(serviceManager.address);
-                await serviceRegistryTokenUtility.changeManager(serviceManager.address);
                 await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
                     maxThreshold);
                 await serviceManager.create(owner.address, ETHAddress, configHash, agentIds, agentParams,
@@ -886,8 +877,6 @@ describe("ServiceManagerToken", function () {
             // Creating 2 canonical agents
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
-            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
             // Creating a service and activating registration
             await serviceManager.create(owner.address, ETHAddress, configHash, [1], [[1, regBond]], 1);
@@ -965,8 +954,6 @@ describe("ServiceManagerToken", function () {
             await agentRegistry.connect(manager).create(owner.address, unitHash, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash1, [1]);
             await agentRegistry.connect(manager).create(owner.address, unitHash2, [1]);
-            await serviceRegistry.changeManager(serviceManager.address);
-            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
 
             const newAgentIds = [1];
             const newAgentParams = [[1, regBond]];
