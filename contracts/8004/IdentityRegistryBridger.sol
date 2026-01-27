@@ -21,15 +21,6 @@ interface IIdentityRegistry {
     function getMetadata(uint256 agentId, string memory key) external view returns (bytes memory);
 }
 
-interface IValidationRegistry {
-    function validationRequest(
-        address validatorAddress,
-        uint256 agentId,
-        string calldata requestUri,
-        bytes32 requestHash
-    ) external;
-}
-
 interface IServiceRegistry {
     /// @dev Gets service instance params.
     /// @param serviceId Service Id.
@@ -113,10 +104,6 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
     // 8004 Identity Registry address
     address public immutable identityRegistry;
-    // 8004 Reputation Registry address
-    address public immutable reputationRegistry;
-    // 8004 Validation Registry address
-    address public immutable validationRegistry;
     // Service Manager address
     address public immutable serviceManager;
     // Service Registry address
@@ -141,26 +128,17 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
 
     /// @dev IdentityRegistryBridger constructor.
     /// @param _identityRegistry 8004 Identity Registry address.
-    /// @param _reputationRegistry 8004 Reputation Registry address.
-    /// @param _validationRegistry 8004 Validation Registry address.
     /// @param _serviceRegistry Service Registry address.
     constructor(
         address _identityRegistry,
-        address _reputationRegistry,
-        address _validationRegistry,
         address _serviceRegistry
     ) {
         // Check for zero addresses
-        if (
-            _identityRegistry == address(0) || _reputationRegistry == address(0) || _validationRegistry == address(0)
-                || _serviceRegistry == address(0)
-        ) {
+        if (_identityRegistry == address(0) || _serviceRegistry == address(0)) {
             revert ZeroAddress();
         }
 
         identityRegistry = _identityRegistry;
-        reputationRegistry = _reputationRegistry;
-        validationRegistry = _validationRegistry;
         serviceRegistry = _serviceRegistry;
         serviceManager = IServiceRegistry(_serviceRegistry).manager();
     }
@@ -423,35 +401,6 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         IIdentityRegistry(identityRegistry).setMetadata(agentId, metadataKey, metadataValue);
 
         emit MetadataSet(agentId, metadataKey, metadataValue);
-
-        _locked = 1;
-    }
-
-    /// @dev Agent validation request.
-    /// @notice This is wrapper function that calls IdentityRegistry's one by address(this) as agent Id owner.
-    ///         Needs to be called by agent multisig.
-    /// @param validatorAddress Validator address.
-    /// @param requestUri Request URI.
-    /// @param requestHash Request hash.
-    function validationRequest(address validatorAddress, string calldata requestUri, bytes32 requestHash) external {
-        // Reentrancy guard
-        if (_locked > 1) {
-            revert ReentrancyGuard();
-        }
-        _locked = 2;
-
-        // Get agent Id by msg.sender as its wallet
-        uint256 agentId = mapMultisigAgentIds[msg.sender];
-
-        // Check for zero value
-        if (agentId == 0) {
-            revert ZeroValue();
-        }
-
-        // Call validation request on behalf of agent
-        IValidationRegistry(validationRegistry).validationRequest(validatorAddress, agentId, requestUri, requestHash);
-
-        emit ValidationRequestSubmitted(msg.sender, agentId, validatorAddress, requestUri, requestHash);
 
         _locked = 1;
     }

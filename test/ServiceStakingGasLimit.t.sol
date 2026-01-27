@@ -105,8 +105,7 @@ contract BaseSetup is Test {
         operatorWhitelist = new OperatorWhitelist(address(serviceRegistry));
 
         identityRegistry = new MockIdentityRegistry();
-        identityRegistryBridger = new IdentityRegistryBridger(address(identityRegistry), address(identityRegistry),
-            address(identityRegistry), address(serviceRegistry));
+        identityRegistryBridger = new IdentityRegistryBridger(address(identityRegistry), address(serviceRegistry));
         bytes memory proxyData = abi.encodeWithSelector(identityRegistryBridger.initialize.selector, "");
         IdentityRegistryBridgerProxy identityRegistryBridgerProxy =
             new IdentityRegistryBridgerProxy(address(identityRegistryBridger), proxyData);
@@ -120,9 +119,7 @@ contract BaseSetup is Test {
         serviceRegistry.changeManager(address(serviceManager));
         serviceRegistryTokenUtility.changeManager(address(serviceManager));
 
-        // TODO revert back when IRB is operational
-        //identityRegistryBridger.changeManager(address(serviceManager));
-        //serviceManager.setIdentityRegistryBridger(address(identityRegistryBridger));
+        serviceManager.setIdentityRegistryBridger(address(identityRegistryBridger));
 
         // Deploying multisig contracts and multisig implementation
         gnosisSafe = new GnosisSafe();
