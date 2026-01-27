@@ -38,7 +38,7 @@ contract BaseSetup is Test {
     address internal constant REGISTRIES_MANAGER = 0x13bb1605DDD353Ff4da9a9b1a70e20B4B1C48fC4;
     address internal constant SERVICE_MANAGER = 0x22808322414594A2a4b8F46Af5760E193D316b5B;
     address internal constant safeMultisigWithRecoveryModule = 0x164e1CA068afeF66EFbB9cA19d904c44E8386fd9;
-    address internal constant IDENTITY_REGISTRY_BRIDGER = 0x2c5c0a88c86b8E672673F2f4B1bbA4B83F2C64BA;
+    address internal constant IDENTITY_REGISTRY_BRIDGER = 0x86f0Db62c0eB96140B71044ce029b602a4B956a3;
     address internal constant IDENTITY_REGISTRY = 0x8004A818BFB912233c491871b3d84c89A494BD9e;
     address internal constant REPUTATION_REGISTRY = 0x8004B663056A597Dffe9eCcC1965A193B7388713;
     uint96 internal constant SECURITY_DEPOSIT = 1;

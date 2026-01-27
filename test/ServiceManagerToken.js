@@ -125,8 +125,7 @@ describe("ServiceManagerToken", function () {
         await identityRegistry.deployed();
 
         const IdentityRegistryBridger = await ethers.getContractFactory("IdentityRegistryBridger");
-        identityRegistryBridger = await IdentityRegistryBridger.deploy(identityRegistry.address,
-            identityRegistry.address, identityRegistry.address, serviceRegistry.address);
+        identityRegistryBridger = await IdentityRegistryBridger.deploy(identityRegistry.address, serviceRegistry.address);
         await identityRegistryBridger.deployed();
 
         proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", [baseURI]);
@@ -139,8 +138,7 @@ describe("ServiceManagerToken", function () {
         // Wrap identityRegistryBridger proxy contract
         identityRegistryBridger = await ethers.getContractAt("IdentityRegistryBridger", identityRegistryBridgerProxy.address);
 
-        identityRegistryBridgerL2 = await IdentityRegistryBridger.deploy(identityRegistry.address,
-            identityRegistry.address, identityRegistry.address, serviceRegistryL2.address);
+        identityRegistryBridgerL2 = await IdentityRegistryBridger.deploy(identityRegistry.address, serviceRegistryL2.address);
         await identityRegistryBridgerL2.deployed();
 
         const identityRegistryBridgerProxyL2 = await IdentityRegistryBridgerProxy.deploy(identityRegistryBridgerL2.address,

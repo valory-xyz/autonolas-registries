@@ -109,8 +109,7 @@ describe("ServiceManagerNative", function () {
         await identityRegistry.initialize();
 
         const IdentityRegistryBridger = await ethers.getContractFactory("IdentityRegistryBridger");
-        identityRegistryBridger = await IdentityRegistryBridger.deploy(identityRegistry.address,
-            identityRegistry.address, identityRegistry.address, serviceRegistry.address);
+        identityRegistryBridger = await IdentityRegistryBridger.deploy(identityRegistry.address, serviceRegistry.address);
         await identityRegistryBridger.deployed();
 
         proxyData = identityRegistryBridger.interface.encodeFunctionData("initialize", [baseURI]);
