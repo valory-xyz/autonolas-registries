@@ -39,5 +39,6 @@
   "complementaryServiceMetadataAddress": "0x0598081D48FB80B0A7E52FAD2905AE9beCd6fC69",
   "recoveryModuleAddress": "0x0Cb12457ed26d572c5e4A50f30b6f7A904662a72",
   "safeMultisigWithRecoveryModuleAddress": "0xB4eB492bbfDcE5ccc11d675797cCF090eB0bCbd6",
-  "serviceManagerProxyAddress": "0x068a4f0946cF8c7f9C1B58a3b5243Ac8843bf473"
+  "serviceManagerProxyAddress": "0x068a4f0946cF8c7f9C1B58a3b5243Ac8843bf473",
+  "agent8004BaseURI": "https://gateway.autonolas.tech/erc8004/gnosis/service/"
 }

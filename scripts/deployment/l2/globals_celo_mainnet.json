@@ -39,5 +39,6 @@
   "optimismMessengerAddress": "0xC14E191A64a7FB0e5790a8a0B9a58683dFFce04d",
   "recoveryModuleAddress": "0x24F792D51b398928459Dfbb4181bDb4D5d2CD472",
   "safeMultisigWithRecoveryModuleAddress": "0x379451B13e4900C7005Bf57467770b2EE4e62a86",
-  "serviceManagerProxyAddress": "0x84B4DA67B37B1EA1dea9c7044042C1d2297b80a0"
+  "serviceManagerProxyAddress": "0x84B4DA67B37B1EA1dea9c7044042C1d2297b80a0",
+  "agent8004BaseURI": "https://gateway.autonolas.tech/erc8004/celo/service/"
 }

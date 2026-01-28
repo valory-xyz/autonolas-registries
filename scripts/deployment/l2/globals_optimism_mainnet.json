@@ -38,5 +38,6 @@
   "safeMultisigWithRecoveryModuleAddress": "0x4be7A91e67be963806FeFA9C1FD6C53DfC358d94",
   "serviceManagerProxyAddress": "0xA5C7FbCCFf28441b7d250412b0Fb87AA1c8b14AD",
   "hashCheckpointAddress": "0x4E82BC73BFB9647074aA71CBF467e66c1808C571",
-  "complementaryServiceMetadataAddress": "0x11949cBC85d8793B360029E26b18ae759708e28b"
+  "complementaryServiceMetadataAddress": "0x11949cBC85d8793B360029E26b18ae759708e28b",
+  "agent8004BaseURI": "https://gateway.autonolas.tech/erc8004/optimism/service/"
 }

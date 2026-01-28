@@ -41,5 +41,6 @@
   "recoveryModuleAddress": "0x69D97b5c4F35fd3A72FA83b6B1eB911c6A8a2e3c",
   "safeMultisigWithRecoveryModuleAddress": "0xCb728aefD88FCA806d638EAEeEAcFC03Dd985d70",
   "complementaryServiceMetadataAddress": "0x0561cE39A1ab785B02DE0D9903125702559993A1",
-  "serviceManagerProxyAddress": "0x94a1892D91c05D0C61c3f49F42205D2285b914c9"
+  "serviceManagerProxyAddress": "0x94a1892D91c05D0C61c3f49F42205D2285b914c9",
+  "agent8004BaseURI": "https://gateway.autonolas.tech/erc8004/ethereum/service/"
 }
