@@ -25,6 +25,7 @@ chainId=$(jq -r '.chainId' $globals)
 networkURL=$(jq -r '.networkURL' $globals)
 
 serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' $globals)
+serviceManagerAddress=$(jq -r '.serviceManagerAddress' $globals)
 serviceManagerProxyAddress=$(jq -r '.serviceManagerProxyAddress' $globals)
 identityRegistryBridgerProxyAddress=$(jq -r '.identityRegistryBridgerProxyAddress' $globals)
 
@@ -74,6 +75,13 @@ echo "Number of link steps: $numIter"
 echo "${green}WRITE FUNCTIONS EXECUTION${reset}"
 castSendHeader="cast send --rpc-url $networkURL$API_KEY $walletArgs"
 
+echo "${green}Change ServiceManagerProxy implementation${reset}"
+castArgs="$serviceManagerProxyAddress changeImplementation(address) $serviceManagerAddress"
+echo $castArgs
+castCmd="$castSendHeader $castArgs"
+result=$($castCmd)
+echo "$result" | grep "status"
+
 echo "${green}Pause ServiceManager${reset}"
 castArgs="$serviceManagerProxyAddress pause()"
 echo $castArgs
@@ -84,7 +92,7 @@ echo "$result" | grep "status"
 # Link service Ids and 8004 agent Ids
 for (( i=0; i < $numIter; i++ )); do
   echo "${green}Linking step $i${reset}"
-  castArgs="$identityRegistryBridgerProxyAddress linkServiceIdAgentIds(uint256) 40"
+  castArgs="$identityRegistryBridgerProxyAddress linkServiceIdAgentIds(uint256) $maxNumServicesPerTx"
   echo $castArgs
   castCmd="$castSendHeader $castArgs"
   result=$($castCmd)
