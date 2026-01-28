@@ -20,7 +20,7 @@
   "serviceRegistryAddress": "0xE3607b00E75f6405248323A9417ff6b39B244b50",
   "operatorWhitelistAddress": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE",
   "serviceRegistryTokenUtilityAddress": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44",
-  "serviceManagerAddress": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5",
+  "serviceManagerAddress": "0xC61e0dbbFb1d3f3e675663A0307d79FA24197EE1",
   "gnosisSafeMultisigImplementationAddress": "0xD421f433e36465B3e558B1121F584ac09Fc33DF8",
   "gnosisSafeSameAddressMultisigImplementationAddress": "0xBb7e1D6Cb6F243D6bdE81CE92a9f2aFF7Fbe7eac",
   "stakingTokenAddress": "0xe1E1B286EbE95b39F785d8069f2248ae9C41b7a9",
@@ -35,5 +35,6 @@
   "wormholeMessengerAddress": "0x397125902ED2cA2d42104F621f448A2cE1bC8Fb7",
   "optimismMessengerAddress": "0xC14E191A64a7FB0e5790a8a0B9a58683dFFce04d",
   "recoveryModuleAddress": "0x24F792D51b398928459Dfbb4181bDb4D5d2CD472",
-  "safeMultisigWithRecoveryModuleAddress": "0x379451B13e4900C7005Bf57467770b2EE4e62a86"
+  "safeMultisigWithRecoveryModuleAddress": "0x379451B13e4900C7005Bf57467770b2EE4e62a86",
+  "serviceManagerProxyAddress": "0x84B4DA67B37B1EA1dea9c7044042C1d2297b80a0"
 }
