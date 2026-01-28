@@ -37,5 +37,5 @@
   "recoveryModuleAddress": "0x1d79e0a600B61FAC1B8F40c27347e48962Ed2f23",
   "safeMultisigWithRecoveryModuleAddress": "0x7Fd1F4b764fA41d19fe3f63C85d12bf64d2bbf68",
   "serviceManagerProxyAddress": "0xcDdD9D9ABaB36fFa882530D69c73FeE5D4001C2d",
-  "agent8004BaseURI": "https://gateway.autonolas.tech/erc8004/mode/service/"
+  "agent8004BaseURI": "https://gateway.autonolas.tech/erc8004/mode-mainnet/service/"
 }
