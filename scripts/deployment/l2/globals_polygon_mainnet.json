@@ -44,5 +44,5 @@
   "polySafeSameAddressMultisigAddress": "0xBcb1BAC84B5BcAb350C89c50ADc9064eD15a4485",
   "hashCheckpointAddress": "0x820ca542d5876FDEf240584F6f3924852D527FED",
   "complementaryServiceMetadataAddress": "0xDC175E77d11246c79B23D7088750eb59160DD6b7",
-  "agent8004BaseURI": "https://gateway.autonolas.tech/erc8004/polygon/service/"
+  "agent8004BaseURI": "https://marketplace.olas.network/erc8004/polygon/ai-agents/"
 }

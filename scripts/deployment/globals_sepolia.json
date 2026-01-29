@@ -41,7 +41,7 @@
   "stakingFactoryAddress": "",
   "recoveryModuleAddress": "0x0a40C5ff1EB345E92DaAB5981Fc05219cCe4463E",
   "safeMultisigWithRecoveryModuleAddress": "0x164e1CA068afeF66EFbB9cA19d904c44E8386fd9",
-  "agent8004BaseURI": "https://gateway.autonolas.tech/erc8004/ethereum/service/",
+  "agent8004BaseURI": "https://marketplace.olas.network/erc8004/ethereum/ai-agents/",
   "identityRegistryBridgerAddress": "0xF01386e5150243eE3736D38B55b16EfAB690b105",
   "identityRegistryBridgerProxyAddress": "0x86f0Db62c0eB96140B71044ce029b602a4B956a3"
 }

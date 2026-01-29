@@ -37,5 +37,5 @@
   "recoveryModuleAddress": "0xD0863340f947bE329c67e196e192705e53A1338f",
   "safeMultisigWithRecoveryModuleAddress": "0x17B2198872216D8469AdeBC1227D0d4824940821",
   "serviceManagerProxyAddress": "0xD421f433e36465B3e558B1121F584ac09Fc33DF8",
-  "agent8004BaseURI": "https://gateway.autonolas.tech/erc8004/arbitrum-one/service/"
+  "agent8004BaseURI": "https://marketplace.olas.network/erc8004/arbitrum-one/ai-agents/"
 }

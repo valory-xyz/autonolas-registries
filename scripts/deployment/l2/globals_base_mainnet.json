@@ -39,5 +39,5 @@
   "serviceManagerProxyAddress": "0x1262136cac6a06A782DC94eb3a3dF0b4d09FF6A6",
   "hashCheckpointAddress": "0x69E679AF02D7F18157A8730189f9aFa8cf9c9a2a",
   "complementaryServiceMetadataAddress": "0x28C1edC7CEd549F7f80B732fDC19f0370160707d",
-  "agent8004BaseURI": "https://gateway.autonolas.tech/erc8004/base/service/"
+  "agent8004BaseURI": "https://marketplace.olas.network/erc8004/base/ai-agents/"
 }

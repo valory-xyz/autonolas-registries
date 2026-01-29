@@ -42,5 +42,5 @@
   "safeMultisigWithRecoveryModuleAddress": "0xCb728aefD88FCA806d638EAEeEAcFC03Dd985d70",
   "complementaryServiceMetadataAddress": "0x0561cE39A1ab785B02DE0D9903125702559993A1",
   "serviceManagerProxyAddress": "0x94a1892D91c05D0C61c3f49F42205D2285b914c9",
-  "agent8004BaseURI": "https://gateway.autonolas.tech/erc8004/ethereum/service/"
+  "agent8004BaseURI": "https://marketplace.olas.network/erc8004/ethereum/ai-agents/"
 }
