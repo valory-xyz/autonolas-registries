@@ -53,10 +53,10 @@ echo "Deployment of: $contractArgs"
 # Deploy the contract and capture the address
 execCmd="forge create --broadcast --rpc-url $networkURL$API_KEY $walletArgs $contractArgs"
 deploymentOutput=$($execCmd)
-stakingVerifierAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
+stakingFactoryAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
 
 # Get output length
-outputLength=${#stakingVerifierAddress}
+outputLength=${#stakingFactoryAddress}
 
 # Check for the deployed address
 if [ $outputLength != 42 ]; then
@@ -65,11 +65,11 @@ if [ $outputLength != 42 ]; then
 fi
 
 # Write new deployed contract back into JSON
-echo "$(jq '. += {"stakingVerifierAddress":"'$stakingVerifierAddress'"}' $globals)" > $globals
+echo "$(jq '. += {"stakingFactoryAddress":"'$stakingFactoryAddress'"}' $globals)" > $globals
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
-  contractParams="$stakingVerifierAddress $contractPath --constructor-args $(cast abi-encode "constructor(address)" $constructorArgs)"
+  contractParams="$stakingFactoryAddress $contractPath --constructor-args $(cast abi-encode "constructor(address)" $constructorArgs)"
   echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."
@@ -82,4 +82,4 @@ if [ "$contractVerification" == "true" ]; then
   fi
 fi
 
-echo "$contractName deployed at: $stakingVerifierAddress"
+echo "$contractName deployed at: $stakingFactoryAddress"

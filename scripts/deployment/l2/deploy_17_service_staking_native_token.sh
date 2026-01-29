@@ -50,10 +50,10 @@ echo "Deployment of: $contractArgs"
 # Deploy the contract and capture the address
 execCmd="forge create --broadcast --rpc-url $networkURL$API_KEY $walletArgs $contractArgs"
 deploymentOutput=$($execCmd)
-stakingTokenAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
+stakingNativeTokenAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
 
 # Get output length
-outputLength=${#stakingTokenAddress}
+outputLength=${#stakingNativeTokenAddress}
 
 # Check for the deployed address
 if [ $outputLength != 42 ]; then
@@ -62,11 +62,11 @@ if [ $outputLength != 42 ]; then
 fi
 
 # Write new deployed contract back into JSON
-echo "$(jq '. += {"stakingTokenAddress":"'$stakingTokenAddress'"}' $globals)" > $globals
+echo "$(jq '. += {"stakingNativeTokenAddress":"'$stakingNativeTokenAddress'"}' $globals)" > $globals
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
-  contractParams="$stakingTokenAddress $contractPath"
+  contractParams="$stakingNativeTokenAddress $contractPath"
   echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."
@@ -79,4 +79,4 @@ if [ "$contractVerification" == "true" ]; then
   fi
 fi
 
-echo "$contractName deployed at: $stakingTokenAddress"
+echo "$contractName deployed at: $stakingNativeTokenAddress"
