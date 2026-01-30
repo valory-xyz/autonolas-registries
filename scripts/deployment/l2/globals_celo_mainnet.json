@@ -17,7 +17,7 @@
   "serviceRegistryName": "Service Registry L2",
   "serviceRegistrySymbol": "AUTONOLAS-SERVICE-L2-V1",
   "timelockAddress": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE",
-  "bridgeMediatorAddress": "0x397125902ED2cA2d42104F621f448A2cE1bC8Fb7",
+  "bridgeMediatorAddress": "0xC14E191A64a7FB0e5790a8a0B9a58683dFFce04d",
   "whOlasAddress": "0xaCFfAe8e57Ec6E394Eb1b41939A8CF7892DbDc51",
   "olasAddress": "0xD80533CA29fF6F033a0b55732Ed792af9Fbb381E",
   "multisigProxyHash130": "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000",
