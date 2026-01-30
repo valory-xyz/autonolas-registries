@@ -31,7 +31,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0x64721b7EfbA7866daD8aB48D220eA70337ba9688"
+        "address": "0x0D30b9A4cf30946958F5204c4E45E20766c1b424"
       },
       {
         "name": "ServiceManagerProxy",
@@ -82,6 +82,16 @@
         "name": "ComplementaryServiceMetadata",
         "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
         "address": "0x0561cE39A1ab785B02DE0D9903125702559993A1"
+      },
+      {
+        "name": "IdentityRegistryBridger",
+        "artifact": "abis/0.8.30/IdentityRegistryBridger.json",
+        "address": "0x346596aD8A8F47FD6eCB7f82BF4666cD5e1c4C92"
+      },
+      {
+        "name": "IdentityRegistryBridgerProxy",
+        "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
+        "address": "0x461A76074596F080dfba414532Ab51280611B8e6"
       }
     ]
   },
