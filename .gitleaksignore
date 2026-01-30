@@ -540,3 +540,4 @@ f6bd4e8d54f430ff12bd9a022ef777fa2b4a5425:scripts/deployment/l2/globals_gnosis_ma
 e74f3396d66a897b4009fd72c6c0709337225d71:scripts/deployment/l2/globals_polygon_polysafe_test_mainnet.json:generic-api-key:28
 78ad56ca31633e9f2306d9e54436621f8c229903:test/StakePolySafeCreator.sol:generic-api-key:28
 ee3cc126d87e1cf8f96d9e481caf66c218f88f2e:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:30
+392b86c936cb803b6b77403e96ab4f98bde03610:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:45
