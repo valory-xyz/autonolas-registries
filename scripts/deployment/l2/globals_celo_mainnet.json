@@ -33,7 +33,7 @@
   "timeForEmissionsLimit": "2592000",
   "numServicesLimit": "100",
   "apyLimit": "3000000000000000000",
-  "stakingVerifierAddress": "0xc40C79C275F3fA1F3f4c723755C81ED2D53A8D81",
+  "stakingVerifierAddress": "0x4aba1Cf7a39a51D75cBa789f5f21cf4882162519",
   "stakingFactoryAddress": "0x1c2cD884127b080F940b7546c1e9aaf525b1FA55",
   "wormholeL1MessageRelayerAddress": "0x27428DD2d3DD32A4D7f7C497eAaa23130d894911",
   "wormholeMessengerAddress": "0x397125902ED2cA2d42104F621f448A2cE1bC8Fb7",
@@ -41,5 +41,6 @@
   "recoveryModuleAddress": "0x24F792D51b398928459Dfbb4181bDb4D5d2CD472",
   "safeMultisigWithRecoveryModuleAddress": "0x379451B13e4900C7005Bf57467770b2EE4e62a86",
   "serviceManagerProxyAddress": "0x84B4DA67B37B1EA1dea9c7044042C1d2297b80a0",
-  "agent8004BaseURI": "https://marketplace.olas.network/erc8004/celo/ai-agents/"
+  "agent8004BaseURI": "https://marketplace.olas.network/erc8004/celo/ai-agents/",
+  "stakingTokenAddress": "0xd2ff4Cf0927c3cFbF3BB27391044dBaf6f4ca7b9"
 }
