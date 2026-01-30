@@ -385,6 +385,11 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         // Create or update multisig instance
         multisig = IService(serviceRegistry).deploy(msg.sender, serviceId, multisigImplementation, data);
 
+        // Check for zero address
+        if (multisig == address(0)) {
+            revert ZeroAddress();
+        }
+
         // 8004 Identity Registry workflow: check if current and last multisigs are different
         if ((identityRegistryBridger != address(0)) && (multisig != lastMultisig)) {
             // Update corresponding multisig records and unset wallet in 8004 agent Id, if required
