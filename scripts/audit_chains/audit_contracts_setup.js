@@ -55,20 +55,20 @@ function customExpectContain(arg1, arg2, log) {
 // Write ownership CSV
 function writeOwnershipCsv(rows, outPath) {
     const headers = [
-        "chain_id",
-        "contract_name",
-        "contract_address",
-        "owner_address",
-        "owner_category",
-        "expected_dao_executor",
-        "ownership_change_required",
+        "chainId",
+        "contractName",
+        "contractAddress",
+        "ownerAddress",
+        "ownerCategory",
+        "expectedDaoExecutor",
+        "ownershipChangeRequired",
     ];
 
     const escapeCsv = (v) => {
         if (v === null || v === undefined) return "";
         const s = String(v);
-        if (s.includes('"') || s.includes(",") || s.includes("\n")) {
-            return `"${s.replace(/"/g, '""')}"`;
+        if (s.includes("\"") || s.includes(",") || s.includes("\n")) {
+            return `"${s.replace(/"/g, "\"\"")}"`;
         }
         return s;
     };
@@ -87,13 +87,13 @@ function recordOwnershipRow(chainId, contractName, contractAddress, ownerInfo) {
     if (!WRITE_OWNERSHIP_CSV || !ownerInfo) return;
 
     ownershipRows.push({
-        chain_id: String(chainId),
-        contract_name: contractName,
-        contract_address: norm(contractAddress),
-        owner_address: ownerInfo.owner,
-        owner_category: ownerInfo.owner_category,
-        expected_dao_executor: ownerInfo.expected_dao_executor,
-        ownership_change_required: ownerInfo.ownership_change_required,
+        chainId: String(chainId),
+        contractName: contractName,
+        contractAddress: norm(contractAddress),
+        ownerAddress: ownerInfo.owner,
+        ownerCategory: ownerInfo.ownerCategory,
+        expectedDaoExecutor: ownerInfo.expectedDaoExecutor,
+        ownershipChangeRequired: ownerInfo.ownershipChangeRequired,
     });
 }
 
@@ -170,9 +170,9 @@ async function checkOwner(chainId, contract, globalsInstance, log) {
 
     return {
         owner,
-        expected_dao_executor: expected,
-        owner_category: ownerCategory,
-        ownership_change_required: ownershipChangeRequired,
+        expectedDaoExecutor: expected,
+        ownerCategory: ownerCategory,
+        ownershipChangeRequired: ownershipChangeRequired,
     };
 }
 
