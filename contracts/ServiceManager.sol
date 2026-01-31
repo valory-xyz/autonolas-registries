@@ -15,6 +15,52 @@ interface IOperatorWhitelist {
     function isOperatorWhitelisted(uint256 serviceId, address operator) external view returns (bool status);
 }
 
+interface IIdentityRegistryBridger {
+    /// @dev Registers 8004 agent Id corresponding to service Id.
+    /// @param serviceId Service Id.
+    /// @return agentId Corresponding 8004 agent Id.
+    function register(uint256 serviceId) external returns (uint256 agentId);
+
+    /// @dev Updates 8004 agent Id wallet corresponding to service Id multisig.
+    /// @param serviceId Service Id.
+    /// @param oldMultisig Old multisig address.
+    /// @param newMultisig New multisig address.
+    function updateAgentWallet(uint256 serviceId, address oldMultisig, address newMultisig) external;
+}
+
+interface IServiceRegistry {
+    enum ServiceState {
+        NonExistent,
+        PreRegistration,
+        ActiveRegistration,
+        FinishedRegistration,
+        Deployed,
+        TerminatedBonded
+    }
+
+    /// @dev Gets service instance params.
+    /// @param serviceId Service Id.
+    /// @return securityDeposit Registration activation deposit.
+    /// @return multisig Service multisig address.
+    /// @return configHash IPFS hashes pointing to the config metadata.
+    /// @return threshold Agent instance signers threshold.
+    /// @return maxNumAgentInstances Total number of agent instances.
+    /// @return numAgentInstances Actual number of agent instances.
+    /// @return state Service state.
+    function mapServices(uint256 serviceId)
+        external
+        view
+        returns (
+            uint96 securityDeposit,
+            address multisig,
+            bytes32 configHash,
+            uint32 threshold,
+            uint32 maxNumAgentInstances,
+            uint32 numAgentInstances,
+            ServiceState state
+        );
+}
+
 // ERC721 interface
 interface IERC721 {
     /// @dev Gets the owner of the token Id.
@@ -32,6 +78,7 @@ error AlreadyInitialized();
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
 contract ServiceManager is GenericManager, OperatorSignedHashes {
     event OperatorWhitelistUpdated(address indexed operatorWhitelist);
+    event IdentityRegistryBridgerUpdated(address indexed identityRegistryBridger);
     event ImplementationUpdated(address indexed implementation);
     event CreateMultisig(address indexed multisig);
     event UnbondWithSignatureExecuted(address indexed operator, uint256 indexed serviceId, uint256 refund);
@@ -58,6 +105,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
 
     // Operator whitelist address
     address public operatorWhitelist;
+
+    // 8004 Identity Registry Bridger address
+    address public identityRegistryBridger;
 
     /// @dev ServiceManager constructor.
     /// @param _serviceRegistry Service Registry address.
@@ -92,6 +142,18 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
 
         operatorWhitelist = newOperatorWhitelist;
         emit OperatorWhitelistUpdated(newOperatorWhitelist);
+    }
+
+    /// @dev Sets identity registry bridger contract address.
+    /// @param newIdentityRegistryBridger New identity registry bridger contract address.
+    function setIdentityRegistryBridger(address newIdentityRegistryBridger) external {
+        // Check for the contract ownership
+        if (msg.sender != owner) {
+            revert OwnerOnly(msg.sender, owner);
+        }
+
+        identityRegistryBridger = newIdentityRegistryBridger;
+        emit IdentityRegistryBridgerUpdated(newIdentityRegistryBridger);
     }
 
     /// @dev Changes implementation contract address.
@@ -166,6 +228,12 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
             serviceId = IService(serviceRegistry).create(serviceOwner, configHash, agentIds, agentParams, threshold);
             // Create a token-related record for the service
             IServiceTokenUtility(serviceRegistryTokenUtility).createWithToken(serviceId, token, agentIds, bonds);
+        }
+
+        // 8004 Identity Registry workflow
+        if (identityRegistryBridger != address(0)) {
+            // Register corresponding 8004 agent Id
+            IIdentityRegistryBridger(identityRegistryBridger).register(serviceId);
         }
     }
 
@@ -311,8 +379,22 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         external
         returns (address multisig)
     {
+        // Get current service multisig
+        (, address lastMultisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
+
         // Create or update multisig instance
         multisig = IService(serviceRegistry).deploy(msg.sender, serviceId, multisigImplementation, data);
+
+        // Check for zero address
+        if (multisig == address(0)) {
+            revert ZeroAddress();
+        }
+
+        // 8004 Identity Registry workflow: check if current and last multisigs are different
+        if ((identityRegistryBridger != address(0)) && (multisig != lastMultisig)) {
+            // Update corresponding multisig records and unset wallet in 8004 agent Id, if required
+            IIdentityRegistryBridger(identityRegistryBridger).updateAgentWallet(serviceId, lastMultisig, multisig);
+        }
 
         emit CreateMultisig(multisig);
     }

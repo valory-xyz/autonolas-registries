@@ -40,6 +40,9 @@ contracts is located in this folder: [internal audit 12](https://github.com/valo
 An internal audit with a focus on next update of PolySafeCreatorWithRecoveryModule
 contracts is located in this folder: [internal audit 13](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal13).
 
+An internal audit with a focus on next update of ERC-8004 bridge (IdentityRegistryBridger)
+contracts is located in this folder: [internal audit 14](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal14).
+
 ### External audit
 
 Following the initial contracts [audit report](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/Valory%20Review%20Final.pdf),
