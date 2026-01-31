@@ -37,6 +37,7 @@
   "stakingFactoryAddress": "0x1c2cD884127b080F940b7546c1e9aaf525b1FA55",
   "wormholeL1MessageRelayerAddress": "0x27428DD2d3DD32A4D7f7C497eAaa23130d894911",
   "wormholeMessengerAddress": "0x397125902ED2cA2d42104F621f448A2cE1bC8Fb7",
+  "L1CrossDomainMessengerProxyAddress": "0x1AC1181fc4e4F877963680587AEAa2C90D7EbB95",
   "optimismMessengerAddress": "0xC14E191A64a7FB0e5790a8a0B9a58683dFFce04d",
   "recoveryModuleAddress": "0x24F792D51b398928459Dfbb4181bDb4D5d2CD472",
   "safeMultisigWithRecoveryModuleAddress": "0x379451B13e4900C7005Bf57467770b2EE4e62a86",
