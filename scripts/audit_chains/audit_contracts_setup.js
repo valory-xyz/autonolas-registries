@@ -7,6 +7,19 @@ const fs = require("fs");
 const verifyRepo = true;
 const verifySetup = true;
 
+// ===================== CSV CONFIG =====================
+const WRITE_OWNERSHIP_CSV = true;
+const OWNERSHIP_CSV_PATH = "scripts/audit_chains/ownable_owners.csv";
+
+// Autonolas deployer (as per your requirement)
+const AUTONOLAS_DEPLOYER = "0xEB2A22b27C7Ad5eeE424Fd90b376c745E60f914E";
+
+// Minimal helper: normalize addresses (case-insensitive compare)
+const norm = (a) => (a ? ethers.utils.getAddress(a) : a);
+
+// Global accumulator for CSV rows (collected during setup checks)
+const ownershipRows = [];
+
 // Custom expect that is wrapped into try / catch block
 function customExpect(arg1, arg2, log) {
     try {
@@ -37,6 +50,51 @@ function customExpectContain(arg1, arg2, log) {
             console.log("\n");
         }
     }
+}
+
+// Write ownership CSV
+function writeOwnershipCsv(rows, outPath) {
+    const headers = [
+        "chain_id",
+        "contract_name",
+        "contract_address",
+        "owner_address",
+        "owner_category",
+        "expected_dao_executor",
+        "ownership_change_required",
+    ];
+
+    const escapeCsv = (v) => {
+        if (v === null || v === undefined) return "";
+        const s = String(v);
+        if (s.includes('"') || s.includes(",") || s.includes("\n")) {
+            return `"${s.replace(/"/g, '""')}"`;
+        }
+        return s;
+    };
+
+    const lines = [
+        headers.join(","),
+        ...rows.map((r) => headers.map((h) => escapeCsv(r[h])).join(",")),
+    ];
+
+    fs.writeFileSync(outPath, lines.join("\n"), "utf8");
+    console.log(`\n[CSV] Wrote ${rows.length} rows to ${outPath}\n`);
+}
+
+// Push a row into the ownership CSV accumulator
+function recordOwnershipRow(chainId, contractName, contractAddress, ownerInfo) {
+    if (!WRITE_OWNERSHIP_CSV || !ownerInfo) return;
+
+    ownershipRows.push({
+        chain_id: String(chainId),
+        contract_name: contractName,
+        contract_address: norm(contractAddress),
+        owner_address: ownerInfo.owner,
+        owner_category: ownerInfo.owner_category,
+        expected_dao_executor: ownerInfo.expected_dao_executor,
+        ownership_change_required: ownerInfo.ownership_change_required,
+    });
 }
 
 async function checkBytecode(provider, configContracts, contractName, log) {
@@ -92,15 +150,32 @@ async function findContractInstance(provider, configContracts, contractName) {
 
 // Check the contract owner
 async function checkOwner(chainId, contract, globalsInstance, log) {
-    const owner = await contract.owner();
-    if (chainId === "1") {
-        // Timelock for L1
-        customExpect(owner, globalsInstance["timelockAddress"], log + ", function: owner()");
-    } else {
-        // BridgeMediator for L2-s
-        customExpect(owner, globalsInstance["bridgeMediatorAddress"], log + ", function: owner()");
-    }
+    const owner = norm(await contract.owner());
+
+    const expected =
+        String(chainId) === "1"
+            ? norm(globalsInstance["timelockAddress"])
+            : norm(globalsInstance["bridgeMediatorAddress"]);
+
+    // Keep existing verification behavior
+    customExpect(owner, expected, log + ", function: owner()");
+
+    // CSV purposes
+    const ownerCategory =
+        owner === norm(AUTONOLAS_DEPLOYER)
+            ? "autonolas_deployer"
+            : (owner === expected ? "dao_executor" : "other");
+
+    const ownershipChangeRequired = owner === expected ? "no" : "yes";
+
+    return {
+        owner,
+        expected_dao_executor: expected,
+        owner_category: ownerCategory,
+        ownership_change_required: ownershipChangeRequired,
+    };
 }
+
 
 // Check component registry: chain Id, provider, parsed globals, configuration contracts, contract name
 // Component Registry resides on L1 only
@@ -120,8 +195,9 @@ async function checkComponentRegistry(chainId, provider, globalsInstance, config
     const baseURI = await componentRegistry.baseURI();
     customExpect(baseURI, "https://gateway.autonolas.tech/ipfs/", log + ", function: baseURI()");
 
-    // Check owner
-    checkOwner(chainId, componentRegistry, globalsInstance, log);
+    // Check owner + record CSV
+    const ownerInfo = await checkOwner(chainId, componentRegistry, globalsInstance, log);
+    recordOwnershipRow(chainId, contractName, componentRegistry.address, ownerInfo);
 
     // Check manager
     const manager = await componentRegistry.manager();
@@ -146,8 +222,9 @@ async function checkAgentRegistry(chainId, provider, globalsInstance, configCont
     const baseURI = await agentRegistry.baseURI();
     customExpect(baseURI, "https://gateway.autonolas.tech/ipfs/", log + ", function: baseURI()");
 
-    // Check owner
-    checkOwner(chainId, agentRegistry, globalsInstance, log);
+    // Check owner + record CSV
+    const ownerInfo = await checkOwner(chainId, agentRegistry, globalsInstance, log);
+    recordOwnershipRow(chainId, contractName, agentRegistry.address, ownerInfo);
 
     // Check manager
     const manager = await agentRegistry.manager();
@@ -175,8 +252,9 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
     const baseURI = await serviceRegistry.baseURI();
     customExpect(baseURI, "https://gateway.autonolas.tech/ipfs/", log + ", function: baseURI()");
 
-    // Check owner
-    checkOwner(chainId, serviceRegistry, globalsInstance, log);
+    // Check owner + record CSV
+    const ownerInfo = await checkOwner(chainId, serviceRegistry, globalsInstance, log);
+    recordOwnershipRow(chainId, contractName, serviceRegistry.address, ownerInfo);
 
     // Check manager
     const manager = await serviceRegistry.manager();
@@ -220,8 +298,9 @@ async function checkServiceManagerProxy(chainId, provider, globalsInstance, conf
     // Get the contract instance
     const serviceManager = await findContractInstance(provider, configContracts, contractName);
 
-    // Check owner
-    checkOwner(chainId, serviceManager, globalsInstance, log);
+    // Check owner + record CSV
+    const ownerInfo = await checkOwner(chainId, serviceManager, globalsInstance, log);
+    recordOwnershipRow(chainId, contractName, serviceManager.address, ownerInfo);
 
     log += ", address: " + serviceManager.address;
 
@@ -252,8 +331,9 @@ async function checkServiceRegistryTokenUtility(chainId, provider, globalsInstan
     // Get the contract instance
     const serviceRegistryTokenUtility = await findContractInstance(provider, configContracts, contractName);
 
-    // Check owner
-    checkOwner(chainId, serviceRegistryTokenUtility, globalsInstance, log);
+    // Check owner + record CSV
+    const ownerInfo = await checkOwner(chainId, serviceRegistryTokenUtility, globalsInstance, log);
+    recordOwnershipRow(chainId, contractName, serviceRegistryTokenUtility.address, ownerInfo);
 
     log += ", address: " + serviceRegistryTokenUtility.address;
     // Check manager
@@ -328,8 +408,9 @@ async function checkStakingVerifier(chainId, provider, globalsInstance, configCo
     // Get the contract instance
     const serviceVerifier = await findContractInstance(provider, configContracts, contractName);
 
-    // Check owner
-    checkOwner(chainId, serviceVerifier, globalsInstance, log);
+    // Check owner + record CSV
+    const ownerInfo = await checkOwner(chainId, serviceVerifier, globalsInstance, log);
+    recordOwnershipRow(chainId, contractName, serviceVerifier.address, ownerInfo);
 
     log += ", address: " + serviceVerifier.address;
     // Check OLAS
@@ -373,8 +454,9 @@ async function checkStakingFactory(chainId, provider, globalsInstance, configCon
     // Get the contract instance
     const stakingFactory = await findContractInstance(provider, configContracts, contractName);
 
-    // Check owner
-    checkOwner(chainId, stakingFactory, globalsInstance, log);
+    // Check owner + record CSV
+    const ownerInfo = await checkOwner(chainId, stakingFactory, globalsInstance, log);
+    recordOwnershipRow(chainId, contractName, stakingFactory.address, ownerInfo);
 
     log += ", address: " + stakingFactory.address;
     // Check staking verifier
@@ -600,6 +682,11 @@ async function main() {
                 log = initLog + ", contract: " + "PolySafeCreatorWithRecoveryModule";
                 await checkPolySafeCreatorWithRecoveryModule(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "PolySafeCreatorWithRecoveryModule", log);
             }
+        }
+
+        // Write CSV once at the end of setup verification
+        if (WRITE_OWNERSHIP_CSV) {
+            writeOwnershipCsv(ownershipRows, OWNERSHIP_CSV_PATH);
         }
     }
     // ################################# /VERIFY CONTRACTS SETUP #################################
