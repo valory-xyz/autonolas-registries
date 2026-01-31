@@ -1,8 +1,9 @@
 module.exports = {
     skipFiles: [
+        "test/ABICreator.sol",
+        "test/CompatibilityFallbackHandler.sol",
         "test/ComponentRegistryTest.sol",
         "test/ERC20Token.sol",
-        "test/GnosisSafeABICreator.sol",
         "test/MockIdentityRegistry.sol",
         "test/MockOperatorContract.sol",
         "test/MockServiceRegistry.sol",

@@ -29,13 +29,9 @@ elif [ $chainId == 80002 ]; then
     fi
 fi
 
-identityRegistryAddress=$(jq -r '.identityRegistryAddress' $globals)
-serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' $globals)
-
-contractName="IdentityRegistryBridger"
-contractPath="contracts/8004/$contractName.sol:$contractName"
-constructorArgs="$identityRegistryAddress $serviceRegistryAddress"
-contractArgs="$contractPath --constructor-args $constructorArgs"
+contractName="StakingNativeToken"
+contractPath="contracts/staking/$contractName.sol:$contractName"
+contractArgs="$contractPath"
 
 # Get deployer based on the ledger flag
 if [ "$useLedger" == "true" ]; then
@@ -54,10 +50,10 @@ echo "Deployment of: $contractArgs"
 # Deploy the contract and capture the address
 execCmd="forge create --broadcast --rpc-url $networkURL$API_KEY $walletArgs $contractArgs"
 deploymentOutput=$($execCmd)
-identityRegistryBridgerAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
+stakingNativeTokenAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
 
 # Get output length
-outputLength=${#identityRegistryBridgerAddress}
+outputLength=${#stakingNativeTokenAddress}
 
 # Check for the deployed address
 if [ $outputLength != 42 ]; then
@@ -66,11 +62,11 @@ if [ $outputLength != 42 ]; then
 fi
 
 # Write new deployed contract back into JSON
-echo "$(jq '. += {"identityRegistryBridgerAddress":"'$identityRegistryBridgerAddress'"}' $globals)" > $globals
+echo "$(jq '. += {"stakingNativeTokenAddress":"'$stakingNativeTokenAddress'"}' $globals)" > $globals
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
-  contractParams="$identityRegistryBridgerAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address)" $constructorArgs)"
+  contractParams="$stakingNativeTokenAddress $contractPath"
   echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."
@@ -83,4 +79,4 @@ if [ "$contractVerification" == "true" ]; then
   fi
 fi
 
-echo "$contractName deployed at: $identityRegistryBridgerAddress"
+echo "$contractName deployed at: $stakingNativeTokenAddress"

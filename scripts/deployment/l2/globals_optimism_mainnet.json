@@ -10,6 +10,9 @@
   "gnosisSafeAddress": "0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552",
   "gnosisSafeProxyFactoryAddress": "0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2",
   "multiSendCallOnlyAddress": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+  "identityRegistryAddress": "",
+  "reputationRegistryAddress": "",
+  "validationRegistryAddress": "",
   "baseURI": "https://gateway.autonolas.tech/ipfs/",
   "serviceRegistryName": "Service Registry L2",
   "serviceRegistrySymbol": "AUTONOLAS-SERVICE-L2-V1",
@@ -35,5 +38,6 @@
   "safeMultisigWithRecoveryModuleAddress": "0x4be7A91e67be963806FeFA9C1FD6C53DfC358d94",
   "serviceManagerProxyAddress": "0xA5C7FbCCFf28441b7d250412b0Fb87AA1c8b14AD",
   "hashCheckpointAddress": "0x4E82BC73BFB9647074aA71CBF467e66c1808C571",
-  "complementaryServiceMetadataAddress": "0x11949cBC85d8793B360029E26b18ae759708e28b"
+  "complementaryServiceMetadataAddress": "0x11949cBC85d8793B360029E26b18ae759708e28b",
+  "agent8004BaseURI": "https://marketplace.olas.network/erc8004/op-mainnet/ai-agents/"
 }

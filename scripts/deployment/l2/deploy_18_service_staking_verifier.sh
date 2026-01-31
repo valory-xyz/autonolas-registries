@@ -29,12 +29,17 @@ elif [ $chainId == 80002 ]; then
     fi
 fi
 
-identityRegistryAddress=$(jq -r '.identityRegistryAddress' $globals)
+olasAddress=$(jq -r '.olasAddress' $globals)
 serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' $globals)
+serviceRegistryTokenUtilityAddress=$(jq -r '.serviceRegistryTokenUtilityAddress' $globals)
+minStakingDepositLimit=$(jq -r '.minStakingDepositLimit' $globals)
+timeForEmissionsLimit=$(jq -r '.timeForEmissionsLimit' $globals)
+numServicesLimit=$(jq -r '.numServicesLimit' $globals)
+apyLimit=$(jq -r '.apyLimit' $globals)
 
-contractName="IdentityRegistryBridger"
-contractPath="contracts/8004/$contractName.sol:$contractName"
-constructorArgs="$identityRegistryAddress $serviceRegistryAddress"
+contractName="StakingVerifier"
+contractPath="contracts/staking/$contractName.sol:$contractName"
+constructorArgs="$olasAddress $serviceRegistryAddress $serviceRegistryTokenUtilityAddress $minStakingDepositLimit $timeForEmissionsLimit $numServicesLimit $apyLimit"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
 # Get deployer based on the ledger flag
@@ -54,10 +59,10 @@ echo "Deployment of: $contractArgs"
 # Deploy the contract and capture the address
 execCmd="forge create --broadcast --rpc-url $networkURL$API_KEY $walletArgs $contractArgs"
 deploymentOutput=$($execCmd)
-identityRegistryBridgerAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
+stakingVerifierAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
 
 # Get output length
-outputLength=${#identityRegistryBridgerAddress}
+outputLength=${#stakingVerifierAddress}
 
 # Check for the deployed address
 if [ $outputLength != 42 ]; then
@@ -66,11 +71,11 @@ if [ $outputLength != 42 ]; then
 fi
 
 # Write new deployed contract back into JSON
-echo "$(jq '. += {"identityRegistryBridgerAddress":"'$identityRegistryBridgerAddress'"}' $globals)" > $globals
+echo "$(jq '. += {"stakingVerifierAddress":"'$stakingVerifierAddress'"}' $globals)" > $globals
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
-  contractParams="$identityRegistryBridgerAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address)" $constructorArgs)"
+  contractParams="$stakingVerifierAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address,address,uint256,uint256,uint256,uint256)" $constructorArgs)"
   echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."
@@ -83,4 +88,4 @@ if [ "$contractVerification" == "true" ]; then
   fi
 fi
 
-echo "$contractName deployed at: $identityRegistryBridgerAddress"
+echo "$contractName deployed at: $stakingVerifierAddress"
