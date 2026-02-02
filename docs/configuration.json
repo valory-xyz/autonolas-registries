@@ -86,7 +86,7 @@
       {
         "name": "IdentityRegistryBridger",
         "artifact": "abis/0.8.30/IdentityRegistryBridger.json",
-        "address": "0x346596aD8A8F47FD6eCB7f82BF4666cD5e1c4C92"
+        "address": "0x6bC86C3d44a8b2EF9993E1DA53152293Fa1fF6ec"
       },
       {
         "name": "IdentityRegistryBridgerProxy",
