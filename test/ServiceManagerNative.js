@@ -553,6 +553,26 @@ describe("ServiceManagerNative", function () {
             await serviceRegistry.changeMultisigPermission(recoveryModule.address, true);
             await serviceRegistry.changeMultisigPermission(safeMultisigWithRecoveryModule.address, true);
 
+            // Try to set agent wallet by a non-agent
+            await expect(
+                identityRegistryBridger.setAgentWallet(10, "0x")
+            ).to.be.revertedWithCustomError(identityRegistryBridger, "ZeroValue");
+
+            // Try to unset agent wallet by a non-agent
+            await expect(
+                identityRegistryBridger.unsetAgentWallet()
+            ).to.be.revertedWithCustomError(identityRegistryBridger, "ZeroValue");
+
+            // Try to unset agent wallet by a non-agent
+            await expect(
+                identityRegistryBridger.unsetAgentWallet()
+            ).to.be.revertedWithCustomError(identityRegistryBridger, "ZeroValue");
+
+            // Try to set metadata by a non-agent
+            await expect(
+                identityRegistryBridger.setMetadata("Hello", "0x00")
+            ).to.be.revertedWithCustomError(identityRegistryBridger, "ZeroValue");
+
             // Deploy service
             // Encode fallbackHandler with isValidSignature() function and nonce (0)
             const safePayload = ethers.utils.defaultAbiCoder.encode(["address", "uint256"],
