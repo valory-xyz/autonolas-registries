@@ -675,6 +675,16 @@ describe("ServiceManagerNative", function () {
             const walletMetadata = await identityRegistry.getMetadata(1, "agentWallet");
             expect(walletMetadata.toLowerCase()).to.equal(proxyAddress.toLowerCase());
 
+            // Unset agent wallet, must be called by multisig
+            // Prepare tx
+            nonce = await multisig.nonce();
+            txHashData = await safeContracts.buildContractCall(identityRegistryBridger, "unsetAgentWallet",
+                [], nonce, 0, 0);
+            signMessageData = await safeContracts.safeSignMessage(agentInstance, multisig, txHashData, 0);
+
+            // Execute tx
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
             // Check initial operator's balance
             const balanceOperator = Number(await serviceRegistry.getOperatorBalance(operator.address, serviceIds[0]));
             expect(balanceOperator).to.equal(regBond);
