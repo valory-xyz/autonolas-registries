@@ -75,6 +75,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     event AgentMultisigUpdated(
         uint256 indexed serviceId, uint256 indexed agentId, address oldMultisig, address indexed newMultisig
     );
+    event AgentWalletSet(uint256 indexed serviceId, uint256 indexed agentId, address indexed multisig);
     event MetadataSet(uint256 indexed agentId, string metadataKey, bytes metadataValue);
     event ValidationRequestSubmitted(
         address indexed sender,
@@ -95,8 +96,6 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     string public constant SERVICE_REGISTRY_METADATA_KEY = "serviceRegistry";
     // Service Id metadata key
     string public constant SERVICE_ID_METADATA_KEY = "serviceId";
-    // Agent wallet multisig metadata key
-    string public constant AGENT_WALLET_METADATA_KEY = "agentWallet";
     // Identity Registry Bridger proxy address slot
     // keccak256("PROXY_IDENTITY_REGISTRY_BRIDGER") = "0x03684189c8fb7a536ac4dbd4b7ad063c37db21bcd0f9c51fe45a4eb16359c165"
     bytes32 public constant PROXY_IDENTITY_REGISTRY_BRIDGER =
@@ -350,23 +349,10 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         }
         uint256 serviceId = abi.decode(metadata, (uint256));
 
-        // Get old multisig address
-        metadata = IIdentityRegistry(identityRegistry).getMetadata(agentId, AGENT_WALLET_METADATA_KEY);
-
-        // Get zero address old multisig by default, if metadata is empty
-        address oldMultisig;
-
-        // Check metadata length and decode accordingly
-        if (metadata.length == 20) {
-            oldMultisig= address(bytes20(metadata));
-        } else if (metadata.length == 32) {
-            oldMultisig= abi.decode(metadata, (address));
-        }
-
         // Set agent wallet on behalf of agent
         IIdentityRegistry(identityRegistry).setAgentWallet(agentId, msg.sender, deadline, signature);
 
-        emit AgentMultisigUpdated(serviceId, agentId, oldMultisig, msg.sender);
+        emit AgentWalletSet(serviceId, agentId, msg.sender);
 
         _locked = 1;
     }
