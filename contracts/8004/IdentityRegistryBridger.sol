@@ -76,6 +76,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         uint256 indexed serviceId, uint256 indexed agentId, address oldMultisig, address indexed newMultisig
     );
     event AgentWalletSet(uint256 indexed serviceId, uint256 indexed agentId, address indexed multisig);
+    event AgentWalletUnset(uint256 indexed serviceId, uint256 indexed agentId);
     event MetadataSet(uint256 indexed serviceId, uint256 indexed agentId, string metadataKey, bytes metadataValue);
     event ValidationRequestSubmitted(
         address indexed sender,
@@ -382,7 +383,7 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
         // Unset agent wallet on behalf of agent
         IIdentityRegistry(identityRegistry).unsetAgentWallet(agentId);
 
-        emit AgentWalletSet(serviceId, agentId, msg.sender);
+        emit AgentWalletUnset(serviceId, agentId);
 
         _locked = 1;
     }
