@@ -77,13 +77,6 @@ contract IdentityRegistryBridger is ERC721TokenReceiver {
     );
     event AgentWalletSet(uint256 indexed serviceId, uint256 indexed agentId, address indexed multisig);
     event MetadataSet(uint256 indexed serviceId, uint256 indexed agentId, string metadataKey, bytes metadataValue);
-    event ValidationRequestSubmitted(
-        address indexed sender,
-        uint256 indexed agentId,
-        address indexed validatorAddress,
-        string requestUri,
-        bytes32 requestHash
-    );
     event StartLinkServiceIdUpdated(uint256 indexed serviceId, bool linkedAll);
 
     // Version number
