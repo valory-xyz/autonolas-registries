@@ -553,6 +553,26 @@ describe("ServiceManagerNative", function () {
             await serviceRegistry.changeMultisigPermission(recoveryModule.address, true);
             await serviceRegistry.changeMultisigPermission(safeMultisigWithRecoveryModule.address, true);
 
+            // Try to set agent wallet by a non-agent
+            await expect(
+                identityRegistryBridger.setAgentWallet(10, "0x")
+            ).to.be.revertedWithCustomError(identityRegistryBridger, "ZeroValue");
+
+            // Try to unset agent wallet by a non-agent
+            await expect(
+                identityRegistryBridger.unsetAgentWallet()
+            ).to.be.revertedWithCustomError(identityRegistryBridger, "ZeroValue");
+
+            // Try to unset agent wallet by a non-agent
+            await expect(
+                identityRegistryBridger.unsetAgentWallet()
+            ).to.be.revertedWithCustomError(identityRegistryBridger, "ZeroValue");
+
+            // Try to set metadata by a non-agent
+            await expect(
+                identityRegistryBridger.setMetadata("Hello", "0x00")
+            ).to.be.revertedWithCustomError(identityRegistryBridger, "ZeroValue");
+
             // Deploy service
             // Encode fallbackHandler with isValidSignature() function and nonce (0)
             const safePayload = ethers.utils.defaultAbiCoder.encode(["address", "uint256"],
@@ -654,6 +674,16 @@ describe("ServiceManagerNative", function () {
             // Check 8004 agent correspondence
             const walletMetadata = await identityRegistry.getMetadata(1, "agentWallet");
             expect(walletMetadata.toLowerCase()).to.equal(proxyAddress.toLowerCase());
+
+            // Unset agent wallet, must be called by multisig
+            // Prepare tx
+            nonce = await multisig.nonce();
+            txHashData = await safeContracts.buildContractCall(identityRegistryBridger, "unsetAgentWallet",
+                [], nonce, 0, 0);
+            signMessageData = await safeContracts.safeSignMessage(agentInstance, multisig, txHashData, 0);
+
+            // Execute tx
+            await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
 
             // Check initial operator's balance
             const balanceOperator = Number(await serviceRegistry.getOperatorBalance(operator.address, serviceIds[0]));
