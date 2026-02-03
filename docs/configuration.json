@@ -490,9 +490,14 @@
         "address": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44"
       },
       {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.23/ServiceManagerToken.json",
-        "address": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5"
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0xC61e0dbbFb1d3f3e675663A0307d79FA24197EE1"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0x84B4DA67B37B1EA1dea9c7044042C1d2297b80a0"
       },
       {
         "name": "OperatorWhitelist",
@@ -517,7 +522,7 @@
       {
         "name": "StakingVerifier",
         "artifact": "abis/0.8.25/StakingVerifier.json",
-        "address": "0xc40C79C275F3fA1F3f4c723755C81ED2D53A8D81"
+        "address": "0x4aba1Cf7a39a51D75cBa789f5f21cf4882162519"
       },
       {
         "name": "StakingFactory",
