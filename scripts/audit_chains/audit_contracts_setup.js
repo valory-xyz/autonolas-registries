@@ -648,11 +648,8 @@ async function main() {
                 await checkServiceRegistry(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryL2", log);
             }
 
-            // Skip celo for now
-            if (i != 6) {
-                log = initLog + ", contract: " + "ServiceManagerProxy";
-                await checkServiceManagerProxy(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerProxy", log);
-            }
+            log = initLog + ", contract: " + "ServiceManagerProxy";
+            await checkServiceManagerProxy(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceManagerProxy", log);
 
             log = initLog + ", contract: " + "ServiceRegistryTokenUtility";
             await checkServiceRegistryTokenUtility(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ServiceRegistryTokenUtility", log);
