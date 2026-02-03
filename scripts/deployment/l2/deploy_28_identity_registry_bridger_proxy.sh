@@ -30,7 +30,8 @@ elif [ $chainId == 80002 ]; then
 fi
 
 identityRegistryBridgerAddress=$(jq -r '.identityRegistryBridgerAddress' $globals)
-proxyData=$(cast calldata "initialize()")
+agent8004BaseURI=$(jq -r '.agent8004BaseURI' $globals)
+proxyData=$(cast calldata "initialize(string memory)" "$agent8004BaseURI")
 
 contractName="IdentityRegistryBridgerProxy"
 contractPath="contracts/8004/$contractName.sol:$contractName"
