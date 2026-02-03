@@ -20,7 +20,7 @@
   "serviceRegistryName": "Service Registry L2",
   "serviceRegistrySymbol": "AUTONOLAS-SERVICE-L2-V1",
   "serviceRegistryAddress": "0xE3607b00E75f6405248323A9417ff6b39B244b50",
-  "serviceManagerAddress": "0xA123748Ce7609F507060F947b70298D0bde621E6",
+  "serviceManagerAddress": "0xaaFBeef195BDAb1Bb6f3Dc9cEbA875Cd72499230",
   "gnosisSafeMultisigImplementationAddress": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44",
   "gnosisSafeSameAddressMultisigImplementationAddress": "0xd8BCC126ff31d2582018715d5291A508530587b0",
   "multisigProxyHash130": "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000",
@@ -44,5 +44,7 @@
   "polySafeSameAddressMultisigAddress": "0xBcb1BAC84B5BcAb350C89c50ADc9064eD15a4485",
   "hashCheckpointAddress": "0x820ca542d5876FDEf240584F6f3924852D527FED",
   "complementaryServiceMetadataAddress": "0xDC175E77d11246c79B23D7088750eb59160DD6b7",
-  "agent8004BaseURI": "https://marketplace.olas.network/erc8004/polygon/ai-agents/"
+  "agent8004BaseURI": "https://marketplace.olas.network/erc8004/polygon/ai-agents/",
+  "identityRegistryBridgerAddress": "0xf78b3C22A204Da5d9a0B080C5D3d695AF4918886",
+  "identityRegistryBridgerProxyAddress": "0x6F121552765424f0B2331B541C0938480cA314Db"
 }
