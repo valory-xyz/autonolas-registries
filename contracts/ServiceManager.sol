@@ -59,6 +59,9 @@ interface IServiceRegistry {
             uint32 numAgentInstances,
             ServiceState state
         );
+
+    /// @dev Gets service total supply.
+    function totalSupply() external view returns (uint256);
 }
 
 // ERC721 interface
@@ -108,6 +111,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
 
     // 8004 Identity Registry Bridger address
     address public identityRegistryBridger;
+
+    // Reentrancy lock
+    uint256 internal _locked = 1;
 
     /// @dev ServiceManager constructor.
     /// @param _serviceRegistry Service Registry address.
@@ -193,6 +199,12 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         IService.AgentParams[] memory agentParams,
         uint32 threshold
     ) external returns (uint256 serviceId) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Check if the minting is paused
         if (paused) {
             revert Paused();
@@ -224,10 +236,14 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
                 agentParams[i].bond = BOND_WRAPPER;
             }
 
-            // Call the original ServiceRegistry contract function
-            serviceId = IService(serviceRegistry).create(serviceOwner, configHash, agentIds, agentParams, threshold);
+            // Get created service Id
+            serviceId = IServiceRegistry(serviceRegistry).totalSupply() + 1;
+
             // Create a token-related record for the service
             IServiceTokenUtility(serviceRegistryTokenUtility).createWithToken(serviceId, token, agentIds, bonds);
+
+            // Call the original ServiceRegistry contract function
+            IService(serviceRegistry).create(serviceOwner, configHash, agentIds, agentParams, threshold);
         }
 
         // 8004 Identity Registry workflow
@@ -235,6 +251,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
             // Register corresponding 8004 agent Id
             IIdentityRegistryBridger(identityRegistryBridger).register(serviceId);
         }
+
+        _locked = 1;
     }
 
     /// @dev Updates a service in a CRUD way.
@@ -253,6 +271,12 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         uint32 threshold,
         uint256 serviceId
     ) external returns (bool success) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Check for the zero address
         if (token == address(0)) {
             revert ZeroAddress();
@@ -292,22 +316,30 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
                 }
             }
 
-            // Call the original ServiceRegistry contract function
-            success =
-                IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams, threshold, serviceId);
-
             // Update relevant data in the ServiceRegistryTokenUtility contract
             // We follow the optimistic design where existing bonds are just overwritten without a clearing
             // bond values of agent Ids that are not going to be used in the service. This is coming from the fact
             // that all the checks are done on the original ServiceRegistry side
             IServiceTokenUtility(serviceRegistryTokenUtility).createWithToken(serviceId, token, agentIds, bonds);
+
+            // Call the original ServiceRegistry contract function
+            success =
+                IService(serviceRegistry).update(msg.sender, configHash, agentIds, agentParams, threshold, serviceId);
         }
+
+        _locked = 1;
     }
 
     /// @dev Activates the service and its sensitive components.
     /// @param serviceId Correspondent service Id.
     /// @return success True, if function executed successfully.
     function activateRegistration(uint256 serviceId) external payable returns (bool success) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Record the actual ERC20 security deposit
         bool isTokenSecured =
             IServiceTokenUtility(serviceRegistryTokenUtility).activateRegistrationTokenDeposit(serviceId);
@@ -325,6 +357,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
             // Otherwise follow the standard msg.value path
             success = IService(serviceRegistry).activateRegistration{value: msg.value}(msg.sender, serviceId);
         }
+
+        _locked = 1;
     }
 
     /// @dev Registers agent instances.
@@ -337,6 +371,12 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         payable
         returns (bool success)
     {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         if (operatorWhitelist != address(0)) {
             // Check if the operator is whitelisted
             if (!IOperatorWhitelist(operatorWhitelist).isOperatorWhitelisted(serviceId, msg.sender)) {
@@ -368,6 +408,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
                 msg.sender, serviceId, agentInstances, agentIds
             );
         }
+
+        _locked = 1;
     }
 
     /// @dev Creates multisig instance controlled by the set of service agent instances and deploys the service.
@@ -379,6 +421,12 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         external
         returns (address multisig)
     {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Get current service multisig
         (, address lastMultisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
 
@@ -397,6 +445,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         }
 
         emit CreateMultisig(multisig);
+
+        _locked = 1;
     }
 
     /// @dev Terminates the service.
@@ -404,6 +454,12 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @return success True, if function executed successfully.
     /// @return refund Refund for the service owner.
     function terminate(uint256 serviceId) external returns (bool success, uint256 refund) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Withdraw the ERC20 token if the service is token-based
         uint256 tokenRefund = IServiceTokenUtility(serviceRegistryTokenUtility).terminateTokenRefund(serviceId);
 
@@ -414,6 +470,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         if (tokenRefund > 0) {
             refund = tokenRefund;
         }
+
+        _locked = 1;
     }
 
     /// @dev Unbonds agent instances of the operator from the service.
@@ -421,6 +479,12 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @return success True, if function executed successfully.
     /// @return refund The amount of refund returned to the operator.
     function unbond(uint256 serviceId) external returns (bool success, uint256 refund) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Withdraw the ERC20 token if the service is token-based
         uint256 tokenRefund = IServiceTokenUtility(serviceRegistryTokenUtility).unbondTokenRefund(msg.sender, serviceId);
 
@@ -431,6 +495,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         if (tokenRefund > 0) {
             refund = tokenRefund;
         }
+
+        _locked = 1;
     }
 
     /// @dev Unbonds agent instances of the operator by the service owner via the operator's pre-signed message hash.
@@ -449,6 +515,12 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         external
         returns (bool success, uint256 refund)
     {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Check the service owner
         address serviceOwner = IERC721(serviceRegistry).ownerOf(serviceId);
         if (msg.sender != serviceOwner) {
@@ -485,6 +557,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         }
 
         emit UnbondWithSignatureExecuted(operator, serviceId, refund);
+
+        _locked = 1;
     }
 
     /// @dev Registers agent instances of the operator by the service owner via the operator's pre-signed message hash.
@@ -507,6 +581,12 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         uint32[] memory agentIds,
         bytes memory signature
     ) external payable returns (bool success) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Check the service owner
         address serviceOwner = IERC721(serviceRegistry).ownerOf(serviceId);
         if (msg.sender != serviceOwner) {
@@ -550,5 +630,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         }
 
         emit RegisterAgentsWithSignatureExecuted(operator, serviceId, agentInstances, agentIds);
+
+        _locked = 1;
     }
 }
