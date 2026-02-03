@@ -161,7 +161,7 @@
       },
       {
         "name": "PolySafeCreatorWithRecoveryModule",
-        "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
+        "artifact": "abis/0.8.30/PolySafeCreatorWithRecoveryModule.json",
         "address": "0xA749f605D93B3efcc207C54270d83C6E8fa70fF8"
       },
       {

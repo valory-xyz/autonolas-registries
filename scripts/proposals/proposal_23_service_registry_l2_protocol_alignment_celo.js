@@ -92,10 +92,9 @@ async function main() {
         data += encoded.slice(2);
     }
 
-    // Whitelist StakingToken in StakingVerifier, de-whitelist old StakingToken
-    let rawPayload = stakingVerifier.interface.encodeFunctionData("setImplementationsStatuses",
-        [[parsedData.stakingTokenAddress, parsedData.whStakingTokenAddress], [true, false], true]);
-    let target = stakingVerifierAddress;
+    // Change StakingVerifier in StakingFactory
+    let rawPayload = stakingFactory.interface.encodeFunctionData("changeVerifier", [stakingVerifierAddress]);
+    let target = stakingFactoryAddress;
     let value = 0;
     let payload = ethers.utils.arrayify(rawPayload);
     let encoded = ethers.utils.solidityPack(
@@ -104,9 +103,10 @@ async function main() {
     );
     data += encoded.slice(2);
 
-    // Change StakingVerifier in StakingFactory
-    rawPayload = stakingFactory.interface.encodeFunctionData("changeVerifier", [stakingVerifierAddress]);
-    target = stakingFactoryAddress;
+    // Whitelist StakingToken in StakingVerifier
+    rawPayload = stakingVerifier.interface.encodeFunctionData("setImplementationsStatuses",
+        [[parsedData.stakingTokenAddress], [true], true]);
+    target = stakingVerifierAddress;
     payload = ethers.utils.arrayify(rawPayload);
     encoded = ethers.utils.solidityPack(
         ["address", "uint96", "uint32", "bytes"],
