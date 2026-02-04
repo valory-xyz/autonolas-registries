@@ -264,6 +264,16 @@
         "name": "ComplementaryServiceMetadata",
         "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
         "address": "0x0598081D48FB80B0A7E52FAD2905AE9beCd6fC69"
+      },
+      {
+        "name": "IdentityRegistryBridger",
+        "artifact": "abis/0.8.30/IdentityRegistryBridger.json",
+        "address": "0x1e9d56730530e9fD9446aBb2eC2E68Dbb3356435"
+      },
+      {
+        "name": "IdentityRegistryBridgerProxy",
+        "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
+        "address": "0x6e8F740F23f07cE129Daa59786926fecA8C2D2F3"
       }
     ]
   },
