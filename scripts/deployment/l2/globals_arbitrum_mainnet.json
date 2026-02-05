@@ -37,5 +37,7 @@
   "recoveryModuleAddress": "0xD0863340f947bE329c67e196e192705e53A1338f",
   "safeMultisigWithRecoveryModuleAddress": "0x17B2198872216D8469AdeBC1227D0d4824940821",
   "serviceManagerProxyAddress": "0xD421f433e36465B3e558B1121F584ac09Fc33DF8",
-  "agent8004BaseURI": "https://marketplace.olas.network/erc8004/arbitrum-one/ai-agents/"
+  "agent8004BaseURI": "https://marketplace.olas.network/erc8004/arbitrum-one/ai-agents/",
+  "identityRegistryBridgerAddress": "0x379451B13e4900C7005Bf57467770b2EE4e62a86",
+  "identityRegistryBridgerProxyAddress": "0x22be6fdcd3e29851b29b512f714c328a00a96b83"
 }

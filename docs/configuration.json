@@ -340,6 +340,16 @@
         "name": "SafeMultisigWithRecoveryModule",
         "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
         "address": "0x17B2198872216D8469AdeBC1227D0d4824940821"
+      },
+      {
+        "name": "IdentityRegistryBridger",
+        "artifact": "abis/0.8.30/IdentityRegistryBridger.json",
+        "address": "0x379451B13e4900C7005Bf57467770b2EE4e62a86"
+      },
+      {
+        "name": "IdentityRegistryBridgerProxy",
+        "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
+        "address": "0x22be6fdcd3e29851b29b512f714c328a00a96b83"
       }
     ]
   },
