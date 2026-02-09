@@ -128,7 +128,7 @@ async function main() {
     const targets = [CDMProxyAddress];
     const values = [0];
     const callDatas = [timelockPayload];
-    const description = "Change multisig implementation statuses in ServiceRegistryL2";
+    const description = "Protocol alignment on Celo";
 
     // Proposal details
     console.log("targets:", targets);
