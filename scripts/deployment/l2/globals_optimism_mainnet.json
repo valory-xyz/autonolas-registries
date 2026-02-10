@@ -39,5 +39,7 @@
   "serviceManagerProxyAddress": "0xA5C7FbCCFf28441b7d250412b0Fb87AA1c8b14AD",
   "hashCheckpointAddress": "0x4E82BC73BFB9647074aA71CBF467e66c1808C571",
   "complementaryServiceMetadataAddress": "0x11949cBC85d8793B360029E26b18ae759708e28b",
-  "agent8004BaseURI": "https://marketplace.olas.network/erc8004/op-mainnet/ai-agents/"
+  "agent8004BaseURI": "https://marketplace.olas.network/erc8004/op-mainnet/ai-agents/",
+  "identityRegistryBridgerAddress": "0x88943F63E29cd436B62cFfE332aD54De92AdCE98",
+  "identityRegistryBridgerProxyAddress": "0x7fc0ddf4DFB61CfA5519db2A5eE7B2Eb02De0140"
 }
