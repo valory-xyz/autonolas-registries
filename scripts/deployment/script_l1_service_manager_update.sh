@@ -24,8 +24,8 @@ derivationPath=$(jq -r '.derivationPath' $globals)
 chainId=$(jq -r '.chainId' $globals)
 networkURL=$(jq -r '.networkURL' $globals)
 
+serviceManagerAddress=$(jq -r '.serviceManagerAddress' $globals)
 serviceManagerProxyAddress=$(jq -r '.serviceManagerProxyAddress' $globals)
-identityRegistryBridgerProxyAddress=$(jq -r '.identityRegistryBridgerProxyAddress' $globals)
 
 # Getting L1 API key
 if [ $chainId == 1 ]; then
@@ -57,8 +57,24 @@ echo "Casting from: $deployer"
 
 castSendHeader="cast send --rpc-url $networkURL$API_KEY $walletArgs"
 
-echo "${green}Set identity registry bridger for ServiceRManager${reset}"
-castArgs="$serviceManagerProxyAddress setIdentityRegistryBridger(address) $identityRegistryBridgerProxyAddress"
+echo "${green}Pause ServiceManager${reset}"
+castArgs="$serviceManagerProxyAddress pause()"
+echo $castArgs
+castCmd="$castSendHeader $castArgs"
+result=$($castCmd)
+echo "$result" | grep "status"
+
+
+echo "${green}Change ServiceManagerProxy implementation${reset}"
+castArgs="$serviceManagerProxyAddress changeImplementation(address) $serviceManagerAddress"
+echo $castArgs
+castCmd="$castSendHeader $castArgs"
+result=$($castCmd)
+echo "$result" | grep "status"
+
+
+echo "${green}Unpause ServiceManager${reset}"
+castArgs="$serviceManagerProxyAddress unpause()"
 echo $castArgs
 castCmd="$castSendHeader $castArgs"
 result=$($castCmd)

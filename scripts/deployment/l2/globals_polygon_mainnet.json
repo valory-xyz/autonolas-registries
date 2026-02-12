@@ -11,13 +11,16 @@
   "gnosisSafeAddress": "0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552",
   "gnosisSafeProxyFactoryAddress": "0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2",
   "multiSendCallOnlyAddress": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+  "identityRegistryAddress": "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+  "reputationRegistryAddress": "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63",
+  "validationRegistryAddress": "",
   "fxRootAddress": "0xfe5e5D361b2ad62c541bAb87C45a0B9B018389a2",
   "bridgeMediatorAddress": "0x9338b5153AE39BB89f50468E608eD9d764B755fD",
   "baseURI": "https://gateway.autonolas.tech/ipfs/",
   "serviceRegistryName": "Service Registry L2",
   "serviceRegistrySymbol": "AUTONOLAS-SERVICE-L2-V1",
   "serviceRegistryAddress": "0xE3607b00E75f6405248323A9417ff6b39B244b50",
-  "serviceManagerAddress": "0xA123748Ce7609F507060F947b70298D0bde621E6",
+  "serviceManagerAddress": "0xC720f1Ada2a882a4B375dCCd0aAc3F3B3e58bc84",
   "gnosisSafeMultisigImplementationAddress": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44",
   "gnosisSafeSameAddressMultisigImplementationAddress": "0xd8BCC126ff31d2582018715d5291A508530587b0",
   "multisigProxyHash130": "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000",
@@ -40,5 +43,8 @@
   "polySafeCreatorWithRecoveryModuleAddress": "0xA749f605D93B3efcc207C54270d83C6E8fa70fF8",
   "polySafeSameAddressMultisigAddress": "0xBcb1BAC84B5BcAb350C89c50ADc9064eD15a4485",
   "hashCheckpointAddress": "0x820ca542d5876FDEf240584F6f3924852D527FED",
-  "complementaryServiceMetadataAddress": "0xDC175E77d11246c79B23D7088750eb59160DD6b7"
+  "complementaryServiceMetadataAddress": "0xDC175E77d11246c79B23D7088750eb59160DD6b7",
+  "agent8004BaseURI": "https://marketplace.olas.network/erc8004/polygon/ai-agents/",
+  "identityRegistryBridgerAddress": "0xf78b3C22A204Da5d9a0B080C5D3d695AF4918886",
+  "identityRegistryBridgerProxyAddress": "0x6F121552765424f0B2331B541C0938480cA314Db"
 }

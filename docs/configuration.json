@@ -31,7 +31,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0x64721b7EfbA7866daD8aB48D220eA70337ba9688"
+        "address": "0x4443ddD8EC67CbCf7E291ee3198f81dD0326b3A1"
       },
       {
         "name": "ServiceManagerProxy",
@@ -82,6 +82,16 @@
         "name": "ComplementaryServiceMetadata",
         "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
         "address": "0x0561cE39A1ab785B02DE0D9903125702559993A1"
+      },
+      {
+        "name": "IdentityRegistryBridger",
+        "artifact": "abis/0.8.30/IdentityRegistryBridger.json",
+        "address": "0x6bC86C3d44a8b2EF9993E1DA53152293Fa1fF6ec"
+      },
+      {
+        "name": "IdentityRegistryBridgerProxy",
+        "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
+        "address": "0x461A76074596F080dfba414532Ab51280611B8e6"
       }
     ]
   },
@@ -102,7 +112,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0xA123748Ce7609F507060F947b70298D0bde621E6"
+        "address": "0xC720f1Ada2a882a4B375dCCd0aAc3F3B3e58bc84"
       },
       {
         "name": "ServiceManagerProxy",
@@ -151,7 +161,7 @@
       },
       {
         "name": "PolySafeCreatorWithRecoveryModule",
-        "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
+        "artifact": "abis/0.8.30/PolySafeCreatorWithRecoveryModule.json",
         "address": "0xA749f605D93B3efcc207C54270d83C6E8fa70fF8"
       },
       {
@@ -168,6 +178,16 @@
         "name": "ComplementaryServiceMetadata",
         "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
         "address": "0xDC175E77d11246c79B23D7088750eb59160DD6b7"
+      },
+      {
+        "name": "IdentityRegistryBridger",
+        "artifact": "abis/0.8.30/IdentityRegistryBridger.json",
+        "address": "0xf78b3C22A204Da5d9a0B080C5D3d695AF4918886"
+      },
+      {
+        "name": "IdentityRegistryBridgerProxy",
+        "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
+        "address": "0x6F121552765424f0B2331B541C0938480cA314Db"
       }
     ]
   },
@@ -188,7 +208,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0xEcF09235AaDEabF4E756B4a532DeD8616b4a2108"
+        "address": "0xe8a85A78E11F4AD8D48d94f90e45827de54Ff2D6"
       },
       {
         "name": "ServiceManagerProxy",
@@ -244,6 +264,16 @@
         "name": "ComplementaryServiceMetadata",
         "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
         "address": "0x0598081D48FB80B0A7E52FAD2905AE9beCd6fC69"
+      },
+      {
+        "name": "IdentityRegistryBridger",
+        "artifact": "abis/0.8.30/IdentityRegistryBridger.json",
+        "address": "0x1e9d56730530e9fD9446aBb2eC2E68Dbb3356435"
+      },
+      {
+        "name": "IdentityRegistryBridgerProxy",
+        "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
+        "address": "0x6e8F740F23f07cE129Daa59786926fecA8C2D2F3"
       }
     ]
   },
@@ -264,7 +294,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0x984cf72FDe8B5aA910e9e508aC5e007ae5BDcC9C"
+        "address": "0x1c80bDBeD23dBb4ACEdCA136382bEa0162550515"
       },
       {
         "name": "ServiceManagerProxy",
@@ -310,6 +340,16 @@
         "name": "SafeMultisigWithRecoveryModule",
         "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
         "address": "0x17B2198872216D8469AdeBC1227D0d4824940821"
+      },
+      {
+        "name": "IdentityRegistryBridger",
+        "artifact": "abis/0.8.30/IdentityRegistryBridger.json",
+        "address": "0x379451B13e4900C7005Bf57467770b2EE4e62a86"
+      },
+      {
+        "name": "IdentityRegistryBridgerProxy",
+        "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
+        "address": "0x22be6fdcd3e29851b29b512f714c328a00a96b83"
       }
     ]
   },
@@ -330,7 +370,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0x92499E80f50f06C4078794C179986907e7822Ea1"
+        "address": "0xA749f605D93B3efcc207C54270d83C6E8fa70fF8"
       },
       {
         "name": "ServiceManagerProxy",
@@ -386,6 +426,16 @@
         "name": "ComplementaryServiceMetadata",
         "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
         "address": "0x11949cBC85d8793B360029E26b18ae759708e28b"
+      },
+      {
+        "name": "IdentityRegistryBridger",
+        "artifact": "abis/0.8.30/IdentityRegistryBridger.json",
+        "address": "0x88943F63E29cd436B62cFfE332aD54De92AdCE98"
+      },
+      {
+        "name": "IdentityRegistryBridgerProxy",
+        "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
+        "address": "0x7fc0ddf4DFB61CfA5519db2A5eE7B2Eb02De0140"
       }
     ]
   },
@@ -406,7 +456,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0xE6e03DD62D11f88A11D65663B398ED2B3Be2070c"
+        "address": "0x1eAccD29c86fFc52Bd7cC0117C03D089306Cbc29"
       },
       {
         "name": "ServiceManagerProxy",
@@ -462,6 +512,16 @@
         "name": "ComplementaryServiceMetadata",
         "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
         "address": "0x28C1edC7CEd549F7f80B732fDC19f0370160707d"
+      },
+      {
+        "name": "IdentityRegistryBridger",
+        "artifact": "abis/0.8.30/IdentityRegistryBridger.json",
+        "address": "0xb0228CA253A88Bc8eb4ca70BCAC8f87b381f4700"
+      },
+      {
+        "name": "IdentityRegistryBridgerProxy",
+        "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
+        "address": "0x67722c823010ceb4bed5325fe109196c0f67d053"
       }
     ]
   },
@@ -480,9 +540,14 @@
         "address": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44"
       },
       {
-        "name": "ServiceManagerToken",
-        "artifact": "abis/0.8.23/ServiceManagerToken.json",
-        "address": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5"
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0x46C0D07F55d4F9B5Eed2Fc9680B5953e5fd7b461"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0x84B4DA67B37B1EA1dea9c7044042C1d2297b80a0"
       },
       {
         "name": "OperatorWhitelist",
@@ -507,7 +572,7 @@
       {
         "name": "StakingVerifier",
         "artifact": "abis/0.8.25/StakingVerifier.json",
-        "address": "0xc40C79C275F3fA1F3f4c723755C81ED2D53A8D81"
+        "address": "0x4aba1Cf7a39a51D75cBa789f5f21cf4882162519"
       },
       {
         "name": "StakingFactory",
@@ -543,7 +608,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0x1cEe30D08943EB58EFF84DD1AB44a6ee6FEff63a"
+        "address": "0x984cf72FDe8B5aA910e9e508aC5e007ae5BDcC9C"
       },
       {
         "name": "ServiceManagerProxy",
