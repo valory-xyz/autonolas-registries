@@ -349,7 +349,7 @@
       {
         "name": "IdentityRegistryBridgerProxy",
         "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
-        "address": "0x22be6fdcd3e29851b29b512f714c328a00a96b83"
+        "address": "0x22bE6fDcd3e29851B29b512F714C328A00A96B83"
       }
     ]
   },
@@ -521,7 +521,7 @@
       {
         "name": "IdentityRegistryBridgerProxy",
         "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
-        "address": "0x67722c823010ceb4bed5325fe109196c0f67d053"
+        "address": "0x67722c823010CEb4BED5325fE109196C0f67D053"
       }
     ]
   },
@@ -588,6 +588,16 @@
         "name": "SafeMultisigWithRecoveryModule",
         "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
         "address": "0x379451B13e4900C7005Bf57467770b2EE4e62a86"
+      },
+      {
+        "name": "IdentityRegistryBridger",
+        "artifact": "abis/0.8.30/IdentityRegistryBridger.json",
+        "address": "0x88943F63E29cd436B62cFfE332aD54De92AdCE98"
+      },
+      {
+        "name": "IdentityRegistryBridgerProxy",
+        "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
+        "address": "0x7fc0ddf4DFB61CfA5519db2A5eE7B2Eb02De0140"
       }
     ]
   },

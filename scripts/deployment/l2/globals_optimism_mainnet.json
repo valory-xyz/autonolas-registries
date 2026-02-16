@@ -4,7 +4,7 @@
   "derivationPath": "m/44'/60'/2'/0/0",
   "providerName": "optimism",
   "chainId": "10",
-  "networkURL": "https://optimism.drpc.org",
+  "networkURL": "https://1rpc.io/op",
   "blockscoutURL": "https://optimism.blockscout.com",
   "gasPriceInGwei": "2",
   "gnosisSafeAddress": "0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552",
