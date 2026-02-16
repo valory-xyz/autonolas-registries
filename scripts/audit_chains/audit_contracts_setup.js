@@ -135,7 +135,7 @@ async function findContractInstance(provider, configContracts, contractName) {
             let contractFromJSON = fs.readFileSync(configContracts[i]["artifact"], "utf8");
 
             // Additional step for the tokenomics proxy contract
-            if (contractName === "ServiceManagerProxy") {
+            if (contractName === "ServiceManagerProxy" || contractName === "IdentityRegistryBridgerProxy") {
                 // Get previous abi as it had ServiceManager implementation in it
                 contractFromJSON = fs.readFileSync(configContracts[i - 1]["artifact"], "utf8");
             }
@@ -320,6 +320,38 @@ async function checkServiceManagerProxy(chainId, provider, globalsInstance, conf
     // OperatorWhitelist
     const operatorWhitelist = await serviceManager.operatorWhitelist();
     customExpect(operatorWhitelist, globalsInstance["operatorWhitelistAddress"], log + ", function: operatorWhitelist()");
+
+    // Check identity registry bridger
+    const identityRegistryBridger = await serviceManager.identityRegistryBridger();
+    customExpect(identityRegistryBridger, globalsInstance["identityRegistryBridgerProxyAddress"], log + ", function: identityRegistryBridger()");
+}
+
+// Check identity registry bridger proxy: chain Id, provider, parsed globals, configuration contracts, contract name
+async function checkIdentityRegistryBridgerProxy(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    // Get the contract instance
+    const identityRegistryBridger = await findContractInstance(provider, configContracts, contractName);
+
+    // Check owner + record CSV
+    const ownerInfo = await checkOwner(chainId, identityRegistryBridger, globalsInstance, log);
+    recordOwnershipRow(chainId, contractName, identityRegistryBridger.address, ownerInfo);
+
+    log += ", address: " + identityRegistryBridger.address;
+
+    // Check service registry
+    const serviceRegistry = await identityRegistryBridger.serviceRegistry();
+    customExpect(serviceRegistry, globalsInstance["serviceRegistryAddress"], log + ", function: serviceRegistry()");
+
+    // Check service manager
+    const serviceManager = await identityRegistryBridger.serviceManager();
+    customExpect(serviceManager, globalsInstance["serviceManagerProxyAddress"],
+        log + ", function: serviceManager()");
+
+    // Check identity registry
+    const identityRegistry = await identityRegistryBridger.identityRegistry();
+    customExpect(identityRegistry, globalsInstance["identityRegistryAddress"], log + ", function: identityRegistry()");
 }
 
 // Check service registry token utility: chain Id, provider, parsed globals, configuration contracts, contract name
@@ -597,8 +629,7 @@ async function main() {
             "arbitrumOne": "scripts/deployment/l2/globals_arbitrum_mainnet.json",
             "optimism": "scripts/deployment/l2/globals_optimism_mainnet.json",
             "base": "scripts/deployment/l2/globals_base_mainnet.json",
-            "celo": "scripts/deployment/l2/globals_celo_mainnet.json",
-            "mode": "scripts/deployment/l2/globals_mode_mainnet.json"
+            "celo": "scripts/deployment/l2/globals_celo_mainnet.json"
         };
 
         const providerLinks = {
@@ -608,14 +639,18 @@ async function main() {
             "arbitrumOne": "https://arb1.arbitrum.io/rpc",
             "optimism": "https://optimism.drpc.org",
             "base": "https://mainnet.base.org",
-            "celo": "https://forno.celo.org",
-            "mode": "https://mainnet.mode.network"
+            "celo": "https://forno.celo.org"
         };
 
         // Get all the globals processed
         const globals = new Array();
         const providers = new Array();
         for (let i = 0; i < numChains; i++) {
+            // TODO Remove when mode is fully decommissioned
+            if (configs[i]["name"] === "mode") {
+                continue;
+            }
+
             const dataJSON = fs.readFileSync(globalNames[configs[i]["name"]], "utf8");
             globals.push(JSON.parse(dataJSON));
             const provider = new ethers.providers.JsonRpcProvider(providerLinks[configs[i]["name"]]);
@@ -625,6 +660,11 @@ async function main() {
         console.log("\nVerifying deployed contracts setup... If no error is output, then the contracts are correct.");
 
         for (let i = 0; i < numChains; i++) {
+            // TODO Remove when mode is fully decommissioned
+            if (configs[i]["name"] === "mode") {
+                continue;
+            }
+
             console.log("\n######## Verifying setup on CHAIN ID", configs[i]["chainId"]);
 
             const initLog = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"];
@@ -679,6 +719,9 @@ async function main() {
                 log = initLog + ", contract: " + "PolySafeCreatorWithRecoveryModule";
                 await checkPolySafeCreatorWithRecoveryModule(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "PolySafeCreatorWithRecoveryModule", log);
             }
+
+            log = initLog + ", contract: " + "IdentityRegistryBridgerProxy";
+            await checkIdentityRegistryBridgerProxy(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "IdentityRegistryBridgerProxy", log);
         }
 
         // Write CSV once at the end of setup verification

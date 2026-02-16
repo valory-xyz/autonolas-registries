@@ -41,5 +41,5 @@
   "complementaryServiceMetadataAddress": "0x28C1edC7CEd549F7f80B732fDC19f0370160707d",
   "agent8004BaseURI": "https://marketplace.olas.network/erc8004/base/ai-agents/",
   "identityRegistryBridgerAddress": "0xb0228CA253A88Bc8eb4ca70BCAC8f87b381f4700",
-  "identityRegistryBridgerProxyAddress": "0x67722c823010ceb4bed5325fe109196c0f67d053"
+  "identityRegistryBridgerProxyAddress": "0x67722c823010CEb4BED5325fE109196C0f67D053"
 }
