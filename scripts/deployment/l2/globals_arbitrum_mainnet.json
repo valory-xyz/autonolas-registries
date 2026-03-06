@@ -2,7 +2,7 @@
   "contractVerification": true,
   "useLedger": true,
   "derivationPath": "m/44'/60'/2'/0/0",
-  "providerName": "arbitrumOne",
+  "providerName": "arbitrum",
   "chainId": "42161",
   "networkURL": "https://arb1.arbitrum.io/rpc",
   "gasPriceInGwei": "2",
@@ -39,5 +39,6 @@
   "serviceManagerProxyAddress": "0xD421f433e36465B3e558B1121F584ac09Fc33DF8",
   "agent8004BaseURI": "https://marketplace.olas.network/erc8004/arbitrum-one/ai-agents/",
   "identityRegistryBridgerAddress": "0x379451B13e4900C7005Bf57467770b2EE4e62a86",
-  "identityRegistryBridgerProxyAddress": "0x22bE6fDcd3e29851B29b512F714C328A00A96B83"
+  "identityRegistryBridgerProxyAddress": "0x22bE6fDcd3e29851B29b512F714C328A00A96B83",
+  "complementaryServiceMetadataAddress": "0x02C26437B292D86c5F4F21bbCcE0771948274f84"
 }

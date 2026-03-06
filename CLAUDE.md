@@ -197,7 +197,7 @@ Both Hardhat and Foundry are configured identically for compilation.
 
 The protocol is deployed across multiple chains. See `docs/configuration.json` for addresses. Network configurations in `hardhat.config.js` include:
 
-**Mainnets:** ethereum, polygon, gnosis, arbitrumOne, optimism, base, celo, mode
+**Mainnets:** ethereum, polygon, gnosis, arbitrum, optimism, base, celo, mode
 **Testnets:** sepolia, polygonAmoy, chiado, arbitrumSepolia, optimismSepolia, baseSepolia, celoAlfajores, modeSepolia
 
 ### Important Constraints

@@ -278,7 +278,7 @@
     ]
   },
   {
-    "name": "arbitrumOne",
+    "name": "arbitrum",
     "chainId": "42161",
     "contracts": [
       {
@@ -340,6 +340,11 @@
         "name": "SafeMultisigWithRecoveryModule",
         "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
         "address": "0x17B2198872216D8469AdeBC1227D0d4824940821"
+      },
+      {
+        "name": "ComplementaryServiceMetadata",
+        "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
+        "address": "0x02C26437B292D86c5F4F21bbCcE0771948274f84"
       },
       {
         "name": "IdentityRegistryBridger",
@@ -588,6 +593,11 @@
         "name": "SafeMultisigWithRecoveryModule",
         "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
         "address": "0x379451B13e4900C7005Bf57467770b2EE4e62a86"
+      },
+      {
+        "name": "ComplementaryServiceMetadata",
+        "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
+        "address": "0xc096362fa6f4A4B1a9ea68b1043416f3381ce300"
       },
       {
         "name": "IdentityRegistryBridger",

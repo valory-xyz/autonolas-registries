@@ -57,7 +57,7 @@ module.exports = {
             accounts: accounts,
             chainId: 100,
         },
-        arbitrumOne: {
+        arbitrum: {
             url: "https://arb1.arbitrum.io/rpc",
             accounts: accounts,
             chainId: 42161,
@@ -229,7 +229,7 @@ module.exports = {
             mainnet: ETHERSCAN_API_KEY,
             polygon: POLYGONSCAN_API_KEY,
             gnosis: GNOSISSCAN_API_KEY,
-            arbitrumOne: ARBISCAN_API_KEY,
+            arbitrum: ARBISCAN_API_KEY,
             optimism: OPSCAN_API_KEY,
             base: BASESCAN_API_KEY,
             celo: CELOSCAN_API_KEY,

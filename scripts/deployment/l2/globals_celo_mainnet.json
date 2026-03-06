@@ -45,5 +45,6 @@
   "agent8004BaseURI": "https://marketplace.olas.network/erc8004/celo/ai-agents/",
   "newStakingTokenAddress": "0xd2ff4Cf0927c3cFbF3BB27391044dBaf6f4ca7b9",
   "identityRegistryBridgerAddress": "0x88943F63E29cd436B62cFfE332aD54De92AdCE98",
-  "identityRegistryBridgerProxyAddress": "0x7fc0ddf4DFB61CfA5519db2A5eE7B2Eb02De0140"
+  "identityRegistryBridgerProxyAddress": "0x7fc0ddf4DFB61CfA5519db2A5eE7B2Eb02De0140",
+  "complementaryServiceMetadataAddress": "0xc096362fa6f4A4B1a9ea68b1043416f3381ce300"
 }
