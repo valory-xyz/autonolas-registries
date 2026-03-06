@@ -626,7 +626,7 @@ async function main() {
             "mainnet": "scripts/deployment/globals_mainnet.json",
             "polygon": "scripts/deployment/l2/globals_polygon_mainnet.json",
             "gnosis": "scripts/deployment/l2/globals_gnosis_mainnet.json",
-            "arbitrumOne": "scripts/deployment/l2/globals_arbitrum_mainnet.json",
+            "arbitrum": "scripts/deployment/l2/globals_arbitrum_mainnet.json",
             "optimism": "scripts/deployment/l2/globals_optimism_mainnet.json",
             "base": "scripts/deployment/l2/globals_base_mainnet.json",
             "celo": "scripts/deployment/l2/globals_celo_mainnet.json"
@@ -636,7 +636,7 @@ async function main() {
             "mainnet": "https://eth-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MAINNET,
             "polygon": "https://polygon-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY_MATIC,
             "gnosis": "https://rpc.gnosischain.com",
-            "arbitrumOne": "https://arb1.arbitrum.io/rpc",
+            "arbitrum": "https://arb1.arbitrum.io/rpc",
             "optimism": "https://optimism.drpc.org",
             "base": "https://mainnet.base.org",
             "celo": "https://forno.celo.org"
