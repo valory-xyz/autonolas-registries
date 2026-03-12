@@ -25,6 +25,16 @@ Key terminology (see docs/definitions.md for details):
 
 When reading code, documentation, or contract names, use the smart contract terminology. When discussing the user-facing application, use the marketplace terminology.
 
+## Setup
+
+The project uses git submodules (`lib/forge-std`, `lib/solmate`). Clone with `git clone --recursive` or run `git submodule update --init --recursive` after cloning.
+
+```bash
+yarn install
+```
+
+Confirmed to work with Yarn 1.22.19, npm/npx 10.1.0, Node v18.17.0.
+
 ## Common Development Commands
 
 ### Build and Compile
@@ -46,8 +56,7 @@ yarn test
 # Run specific test file
 npx hardhat test test/ServiceRegistry.js
 
-# Run with gas reporter
-yarn test  # (gas reporter enabled by default in config)
+# Gas reporter is enabled by default in hardhat config
 ```
 
 #### Forge Tests (Solidity)
@@ -60,6 +69,7 @@ forge test --match-contract PolySafeCreator -vvv
 
 # Run fork tests (requires FORK_NODE_URL env var)
 forge test -f $FORK_NODE_URL --match-contract IdentityRegistry -vvv
+forge test -f $FORK_NODE_URL --match-contract StakePolySafe -vvv
 ```
 
 ### Coverage
@@ -90,6 +100,12 @@ scribble contracts/scribble/ServiceRegistryAnnotated.sol --disarm
 
 # Or use the convenience script
 ./scripts/scribble.sh scribble/ServiceRegistryAnnotated.sol
+```
+
+### Docker (Local Development)
+```bash
+docker build . -t valory/autonolas-registries
+docker run -it -d -p 8545:8545 --name chain valory/autonolas-registries
 ```
 
 ### Deployment and Network Operations
@@ -208,17 +224,36 @@ The protocol is deployed across multiple chains. See `docs/configuration.json` f
 - Reentrancy protection uses a simple `_locked` variable pattern
 - Maximum unit IDs are bounded by `uint32` (~4.2 billion)
 
+### Recovery Module & Fund Recovery
+
+When an Agent EOA private key is lost, the `RecoveryModule` contract allows the service owner (Master Safe) to regain sole ownership of the Agent Safe. The full recovery script is at `scripts/recover_funds_lost_agent_eoa.py` with detailed documentation in `docs/recover_funds_lost_agent_eoa.md`.
+
+**Recovery flow**: unstake (if staked) -> terminate -> unbond -> `recoveryModule.recoverAccess(serviceId)` -> sweep funds via MultiSend.
+
+Key contracts involved:
+- `contracts/multisigs/RecoveryModule.sol`: `recoverAccess(serviceId)` removes all Agent Safe owners and makes the service owner the sole owner
+- `contracts/multisigs/SafeMultisigWithRecoveryModule.sol`: Creates Safe proxies with the RecoveryModule pre-enabled
+- `contracts/staking/StakingBase.sol`: `unstake(serviceId)` returns service NFT to the owner. `getServiceInfo(serviceId)` exposes the actual service owner when staked.
+
+The recovery script uses Safe v=1 (sender-approved) signatures where Master Safe is both msg.sender and the sole owner. Forge tests covering all recovery scenarios are in `test/RecoverFunds.t.sol`.
+
 ## Key Files and Locations
 
 - **Contracts:** `contracts/`
 - **Tests:** `test/` (JavaScript with Hardhat), `test/*.t.sol` (Solidity with Forge)
 - **Deployment scripts:** `scripts/deployment/`
+- **Recovery script:** `scripts/recover_funds_lost_agent_eoa.py` (see `docs/recover_funds_lost_agent_eoa.md`)
 - **ABIs:** `abis/` (organized by Solidity version)
 - **Documentation:** `docs/`
+- **Contract addresses per chain:** `docs/configuration.json`
 - **Solana integration:** `integrations/solana/`
 
 ## Development Notes
 
+- When using `web3.py` with Polygon (or other POA chains), inject `geth_poa_middleware` before making calls — Polygon blocks have >32 byte `extraData` which causes `ExtraDataLengthError` without it
+- When encoding calldata for Safe transactions (without sending), use `contract.functions.func(args)._encode_transaction_data()` instead of `build_transaction()["data"]` to avoid unnecessary gas estimation RPC calls that may revert (e.g., MultiSend enforces delegatecall-only)
+- Gnosis Safe v1.3.0 signature types: `v=27/28` for ECDSA, `v=0` for contract signature, `v=1` for sender-approved (msg.sender is owner, no actual signature needed — `r=address padded to 32 bytes, s=0, v=1`)
+- `StakingBase.stake` has two overloads (`stake(uint256)` and `stake(uint256,uint256)`), so `StakingBase.stake.selector` is ambiguous in Solidity. Use `bytes4(keccak256("stake(uint256)"))` instead. Same applies to other overloaded functions.
 - The `manager` role (not `owner`) typically calls `create()` functions on registries
 - Service ownership transfers happen during deployment (service owner gives up multisig ownership to agent instances)
 - When working with service registration, always verify the state machine constraints
