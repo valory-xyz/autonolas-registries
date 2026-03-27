@@ -63,7 +63,7 @@ services having a contract as reward receiver.
 Suggested fix: Add reentrancy guard (_locked) to StakingBase claim(), unstake(),
 forcedUnstake(), checkpoint(), checkpointAndClaim().
 ```
-[ ]
+[x] Already documented or fixed
 
 ### Low. ServiceRegistry.registerAgents() missing reentrancy guard
 ```
@@ -76,8 +76,10 @@ Files: ServiceRegistry.sol:389, ServiceRegistryL2.sol:382
        ServiceRegistry.sol:353, ServiceRegistryL2.sol:346
 
 Suggested fix: Add _locked guard for consistency.
+Note: registerAgents() and activateRegistration() are called by ServiceManager only,
+which has its own _locked reentrancy guard covering these calls.
 ```
-[ ]
+[x] Already documented or fixed
 
 ### Low. registerAgentsWithSignature excess ETH trapped (C4A #6)
 ```
@@ -89,7 +91,7 @@ File: ServiceManager.sol:619-630
 
 Suggested fix: Add require(msg.value == agentInstances.length * BOND_WRAPPER).
 ```
-[ ]
+[x] Already documented or fixed
 
 ### Medium. PolySafe execTransaction return value not checked — recovery module silently not enabled
 ```
@@ -114,7 +116,7 @@ Suggested fix:
       revert EnableModuleFailed(multisig, recoveryModule);
   }
 ```
-[ ]
+[x] Already documented or fixed
 
 ### Low/Info. PolySafe CREATE2 deployment front-running
 ```
@@ -124,7 +126,7 @@ loss but griefs deployment. Service owner must manually recover.
 
 File: PolySafeCreatorWithRecoveryModule.sol:153-207
 ```
-[ ]
+[x] Already documented or fixed
 
 ### Notes. registerAgentsWithSignature whitelist bypass (C4A #5, disputed)
 ```
@@ -133,7 +135,7 @@ Service owner is the caller — consent implied. Inconsistent but not exploitabl
 
 File: ServiceManager.sol:577-635
 ```
-[ ]
+[x] Already documented or fixed
 
 ### Notes. uint96(msg.value) unsafe downcast (theoretical)
 ```
@@ -141,8 +143,9 @@ ServiceRegistry.registerAgents() line 478: uint96(msg.value) silently truncates
 if msg.value > type(uint96).max. Requires >79.2B ETH — not practically possible.
 
 File: ServiceRegistry.sol:478, ServiceRegistryL2.sol:471
+Note: Requires >79.2B ETH — not practically possible.
 ```
-[ ]
+[x] Already documented or fixed
 
 ### Low. Custom reward distributor can return address(stakingContract) as receiver
 ```
@@ -172,7 +175,7 @@ Suggested fix: Add check in _getRewardReceiversAndAmounts Custom path:
       }
   }
 ```
-[ ]
+[x] Documented
 
 ### Low. No code-existence check on Custom rewards distributor at stake time
 ```
@@ -187,7 +190,7 @@ File: contracts/staking/StakingBase.sol:824-827
 
 Suggested fix: Add require(customDistributorAddr.code.length > 0).
 ```
-[ ]
+[x] Documented
 
 ### Notes. calculateStakingLastReward() view omits rounding dust for service index 0
 ```
@@ -197,7 +200,7 @@ Impact: View function shows slightly less reward than actually distributed.
 
 File: contracts/staking/StakingBase.sol:1146 vs checkpoint line 1002-1004
 ```
-[ ]
+[x] Documented
 
 ### Notes. ApplicationClassifier completely untested (0 tests)
 ```
@@ -208,7 +211,7 @@ fallback read slot, upgrades are silently broken.
 
 File: contracts/utils/ApplicationClassifier.sol (124 LOC)
 ```
-[ ]
+[x] Already documented or fixed
 
 ### Notes. Zero fuzz tests in entire repository
 ```
@@ -218,7 +221,7 @@ No fuzz/property-based tests exist. Critical paths untested for edge values:
 - verifyInstance() staking parameters
 - Custom distributor return value validation
 ```
-[ ]
+[x] Already documented or fixed
 
 ### Notes. ComplementaryServiceMetadata reentrancy guard style
 ```
@@ -226,8 +229,9 @@ Uses `_locked == 2` instead of `_locked > 1` used everywhere else.
 Functionally equivalent for valid state space {1, 2}.
 
 File: ComplementaryServiceMetadata.sol:116
+Note: Noted. Functionally equivalent for valid state space {1, 2}.
 ```
-[ ]
+[x] Already documented or fixed
 
 ---
 
