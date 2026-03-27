@@ -63,7 +63,7 @@ services having a contract as reward receiver.
 Suggested fix: Add reentrancy guard (_locked) to StakingBase claim(), unstake(),
 forcedUnstake(), checkpoint(), checkpointAndClaim().
 ```
-[x] Already documented or fixed
+[x] Documented
 
 ### Low. ServiceRegistry.registerAgents() missing reentrancy guard
 ```
@@ -79,7 +79,7 @@ Suggested fix: Add _locked guard for consistency.
 Note: registerAgents() and activateRegistration() are called by ServiceManager only,
 which has its own _locked reentrancy guard covering these calls.
 ```
-[x] Already documented or fixed
+[x] Documented
 
 ### Low. registerAgentsWithSignature excess ETH trapped (C4A #6)
 ```
@@ -91,7 +91,7 @@ File: ServiceManager.sol:619-630
 
 Suggested fix: Add require(msg.value == agentInstances.length * BOND_WRAPPER).
 ```
-[x] Already documented or fixed
+[x] Documented
 
 ### Medium. PolySafe execTransaction return value not checked — recovery module silently not enabled
 ```
@@ -126,7 +126,7 @@ loss but griefs deployment. Service owner must manually recover.
 
 File: PolySafeCreatorWithRecoveryModule.sol:153-207
 ```
-[x] Already documented or fixed
+[x] Documented
 
 ### Notes. registerAgentsWithSignature whitelist bypass (C4A #5, disputed)
 ```
@@ -135,7 +135,7 @@ Service owner is the caller — consent implied. Inconsistent but not exploitabl
 
 File: ServiceManager.sol:577-635
 ```
-[x] Already documented or fixed
+[x] Documented
 
 ### Notes. uint96(msg.value) unsafe downcast (theoretical)
 ```
@@ -145,7 +145,7 @@ if msg.value > type(uint96).max. Requires >79.2B ETH — not practically possibl
 File: ServiceRegistry.sol:478, ServiceRegistryL2.sol:471
 Note: Requires >79.2B ETH — not practically possible.
 ```
-[x] Already documented or fixed
+[x] Noted, called by ServiceManager that has reentrancy check
 
 ### Low. Custom reward distributor can return address(stakingContract) as receiver
 ```
@@ -211,7 +211,7 @@ fallback read slot, upgrades are silently broken.
 
 File: contracts/utils/ApplicationClassifier.sol (124 LOC)
 ```
-[x] Already documented or fixed
+[x] Fixed — test/ApplicationClassifier.js (21 tests covering all 5 functions, proxy slot verification)
 
 ### Notes. Zero fuzz tests in entire repository
 ```
@@ -221,7 +221,7 @@ No fuzz/property-based tests exist. Critical paths untested for edge values:
 - verifyInstance() staking parameters
 - Custom distributor return value validation
 ```
-[x] Already documented or fixed
+[x] Fixed — test/StakingFuzz.t.sol (5 fuzz tests: rewardDistributionInfo bit-packing, checkpoint reward bounds, proportional scaling, multi-epoch accumulation, valid distribution types)
 
 ### Notes. ComplementaryServiceMetadata reentrancy guard style
 ```
@@ -231,7 +231,7 @@ Functionally equivalent for valid state space {1, 2}.
 File: ComplementaryServiceMetadata.sol:116
 Note: Noted. Functionally equivalent for valid state space {1, 2}.
 ```
-[x] Already documented or fixed
+[x] Noted
 
 ---
 
@@ -366,7 +366,7 @@ No vulnerability: recovery requires PreRegistration state (all agents unbonded),
 
 ### Coverage Gaps Identified
 
-1. **NO fuzz tests.** Zero `fuzz` or `invariant` keywords in test directory. All tests use hardcoded values.
+1. **Fuzz tests added.** See test/ServiceStaking.t.sol (nonce fuzzing) and test/StakingFuzz.t.sol (reward calculation, bit-packing, proportional scaling).
 
 2. **Item 253 (alternative paths):** The forcedUnstake path IS tested, but the cross-service claim reentrancy path (our Low finding) is NOT tested -- the ReentrancyStakingAttacker only attempts same-service reentrancy via onERC721Received and single-service claim reentrancy via receive(). It does NOT test the cross-service `_withdraw()` scenario we identified.
 
@@ -459,4 +459,4 @@ The only risk scenario is the cross-service reentrancy in `_withdraw()` (our Low
 - All 32 production contracts reviewed across 4 audit streams
 - Cross-contract interaction chains traced: 3 chains verified
 - Key invariants verified: 5/5 hold
-- Test coverage analyzed: no fuzz tests, cross-service reentrancy untested
+- Test coverage analyzed: fuzz tests added (StakingFuzz.t.sol), ApplicationClassifier tests added, cross-service reentrancy untested
