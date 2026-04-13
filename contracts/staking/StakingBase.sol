@@ -1109,15 +1109,15 @@ abstract contract StakingBase is ERC721TokenReceiver {
     }
 
     /// @dev Checkpoint to allocate rewards up until a current time.
-    /// @return Staking service Ids (excluding evicted ones within a current epoch).
-    /// @return Set of reward-eligible service Ids.
-    /// @return Corresponding set of reward-eligible service rewards.
-    /// @return Evicted service Ids.
+    /// @return serviceIds Staking service Ids (excluding evicted ones within a current epoch).
+    /// @return finalEligibleServiceIds Set of reward-eligible service Ids.
+    /// @return finalEligibleServiceRewards Corresponding set of reward-eligible service rewards.
+    /// @return evictServiceIds Evicted service Ids.
     function checkpoint() external returns (
-        uint256[] memory,
-        uint256[] memory,
-        uint256[] memory,
-        uint256[] memory
+        uint256[] memory serviceIds,
+        uint256[] memory finalEligibleServiceIds,
+        uint256[] memory finalEligibleServiceRewards,
+        uint256[] memory evictServiceIds
     ) {
         // Reentrancy guard
         if (_locked > 1) {
@@ -1125,12 +1125,9 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
         _locked = 2;
 
-        (uint256[] memory serviceIds, uint256[] memory finalEligibleServiceIds,
-            uint256[] memory finalEligibleServiceRewards, uint256[] memory evictServiceIds) = _checkpoint();
+        (serviceIds, finalEligibleServiceIds, finalEligibleServiceRewards, evictServiceIds) = _checkpoint();
 
         _locked = 1;
-
-        return (serviceIds, finalEligibleServiceIds, finalEligibleServiceRewards, evictServiceIds);
     }
 
     /// @dev Stakes service with default reward distribution type: Proportional.
