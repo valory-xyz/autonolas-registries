@@ -565,6 +565,7 @@ contracts, which is easy to do considering reward deposits are permissionless.
 ### 22. `_withdraw` function reentrancy in StakingBase
 
 **Severity**: Low
+**Source**: Code4rena 2026-01 Olas audit (submission #S-229)
 
 The following function is implemented in the StakingBase contract:
 
