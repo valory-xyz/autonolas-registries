@@ -13,7 +13,7 @@ N/A
 ```
 sol2uml storage contracts/ -f png -c ServiceManager -o audits/internal14/ServiceManager.png
 ```
-[ServiceManager](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal14/ServiceManager.png)
+[ServiceManager](./ServiceManager.png)
 
 ### Coverage
 ```

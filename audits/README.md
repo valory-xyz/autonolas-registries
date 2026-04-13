@@ -43,6 +43,8 @@ contracts is located in this folder: [internal audit 13](https://github.com/valo
 An internal audit with a focus on next update of ERC-8004 bridge (IdentityRegistryBridger)
 contracts is located in this folder: [internal audit 14](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal14).
 
+Full internal audit. Verify all C4A findings fixed. Identify new vulnerabilities: [internal audit 15](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal15).
+
 ### External audit
 
 Following the initial contracts [audit report](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/Valory%20Review%20Final.pdf),
