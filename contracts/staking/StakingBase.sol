@@ -671,6 +671,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     ) internal view virtual returns (address[] memory receivers, uint256[] memory amounts) {
         // Get reward distribution info: rewardDistributionType and customRewardsDistributor address, if required
         // rewardDistributionType is extracted from first 8 bits
+        // Safe: sInfo.rewardDistributionInfo can only be set via _stake, which validates the enum range.
         RewardDistributionType rewardDistributionType = RewardDistributionType(uint8(rewardDistributionInfo));
 
         // Check reward distribution type
@@ -836,6 +837,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
         // Set reward distribution info: rewardDistributionType and customRewardsDistributor address, if required
         // rewardDistributionType takes first 8 bits
+        // Solidity reverts with Panic(0x21) if uint8(rewardDistributionInfo) is outside the enum range,
+        // gating every downstream read of sInfo.rewardDistributionInfo (no other write path exists).
         RewardDistributionType rewardDistributionType = RewardDistributionType(uint8(rewardDistributionInfo));
         // Check reward distribution type
         if (rewardDistributionType == RewardDistributionType.Custom) {
