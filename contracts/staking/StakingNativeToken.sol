@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.30;
 
-import {StakingBase} from "./StakingBase.sol";
+import {StakingBase, ReentrancyGuard} from "./StakingBase.sol";
 
 /// @dev Failure of a transfer.
 /// @param token Address of a token.
@@ -33,6 +33,12 @@ contract StakingNativeToken is StakingBase {
     }
 
     receive() external payable {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Add to the contract and available rewards balances
         uint256 newBalance = balance + msg.value;
         uint256 newAvailableRewards = availableRewards + msg.value;
@@ -42,5 +48,7 @@ contract StakingNativeToken is StakingBase {
         availableRewards = newAvailableRewards;
 
         emit Deposit(msg.sender, msg.value, newBalance, newAvailableRewards);
+
+        _locked = 1;
     }
 }
