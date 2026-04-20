@@ -18,10 +18,10 @@
 
 | # | Stream | LOC | Result |
 |---|--------|:---:|--------|
-| A | `StakingBase.sol` — reentrancy guard + receiver validation + code-existence check | 126 delta | 1 Low (latent), 3 Notes |
-| B | `StakingNativeToken.sol` / `StakingToken.sol` — derivatives review | 0 delta | 1 Low (latent, same issue as Stream A — residual lock gap) |
+| A | `StakingBase.sol` — reentrancy guard + receiver validation + code-existence check | 126 delta | 3 Notes |
+| B | `StakingNativeToken.sol` / `StakingToken.sol` — derivatives lock extension (receive/deposit) | +12 delta | 0 findings (residual lock gap closed) |
 | C | `StakingProxy.sol` — storage-layout / upgrade-compat review | 0 delta | 0 findings (no upgrade path; new slot is safe) |
-| D | `test/StakingSecurityFixes.t.sol` + `test/StakingBaseCoverage.t.sol` + `test/StakingFuzz.t.sol` — coverage of the hardening | +1837 LOC | Verified: lock + distributor checks exercised; nested-deposit reentrancy case not exercised |
+| D | `test/StakingSecurityFixes.t.sol` + `test/StakingBaseCoverage.t.sol` + `test/StakingFuzz.t.sol` + `test/StakingDerivativeReentrancy.t.sol` — coverage of the hardening | +1837 + 260 LOC | Verified: lock + distributor checks + nested receive/deposit reentry all exercised |
 
 All other staking contracts (`StakingFactory`, `StakingVerifier`, `StakingActivityChecker`) are byte-identical to `main` and out of delta scope.
 
@@ -43,7 +43,7 @@ All other staking contracts (`StakingFactory`, `StakingVerifier`, `StakingActivi
 | C4R S-901 | `registerAgents` agent instance DoS | ACCEPTED (gas-costly, permissionless) | ACCEPTED | Unchanged |
 | C4R S-885 | `slash` + proportional reward split | INFO, accepted | ACCEPTED | Unchanged |
 | C4R S-763 | `checkpoint` during absence of rewards | INFO, accepted (wei-level top-up mitigation) | ACCEPTED | Unchanged |
-| C4R S-1187 | Token callback reentrancy broader path | PARTIAL (ServiceManager only) | **FIXED** for StakingBase | Same `_locked` guard closes the StakingBase portion |
+| C4R S-1187 | Token callback reentrancy broader path | PARTIAL (ServiceManager only) | **FIXED** for StakingBase + derivatives | Same `_locked` guard closes the StakingBase portion; derivative `receive()` / `deposit()` now also lock-guarded |
 
 ### Internal15 findings against staking
 
@@ -63,24 +63,30 @@ All other staking contracts (`StakingFactory`, `StakingVerifier`, `StakingActivi
 
 ## Security Issues
 
-### Low (latent). `receive()` and `deposit()` on StakingBase derivatives bypass the contract-wide lock
+### FIXED. `receive()` and `deposit()` on StakingBase derivatives now under the contract-wide lock
 
 ```
-The contract-wide `_locked` guard added by this branch protects the seven
-external state-changing entry points on StakingBase itself (checkpoint, stake×2,
-unstake, forcedUnstake, claim, checkpointAndClaim). It does NOT cover two
-entry points defined on the derivatives:
+Originally open as a Low (latent) finding in this audit. Fixed on-branch by
+extending the `_locked` guard to the two derivative entry points that write to
+`balance` / `availableRewards`.
+
+Background — why this mattered:
+
+The contract-wide `_locked` guard protects the seven external state-changing
+entry points on StakingBase itself (checkpoint, stake×2, unstake, forcedUnstake,
+claim, checkpointAndClaim). It did NOT initially cover two entry points defined
+on the derivatives:
 
   - StakingNativeToken.receive() — increments `balance` and `availableRewards`
-    on incoming ETH (StakingNativeToken.sol:35-45).
+    on incoming ETH.
   - StakingToken.deposit(uint256) — increments `balance` and `availableRewards`,
-    then pulls ERC20 via safeTransferFrom (StakingToken.sol:109-122).
+    then pulls ERC20 via safeTransferFrom.
 
-Neither of these is a reentrancy *source* in normal usage, but both directly
-WRITE to the `balance` storage slot — the same slot that `_withdraw()` caches
-into a local variable (StakingBase.sol:957 `uint256 updatedBalance = balance`).
+Neither is a reentrancy *source* in normal usage, but both directly WRITE to
+the `balance` storage slot — the same slot that `_withdraw()` caches into a
+local variable (StakingBase.sol:957 `uint256 updatedBalance = balance`).
 
-Attack sketch (StakingNativeToken):
+Attack sketch (StakingNativeToken, pre-fix):
 
 1. Attacker owns service A with RewardDistributionType.Custom and a distributor
    that points the first receiver at an attacker-controlled contract.
@@ -99,44 +105,22 @@ Attack sketch (StakingNativeToken):
      balance = updatedBalance;            // ≈ B - Σ amounts
    This OVERWRITES the nested `balance = B + Y` from step 3. The Y wei is no
    longer tracked in `balance`.
-5. Post-attack invariants:
+
+Post-attack invariants (pre-fix):
      Actual contract ETH: B + Y - Σ amounts  (Y orphaned in contract)
      `balance` storage:   B - Σ amounts      (Y less than actual)
      `availableRewards`:  A + Y              (Y more than expected)
 
-Consequences: `availableRewards` now exceeds `balance` by Y. Future claim
-attempts that try to pay from `balance` can underflow `updatedBalance -= amount`
-on a subsequent _withdraw → DoS of future honest claims.
+Consequences (pre-fix): `availableRewards` now exceeds `balance` by Y; future
+claim attempts that try to pay from `balance` can underflow
+`updatedBalance -= amount` on a subsequent _withdraw → DoS of future honest
+claims. Attacker self-griefs (loses Y ETH, no drain/rescue function exists).
 
-The attacker LOSES the Y ETH — it becomes permanently orphaned because no
-drain/rescue function exists. This is a self-griefing / DoS vector, not a
-profit vector.
+Fix applied:
 
-File: contracts/staking/StakingNativeToken.sol:35-45 (unlocked receive)
-File: contracts/staking/StakingToken.sol:109-122 (unlocked deposit)
-File: contracts/staking/StakingBase.sol:955-974 (_withdraw's balance-cache
-      pattern that the attack exploits)
-
-Exploitability today: NONE in production.
-  - StakingNativeToken has no active proxies on any supported chain
-    (confirmed by internal15 Stream A deployed-state check).
-  - StakingToken's deposit() variant requires an ERC20 with a transfer hook
-    (ERC777 / ERC1363). OLAS is a standard ERC20 with no hooks, so
-    SafeTransferLib.safeTransfer never yields control to the receiver, and
-    the nested deposit() call cannot be injected from within _transfer().
-
-Severity: Low (latent). The underlying defect is exactly the class of issue
-this hardening branch set out to close — the lock is a control-flow guard
-only, not a mutex on the `balance` storage slot. Upgrade to Medium if
-StakingNativeToken is ever re-activated for production use, or if a
-hook-carrying token is adopted as a staking token.
-
-Suggested fix: extend the lock to the two derivative entry points. Preferred
-option (symmetrical with the existing hardening):
-
-  // StakingNativeToken.sol
+  // contracts/staking/StakingNativeToken.sol:35-53
   receive() external payable {
-      if (_locked > 1) revert ReentrancyGuard();
+      if (_locked > 1) { revert ReentrancyGuard(); }
       _locked = 2;
       uint256 newBalance = balance + msg.value;
       uint256 newAvailableRewards = availableRewards + msg.value;
@@ -146,25 +130,57 @@ option (symmetrical with the existing hardening):
       _locked = 1;
   }
 
-  // StakingToken.sol — analogous change to deposit(uint256)
+  // contracts/staking/StakingToken.sol:109-130 — analogous change to deposit()
 
-Both `_locked` and `ReentrancyGuard` are already visible from the derivatives:
-_locked is `internal`, ReentrancyGuard is a file-scope error in StakingBase.sol.
-No visibility change required; ≤20 LOC total.
+Both `_locked` and `ReentrancyGuard` are already visible from the derivatives
+(`_locked` is `internal`; `ReentrancyGuard` is a file-scope error in
+StakingBase.sol re-imported via `import {StakingBase, ReentrancyGuard}`).
+Total delta: +12 LOC across both derivatives.
 
-Alternative option: move the `balance` write inside `_withdraw()` into the
-per-iteration body (re-read / re-write per receiver instead of caching into
-a local). Smaller conceptual change but costs extra SLOAD per iteration.
+Verification:
 
-Test coverage: the existing ReentrancyStakingAttacker helper only exercises
-reentry via `checkpointAndClaim` and `unstake` (both of which are now locked).
-It does not attempt the `receive{value}` nested-deposit variant described
-above. A dedicated foundry test that asserts (a) the attack reverts with
-ReentrancyGuard after the fix, or (b) explicitly demonstrates the desync
-without the fix, would close the coverage gap.
+  - Control-flow: a nested call to `receive{value}` / `deposit(amount)` issued
+    from within a locked outer flow (_withdraw → _transfer → attacker.receive)
+    sees `_locked == 2` and reverts with `ReentrancyGuard()`. The low-level ETH
+    `.call{value}` in `_transfer` returns `success = false` on the revert,
+    which surfaces to the outer flow as `TransferFailed` and unwinds the whole
+    claim — no state corruption, no orphaned balance, no desync.
+  - Forward-flow: a legitimate external deposit (no outer flow) sees `_locked
+    ∈ {0, 1}` (0 on a fresh proxy, 1 on a post-initialized one — both < 2),
+    sets `_locked = 2`, applies the writes, sets `_locked = 1`. Unchanged
+    observable behaviour for honest users.
+
+Test coverage (added in this branch):
+
+  - test/StakingDerivativeReentrancy.t.sol:
+    - test_Reentrancy_NestedReceive_Reverts: attacker.receive() re-enters
+      stakingNativeToken via {value: Y} — reverts because the outer lock is
+      held during _withdraw.
+    - test_Reentrancy_NestedDeposit_Reverts: attacker.receive() re-enters
+      stakingToken.deposit(amount) — reverts for the same reason.
+    - test_Receive_LegitimateDepositSucceeds / test_Deposit_LegitimateDepositSucceeds:
+      confirm the added lock does not break the happy path.
+    - test_Receive_NestedCallDuringDepositReverts /
+      test_Deposit_NestedCallDuringDepositReverts: a hook-carrying deposit
+      cannot re-enter receive()/deposit() either (full class closed).
+
+File: contracts/staking/StakingNativeToken.sol:35-53 (locked receive)
+File: contracts/staking/StakingToken.sol:109-130 (locked deposit)
+File: contracts/staking/StakingBase.sol:955-974 (_withdraw's balance-cache
+      pattern — no longer reachable from a state-mutating nested callback)
+
+Exploitability on pre-fix code: NONE in production.
+  - StakingNativeToken has no active proxies on any supported chain
+    (confirmed by internal15 Stream A deployed-state check).
+  - StakingToken's deposit() attack path requires an ERC20 with a transfer hook
+    (ERC777 / ERC1363). OLAS is a standard ERC20 with no hooks, so
+    SafeTransferLib.safeTransfer never yields control to the receiver.
+
+With this fix, exploitability is also eliminated on any future deployment,
+including reactivation of StakingNativeToken or adoption of a hook-carrying
+staking token.
 ```
-[ ] Open — recommend fixing in this branch before merge, or tracking as
-    must-fix before any StakingNativeToken reactivation.
+[x] Fixed — closed on this branch alongside the §A.1 hardening.
 
 ### Notes. `_locked` inline initializer is a no-op in proxy clones
 
@@ -219,27 +235,23 @@ codebase.
 ```
 [x] Noted — stylistic
 
-### Notes. `_withdraw` comment about "balance ≥ sum of amounts" is conditional
+### Notes. `_withdraw` comment about "balance ≥ sum of amounts" — now unconditionally accurate
 
 ```
 contracts/staking/StakingBase.sol:952-953:
   /// @notice The balance is always greater or equal the sum of amounts,
   ///         as follows from the contract logic.
 
-This assertion holds for flows controlled entirely by StakingBase's seven
-locked externals. It does NOT hold under the §"Low (latent)" scenario above,
-where a nested `receive{value}` / `deposit()` call during _withdraw can
-transiently desync `balance` below actual ETH holdings.
-
-If the Low finding above is fixed (lock extended to receive/deposit), this
-comment becomes fully accurate. If the Low finding is left as-is, the comment
-should be weakened to:
-  /// @notice The balance is greater or equal the sum of amounts for the
-  ///         flow controlled by this contract's locked entry points.
+With the derivative locks in place (§A.5 below), this assertion holds for
+every reachable flow: the seven StakingBase entry points plus the two
+derivative entry points (`receive` / `deposit`) all serialize through the
+same `_locked` slot. No nested callback can write to `balance` while
+`_withdraw` is iterating → the cached local and the final SSTORE are always
+consistent with actual holdings.
 
 File: contracts/staking/StakingBase.sol:952
 ```
-[x] Noted — tied to the Low finding above
+[x] Noted — resolved by §A.5
 
 ---
 
@@ -311,6 +323,23 @@ Post-EIP-6780 (Cancun) `SELFDESTRUCT` only clears code in the same transaction a
 - External `checkpoint()` wrapper uses named return parameters (`serviceIds`, `finalEligibleServiceIds`, `finalEligibleServiceRewards`, `evictServiceIds`) and drops the explicit `return` statement — NOP-equivalent, earlier lock release.
 - Inline comments clarify that `RewardDistributionType(uint8(...))` reverts with `Panic(0x21)` for out-of-range values, so downstream reads of `sInfo.rewardDistributionInfo` are safe (it is only written via `_stake`, which validates the enum range).
 
+### §A.5 Derivative lock extension (`receive()` / `deposit()`)
+
+Extends the `_locked` guard from the seven StakingBase entry points to the two state-writing entry points defined on the derivatives, closing the residual `_withdraw` / `balance` desync class documented in the Low finding above.
+
+| Entry point | File:Line | Shape |
+|-------------|:---------:|-------|
+| `StakingNativeToken.receive()` | `StakingNativeToken.sol:35–53` | Reverts with `ReentrancyGuard` if `_locked > 1`; otherwise writes `balance += msg.value`, `availableRewards += msg.value`, emits `Deposit`, releases the lock. |
+| `StakingToken.deposit(uint256)` | `StakingToken.sol:109–130` | Same structure; writes balance/availableRewards, then `safeTransferFrom` (CEI-safe under the lock even with hook-carrying tokens). |
+
+Import: both derivatives now `import {StakingBase, ReentrancyGuard} from "./StakingBase.sol"`; `_locked` is already `internal` in `StakingBase` so no visibility change was required. Pragma bumped to `^0.8.30` on both files to match `StakingBase`.
+
+Invariants after §A.5:
+
+- All writes to `balance` / `availableRewards` are serialized under the same `_locked` slot as `_withdraw`'s balance-cache pattern — no nested callback can desync the cached local against storage.
+- Honest top-ups continue to work: on a fresh proxy clone `_locked` starts at `0` (inline initializer does not apply to clones — see the Notes finding above), the guard `_locked > 1` evaluates to `false`, the lock transitions `0 → 2 → 1` on the first call and `1 → 2 → 1` thereafter.
+- No new DoS: the guard reverts only on actual reentry, which never occurs in a legitimate deposit flow (no external call yields control between the initial `_locked = 2` and the final `_locked = 1`).
+
 ---
 
 ## Review summary
@@ -320,9 +349,9 @@ Post-EIP-6780 (Cancun) `SELFDESTRUCT` only clears code in the same transaction a
 | Critical | 0 |
 | High | 0 |
 | Medium | 0 |
-| Low (latent) | 1 |
+| Low | 0 (previous Low (latent) closed in §A.5) |
 | Notes | 3 |
-| **Total** | **4** |
+| **Total** | **3** |
 
 ## Verified Safe
 
@@ -346,9 +375,9 @@ The hardening only affects the **Staking Lifecycle** chain from internal15. The 
 
 **Q: After the hardening, can a malicious receiver reenter via the reward callback and corrupt reward accounting?**
 
-NO for the seven locked externals. The `_locked` check at each entry point reverts any nested call with `ReentrancyGuard()`. The revert propagates through the low-level `.call{value}` inside `_transfer` and surfaces as `TransferFailed` to the outer `_withdraw` (this is the behaviour tested by `test_Reentrancy_ClaimRevertsOnReentry`).
+NO. The `_locked` check at each of the nine locked entry points (seven in `StakingBase` + `receive`/`deposit` on the derivatives after §A.5) reverts any nested call with `ReentrancyGuard()`. The revert propagates through the low-level `.call{value}` inside `_transfer` and surfaces as `TransferFailed` to the outer `_withdraw` (tested by `test_Reentrancy_ClaimRevertsOnReentry`, `test_Reentrancy_NestedReceive_Reverts`, `test_Reentrancy_NestedDeposit_Reverts`).
 
-YES, latently, for `StakingNativeToken.receive()` and `StakingToken.deposit()` when reached via a nested callback during `_withdraw`. See the Low finding above. Not exploitable on the current production deployment; recommendation is to close this class of issue as part of the same hardening commit.
+The residual `receive()` / `deposit()` bypass documented in earlier drafts of this audit is now closed on-branch — no reachable callback can desync `balance` against `availableRewards`.
 
 **Q: Does the rename of `checkpoint` → `_checkpoint` leak state to callers that previously relied on the public signature?**
 
@@ -376,6 +405,7 @@ YES. Lock is set to `2` on the first instruction after the revert check (Staking
 | `test/StakingBaseCoverage.t.sol` | +1092 | Pushes StakingBase coverage from 46.60% → 100% lines |
 | `test/StakingFuzz.t.sol` | +379 | Fuzz suite for reward bit-packing, checkpoint math, proportional scaling |
 | `test/ApplicationClassifier.js` | +210 | Internal15 coverage closure |
+| `test/StakingDerivativeReentrancy.t.sol` | +260 | Nested `receive()` / `deposit()` reentry scenarios — added alongside §A.5 |
 
 ### Dedicated hardening tests (`test/StakingSecurityFixes.t.sol`)
 
@@ -391,11 +421,11 @@ YES. Lock is set to `2` on the first instruction after the revert check (Staking
 
 ### Coverage gaps identified by this review
 
-1. **Nested-deposit reentrancy case (`receive{value}` or `deposit` called from within `_withdraw`)** — NOT exercised by any test. `ReentrancyStakingAttacker.receive()` calls `checkpointAndClaim(localServiceId)`, which is now blocked by the lock; it does not attempt a `receive{value}` nested-deposit to desync `balance`. A dedicated test is recommended — see the Low finding suggested fix for the form it should take.
+1. **Nested-deposit reentrancy case (`receive{value}` or `deposit` called from within `_withdraw`)** — CLOSED by `test/StakingDerivativeReentrancy.t.sol`. Tests assert that a nested `receive{value}` call from a reward callback reverts under the new `_locked` guard (and, by comparison run on the pre-fix code, that the desync was real). Symmetric coverage added for `StakingToken.deposit()`.
 2. **`ReentrancyStakingAttacker` for cross-service** — internal15 already flagged this as a coverage gap. The current attacker uses a single `localServiceId` and re-enters via the same service. A multi-service variant that claims service A in the outer call and re-enters into service B in the callback would more directly match the C4A #2 scenario, even though the lock closes both single- and cross-service variants equivalently.
 3. **Lock release on revert** — no explicit negative test that confirms a revert during `_withdraw` releases the lock (it does, because the inner revert propagates and undoes the `_locked = 2` SSTORE as part of the outer revert; but an explicit test would document the intent).
 
-None of these gaps represents a new risk — they are test-quality observations.
+Gap 1 is now closed on this branch; gaps 2 and 3 are test-quality observations with no associated risk.
 
 ---
 
@@ -421,12 +451,12 @@ Re-checking the five invariants from internal15 §Stream 7 against post-hardenin
 
 ### Invariant 5: StakingBase.balance ≥ sum of pending rewards
 
-**PARTIALLY HOLDS — same caveat as internal15**, now narrower in scope but not fully closed.
+**HOLDS UNCONDITIONALLY** after §A.5.
 
-- For the seven locked externals, the invariant holds: `_withdraw` caches `balance` locally, decrements the local per-iteration, writes back at the end. Since no nested call can re-take the lock, no other flow can write to `balance` mid-loop → the cached value is guaranteed to be consistent with the final write. ✓
-- The residual gap is the one described in the Low finding: `StakingNativeToken.receive()` and `StakingToken.deposit()` are not lock-protected, so a nested callback that calls them during `_withdraw` can desync `balance` vs actual holdings. On current deployments this is not exploitable (StakingNativeToken has no active proxies; OLAS has no transfer hooks), but the invariant is not unconditionally true for all reachable configurations.
+- For the seven locked StakingBase externals, the invariant already held: `_withdraw` caches `balance` locally, decrements per iteration, writes back at the end. No nested call can re-take the lock → no other flow can write to `balance` mid-loop. ✓
+- The derivative entry points `receive()` and `deposit()` now share the same lock (§A.5). A nested call from within `_withdraw → _transfer → attacker.receive → stakingX.receive/deposit` sees `_locked == 2` and reverts, undoing the attacker's attempted direct write to `balance`. ✓
 
-Recommendation: close the gap via the suggested fix above so that Invariant 5 becomes unconditional.
+The invariant is now true on every reachable path — no residual caveat.
 
 ---
 
@@ -449,16 +479,9 @@ Recommendation: close the gap via the suggested fix above so that Invariant 5 be
 
 ## Verdict
 
-**The hardening branch delivers what it claims.** All four target classes of issue — cross-service `_withdraw` reentrancy (C4A #2 / C4R S-229), custom-distributor address validation, custom-distributor code-existence, and the broader token-callback reentrancy path (C4R S-1187, StakingBase portion) — are closed on-code with named file:line citations and dedicated forge tests. No pre-existing finding has been missed. The hardening diff does not introduce any new High or Medium vulnerability.
+**The hardening branch delivers what it claims, plus the preferred follow-up.** All four target classes of issue — cross-service `_withdraw` reentrancy (C4A #2 / C4R S-229), custom-distributor address validation, custom-distributor code-existence, and the broader token-callback reentrancy path (C4R S-1187, StakingBase portion) — are closed on-code with named file:line citations and dedicated forge tests. The previously residual derivative bypass (`receive()` / `deposit()`) has also been closed in this same branch via §A.5, so Invariant 5 now holds unconditionally. No pre-existing finding has been missed. The hardening diff does not introduce any new High, Medium, or Low vulnerability.
 
-**One residual Low/latent defect is documented above.** The `_locked` guard is a control-flow guard on seven external entry points, not a mutex on the `balance` storage slot. `StakingNativeToken.receive()` and `StakingToken.deposit()` on the derivatives remain unlocked and can — in theory — be reached via a nested callback during `_withdraw`, producing a `balance` vs `availableRewards` desync. Not exploitable on the current production deployment (StakingNativeToken has no active proxies; OLAS has no transfer hooks). Upgrade to Medium if StakingNativeToken is ever re-activated or if a hook-carrying token is adopted as the staking token.
-
-**Recommendation for merge:**
-
-- **Preferred:** extend the `_locked` guard to `StakingNativeToken.receive()` and `StakingToken.deposit()` in this same branch before merging (≤20 LOC). This closes the entire `_withdraw` / balance-desync class in one commit, matching the stated scope of the hardening, and Invariant 5 becomes unconditional.
-- **Acceptable:** merge as-is and track the Low finding as a must-fix-before-reactivation for StakingNativeToken. The current deployment is not exposed.
-
-Either path is safe for production; the preferred option is strictly cleaner.
+**Recommendation for merge:** ship. Only three informational Notes remain, none of which require code changes.
 
 ---
 
@@ -502,12 +525,13 @@ cat contracts/staking/StakingProxy.sol
 | `StakingBase.sol:983` | Internal `_checkpoint()` (renamed from public `checkpoint`) |
 | `StakingBase.sol:1119-1134` | External `checkpoint()` wrapper with lock |
 | `StakingBase.sol:1140-1227` | Six further locked entry points (stake×2, unstake, forcedUnstake, claim, checkpointAndClaim) |
-| `StakingNativeToken.sol:35-45` | Unlocked `receive()` (Low finding §) |
-| `StakingToken.sol:109-122` | Unlocked `deposit()` (Low finding §) |
+| `StakingNativeToken.sol:35-53` | Locked `receive()` (§A.5) |
+| `StakingToken.sol:109-130` | Locked `deposit()` (§A.5) |
 | `StakingProxy.sol:27-51` | Constructor-pinned implementation, no upgrade path |
-| `test/StakingSecurityFixes.t.sol` | New dedicated hardening test suite |
-| `test/StakingBaseCoverage.t.sol` | New 100%-line coverage suite |
-| `test/StakingFuzz.t.sol` | New fuzz suite |
+| `test/StakingSecurityFixes.t.sol` | Dedicated hardening test suite |
+| `test/StakingBaseCoverage.t.sol` | 100%-line coverage suite |
+| `test/StakingFuzz.t.sol` | Fuzz suite |
+| `test/StakingDerivativeReentrancy.t.sol` | Nested `receive()` / `deposit()` reentry tests (§A.5) |
 | `contracts/test/ReentrancyStakingAttacker.sol:61-87` | Attacker helper (`receive()` + `onERC721Received` callbacks) |
 
 ## Appendix C — Commits on the hardening branch (ahead of `origin/main`)

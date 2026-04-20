@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.30;
 
-import {StakingBase} from "./StakingBase.sol";
+import {StakingBase, ReentrancyGuard} from "./StakingBase.sol";
 import {SafeTransferLib} from "../utils/SafeTransferLib.sol";
 
 /// @dev Provided zero token address.
@@ -107,6 +107,12 @@ contract StakingToken is StakingBase {
     /// @dev Deposits funds for staking.
     /// @param amount Token amount to deposit.
     function deposit(uint256 amount) external {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         // Add to the contract and available rewards balances
         uint256 newBalance = balance + amount;
         uint256 newAvailableRewards = availableRewards + amount;
@@ -119,5 +125,7 @@ contract StakingToken is StakingBase {
         SafeTransferLib.safeTransferFrom(stakingToken, msg.sender, address(this), amount);
 
         emit Deposit(msg.sender, amount, newBalance, newAvailableRewards);
+
+        _locked = 1;
     }
 }
