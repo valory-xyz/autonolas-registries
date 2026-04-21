@@ -14,7 +14,7 @@ This audit is a **full re-audit** of `autonolas-registries` against the Code4ren
 - Verify the §A.5 derivative reentrancy lock that `internal16` recommended as a follow-up has been implemented correctly on-code (commits `36609be` → `d60f7ef5`, PR #288).
 - Map every applicable C4A finding to the registries repo and verify the fix in the current code.
 - Build an on-chain owner map for all deployed registries contracts and run the OpSec checks (multisig threshold, timelock, EOA owner exposure).
-- Re-verify the 22 entries in `docs/Vulnerabilities_list_registries.md` against current code.
+- Re-verify the 21 entries in `docs/Vulnerabilities_list_registries.md` against current code.
 - Confirm prior internal15 and internal16 findings still hold on HEAD `d60f7ef5`.
 
 Out of scope: Gnosis Safe core, OpenZeppelin library sources, solmate ERC721 / ERC721TokenReceiver, external activity checker and custom rewards distributor implementations. Inherited OZ / solmate / Safe code is trusted.
@@ -196,7 +196,7 @@ The previously-`public` `checkpoint()` was split into external wrapper + interna
 - `registerAgentsWithSignature` line 585–587: `if (_locked > 1) { revert ReentrancyGuard(); } _locked = 2;`
 - Lock released at line 634.
 
-Sibling `ServiceRegistry.registerAgents` path is lock-guarded analogously (internal `_locked` slot + inline check on every state-mutating external — matches the C4A PR #241 merge referenced in `docs/Vulnerabilities_list_registries.md` items #14 / #15).
+Sibling `ServiceRegistry.registerAgents` path is lock-guarded analogously (internal `_locked` slot + inline check on every state-mutating external — matches the C4A PR #241 merge referenced in `docs/Vulnerabilities_list_registries.md` items #13 / #14).
 
 **Status-preserving note (carry-over from internal15).** Reentrancy analysis for `ServiceRegistry.create` (ERC721 `_safeMint` callback) — the create path does not expose reward state or tokens to the callback; the only mutable state is the freshly-allocated `serviceId` row (well-formed before `_safeMint`). No CEI ordering bug remains.
 
@@ -206,7 +206,7 @@ Sibling `ServiceRegistry.registerAgents` path is lock-guarded analogously (inter
 
 **Original finding.** When the service owner enabled an operator whitelist, a non-whitelisted operator could register via the signature path, bypassing the whitelist check.
 
-**Status.** Acknowledged as a **documented trade-off** (`docs/Vulnerabilities_list_registries.md` item #15). Rationale: the signature path requires the service owner's or operator's cryptographic cooperation, so an exploit requires the legitimate party to already have signed. The whitelist is the service owner's self-restriction; if the owner signs for a non-whitelisted operator, that is owner intent.
+**Status.** Acknowledged as a **documented trade-off** (`docs/Vulnerabilities_list_registries.md` item #14). Rationale: the signature path requires the service owner's or operator's cryptographic cooperation, so an exploit requires the legitimate party to already have signed. The whitelist is the service owner's self-restriction; if the owner signs for a non-whitelisted operator, that is owner intent.
 
 Code inspection: `ServiceManager.sol:577–635` implements the signature-authenticated registration, and `OperatorWhitelist` is **not** consulted on this path (by design). The `ServiceRegistry.registerAgents` call at line 622/627 is gated by the signature verification at line 608, not by the whitelist.
 
@@ -216,7 +216,7 @@ Code inspection: `ServiceManager.sol:577–635` implements the signature-authent
 
 **Original finding.** The signature does not carry a deadline or a maximum-bond parameter. A previous service owner with a still-valid signature can front-run the operator's next `safeApprove` to a different service.
 
-**Status.** Acknowledged as a **documented trade-off** (`docs/Vulnerabilities_list_registries.md` item #18). Rationale:
+**Status.** Acknowledged as a **documented trade-off** (`docs/Vulnerabilities_list_registries.md` item #17). Rationale:
 
 - The exploit requires the operator to maintain nonzero approvals to the old service owner after separation — an operational discipline failure, not a protocol defect.
 - The signed-hash nonce (`mapOperatorRegisterAgentsNonces[operatorService]` at `ServiceManager.sol:603`) is per-operator-per-service, so each signature is single-use; it cannot be replayed to register twice.
@@ -241,7 +241,7 @@ Defence-in-depth for any future hook-carrying staking token deployed via `Stakin
 
 **Original finding.** Under `RewardDistributionType.Proportional`, the reward split assumes equal bonds per operator. A slashed operator still receives the same proportional share.
 
-**Status.** Acknowledged as **documented design** (`docs/Vulnerabilities_list_registries.md` item #20). Slashing withholds funds at `ServiceRegistry(L2)` level; staking rewards are orthogonal to bond accounting. If a slashed agent instance continues to perform staking activity, it earns its share. The `Custom` reward distribution type (`StakingBase.sol:725–744`) is the escape hatch for deployments that want bond-weighted rewards.
+**Status.** Acknowledged as **documented design** (`docs/Vulnerabilities_list_registries.md` item #19). Slashing withholds funds at `ServiceRegistry(L2)` level; staking rewards are orthogonal to bond accounting. If a slashed agent instance continues to perform staking activity, it earns its share. The `Custom` reward distribution type (`StakingBase.sol:725–744`) is the escape hatch for deployments that want bond-weighted rewards.
 
 ✅ **DOCUMENTED DESIGN — ACCEPTED.**
 
@@ -249,7 +249,7 @@ Defence-in-depth for any future hook-carrying staking token deployed via `Stakin
 
 **Original finding.** When `availableRewards == 0`, `checkpoint` short-circuits without updating per-service activity state — a service active only during the zero-reward window can later claim rewards for the unmeasured gap.
 
-**Status.** Acknowledged as **documented trade-off** (`docs/Vulnerabilities_list_registries.md` item #21). Operational mitigation: reward deposits are permissionless (`StakingNativeToken.receive` / `StakingToken.deposit` — both now lock-guarded per §3.1), so maintaining a wei-level `availableRewards > 0` across epochs closes the window.
+**Status.** Acknowledged as **documented trade-off** (`docs/Vulnerabilities_list_registries.md` item #20). Operational mitigation: reward deposits are permissionless (`StakingNativeToken.receive` / `StakingToken.deposit` — both now lock-guarded per §3.1), so maintaining a wei-level `availableRewards > 0` across epochs closes the window.
 
 ✅ **DOCUMENTED TRADE-OFF — ACCEPTED.**
 
@@ -257,7 +257,7 @@ Defence-in-depth for any future hook-carrying staking token deployed via `Stakin
 
 **Original finding.** `RecoveryModule.recoverAccess` and multisig-creating `create()` functions invoke `Safe.execTransaction` and ignore the boolean return value.
 
-**Fix verified.** Per `docs/Vulnerabilities_list_registries.md` item #14: the guard is enforced at the `ServiceManager` level via PR #241 (deployment path checks the multisig-creation success and reverts on failure); the `RecoveryModule` off-chain side is addressed by pre-flight simulation.
+**Fix verified.** Per `docs/Vulnerabilities_list_registries.md` item #13: the guard is enforced at the `ServiceManager` level via PR #241 (deployment path checks the multisig-creation success and reverts on failure); the `RecoveryModule` off-chain side is addressed by pre-flight simulation.
 
 ✅ **FIXED (partial on-chain, partial off-chain) — ACCEPTED.**
 
@@ -265,7 +265,7 @@ Defence-in-depth for any future hook-carrying staking token deployed via `Stakin
 
 **Original finding.** `registerAgentsWithSignature` forwards `{value: agentInstances.length * BOND_WRAPPER}` to `ServiceRegistry.registerAgents` without validating the caller-supplied `msg.value`. Excess ETH is not refunded — it sits permanently in `ServiceManager`.
 
-**Status.** Acknowledged as **documented trade-off** (`docs/Vulnerabilities_list_registries.md` item #16). C4A assessed the dup (#S-1175) as "misconfigured registration from users" per Known Issues. Protocol adds no refund mechanism by design.
+**Status.** Acknowledged as **documented trade-off** (`docs/Vulnerabilities_list_registries.md` item #15). C4A assessed the dup (#S-1175) as "misconfigured registration from users" per Known Issues. Protocol adds no refund mechanism by design.
 
 The mirrored `msg.value` check for the non-signature path (`ServiceRegistry.registerAgents`) is strict: `require(msg.value == agentInstances.length * BOND_WRAPPER)`.
 
@@ -275,7 +275,7 @@ The mirrored `msg.value` check for the non-signature path (`ServiceRegistry.regi
 
 **Original finding.** A service owner can install a malicious Safe module on the service multisig and call `ServiceRegistry.slash` on their own operators, stealing the bonds.
 
-**Status.** Acknowledged as **documented trade-off** (`docs/Vulnerabilities_list_registries.md` item #17). Slashed funds are **locked** at `ServiceRegistry(L2)` and only the DAO-gated `drainer` can drain them (set to Treasury on Ethereum mainnet). No economic benefit for the service owner.
+**Status.** Acknowledged as **documented trade-off** (`docs/Vulnerabilities_list_registries.md` item #16). Slashed funds are **locked** at `ServiceRegistry(L2)` and only the DAO-gated `drainer` can drain them (set to Treasury on Ethereum mainnet). No economic benefit for the service owner.
 
 ✅ **DOCUMENTED TRADE-OFF — ACCEPTED.**
 
@@ -283,7 +283,7 @@ The mirrored `msg.value` check for the non-signature path (`ServiceRegistry.regi
 
 **Original finding.** An attacker can repeatedly front-run `registerAgents` calls with throw-away addresses, consuming slots.
 
-**Status.** Acknowledged as **documented trade-off** (`docs/Vulnerabilities_list_registries.md` item #19). Agent instance addresses are unlimited; DoS has per-block gas cost for the attacker; no slot reservation beyond block-finality-ordering is possible without introducing a whitelist (which has its own scope issues, see §4.3).
+**Status.** Acknowledged as **documented trade-off** (`docs/Vulnerabilities_list_registries.md` item #18). Agent instance addresses are unlimited; DoS has per-block gas cost for the attacker; no slot reservation beyond block-finality-ordering is possible without introducing a whitelist (which has its own scope issues, see §4.3).
 
 ✅ **DOCUMENTED TRADE-OFF — ACCEPTED.**
 
@@ -386,7 +386,7 @@ All internal15 findings re-verified against HEAD `d60f7ef5`:
 | Stream D Low — Custom distributor can return `address(stakingContract)` | L | **FIXED** | Receiver check `StakingBase.sol:742–744` |
 | Stream D Low — No code-existence check on custom distributor at stake time | L | **FIXED** | `customRewardsDistributor.code.length == 0` at `StakingBase.sol:852–854` |
 | Stream B Low — `ServiceRegistry.registerAgents` missing reentrancy guard | L | UNCHANGED | `ServiceManager.registerAgentsWithSignature` already lock-guarded (line 585–587) |
-| Stream D Notes — `calculateStakingLastReward()` rounding dust | Info | UNCHANGED | Item #22 in `Vulnerabilities_list`; cosmetic only |
+| Stream D Notes — `calculateStakingLastReward()` rounding dust | Info | UNCHANGED | Item #21 in `Vulnerabilities_list`; cosmetic only |
 | Stream D Notes — `ApplicationClassifier` untested | Info | **ADDRESSED** | `test/ApplicationClassifier.js` (+210 LOC) |
 | Stream D Notes — Zero fuzz tests | Info | **ADDRESSED** | `test/StakingFuzz.t.sol` (+379 LOC) |
 | Stream C Low/Info — PolySafe CREATE2 front-running | L/Info | UNCHANGED | Item #12 in `Vulnerabilities_list`; accepted |
@@ -416,7 +416,7 @@ Re-checking five key staking invariants on HEAD `d60f7ef5`:
 
 ## 7. `docs/Vulnerabilities_list_registries.md` hygiene
 
-Document tracks 22 items. Re-verified each against HEAD `d60f7ef5`.
+Document tracks 21 items. Re-verified each against HEAD `d60f7ef5`.
 
 | # | Title | Severity | Code still present? | Mitigation in place? |
 |---|---|---|---|---|
@@ -432,21 +432,20 @@ Document tracks 22 items. Re-verified each against HEAD `d60f7ef5`.
 | 10 | `checkpoint` function — O(n) gas overflow | High | ✅ yes | ✅ 100-slot launcher discipline |
 | 11 | `deploy` function — `RecoveryModule` does not restore off-chain dependencies | Info | ✅ yes | ✅ integration-level advisory |
 | 12 | `create` function — PolySafe CREATE2 front-run | Low | ✅ yes | ✅ `GnosisSafeSameAddressMultisig.create()` fallback |
-| 13 | `_claim` function — reward-before-checkpoint sequence | Low | ✅ yes | ✅ call `checkpoint()` first (doc advisory) |
-| 14 | `execTransaction` return value ignored (C4A L-11 / C4R S-69) | Low | ✅ yes | ✅ `ServiceManager` guard via PR #241; `RecoveryModule` off-chain pre-flight |
-| 15 | `registerAgentsWithSignature` operator whitelist bypass (C4A H-07 / C4R S-149) | Low | ✅ yes | ✅ service owner self-restriction (accepted) |
-| 16 | `registerAgentsWithSignature` missing `msg.value` validation (C4A L-12 / C4R S-1175) | Low | ✅ yes | ✅ caller-side discipline (accepted per Known Issues) |
-| 17 | `slash` mechanism abuse (C4A L-13 / C4R S-430) | Low | ✅ yes | ✅ no economic benefit (funds locked in registry) |
-| 18 | `registerAgentsWithSignature` missing deadline / max bond (C4A H-09 / C4R S-858, S-862) | Low | ✅ yes | ✅ nonce makes signature single-use; operational discipline |
-| 19 | `registerAgents` agent instance DoS (C4A L-14 / C4R S-901) | Low | ✅ yes | ✅ gas-cost asymmetry |
-| 20 | `slash` + proportional split (C4A M-08 / C4R S-885) | Info | ✅ yes | ✅ decoupled by design; `Custom` distributor escape hatch |
-| 21 | `checkpoint` during absence of rewards (C4A M-10 / C4R S-763) | Info | ✅ yes | ✅ wei-level top-up discipline |
-| 22 | `calculateStakingLastReward` rounding dust | Info | ✅ yes | ✅ cosmetic only |
+| 13 | `execTransaction` return value ignored (C4A L-11 / C4R S-69) | Low | ✅ yes | ✅ `ServiceManager` guard via PR #241; `RecoveryModule` off-chain pre-flight |
+| 14 | `registerAgentsWithSignature` operator whitelist bypass (C4A H-07 / C4R S-149) | Low | ✅ yes | ✅ service owner self-restriction (accepted) |
+| 15 | `registerAgentsWithSignature` missing `msg.value` validation (C4A L-12 / C4R S-1175) | Low | ✅ yes | ✅ caller-side discipline (accepted per Known Issues) |
+| 16 | `slash` mechanism abuse (C4A L-13 / C4R S-430) | Low | ✅ yes | ✅ no economic benefit (funds locked in registry) |
+| 17 | `registerAgentsWithSignature` missing deadline / max bond (C4A H-09 / C4R S-858, S-862) | Low | ✅ yes | ✅ nonce makes signature single-use; operational discipline |
+| 18 | `registerAgents` agent instance DoS (C4A L-14 / C4R S-901) | Low | ✅ yes | ✅ gas-cost asymmetry |
+| 19 | `slash` + proportional split (C4A M-08 / C4R S-885) | Info | ✅ yes | ✅ decoupled by design; `Custom` distributor escape hatch |
+| 20 | `checkpoint` during absence of rewards (C4A M-10 / C4R S-763) | Info | ✅ yes | ✅ wei-level top-up discipline |
+| 21 | `calculateStakingLastReward` rounding dust | Info | ✅ yes | ✅ cosmetic only |
 
 **Hygiene recommendations:**
 
-1. **No entry needs removal** — all 22 items still describe live code paths or documented trade-offs.
-2. **Documentation drift — ADDRESSED.** Items #15 / #16 / #18 previously reproduced a `registerAgentsWithSignature` signature snippet with a spurious `uint256 deadline` parameter and an `address serviceOwner` first argument. All three snippets have been updated to match the deployed signature `registerAgentsWithSignature(address operator, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, bytes memory signature) external payable returns (bool success)`.
+1. **Fixed-on-code entry removed** — former item #13 (`_claim` reward-before-checkpoint sequence) has been removed and subsequent items renumbered #14→#13, #15→#14, …, #22→#21. The `_claim` ordering in `StakingBase.sol:548–583` already invokes `_checkpoint()` before reading `sInfo.reward`, so the zero-reward revert described in the old entry cannot occur. Covered by `test/StakingBaseCoverage.t.sol:test_CheckpointAndClaim_HappyPath` and `test/ServiceStaking.js` flows around `checkpointAndClaim`.
+2. **Documentation drift — ADDRESSED.** Items #14 / #15 / #17 previously reproduced a `registerAgentsWithSignature` signature snippet with a spurious `uint256 deadline` parameter and an `address serviceOwner` first argument. All three snippets have been updated to match the deployed signature `registerAgentsWithSignature(address operator, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, bytes memory signature) external payable returns (bool success)`.
 3. **C4A H-05 / H-10 and the §A.5 derivative lock are NOT added to the list** — these were defects now fixed on-code with dedicated tests. The list is reserved for known, deliberately unfixed trade-offs (same rule applied in `autonolas-tokenomics/audits/internal15` and `autonolas-governance/audits/internal19`).
 
 ## 8. Conclusion
@@ -456,7 +455,7 @@ Document tracks 22 items. Re-verified each against HEAD `d60f7ef5`.
 - **On-chain owner map (§5)** — all registries contracts resolve to the same governance Timelock as `autonolas-governance` and `autonolas-tokenomics`. No EOA-owned admin. Permissionless `StakingFactory` + owner-gated `StakingVerifier` allowlist.
 - **New code findings this pass:** 0 High / 0 Medium / 0 Low / 0 new Notes. The three Notes from internal16 carry over unchanged (one of which is now explicitly resolved by §A.5).
 - **Internal15 findings** — all re-verified; three previously-open Lows fixed on the hardening branch.
-- **`Vulnerabilities_list_registries.md`** — all 22 entries still valid; minor documentation drift around `registerAgentsWithSignature` signature snippets (items #15 / #16 / #18) noted as a doc-hygiene item.
+- **`Vulnerabilities_list_registries.md`** — 21 entries after removing the former item #13 (`_claim` reward-before-checkpoint sequence) which is fixed on-code and covered by `test/StakingBaseCoverage.t.sol:test_CheckpointAndClaim_HappyPath`; documentation drift around `registerAgentsWithSignature` signature snippets (items #14 / #15 / #17 after renumber) corrected.
 
 **Verdict: no High / Medium / Low findings on commit `d60f7ef5`.** The C4A external audit + post-C4R hardening + PR #288 closed every serious registries-scope issue. The remaining surface is well-understood documented trade-offs and three informational Notes (stylistic / cosmetic). **Recommendation: ship.**
 
@@ -464,7 +463,7 @@ Document tracks 22 items. Re-verified each against HEAD `d60f7ef5`.
 
 | Rule | Compliance |
 |---|---|
-| 1. Exhaustive checking | ✓ C4A (11H+12M+15L) triaged; Vulnerabilities_list (22 entries) all checked; internal15 + internal16 findings all re-verified |
+| 1. Exhaustive checking | ✓ C4A (11H+12M+15L) triaged; Vulnerabilities_list (21 entries) all checked; internal15 + internal16 findings all re-verified |
 | 2. Cross-domain patterns | ✓ DeFi reentrancy + callback + CEI + proxy-storage patterns applied; staking-specific patterns (custom distributor, lock extension to derivative entries) covered |
 | 3. Checklist log | ✓ this document (§4 matrix + §6.3 internal15 table + §6.2 internal16 table + §7 hygiene table) |
 | 4. Playbook updates all-or-nothing | ✓ v2.22 applied; registry / staking / multisig patterns covered |
