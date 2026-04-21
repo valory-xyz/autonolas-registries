@@ -47,6 +47,8 @@ Full internal audit. Verify all C4A findings fixed. Identify new vulnerabilities
 
 Delta internal audit. Verify all C4A findings fixed. Identify new vulnerabilities: [internal audit 16](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal16).
 
+Delta internal audit. Verify all C4A findings fixed. [internal audit 17](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/internal17).
+
 ### External audit
 
 Following the initial contracts [audit report](https://github.com/valory-xyz/autonolas-registries/blob/main/audits/Valory%20Review%20Final.pdf),

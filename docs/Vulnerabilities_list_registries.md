@@ -16,16 +16,15 @@
     - [10. checkpoint function: O(n) complexity due to gas overflow](#10-checkpoint-function-on-complexity-and-dos-due-to-gas-overflow)
     - [11. deploy function](#11-deploy-function)
     - [12. create function](#12-create-function-1)
-    - [13. _claim function](#13-_claim-function)
-    - [14. execTransaction return value in RecoveryModule and other multisig creating contracts](#14-exectransaction-return-value-in-recoverymodule-and-other-multisig-creating-contracts)
-    - [15. registerAgentsWithSignature operator whitelist bypass](#15-registeragentswithsignature-operator-whitelist-bypass)
-    - [16. registerAgentsWithSignature missing msg.value validation](#16-registeragentswithsignature-missing-msgvalue-validation)
-    - [17. slash mechanism abuse by service owner](#17-slash-mechanism-abuse-by-service-owner)
-    - [18. registerAgentsWithSignature missing deadline and maximum bond parameters](#18-registeragentswithsignature-missing-deadline-and-maximum-bond-parameters)
-    - [19. registerAgents agent instance registration DoS](#19-registeragents-agent-instance-registration-dos)
-    - [20. slash and proportional RewardDistributionType split](#20-slash-and-proportional-rewarddistributiontype-split)
-    - [21. checkpoint function during absence of rewards](#21-checkpoint-function-during-absence-of-rewards)
-    - [22. calculateStakingLastReward rounding dust](#22-calculatestakinglastreward-rounding-dust)
+    - [13. execTransaction return value in RecoveryModule and other multisig creating contracts](#13-exectransaction-return-value-in-recoverymodule-and-other-multisig-creating-contracts)
+    - [14. registerAgentsWithSignature operator whitelist bypass](#14-registeragentswithsignature-operator-whitelist-bypass)
+    - [15. registerAgentsWithSignature missing msg.value validation](#15-registeragentswithsignature-missing-msgvalue-validation)
+    - [16. slash mechanism abuse by service owner](#16-slash-mechanism-abuse-by-service-owner)
+    - [17. registerAgentsWithSignature missing deadline and maximum bond parameters](#17-registeragentswithsignature-missing-deadline-and-maximum-bond-parameters)
+    - [18. registerAgents agent instance registration DoS](#18-registeragents-agent-instance-registration-dos)
+    - [19. slash and proportional RewardDistributionType split](#19-slash-and-proportional-rewarddistributiontype-split)
+    - [20. checkpoint function during absence of rewards](#20-checkpoint-function-during-absence-of-rewards)
+    - [21. calculateStakingLastReward rounding dust](#21-calculatestakinglastreward-rounding-dust)
 
 ## Involved contracts and level of the bugs
 
@@ -333,27 +332,7 @@ GnosisSafeSameAddressMultisig contract's `create()` function specific for PolySa
 This contract function call just sets the already created multisig (that was created by front
 running), and service deployment is successful.
 
-### 13. `_claim` function
-
-**Severity**: Low
-
-The following function is implemented in the StakingBase contract:
-
-```solidity
-function _claim(uint256 serviceId, bool execCheckPoint) internal returns (uint256 reward)
-```
-
-This function claims accumulated rewards for a specified `serviceId`. It also supports
-calling a `checkpoint()` function before claiming rewards. However, the sequence of
-actions is not entirely correct. The service reward is obtained first, then a checkpoint is
-called, and verification for the non-zero reward is made on a value obtained before the
-checkpoint. This leads to scenarios where there was no reward before the checkpoint,
-and thus the function reverts.
-
-In order to get a correct sequence of actions and avoid described scenarios, we
-recommend calling `checkpoint()` separately before calling the `claim()` function.
-
-### 14. `execTransaction` return value in RecoveryModule and other multisig creating contracts
+### 13. `execTransaction` return value in RecoveryModule and other multisig creating contracts
 
 **Severity**: Low
 **Source**: Code4rena 2026-01 Olas audit (submission #S-69)
@@ -381,7 +360,7 @@ It is straightforward to perform the off-chain check for the recovery module. As
 multisig creating contracts invoked via the create() function during service deployment,
 the guard is enforced at the ServiceManager level (see PR #241).
 
-### 15. `registerAgentsWithSignature` operator whitelist bypass
+### 14. `registerAgentsWithSignature` operator whitelist bypass
 
 **Severity**: Low
 **Source**: Code4rena 2026-01 Olas audit (submission #S-149)
@@ -389,7 +368,7 @@ the guard is enforced at the ServiceManager level (see PR #241).
 The following function is implemented in the ServiceManager contract:
 
 ```solidity
-function registerAgentsWithSignature(address serviceOwner, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, uint256 deadline, bytes memory signature) external payable
+function registerAgentsWithSignature(address operator, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, bytes memory signature) external payable returns (bool success)
 ```
 
 This issue reports that non-whitelisted operators could potentially register agents via
@@ -401,7 +380,7 @@ against self. The service owner is the party that configures the whitelist and c
 registration. An operator exploiting this would require the service owner to have provided
 or approved the signature in the first place.
 
-### 16. `registerAgentsWithSignature` missing msg.value validation
+### 15. `registerAgentsWithSignature` missing msg.value validation
 
 **Severity**: Low
 **Source**: Code4rena 2026-01 Olas audit (submission #S-1175)
@@ -409,7 +388,7 @@ or approved the signature in the first place.
 The following function is implemented in the ServiceManager contract:
 
 ```solidity
-function registerAgentsWithSignature(address serviceOwner, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, uint256 deadline, bytes memory signature) external payable
+function registerAgentsWithSignature(address operator, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, bytes memory signature) external payable returns (bool success)
 ```
 
 In registerAgents(), the native-token branch strictly enforces: `require(msg.value == agentInstances.length * BOND_WRAPPER)`. However, in registerAgentsWithSignature(),
@@ -428,7 +407,7 @@ corrected by adding the specified msg.value check. Note: One of the duplicate
 submissions (#S-1175) was assessed as out of scope per the Known Issues section
 regarding misconfigured registration from users.
 
-### 17. `slash` mechanism abuse by service owner
+### 16. `slash` mechanism abuse by service owner
 
 **Severity**: Low
 **Source**: Code4rena 2026-01 Olas audit (submission #S-430)
@@ -452,7 +431,7 @@ However, even if operators are slashed, the funds are locked on the ServiceRegis
 contract itself, and could only be drained by the DAO. At that point the DAO will reimburse
 operators. This attack does not have any economical benefit for the service owner.
 
-### 18. `registerAgentsWithSignature` missing deadline and maximum bond parameters
+### 17. `registerAgentsWithSignature` missing deadline and maximum bond parameters
 
 **Severity**: Low
 **Source**: Code4rena 2026-01 Olas audit (submissions #S-858, #S-862)
@@ -460,7 +439,7 @@ operators. This attack does not have any economical benefit for the service owne
 The following function is implemented in the ServiceManager contract:
 
 ```solidity
-function registerAgentsWithSignature(address serviceOwner, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, uint256 deadline, bytes memory signature) external payable
+function registerAgentsWithSignature(address operator, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, bytes memory signature) external payable returns (bool success)
 ```
 
 The operator can always set token approval to zero, and thus even with a valid signature
@@ -475,7 +454,7 @@ the operator to the service owner. If a user has a higher approval and/or differ
 approval in the future, a delayed registration via registerAgentsWithSignature could
 possibly affect operators.
 
-### 19. `registerAgents` agent instance registration DoS
+### 18. `registerAgents` agent instance registration DoS
 
 **Severity**: Low
 **Source**: Code4rena 2026-01 Olas audit (submission #S-901)
@@ -497,7 +476,7 @@ likely not incentivized due to gas costs. Ultimately this is not an issue for th
 all due to the unlimited number of addresses. Trying to control or whitelist all of them is
 something blockchain was not created for.
 
-### 20. `slash` and proportional `RewardDistributionType` split
+### 19. `slash` and proportional `RewardDistributionType` split
 
 **Severity**: Informative
 **Source**: Code4rena 2026-01 Olas audit (submission #S-885)
@@ -535,7 +514,7 @@ instance continues to perform its staking routines - those need to be rewarded f
 accordingly. Thus it is not considered to be an issue for the protocol, and the fix is not
 required.
 
-### 21. `checkpoint` function during absence of rewards
+### 20. `checkpoint` function during absence of rewards
 
 **Severity**: Informative
 **Source**: Code4rena 2026-01 Olas audit (submission #S-763)
@@ -558,7 +537,7 @@ maintains staking rewards, and if cancelled, no such situation is possible. Also
 actions could be prevented by ensuring at least wei levels of tokens within the staking
 contracts, which is easy to do considering reward deposits are permissionless.
 
-### 22. `calculateStakingLastReward` rounding dust
+### 21. `calculateStakingLastReward` rounding dust
 
 **Severity**: Informative
 

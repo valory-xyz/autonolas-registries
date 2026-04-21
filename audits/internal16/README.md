@@ -52,7 +52,7 @@ All other staking contracts (`StakingFactory`, `StakingVerifier`, `StakingActivi
 | Stream A Low — `StakingBase._withdraw()` cross-service reentrancy | L | latent | **FIXED** | `_locked` guard §Security Issue §A.1 |
 | Stream D Low — Custom reward distributor can return `address(stakingContract)` as receiver | L | open | **FIXED** | `receivers[i] == address(this)` check at StakingBase.sol:742–744 + `test_CustomDistributor_RejectsSelfReceiver` |
 | Stream D Low — No code-existence check on Custom distributor at stake time | L | open | **FIXED** | `customRewardsDistributor.code.length == 0` check at StakingBase.sol:852–854 + `test_CustomDistributor_EOAReverts` / `test_CustomDistributor_UndeployedAddressReverts` |
-| Stream D Notes — `calculateStakingLastReward()` rounding dust | Info | open | **UNCHANGED** (cosmetic) | Still item #22 in `Vulnerabilities_list_registries.md`; no fix required |
+| Stream D Notes — `calculateStakingLastReward()` rounding dust | Info | open | **UNCHANGED** (cosmetic) | Still item #21 in `Vulnerabilities_list_registries.md`; no fix required |
 | Stream D Notes — ApplicationClassifier completely untested | Info | open | **ADDRESSED** | `test/ApplicationClassifier.js` (+210) added in commit `2e6bca0` |
 | Stream D Notes — Zero fuzz tests in entire repository | Info | open | **ADDRESSED** | `test/StakingFuzz.t.sol` (+379) |
 | Stream B Low — `ServiceRegistry.registerAgents()` missing reentrancy guard | L | open | **UNCHANGED** | Not in staking scope; track separately |
