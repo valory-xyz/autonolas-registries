@@ -446,7 +446,7 @@ Document tracks 22 items. Re-verified each against HEAD `d60f7ef5`.
 **Hygiene recommendations:**
 
 1. **No entry needs removal** — all 22 items still describe live code paths or documented trade-offs.
-2. **Documentation drift** to address: the deployed `ServiceManager.registerAgentsWithSignature(operator, serviceId, agentInstances, agentIds, signature)` has no `deadline` parameter, but items #15 / #16 / #18 reproduce a signature snippet containing `uint256 deadline`. Suggest updating those three snippets to match the current function signature.
+2. **Documentation drift — ADDRESSED.** Items #15 / #16 / #18 previously reproduced a `registerAgentsWithSignature` signature snippet with a spurious `uint256 deadline` parameter and an `address serviceOwner` first argument. All three snippets have been updated to match the deployed signature `registerAgentsWithSignature(address operator, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, bytes memory signature) external payable returns (bool success)`.
 3. **C4A H-05 / H-10 and the §A.5 derivative lock are NOT added to the list** — these were defects now fixed on-code with dedicated tests. The list is reserved for known, deliberately unfixed trade-offs (same rule applied in `autonolas-tokenomics/audits/internal15` and `autonolas-governance/audits/internal19`).
 
 ## 8. Conclusion

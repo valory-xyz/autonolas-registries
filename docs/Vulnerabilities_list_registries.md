@@ -389,7 +389,7 @@ the guard is enforced at the ServiceManager level (see PR #241).
 The following function is implemented in the ServiceManager contract:
 
 ```solidity
-function registerAgentsWithSignature(address serviceOwner, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, uint256 deadline, bytes memory signature) external payable
+function registerAgentsWithSignature(address operator, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, bytes memory signature) external payable returns (bool success)
 ```
 
 This issue reports that non-whitelisted operators could potentially register agents via
@@ -409,7 +409,7 @@ or approved the signature in the first place.
 The following function is implemented in the ServiceManager contract:
 
 ```solidity
-function registerAgentsWithSignature(address serviceOwner, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, uint256 deadline, bytes memory signature) external payable
+function registerAgentsWithSignature(address operator, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, bytes memory signature) external payable returns (bool success)
 ```
 
 In registerAgents(), the native-token branch strictly enforces: `require(msg.value == agentInstances.length * BOND_WRAPPER)`. However, in registerAgentsWithSignature(),
@@ -460,7 +460,7 @@ operators. This attack does not have any economical benefit for the service owne
 The following function is implemented in the ServiceManager contract:
 
 ```solidity
-function registerAgentsWithSignature(address serviceOwner, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, uint256 deadline, bytes memory signature) external payable
+function registerAgentsWithSignature(address operator, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, bytes memory signature) external payable returns (bool success)
 ```
 
 The operator can always set token approval to zero, and thus even with a valid signature
