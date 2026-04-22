@@ -7,6 +7,24 @@ Audit date: 2026-04-22
 Deliverable style: internal15 template (C4A verification matrix + on-chain owner map + Vulnerabilities_list hygiene)
 Prior references: `audits/internal15/README.md`, `audits/internal16/README.md`
 
+## C4R fixed issues — summary
+
+Quick reference for the C4A 2026-01 / C4R registries-scope findings handled in this audit. Full detail in §4.
+
+| C4R issue | Summary | Fixed status | Fix commit | Fix branch |
+|---|---|---|---|---|
+| H-05 / C4R S-229 | `StakingBase._withdraw` cross-service reentrancy | Fixed on-code | `f59b339` (PR #287); `36609be` (PR #288, §A.5 follow-up) | `fix/staking-post-c4r-hardening`; `fix/staking-derivative-reentrancy-lock` |
+| H-06 | `ServiceManager.create` reentrancy via `onERC721Received` | Fixed on-code | `7674c5c` (PR #241) | `8004_extension` |
+| H-07 / C4R S-149 | `registerAgentsWithSignature` operator whitelist bypass | Documented trade-off | — | — |
+| H-09 / C4R S-858, S-862 | `registerAgentsWithSignature` missing deadline / max bond | Documented trade-off | — | — |
+| H-10 / C4R S-1187 | Token callback reentrancy (broader path) | Fixed on-code | `f59b339` (PR #287); `36609be` (PR #288, §A.5 follow-up) | `fix/staking-post-c4r-hardening`; `fix/staking-derivative-reentrancy-lock` |
+| M-08 / C4R S-885 | Proportional rewards ignore slashed bonds | Documented design | — | — |
+| M-10 / C4R S-763 | `checkpoint` during absence of rewards | Documented trade-off | — | — |
+| L-11 / C4R S-69 | `execTransaction` return value ignored | Fixed on-code (ServiceManager layer) | `7674c5c` (PR #241) | `8004_extension` |
+| L-12 / C4R S-1175 | `registerAgentsWithSignature` missing `msg.value` validation | Documented trade-off | — | — |
+| L-13 / C4R S-430 | `slash` abuse by service owner | Documented trade-off | — | — |
+| L-14 / C4R S-901 | `registerAgents` agent instance DoS | Documented trade-off | — | — |
+
 ## 1. Objectives
 
 This audit is a **full re-audit** of `autonolas-registries` against the Code4rena (C4A) Olas 2026-01 external audit report, building on the prior `audits/internal16/README.md` (delta audit of the staking hardening branch, baseline `b5c50ae`).
@@ -162,6 +180,8 @@ All 11 are verified below against HEAD `d60f7ef5`.
 
 ### 4.1 C4A H-05 / C4R S-229 — `StakingBase._withdraw` cross-service reentrancy
 
+**Fix branch:** `fix/staking-post-c4r-hardening` (PR #287, commit `f59b339`), extended by `fix/staking-derivative-reentrancy-lock` (PR #288, commit `36609be`) for the §A.5 derivative follow-up.
+
 **Original finding.** `StakingBase._withdraw` transferred rewards to service owners via low-level `.call{value}` (native) or `safeTransfer` (ERC20) without a reentrancy guard. A malicious receiver in service A could re-enter and call `checkpoint` / `claim` / `unstake` for service B, corrupting reward accounting.
 
 **Fix verified on code (HEAD `d60f7ef5`):**
@@ -188,6 +208,8 @@ The previously-`public` `checkpoint()` was split into external wrapper + interna
 ✅ **FIXED AND VERIFIED.** (Full attack-review in `internal16`; §3.1 of this report verifies the §A.5 follow-up.)
 
 ### 4.2 C4A H-06 — `ServiceManager.create` reentrancy via `onERC721Received`
+
+**Fix branch:** `8004_extension` (PR #241, commit `7674c5c`).
 
 **Original finding.** During `deploy` / `registerAgents` paths that mint an ERC721 service token with `_safeMint`, a recipient contract's `onERC721Received` callback could re-enter and manipulate state before the outer call completed.
 
@@ -226,6 +248,8 @@ Code inspection: `ServiceManager.sol:577–635` implements the signature-authent
 
 ### 4.5 C4A H-10 / C4R S-1187 — token callback reentrancy (broader path)
 
+**Fix branch:** `fix/staking-post-c4r-hardening` (PR #287, commit `f59b339`), extended by `fix/staking-derivative-reentrancy-lock` (PR #288, commit `36609be`) for the §A.5 derivative follow-up.
+
 **Original finding.** `_withdraw` invokes `safeTransfer` on a generic ERC20, which for hook-carrying standards (ERC777 / ERC1363) yields control to the receiver — reentrancy surface broader than just `_withdraw`.
 
 **Fix verified.** The same contract-wide `_locked` on `StakingBase.sol` and on `StakingNativeToken.receive` / `StakingToken.deposit` (§3.1) closes the full attack class. In particular:
@@ -254,6 +278,8 @@ Defence-in-depth for any future hook-carrying staking token deployed via `Stakin
 ✅ **DOCUMENTED TRADE-OFF — ACCEPTED.**
 
 ### 4.8 C4A L-11 / C4R S-69 — `execTransaction` return value ignored
+
+**Fix branch:** `8004_extension` (PR #241, commit `7674c5c`) — on-chain `ServiceManager` layer; `RecoveryModule` side handled off-chain via pre-flight simulation.
 
 **Original finding.** `RecoveryModule.recoverAccess` and multisig-creating `create()` functions invoke `Safe.execTransaction` and ignore the boolean return value.
 
