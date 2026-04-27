@@ -189,6 +189,12 @@ error ServiceNotFound(uint256 serviceId);
 /// @param tsExpected Minimum time the service needs to be staked for.
 error NotEnoughTimeStaked(uint256 serviceId, uint256 tsProvided, uint256 tsExpected);
 
+// Reentrancy guard lock
+error ReentrancyGuard();
+
+// Custom rewards distributor returned a forbidden receiver address
+error UnauthorizedAccount(address account);
+
 // Service Info struct
 struct ServiceInfo {
     // Service multisig address
@@ -329,6 +335,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
     mapping (uint256 => ServiceInfo) public mapServiceInfo;
     // Set of currently staking serviceIds
     uint256[] public setServiceIds;
+    // Reentrancy lock
+    uint256 internal _locked = 1;
 
     /// @dev StakingBase initialization.
     /// @param _stakingParams Service staking parameters.
@@ -546,7 +554,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
         // Call the checkpoint, if required
         if (execCheckPoint) {
-            checkpoint();
+            _checkpoint();
         }
 
         // Get service reward
@@ -663,6 +671,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     ) internal view virtual returns (address[] memory receivers, uint256[] memory amounts) {
         // Get reward distribution info: rewardDistributionType and customRewardsDistributor address, if required
         // rewardDistributionType is extracted from first 8 bits
+        // Safe: sInfo.rewardDistributionInfo can only be set via _stake, which validates the enum range.
         RewardDistributionType rewardDistributionType = RewardDistributionType(uint8(rewardDistributionInfo));
 
         // Check reward distribution type
@@ -721,9 +730,18 @@ abstract contract StakingBase is ERC721TokenReceiver {
                 revert WrongArrayLength(receivers.length, amounts.length);
             }
 
-            // Sum all calculated amounts
+            // Sum all calculated amounts, verifying each receiver is a permitted address
             uint256 amountCheck;
             for (uint256 i = 0; i < amounts.length; ++i) {
+                // Receiver must not be the zero address
+                if (receivers[i] == address(0)) {
+                    revert ZeroAddress();
+                }
+                // Receiver must not be this staking contract: forwarding rewards to self orphans funds
+                // and desynchronizes balance accounting
+                if (receivers[i] == address(this)) {
+                    revert UnauthorizedAccount(receivers[i]);
+                }
                 amountCheck += amounts[i];
             }
 
@@ -742,7 +760,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     ///        address, if required.
     function _stake(uint256 serviceId, uint256 rewardDistributionInfo) internal {
         // Checkpoint to finalize any unaccounted rewards, if any
-        checkpoint();
+        _checkpoint();
 
         // Check if there available rewards
         if (availableRewards == 0) {
@@ -819,12 +837,20 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
         // Set reward distribution info: rewardDistributionType and customRewardsDistributor address, if required
         // rewardDistributionType takes first 8 bits
+        // Solidity reverts with Panic(0x21) if uint8(rewardDistributionInfo) is outside the enum range,
+        // gating every downstream read of sInfo.rewardDistributionInfo (no other write path exists).
         RewardDistributionType rewardDistributionType = RewardDistributionType(uint8(rewardDistributionInfo));
         // Check reward distribution type
         if (rewardDistributionType == RewardDistributionType.Custom) {
             // Check custom rewards distributor address: shift rewardDistributionType value of 8 bits
-            if (uint160(rewardDistributionInfo >> 8) == 0) {
+            address customRewardsDistributor = address(uint160(rewardDistributionInfo >> 8));
+            if (customRewardsDistributor == address(0)) {
                 revert ZeroAddress();
+            }
+            // Custom distributor must be a deployed contract, otherwise the staticcall in _getRewardReceiversAndAmounts
+            // returns empty data and bricks reward claims for this service
+            if (customRewardsDistributor.code.length == 0) {
+                revert ContractOnly(customRewardsDistributor);
             }
         } else if (uint160(rewardDistributionInfo >> 8) != 0) {
             // Make sure upper bits do not have any value if reward distribution type is not Сustom
@@ -847,7 +873,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     /// @return reward Staking reward.
     function _unstake(uint256 serviceId, bool enforced) internal returns (uint256 reward) {
         // Call the checkpoint first, as mapServiceInfo could be updated there
-        (uint256[] memory serviceIds, , , ) = checkpoint();
+        (uint256[] memory serviceIds, , , ) = _checkpoint();
 
         // Get sInfo as memory since there is no writing in storage anymore
         ServiceInfo memory sInfo = mapServiceInfo[serviceId];
@@ -948,11 +974,13 @@ abstract contract StakingBase is ERC721TokenReceiver {
     }
 
     /// @dev Checkpoint to allocate rewards up until a current time.
+    /// @notice Internal implementation. Callers that are external entry points must set the reentrancy lock themselves;
+    ///         the internal staking flows (_stake, _unstake, _claim) rely on their own external-level guard.
     /// @return Staking service Ids (excluding evicted ones within a current epoch).
     /// @return Set of reward-eligible service Ids.
     /// @return Corresponding set of reward-eligible service rewards.
     /// @return evictServiceIds Evicted service Ids.
-    function checkpoint() public returns (
+    function _checkpoint() internal returns (
         uint256[] memory,
         uint256[] memory,
         uint256[] memory,
@@ -1083,12 +1111,42 @@ abstract contract StakingBase is ERC721TokenReceiver {
         return (serviceIds, finalEligibleServiceIds, finalEligibleServiceRewards, evictServiceIds);
     }
 
+    /// @dev Checkpoint to allocate rewards up until a current time.
+    /// @return serviceIds Staking service Ids (excluding evicted ones within a current epoch).
+    /// @return finalEligibleServiceIds Set of reward-eligible service Ids.
+    /// @return finalEligibleServiceRewards Corresponding set of reward-eligible service rewards.
+    /// @return evictServiceIds Evicted service Ids.
+    function checkpoint() external returns (
+        uint256[] memory serviceIds,
+        uint256[] memory finalEligibleServiceIds,
+        uint256[] memory finalEligibleServiceRewards,
+        uint256[] memory evictServiceIds
+    ) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
+        (serviceIds, finalEligibleServiceIds, finalEligibleServiceRewards, evictServiceIds) = _checkpoint();
+
+        _locked = 1;
+    }
+
     /// @dev Stakes service with default reward distribution type: Proportional.
     /// @notice Each service must be staked for a minimum of maxInactivityDuration time, or until the funds are not zero.
     ///         maxInactivityDuration = maxNumInactivityPeriods * livenessPeriod
     /// @param serviceId Service Id.
     function stake(uint256 serviceId) external {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         _stake(serviceId, 0);
+
+        _locked = 1;
     }
 
     /// @dev Stakes service with specified reward distribution info.
@@ -1098,34 +1156,74 @@ abstract contract StakingBase is ERC721TokenReceiver {
     /// @param rewardDistributionInfo Reward distribution info: rewardDistributionType and customRewardsDistributor
     ///        address, if required.
     function stake(uint256 serviceId, uint256 rewardDistributionInfo) external {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         _stake(serviceId, rewardDistributionInfo);
+
+        _locked = 1;
     }
 
     /// @dev Unstakes the service with collected reward, if available.
     /// @param serviceId Service Id.
     /// @return reward Staking reward.
-    function unstake(uint256 serviceId) external returns (uint256) {
-        return _unstake(serviceId, false);
+    function unstake(uint256 serviceId) external returns (uint256 reward) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
+        reward = _unstake(serviceId, false);
+
+        _locked = 1;
     }
 
     /// @dev Unstakes the service without a reward.
     /// @param serviceId Service Id.
     function forcedUnstake(uint256 serviceId) external {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
         _unstake(serviceId, true);
+
+        _locked = 1;
     }
 
     /// @dev Claims rewards for the service without an additional checkpoint call.
     /// @param serviceId Service Id.
-    /// @return Staking reward.
-    function claim(uint256 serviceId) external returns (uint256) {
-        return _claim(serviceId, false);
+    /// @return reward Staking reward.
+    function claim(uint256 serviceId) external returns (uint256 reward) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
+        reward = _claim(serviceId, false);
+
+        _locked = 1;
     }
 
     /// @dev Checkpoints and claims rewards for the service.
     /// @param serviceId Service Id.
-    /// @return Staking reward.
-    function checkpointAndClaim(uint256 serviceId) external returns (uint256) {
-        return _claim(serviceId, true);
+    /// @return reward Staking reward.
+    function checkpointAndClaim(uint256 serviceId) external returns (uint256 reward) {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
+        reward = _claim(serviceId, true);
+
+        _locked = 1;
     }
 
     /// @dev Calculates service staking reward starting from the last checkpoint period.
