@@ -7,23 +7,43 @@ Audit date: 2026-04-22
 Deliverable style: internal15 template (C4A verification matrix + on-chain owner map + Vulnerabilities_list hygiene)
 Prior references: `audits/internal15/README.md`, `audits/internal16/README.md`
 
+## 0. Status vocabulary
+
+The verification matrix below uses two **orthogonal** status columns rather than a single "fixed/not-fixed" flag, modelled on the scheme adopted by `autonolas-governance/audits/internal19`. The split is deliberate: a fix can land in source code without being live on-chain, and a contract can be deployed without the latest code.
+
+| Code status | Meaning |
+|---|---|
+| ✅ Fixed in `origin/main` | Code fix landed on `origin/main` of this repository |
+| 🟢 Fixed on feature branch | Code fix landed on a non-`main` feature branch; not yet merged |
+| 🟠 Partially fixed | Some attack paths closed in code, others still live |
+| 📝 Documented (known issue) | Not fixed in code; explicitly accepted on `docs/Vulnerabilities_list_registries.md` |
+| 🔴 Not fixed (open) | Not fixed in code and not documented as accepted; tracked openly |
+
+| Deployment status | Meaning |
+|---|---|
+| 🟢 Live on-chain | Code fix is deployed and live on the target chain(s) — the address in `docs/configuration.json` references the post-fix artifact |
+| 🟡 Pending redeploy | Code fix landed in source; the on-chain version is still the older bytecode and a redeploy of an existing contract is required for the fix to take effect |
+| ⚪ Code fix only — never deployed | The exact source version on this audit's HEAD has never been deployed. Either (a) the contract is brand-new and has no prior on-chain version, or (b) the contract is an upgradable / clonable implementation that will be deployed as a **new, separately-addressed instance** rather than replacing an existing one — pre-existing instances remain in service unchanged. The fix only takes effect on new instances created against the new deployment. |
+| — (N/A) | No code fix exists (Documented or Not-fixed rows) |
+| Not verified here | This report did not bytecode-check the on-chain deployment against the source |
+
 ## C4R fixed issues — summary
 
 Quick reference for the C4A 2026-01 / C4R registries-scope findings handled in this audit. Full detail in §4.
 
-| C4R issue | Summary | Fixed status | Fix commit | Fix branch |
+| C4R issue | Summary | Code status | Deployment status | Fix commit / Fix branch |
 |---|---|---|---|---|
-| H-05 / C4R S-229 | `StakingBase._withdraw` cross-service reentrancy | Fixed on-code | `f59b339` (PR #287); `36609be` (PR #288, §A.5 follow-up) | `fix/staking-post-c4r-hardening`; `fix/staking-derivative-reentrancy-lock` |
-| H-06 | `ServiceManager.create` reentrancy via `onERC721Received` | Fixed on-code | `7674c5c` (PR #241) | `8004_extension` |
-| H-07 / C4R S-149 | `registerAgentsWithSignature` operator whitelist bypass | Documented trade-off | — | — |
-| H-09 / C4R S-858, S-862 | `registerAgentsWithSignature` missing deadline / max bond | Documented trade-off | — | — |
-| H-10 / C4R S-1187 | Token callback reentrancy (broader path) | Fixed on-code | `f59b339` (PR #287); `36609be` (PR #288, §A.5 follow-up) | `fix/staking-post-c4r-hardening`; `fix/staking-derivative-reentrancy-lock` |
-| M-08 / C4R S-885 | Proportional rewards ignore slashed bonds | Documented design | — | — |
-| M-10 / C4R S-763 | `checkpoint` during absence of rewards | Documented trade-off | — | — |
-| L-11 / C4R S-69 | `execTransaction` return value ignored | Fixed on-code (ServiceManager layer) | `7674c5c` (PR #241) | `8004_extension` |
-| L-12 / C4R S-1175 | `registerAgentsWithSignature` missing `msg.value` validation | Documented trade-off | — | — |
-| L-13 / C4R S-430 | `slash` abuse by service owner | Documented trade-off | — | — |
-| L-14 / C4R S-901 | `registerAgents` agent instance DoS | Documented trade-off | — | — |
+| H-05 / C4R S-229 | `StakingBase._withdraw` cross-service reentrancy | ✅ Fixed in `origin/main` | ⚪ Code fix only — never deployed. The post-fix `StakingToken` / `StakingNativeToken` source has not been deployed on any chain. When deployed, it will be added as a **new** allowlisted implementation in `StakingVerifier` and used by `StakingFactory` for new clones; pre-existing `StakingProxy` instances (built against the prior `abis/0.8.25/*` implementations referenced in `docs/configuration.json`) remain in service against the original bytecode by design (constructor-pinned implementation, §5.5). | `f59b339` (PR #287); `36609be` (PR #288, §A.5 follow-up) — `fix/staking-post-c4r-hardening`; `fix/staking-derivative-reentrancy-lock` |
+| H-06 | `ServiceManager.create` reentrancy via `onERC721Received` | ✅ Fixed in `origin/main` | 🟢 Live on-chain (`docs/configuration.json` references `abis/0.8.30/ServiceManager.json` across all production chains; not byte-code-verified in this report) | `7674c5c` (PR #241) — `8004_extension` |
+| H-07 / C4R S-149 | `registerAgentsWithSignature` operator whitelist bypass | 📝 Documented (known issue) | — | item #14 in `docs/Vulnerabilities_list_registries.md` |
+| H-09 / C4R S-858, S-862 | `registerAgentsWithSignature` missing deadline / max bond | 📝 Documented (known issue) | — | item #17 in `docs/Vulnerabilities_list_registries.md` |
+| H-10 / C4R S-1187 | Token callback reentrancy (broader path) | ✅ Fixed in `origin/main` | ⚪ Code fix only — never deployed. Same as H-05: post-fix `StakingToken` / `StakingNativeToken` source not deployed on any chain; will land as a new allowlisted implementation in `StakingVerifier`, alongside (not replacing) the existing one. | `f59b339` (PR #287); `36609be` (PR #288, §A.5 follow-up) — `fix/staking-post-c4r-hardening`; `fix/staking-derivative-reentrancy-lock` |
+| M-08 / C4R S-885 | Proportional rewards ignore slashed bonds | 📝 Documented (known issue) | — | item #19 in `docs/Vulnerabilities_list_registries.md` |
+| M-10 / C4R S-763 | `checkpoint` during absence of rewards | 📝 Documented (known issue) | — | item #20 in `docs/Vulnerabilities_list_registries.md` |
+| L-11 / C4R S-69 | `execTransaction` return value ignored | 📝 Documented (known issue) — bool still unchecked in `PolySafeCreatorWithRecoveryModule.create:201–204`; not exploitable today under deployed Safe v1.3.0 + `safeTxGas = 0, gasPrice = 0` semantics; recommendation: add explicit on-chain check | — (no code change) | item #13 in `docs/Vulnerabilities_list_registries.md` |
+| L-12 / C4R S-1175 | `registerAgentsWithSignature` missing `msg.value` validation | 📝 Documented (known issue) | — | item #15 in `docs/Vulnerabilities_list_registries.md` |
+| L-13 / C4R S-430 | `slash` abuse by service owner | 📝 Documented (known issue) | — | item #16 in `docs/Vulnerabilities_list_registries.md` |
+| L-14 / C4R S-901 | `registerAgents` agent instance DoS | 📝 Documented (known issue) | — | item #18 in `docs/Vulnerabilities_list_registries.md` |
 
 ## 1. Objectives
 
@@ -162,21 +182,37 @@ function deposit(uint256 amount) external {
 
 The table below lists the C4A 2026-01 findings that touch `autonolas-registries` — **11 findings: 5 High + 2 Medium + 4 Low**. Findings scoped to other Olas repos (`autonolas-tokenomics`, `autonolas-governance`) are verified in their own internal audits and are intentionally omitted here so the registries remediation surface stays unambiguous.
 
-| C4A ID | Title | Handled in |
-|---|---|---|
-| H-05 / C4R S-229 | `StakingBase._withdraw` cross-service reentrancy (F-8) | §4.1 |
-| H-06 | `ServiceManager.create` reentrancy via `onERC721Received` (F-123) | §4.2 |
-| H-07 / C4R S-149 | `registerAgentsWithSignature` operator whitelist bypass (F-166) | §4.3 |
-| H-09 / C4R S-858, S-862 | `registerAgentsWithSignature` missing deadline / maximum bond (F-215) | §4.4 |
-| H-10 / C4R S-1187 | Token callback reentrancy (broader path) (F-397) | §4.5 |
-| M-08 / C4R S-885 | Proportional `RewardDistributionType` ignores slashed bonds (F-329) | §4.6 |
-| M-10 / C4R S-763 | `checkpoint` time manipulation during absence of rewards (F-374) | §4.7 |
-| L-11 / C4R S-69 | `execTransaction` return value ignored in multisig-creating contracts | §4.8 |
-| L-12 / C4R S-1175 | `registerAgentsWithSignature` missing `msg.value` validation | §4.9 |
-| L-13 / C4R S-430 | `slash` mechanism abuse by service owner | §4.10 |
-| L-14 / C4R S-901 | `registerAgents` agent instance registration DoS | §4.11 |
+The matrix uses the two orthogonal status columns defined in §0 — **Code status** (where the fix lives in source) and **Deployment status** (whether the fix is live on-chain). The previous template conflated the two into a single "fixed" flag; the split below is the structural correction.
+
+| C4A ID | Title | Code status | Deployment status | Detail |
+|---|---|---|---|---|
+| H-05 / C4R S-229 | `StakingBase._withdraw` cross-service reentrancy (F-8) | ✅ Fixed in `origin/main` | ⚪ Code fix only — never deployed. The post-fix `StakingToken` / `StakingNativeToken` source has not been deployed on any chain. When it is, it will be added as a **new** allowlisted implementation in `StakingVerifier` (alongside, not replacing, the existing one). Pre-existing `StakingProxy` instances remain on the original bytecode by design (constructor-pinned, §5.5); the fix takes effect on new clones built against the new implementation. | §4.1 |
+| H-06 | `ServiceManager.create` reentrancy via `onERC721Received` (F-123) | ✅ Fixed in `origin/main` | 🟢 Live on-chain — `docs/configuration.json` references `abis/0.8.30/ServiceManager.json` for all production chains; not bytecode-verified in this report | §4.2 |
+| H-07 / C4R S-149 | `registerAgentsWithSignature` operator whitelist bypass (F-166) | 📝 Documented (known issue) — item #14 | — | §4.3 |
+| H-09 / C4R S-858, S-862 | `registerAgentsWithSignature` missing deadline / maximum bond (F-215) | 📝 Documented (known issue) — item #17 | — | §4.4 |
+| H-10 / C4R S-1187 | Token callback reentrancy (broader path) (F-397) | ✅ Fixed in `origin/main` | ⚪ Code fix only — never deployed. Same as H-05: source on HEAD `d60f7ef5` has never been deployed; will land as a new allowlisted implementation. | §4.5 |
+| M-08 / C4R S-885 | Proportional `RewardDistributionType` ignores slashed bonds (F-329) | 📝 Documented (known issue) — item #19 | — | §4.6 |
+| M-10 / C4R S-763 | `checkpoint` time manipulation during absence of rewards (F-374) | 📝 Documented (known issue) — item #20 | — | §4.7 |
+| L-11 / C4R S-69 | `execTransaction` return value ignored in multisig-creating contracts | 📝 Documented (known issue) — item #13; bool still unchecked in `PolySafeCreatorWithRecoveryModule.create:201–204`; not exploitable under deployed Safe v1.3.0 + `safeTxGas = 0, gasPrice = 0` semantics; defence-in-depth recommendation in §4.8 | — (no code change) | §4.8 |
+| L-12 / C4R S-1175 | `registerAgentsWithSignature` missing `msg.value` validation | 📝 Documented (known issue) — item #15 | — | §4.9 |
+| L-13 / C4R S-430 | `slash` mechanism abuse by service owner | 📝 Documented (known issue) — item #16 | — | §4.10 |
+| L-14 / C4R S-901 | `registerAgents` agent instance registration DoS | 📝 Documented (known issue) — item #18 | — | §4.11 |
 
 All 11 are verified below against HEAD `d60f7ef5`.
+
+**Per-status summary (registries-scope only):**
+
+| | High | Medium | Low | Total |
+|---|---:|---:|---:|---:|
+| ✅ Fixed in `origin/main` | 3 (H-05, H-06, H-10) | 0 | 0 | 3 |
+| 📝 Documented (known issue) | 2 (H-07, H-09) | 2 (M-08, M-10) | 4 (L-11, L-12, L-13, L-14) | 8 |
+| **Total** | **5** | **2** | **4** | **11** |
+
+| Deployment status (for the 3 code-fixes) | Count | Findings |
+|---|---:|---|
+| 🟢 Live on-chain (referenced in `docs/configuration.json`; not bytecode-checked in this report) | 1 | H-06 (`ServiceManager` 0.8.30 across all chains) |
+| 🟡 Pending redeploy | 0 | — |
+| ⚪ Code fix only — never deployed (post-fix `StakingToken` / `StakingNativeToken` source not deployed on any chain; will land as a new allowlisted implementation in `StakingVerifier`, alongside the existing one) | 2 | H-05, H-10 |
 
 ### 4.1 C4A H-05 / C4R S-229 — `StakingBase._withdraw` cross-service reentrancy
 
@@ -211,16 +247,15 @@ The previously-`public` `checkpoint()` was split into external wrapper + interna
 
 **Fix branch:** `8004_extension` (PR #241, commit `7674c5c`).
 
-**Original finding.** During `deploy` / `registerAgents` paths that mint an ERC721 service token with `_safeMint`, a recipient contract's `onERC721Received` callback could re-enter and manipulate state before the outer call completed.
+**Original finding.** `ServiceManager.create` (and the underlying `ServiceRegistry.create`) mints the service ERC721 to `serviceOwner` with `_safeMint`. A contract recipient's `onERC721Received` callback could re-enter `ServiceManager.create` (or other state-mutating externals) and manipulate state before the outer call completed.
 
-**Fix verified.** Reentrancy guards added on `ServiceManager.sol`:
+**Fix verified.** Reentrancy guards on the create path:
 
-- `registerAgentsWithSignature` line 585–587: `if (_locked > 1) { revert ReentrancyGuard(); } _locked = 2;`
-- Lock released at line 634.
+- `ServiceManager.create` — `_locked` acquired at `ServiceManager.sol:203–206` and released at line 255, wrapping the inner `IService(serviceRegistry).create(...)` call.
+- `ServiceRegistry.create` — `_locked` acquired at `ServiceRegistry.sol:226–229` and released at line 274, with `_safeMint(serviceOwner, serviceId)` at line 270 executing **inside** the lock window. State writes (`mapServices[serviceId] = service`, `totalSupply = serviceId`) at lines 266–267 happen **before** `_safeMint`, so any reentry into `ServiceRegistry.create` itself reverts on the lock check; the `serviceId` row is fully well-formed before the callback is reached.
+- `ServiceRegistryL2.create` mirrors the L1 layout (lock at `ServiceRegistryL2.sol:218–221`/266; `_safeMint` at line 262).
 
-Sibling `ServiceRegistry.registerAgents` path is lock-guarded analogously (internal `_locked` slot + inline check on every state-mutating external — matches the C4A PR #241 merge referenced in `docs/Vulnerabilities_list_registries.md` items #13 / #14).
-
-**Status-preserving note (carry-over from internal15).** Reentrancy analysis for `ServiceRegistry.create` (ERC721 `_safeMint` callback) — the create path does not expose reward state or tokens to the callback; the only mutable state is the freshly-allocated `serviceId` row (well-formed before `_safeMint`). No CEI ordering bug remains.
+**Caveat — `ServiceRegistry.registerAgents` is NOT lock-guarded.** Only `create`, `deploy`, `terminate`, `unbond`, and `drain` carry an inline `_locked` block on `ServiceRegistry` (and on `ServiceRegistryL2`); `update`, `activateRegistration`, and `registerAgents` do not. Reentrancy on the `registerAgents` path is mitigated by the `ServiceManager.registerAgents` / `registerAgentsWithSignature` wrappers (`ServiceManager.sol:374–378` and `585–588`), which is the only entry point used by the periphery and the only one that invokes `IServiceTokenUtility`. Direct callers that talk to `ServiceRegistry.registerAgents` bypassing the manager would not be lock-protected — but that path requires the caller to be authorised as `manager`, which is governed by the Timelock-set `manager` role (currently `ServiceManager`).
 
 ✅ **FIXED AND VERIFIED.**
 
@@ -279,21 +314,32 @@ Defence-in-depth for any future hook-carrying staking token deployed via `Stakin
 
 ### 4.8 C4A L-11 / C4R S-69 — `execTransaction` return value ignored
 
-**Fix branch:** `8004_extension` (PR #241, commit `7674c5c`) — on-chain `ServiceManager` layer; `RecoveryModule` side handled off-chain via pre-flight simulation.
+**Original finding.** `RecoveryModule.recoverAccess` and the multisig-creating `create()` functions (notably `PolySafeCreatorWithRecoveryModule.create`) invoke `Safe.execTransaction` and ignore the boolean return value.
 
-**Original finding.** `RecoveryModule.recoverAccess` and multisig-creating `create()` functions invoke `Safe.execTransaction` and ignore the boolean return value.
+**Code state (HEAD `d60f7ef5`):** the bool return is **still ignored on-chain** in the multisig creators. `PolySafeCreatorWithRecoveryModule.create` at `contracts/multisigs/PolySafeCreatorWithRecoveryModule.sol:201–204` calls `ISafe(multisig).execTransaction(...)` for the `enableModule(recoveryModule)` post-creation step and does not consume the returned bool.
 
-**Fix verified.** Per `docs/Vulnerabilities_list_registries.md` item #13: the guard is enforced at the `ServiceManager` level via PR #241 (deployment path checks the multisig-creation success and reverts on failure); the `RecoveryModule` off-chain side is addressed by pre-flight simulation.
+The "ServiceManager-level guard" cited by the prior framing is `ServiceManager.deploy:434–439`, which checks `multisig != address(0)` after the inner `IService(serviceRegistry).deploy(...)` returns. This zero check is genuinely a guard for the case where a stateless `IMultisig.create()` implementation fails entirely and returns the zero address. It is **not** a guard for L-11's specific silent-failure case: in `PolySafeCreatorWithRecoveryModule.create`, the Safe proxy is deployed and codehash-checked at lines 164–177 *before* `execTransaction(enableModule)` runs, so the returned `multisig` is always non-zero by line 206 regardless of whether the module-enabling call succeeded. The zero-address check therefore cannot distinguish "Safe created with module enabled" from "Safe created without module enabled".
 
-✅ **FIXED (partial on-chain, partial off-chain) — ACCEPTED.**
+**Why this is not exploitable in practice on the deployed parameters.** The `execTransaction` call is constructed with `safeTxGas = 0` and `gasPrice = 0` (positional args 5 and 7 at `PolySafeCreatorWithRecoveryModule.sol:203`). Per Safe v1.3.0 `execTransaction`, when both are zero and the inner Safe call fails, `execTransaction` reverts with `GS013` rather than silently returning `false`. So the only way the call returns is on inner-call success, in which case the bool is `true` and ignoring it is a stylistic — not security — issue. The previously-cited "ServiceManager-level guard" is the inner-call revert propagating through `ServiceRegistry.deploy → IMultisig(...).create → execTransaction`, not an explicit success check in `ServiceManager`.
+
+**Recommendation.** For defence-in-depth and clarity, either (a) check the bool explicitly in `PolySafeCreatorWithRecoveryModule.create` and revert on `false`, or (b) add an explicit post-condition (e.g. confirm the recovery module is in `getModulesPaginated()` after the call). Without one of these, future Safe versions or different `safeTxGas` / `gasPrice` parameterisations would reintroduce the silent-failure surface.
+
+**`RecoveryModule.recoverAccess` side** — the bool is also not checked on-chain; the operational mitigation is off-chain pre-flight simulation by the master Safe before submitting the transaction (per `docs/recover_funds_lost_agent_eoa.md`).
+
+⚠️ **NOT FIXED ON-CODE in the multisig creators.** Marking L-11 as fixed in §C4R / `Vulnerabilities_list_registries.md` item #13 is unsafe given current code — should be re-classified as a **documented trade-off** justified by Safe v1.3.0 revert semantics under the specific `safeTxGas = 0, gasPrice = 0` parameterisation, OR closed by an explicit on-chain check.
 
 ### 4.9 C4A L-12 / C4R S-1175 — `registerAgentsWithSignature` missing `msg.value` validation
 
-**Original finding.** `registerAgentsWithSignature` forwards `{value: agentInstances.length * BOND_WRAPPER}` to `ServiceRegistry.registerAgents` without validating the caller-supplied `msg.value`. Excess ETH is not refunded — it sits permanently in `ServiceManager`.
+**Original finding.** `registerAgentsWithSignature` does not validate the caller-supplied `msg.value`. Excess ETH is not refunded — it sits permanently in `ServiceManager`.
 
-**Status.** Acknowledged as **documented trade-off** (`docs/Vulnerabilities_list_registries.md` item #15). C4A assessed the dup (#S-1175) as "misconfigured registration from users" per Known Issues. Protocol adds no refund mechanism by design.
+**Code state (HEAD `d60f7ef5`).** The forwarded value depends on the service's bond token (`ServiceManager.sol:619–630`):
 
-The mirrored `msg.value` check for the non-signature path (`ServiceRegistry.registerAgents`) is strict: `require(msg.value == agentInstances.length * BOND_WRAPPER)`.
+- **Token-secured services** (custom ERC20 bond): forwards `{value: agentInstances.length * BOND_WRAPPER}` (i.e. `length * 1 wei`) to `ServiceRegistry.registerAgents`. Any excess `msg.value` above this constant is unrefunded and trapped in `ServiceManager`.
+- **Native (ETH-secured) services**: forwards `{value: msg.value}` directly. The downstream check enforces an exact match, so excess simply causes a revert — no trapping.
+
+The mirrored check on the non-signature path lives in `ServiceRegistry.registerAgents` at line 427: `if (msg.value != totalBond) revert IncorrectAgentBondingValue(...)`, where `totalBond` is the **sum of stored `agentParams.bond`** for the requested agent IDs. Because `ServiceManager.create` / `update` wrap token-secured bonds to `BOND_WRAPPER = 1`, `totalBond` reduces to `agentInstances.length * BOND_WRAPPER` for token-secured services only; for native services `totalBond` is the actual sum of ETH bonds.
+
+**Status.** Acknowledged as **documented trade-off** (`docs/Vulnerabilities_list_registries.md` item #15). C4A assessed the dup (#S-1175) as "misconfigured registration from users" per Known Issues. The token-secured signature path is the only one where excess `msg.value` can be silently trapped; the native-secured path reverts on mismatch, and the non-signature `ServiceManager.registerAgents` path explicitly enforces `msg.value == totalBond` for token-secured services at `ServiceManager.sol:394–398`.
 
 ✅ **DOCUMENTED TRADE-OFF — ACCEPTED.**
 
@@ -315,14 +361,30 @@ The mirrored `msg.value` check for the non-signature path (`ServiceRegistry.regi
 
 ### 4.12 C4A summary
 
-| Severity | Registries-scope count | Fixed on-code | Accepted trade-off |
-|---|---:|---:|---:|
-| High | 5 | 3 (H-05, H-06, H-10) | 2 (H-07, H-09) |
-| Medium | 2 | 0 | 2 (M-08, M-10) |
-| Low | 4 | 1 (L-11 at ServiceManager layer) | 3 (L-12, L-13, L-14) |
-| **Total** | **11** | **4 code-level fixes** | **7 documented trade-offs** |
+**Code status:**
 
-**No C4A registries-scope finding remains open as an actionable code bug.** Every trade-off is mapped to an entry in `docs/Vulnerabilities_list_registries.md` with explicit mitigation guidance.
+| Severity | Registries-scope count | ✅ Fixed in `origin/main` | 📝 Documented (known issue) | 🔴 Not fixed (open) |
+|---|---:|---:|---:|---:|
+| High | 5 | 3 (H-05, H-06, H-10) | 2 (H-07, H-09) | 0 |
+| Medium | 2 | 0 | 2 (M-08, M-10) | 0 |
+| Low | 4 | 0 | 4 (L-11, L-12, L-13, L-14) | 0 |
+| **Total** | **11** | **3** | **8** | **0** |
+
+**Deployment status (only meaningful for code-fixed rows):**
+
+| Deployment status | Count | Findings | Notes |
+|---|---:|---|---|
+| 🟢 Live on-chain | 1 | H-06 | `docs/configuration.json` references `abis/0.8.30/ServiceManager.json` on all production chains; bytecode-equivalence not directly verified in this report. |
+| 🟡 Pending redeploy | 0 | — | — |
+| ⚪ Code fix only — never deployed | 2 | H-05, H-10 | The post-fix `StakingToken` / `StakingNativeToken` source on HEAD `d60f7ef5` has not been deployed on any chain. Plan: deploy as a **new** implementation, register it in `StakingVerifier` as an additional allowlisted entry (the prior 0.8.25 / 0.8.28 implementations remain whitelisted in parallel), and `StakingFactory` will then produce new `StakingProxy` clones bound to the post-fix bytecode. Existing `StakingProxy` instances continue running against their original implementation by design (constructor-pinned, §5.5) — the fix is not retro-applied. Per §4.1 / §3.1 the pre-fix gap was not reachable on the OLAS-backed proxies actually live today (OLAS has no transfer hooks; `StakingNativeToken` has no live proxies on any supported chain), so the deployment is defence-in-depth, not an emergency. |
+
+**Key dispositions for registries-scope:**
+
+- **No C4A registries-scope finding remains open as a High/Medium actionable code bug.** All three code-level fixes (H-05, H-06, H-10) live on `origin/main`. The two High and two Medium findings without a code change (H-07, H-09, M-08, M-10) are accepted trade-offs documented in `docs/Vulnerabilities_list_registries.md`.
+- **L-11 was previously framed as "fixed at the ServiceManager layer".** This report reclassifies it to a documented trade-off (§4.8): the bool return is still ignored in `PolySafeCreatorWithRecoveryModule.create:201–204`, but Safe v1.3.0 revert semantics under the deployed `safeTxGas = 0, gasPrice = 0` parameterisation prevent silent failure today. Recommendation: add an explicit on-chain check or post-condition for defence-in-depth.
+- **The two staking fixes (H-05, H-10) are deployment-gated.** Operational follow-up: deploy a new `StakingToken` / `StakingNativeToken` implementation off `origin/main`, register it as an additional allowlisted entry in `StakingVerifier`, and let `StakingFactory` produce new clones against it. Existing proxies stay on their original (pre-fix) implementation by design. Per §3.1 the pre-fix gap was not reachable on OLAS-backed proxies actually live today, so the deployment is defence-in-depth, not an emergency.
+
+Every trade-off is mapped to an entry in `docs/Vulnerabilities_list_registries.md` with explicit mitigation guidance.
 
 ## 5. On-chain verification (Ethereum mainnet, block-tip 2026-04-22)
 
@@ -382,15 +444,15 @@ None of these are registries-code findings — cross-repo OpSec context only.
 
 ### 6.1 Summary
 
-| Severity | Count | IDs |
-|---|---|---|
-| Critical | 0 | — |
-| High | 0 | — |
-| Medium | 0 | — |
-| Low | 0 | (the Low §A.5 that internal16 carried as "residual" is now closed on-code) |
-| Notes | 0 new (3 carry-over from internal16) | N-1, N-2, N-3 (all informational / stylistic) |
+| Severity | Count | Code status | Deployment status | IDs |
+|---|---|---|---|---|
+| Critical | 0 | — | — | — |
+| High | 0 | — | — | — |
+| Medium | 0 | — | — | — |
+| Low | 1 (defence-in-depth) | 📝 Documented (known issue) — item #13 in `docs/Vulnerabilities_list_registries.md` | — (no code change) | L-11 — `PolySafeCreatorWithRecoveryModule.create` ignores `Safe.execTransaction` bool (§4.8). Not exploitable today under deployed Safe v1.3.0 + `safeTxGas = 0, gasPrice = 0`; recommendation: add an explicit on-chain check. |
+| Notes | 0 new (3 carry-over from internal16) | — | — | N-1, N-2, N-3 (all informational / stylistic) |
 
-No new manual-review finding from the fresh read beyond confirmation that the §A.5 fix is implemented correctly.
+No new manual-review finding from the fresh read beyond confirmation that the §A.5 fix is implemented correctly. Items requiring follow-up that are *deployment-state* (not code-state) — H-05 / H-10 staking implementation redeploy, see §4.12 — are tracked in the operational follow-up bullet of §4.12, not as findings here.
 
 ### 6.2 Internal16 Notes — status on HEAD
 
@@ -411,12 +473,12 @@ All internal15 findings re-verified against HEAD `d60f7ef5`:
 | Stream A Low — `StakingBase._withdraw` cross-service reentrancy | L | **FIXED** | `_locked` guard (§4.1) |
 | Stream D Low — Custom distributor can return `address(stakingContract)` | L | **FIXED** | Receiver check `StakingBase.sol:742–744` |
 | Stream D Low — No code-existence check on custom distributor at stake time | L | **FIXED** | `customRewardsDistributor.code.length == 0` at `StakingBase.sol:852–854` |
-| Stream B Low — `ServiceRegistry.registerAgents` missing reentrancy guard | L | UNCHANGED | `ServiceManager.registerAgentsWithSignature` already lock-guarded (line 585–587) |
+| Stream B Low — `ServiceRegistry.registerAgents` missing reentrancy guard | L | UNCHANGED | `ServiceRegistry.registerAgents` (line 389) and `ServiceRegistryL2.registerAgents` (line 382) remain unguarded; mitigation is at the `ServiceManager` periphery only — `registerAgents` (line 374–378) and `registerAgentsWithSignature` (line 585–588). Direct callers with the `manager` role bypass the guard, which is acceptable given the role is held by the Timelock-controlled `ServiceManager`. |
+| Stream D Medium — PolySafe `execTransaction` return silently ignored | **M** | UNCHANGED | Cross-refs C4A L-11 §4.8; bool still unchecked in `PolySafeCreatorWithRecoveryModule.create:201–204`. Safe v1.3.0 reverts on inner-call failure under deployed `safeTxGas = 0, gasPrice = 0`, so not exploitable as silent-success today. Recommendation in §4.8 to add explicit on-chain check. |
 | Stream D Notes — `calculateStakingLastReward()` rounding dust | Info | UNCHANGED | Item #21 in `Vulnerabilities_list`; cosmetic only |
 | Stream D Notes — `ApplicationClassifier` untested | Info | **ADDRESSED** | `test/ApplicationClassifier.js` (+210 LOC) |
 | Stream D Notes — Zero fuzz tests | Info | **ADDRESSED** | `test/StakingFuzz.t.sol` (+379 LOC) |
 | Stream C Low/Info — PolySafe CREATE2 front-running | L/Info | UNCHANGED | Item #12 in `Vulnerabilities_list`; accepted |
-| Stream D Medium — PolySafe `execTransaction` return silently ignored | **M** | UNCHANGED | Cross-refs C4A L-11 §4.8; mitigated via PR #241 at `ServiceManager` layer |
 | Stream D Notes — `ComplementaryServiceMetadata` reentrancy guard style (`== 2` vs `> 1`) | Info | UNCHANGED | Noted |
 | Stream B/D Notes — `uint96(msg.value)` unsafe downcast | Info | UNCHANGED | Noted |
 
@@ -458,7 +520,7 @@ Document tracks 21 items. Re-verified each against HEAD `d60f7ef5`.
 | 10 | `checkpoint` function — O(n) gas overflow | High | ✅ yes | ✅ 100-slot launcher discipline |
 | 11 | `deploy` function — `RecoveryModule` does not restore off-chain dependencies | Info | ✅ yes | ✅ integration-level advisory |
 | 12 | `create` function — PolySafe CREATE2 front-run | Low | ✅ yes | ✅ `GnosisSafeSameAddressMultisig.create()` fallback |
-| 13 | `execTransaction` return value ignored (C4A L-11 / C4R S-69) | Low | ✅ yes | ✅ `ServiceManager` guard via PR #241; `RecoveryModule` off-chain pre-flight |
+| 13 | `execTransaction` return value ignored (C4A L-11 / C4R S-69) | Low | ✅ yes | ⚠️ Bool still unchecked in `PolySafeCreatorWithRecoveryModule.create:201–204`; not exploitable today due to Safe v1.3.0 revert semantics under deployed `safeTxGas = 0, gasPrice = 0` (§4.8). Recommendation: add explicit on-chain check or post-condition. `RecoveryModule` side: off-chain pre-flight. |
 | 14 | `registerAgentsWithSignature` operator whitelist bypass (C4A H-07 / C4R S-149) | Low | ✅ yes | ✅ service owner self-restriction (accepted) |
 | 15 | `registerAgentsWithSignature` missing `msg.value` validation (C4A L-12 / C4R S-1175) | Low | ✅ yes | ✅ caller-side discipline (accepted per Known Issues) |
 | 16 | `slash` mechanism abuse (C4A L-13 / C4R S-430) | Low | ✅ yes | ✅ no economic benefit (funds locked in registry) |
@@ -476,14 +538,15 @@ Document tracks 21 items. Re-verified each against HEAD `d60f7ef5`.
 
 ## 8. Conclusion
 
-- **§A.5 follow-up** (internal16's residual Low) — **FIXED ON-CODE** by commits `36609be` + `d60f7ef5` (PR #288). Derivative `receive()` / `deposit()` now share the `_locked` slot; Invariant 5 holds unconditionally. Fix implemented exactly as internal16 specified (§3.1).
-- **C4A registries-scope** (5 High + 2 Medium + 4 Low): 4 closed on-code (H-05, H-06, H-10, L-11), 7 accepted as documented trade-offs with mitigations recorded in `docs/Vulnerabilities_list_registries.md`. No open actionable code bug.
+- **§A.5 follow-up** (internal16's residual Low) — **Code: ✅ Fixed in `origin/main`** by commits `36609be` + `d60f7ef5` (PR #288). Derivative `receive()` / `deposit()` now share the `_locked` slot; Invariant 5 holds unconditionally. **Deployment: ⚪ Code fix only — never deployed** — same as H-05 / H-10: this version of `StakingToken` / `StakingNativeToken` has not yet been deployed; will land as a new allowlisted implementation in `StakingVerifier`, alongside the existing one. Fix implemented exactly as internal16 specified (§3.1).
+- **C4A registries-scope (5H + 2M + 4L) — code-status disposition:** 3 ✅ Fixed in `origin/main` (H-05, H-06, H-10), 8 📝 Documented (known issue) with mitigations in `docs/Vulnerabilities_list_registries.md` (H-07, H-09, M-08, M-10, L-11, L-12, L-13, L-14), 0 🔴 Not-fixed open. L-11 is the reclassification from "fixed at ServiceManager layer" to documented trade-off (§4.8): bool still unchecked in `PolySafeCreatorWithRecoveryModule.create`, non-exploitable under deployed Safe v1.3.0 + `safeTxGas = 0, gasPrice = 0`; recommendation to add explicit on-chain check.
+- **C4A registries-scope — deployment-status disposition (for the 3 code-fixes):** 1 🟢 Live on-chain (H-06: `ServiceManager` references `abis/0.8.30/ServiceManager.json` on all production chains; not bytecode-checked here); 2 ⚪ Code fix only — never deployed (H-05 / H-10: post-fix `StakingToken` / `StakingNativeToken` source on HEAD has never been deployed; planned to land as a new allowlisted implementation in `StakingVerifier` — added alongside, not replacing, the existing implementation. Existing `StakingProxy` instances are constructor-pinned and remain on their original implementation by design. Operational follow-up, not blocking — pre-fix gap was not reachable on OLAS-backed proxies live today per §3.1.).
 - **On-chain owner map (§5)** — all registries contracts resolve to the same governance Timelock as `autonolas-governance` and `autonolas-tokenomics`. No EOA-owned admin. Permissionless `StakingFactory` + owner-gated `StakingVerifier` allowlist.
-- **New code findings this pass:** 0 High / 0 Medium / 0 Low / 0 new Notes. The three Notes from internal16 carry over unchanged (one of which is now explicitly resolved by §A.5).
+- **New code findings this pass:** 0 High / 0 Medium / 1 Low / 0 new Notes. The Low is L-11 (`execTransaction` bool unchecked in `PolySafeCreatorWithRecoveryModule.create`), reclassified from the prior "fixed at ServiceManager layer" framing — see §4.8. The three Notes from internal16 carry over unchanged (one of which is now explicitly resolved by §A.5).
 - **Internal15 findings** — all re-verified; three previously-open Lows fixed on the hardening branch.
-- **`Vulnerabilities_list_registries.md`** — 21 entries after removing the former item #13 (`_claim` reward-before-checkpoint sequence) which is fixed on-code and covered by `test/StakingBaseCoverage.t.sol:test_CheckpointAndClaim_HappyPath`; documentation drift around `registerAgentsWithSignature` signature snippets (items #14 / #15 / #17 after renumber) corrected.
+- **`Vulnerabilities_list_registries.md`** — now 22 entries: 21 after removing the former `_claim` reward-before-checkpoint entry (fixed on-code, covered by `test/StakingBaseCoverage.t.sol`), plus a new item #22 added this pass for `ServiceRegistry.registerAgents` / `update` / `activateRegistration` missing inline reentrancy guard (manager-role-mitigated). Item #13 (L-11) rewritten to accurately describe what PR #241's zero-check does and does not protect.
 
-**Verdict: no High / Medium / Low findings on commit `d60f7ef5`.** The C4A external audit + post-C4R hardening + PR #288 closed every serious registries-scope issue. The remaining surface is well-understood documented trade-offs and three informational Notes (stylistic / cosmetic). **Recommendation: ship.**
+**Verdict: no High / Medium findings on commit `d60f7ef5`; one Low (L-11, defence-in-depth) and three informational Notes carried from internal16.** The C4A external audit + post-C4R hardening + PR #288 closed every High/Medium registries-scope issue at the **code level**. L-11 is non-exploitable today under deployed Safe parameters but warrants an explicit on-chain bool check in `PolySafeCreatorWithRecoveryModule.create` for defence-in-depth. The two staking fixes (H-05, H-10) live on `origin/main` but the new `StakingToken` / `StakingNativeToken` implementation has not been deployed yet — when it is, it will be added as a new allowlisted entry in `StakingVerifier` alongside the existing one (existing proxies are constructor-pinned and stay on their original implementation by design). Defence-in-depth follow-up, not blocking. **Recommendation: ship; schedule (a) a follow-up PR adding an explicit `execTransaction` bool/post-condition check in `PolySafeCreatorWithRecoveryModule`, and (b) deployment of the post-fix `StakingToken` / `StakingNativeToken` as a new allowlisted implementation in `StakingVerifier` on the chains where it matters.**
 
 ## 9. Methodology Compliance Report (AGENT-RULES.md)
 
@@ -493,7 +556,7 @@ Document tracks 21 items. Re-verified each against HEAD `d60f7ef5`.
 | 2. Cross-domain patterns | ✓ DeFi reentrancy + callback + CEI + proxy-storage patterns applied; staking-specific patterns (custom distributor, lock extension to derivative entries) covered |
 | 3. Checklist log | ✓ this document (§4 matrix + §6.3 internal15 table + §6.2 internal16 table + §7 hygiene table) |
 | 4. Playbook updates all-or-nothing | ✓ v2.22 applied; registry / staking / multisig patterns covered |
-| 5. Post-audit vulnerability monitoring | ✓ C4A H-05/H-06/H-10/L-11 → fix confirmed; §A.5 (internal16 residual) closed |
+| 5. Post-audit vulnerability monitoring | ✓ C4A H-05/H-06/H-10 → fix confirmed; L-11 reclassified to documented trade-off (§4.8); §A.5 (internal16 residual) closed |
 | 6. No premature "all clear" | ✓ §6 lists carry-over Notes explicitly; §4 lists every accepted trade-off |
 | 7. Compliance report | ✓ this section |
 
