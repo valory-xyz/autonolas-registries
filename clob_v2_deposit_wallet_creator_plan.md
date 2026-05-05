@@ -248,6 +248,104 @@ and the `DepositWalletLinked` event are still useful — they let third parties
 (8004 indexers, dashboards, the trader itself) discover a service's DW from
 its Safe.
 
+### Service-id association — how indexers join a DW back to an OLAS service
+
+The creator should not be the authoritative source of `serviceId`. The
+`IMultisig.create(owners, threshold, data)` interface does not receive
+`serviceId`, and `ServiceRegistryL2.deploy()` emits
+`CreateMultisigWithAgents(serviceId, multisig)` only after the creator returns:
+
+```solidity
+multisig = IMultisig(multisigImplementation).create(agentInstances, service.threshold, data);
+service.multisig = multisig;
+emit CreateMultisigWithAgents(serviceId, multisig);
+```
+
+So the canonical association is a two-event join on the Safe/multisig address:
+
+1. The DW creator emits the execution-wallet link:
+
+   ```solidity
+   event DepositWalletLinked(
+       address indexed multisig,
+       address indexed depositWallet,
+       address indexed owner
+   );
+   ```
+
+   Minimum required fields are `multisig` and `depositWallet`; indexing
+   `owner` is recommended because `owner == agentInstance` is the invariant
+   checked by the creator.
+
+2. `ServiceRegistryL2` emits the service identity link:
+
+   ```solidity
+   event CreateMultisigWithAgents(uint256 indexed serviceId, address indexed multisig);
+   ```
+
+3. Indexers join the two records by `multisig`:
+
+   ```text
+   DepositWalletLinked.multisig
+       == CreateMultisigWithAgents.multisig
+
+   serviceId      = CreateMultisigWithAgents.serviceId
+   serviceSafe    = CreateMultisigWithAgents.multisig
+   depositWallet  = DepositWalletLinked.depositWallet
+   owner          = DepositWalletLinked.owner
+   ```
+
+This gives a deterministic subgraph shape:
+
+```graphql
+type ServiceDepositWallet @entity {
+  id: Bytes!              # depositWallet
+  serviceId: BigInt!
+  multisig: Bytes!        # OLAS service Safe
+  depositWallet: Bytes!
+  owner: Bytes!           # agent instance / DW owner
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+```
+
+The event ordering inside `ServiceRegistryL2.deploy()` is expected to be:
+creator event first, registry event second, because the creator emits during
+`create()` and the registry emits after `create()` returns. A subgraph should
+therefore be written as an upsert/pending-join rather than assuming both sides
+already exist in one handler:
+
+- On `DepositWalletLinked`, store a pending `multisig -> depositWallet` record.
+- On `CreateMultisigWithAgents`, create or complete the canonical
+  `ServiceDepositWallet` record if a pending DW link exists for that multisig.
+- If the registry event is indexed first due to handler ordering or future
+  contract changes, store `multisig -> serviceId` and complete the record when
+  the DW link arrives.
+
+Once this mapping exists, Polymarket trade attribution changes from a direct
+`TraderAgent.load(maker)` lookup to:
+
+```text
+maker = OrderFilled.maker
+
+if maker is a known depositWallet:
+    trader identity = ServiceDepositWallet[maker].multisig or serviceId
+else:
+    trader identity = maker   # legacy Safe/proxy path
+```
+
+The same resolution is needed for redemptions if `PayoutRedemption.redeemer`
+is the deposit wallet. This is the subgraph bridge between the Safe-as-service
+identity and the DW-as-CLOB-execution wallet.
+
+If a single `DepositWalletLinked(serviceId, multisig, depositWallet)` event is
+desired, the registry/creator interface must change so the registry passes a
+trusted `serviceId` into the creator. Encoding `serviceId` only inside
+creator `data` is not an authoritative source by itself because arbitrary
+caller-supplied `data` is not tied to the `serviceId` unless the registry
+validates it.
+
 ### Updated revised flow (incorporates probe findings)
 
 ```
@@ -272,7 +370,7 @@ T = max(Phase1, Phase2)
              4. require(depositWalletAddr.codehash == depositWalletBytecodeHash).
              5. require(IDepositWallet(depositWalletAddr).owner() == agentInstances[0]).
              6. mapMultisigDepositWallets[newSafe] = depositWalletAddr.
-             7. emit DepositWalletLinked(newSafe, depositWalletAddr).
+             7. emit DepositWalletLinked(newSafe, depositWalletAddr, agentInstances[0]).
              8. return newSafe.
 
 T = Phase3+
@@ -297,11 +395,12 @@ land, typically under a minute.
 | §"Target end-state" — Phase 4 inlining | "Probe-gated public executeBatch" | **Off the table.** `wallet.execute` is `onlyFactory`. Phase 4 must be off-chain via relayer. |
 | §"Why Safe should NOT have agent instances as direct owners of DW" | Argued the Safe should own DW | **Argument inverted.** Agent-EOA-as-owner is now the only viable model. The original argument's downsides (no recovery for DW funds, no threshold control over DW) are now load-bearing concerns, not avoidable costs. |
 | §"Recovery flow under wrapping" | Master Safe regains control of DW after Safe recovery | **Materially weaker.** RecoveryModule recovers the Safe but not the DW. Lost agent EOA = DW funds stranded. Mitigation: frequent sweep. |
+| §"Design C" service-id event | Creator emits `DepositWalletLinked(serviceId, multisig, depositWallet)` | **Superseded.** `IMultisig.create()` does not receive trusted `serviceId`; indexers should join `DepositWalletLinked(multisig, depositWallet, owner)` with `ServiceRegistryL2.CreateMultisigWithAgents(serviceId, multisig)` by `multisig`. |
 
 ### What still applies from the previous plan
 
 - The IMultisig `create()` shape and wrapper-data design (just with `agentInstances[0]` instead of the Safe in the owner-check).
-- The on-chain link record (`mapMultisigDepositWallets`) and `DepositWalletLinked` event.
+- The on-chain link record (`mapMultisigDepositWallets`) and `DepositWalletLinked` event, with `serviceId` recovered by joining to `CreateMultisigWithAgents(serviceId, multisig)`.
 - Phase 1 ‖ Phase 2 parallelism.
 - The CREATE2 front-running consideration (carries over from PolySafe).
 - The OLAS-side Collapse 2 (`createAndDeploy` wrapper) — independently valuable.
