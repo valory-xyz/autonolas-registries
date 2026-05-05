@@ -67,9 +67,14 @@ forge test --match-contract Staking -vvv
 # Run PolySafeCreator tests
 forge test --match-contract PolySafeCreator -vvv
 
+# Run SafeAndDepositWalletCreator unit tests
+forge test --match-contract SafeAndDepositWalletCreator -vvv
+
 # Run fork tests (requires FORK_NODE_URL env var)
 forge test -f $FORK_NODE_URL --match-contract IdentityRegistry -vvv
 forge test -f $FORK_NODE_URL --match-contract StakePolySafe -vvv
+forge test -f $FORK_NODE_URL --match-contract SafeAndDepositWalletCreatorFork -vvv
+forge test -f $FORK_NODE_URL --match-contract SafeAndDepositWalletCreatorE2E -vvv
 ```
 
 ### Coverage
@@ -174,8 +179,13 @@ Services are deployed as multisigs. Multiple implementations are supported via t
 - `SafeMultisigWithRecoveryModule`: Includes Recovery Module for access recovery
 - `RecoveryModule`: Provides recovery functionality for Safe multisigs
 - `PolySafeCreatorWithRecoveryModule`: Creates Safe multisigs with recovery on Polygon/other chains
+- `SafeAndDepositWalletCreator`: Creates a Safe multisig with Recovery Module and links it to a Polymarket deposit wallet (Polygon-specific). The Safe is the OLAS service multisig + ERC-8004 agent wallet; the deposit wallet is a separate per-service Polymarket trading account, deployed out-of-band by Polymarket's relayer with the agent-instance EOA as its sole owner. The two are independent peers bridged by the agent EOA — the Safe cannot own the deposit wallet because Polymarket's `_erc1271IsValidSignatureNowCalldata` is pure ECDSA. See `clob_v2_deposit_wallet_creator_plan.md` for the full design.
 
 Multisig policies are tracked in `mapMultisigs` mapping in ServiceRegistry.
+
+### Polymarket CLOB v2 — deposit-wallet flow
+
+Under the CLOB v2 rollout (2026-05-01), new accounts must use deposit wallets to trade on Polymarket; new PolySafes are off-allowlist at the CLOB API ingest service. `SafeAndDepositWalletCreator` is the migration path: a single on-chain user transaction (`ServiceManager.deploy(serviceId, creator, data)`) deploys the Safe with RecoveryModule enabled atomically and verifies a pre-deployed deposit wallet, while off-chain HTTP calls to Polymarket's relayer (which is the only caller authorized to deploy deposit wallets — `DepositWalletFactory.deploy` is `onlyOperator`) handle the wallet provisioning and the post-deploy session-signer + approvals batch (`factory.proxy`). ERC-8004 `setAgentWallet` works through the Safe via the standard `SignMessageLib` + `CompatibilityFallbackHandler` path — no special multisig logic required, the Safe just needs the `CompatibilityFallbackHandler` set as its fallback (passed in via `data` to the creator). The end-to-end flow is exercised by `test/SafeAndDepositWalletCreatorFork.sol::SafeAndDepositWalletCreatorE2E`.
 
 ### Staking Contracts
 

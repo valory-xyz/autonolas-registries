@@ -82,6 +82,11 @@ The implementation of such multisig is provided here:
 The updated version with the access recovery feature is provided in the Recovery Module contract itself here:
 - [RecoveryModule](./contracts/multisigs/RecoveryModule.sol)
 
+A Polymarket-specific multisig creator that pairs a Safe (OLAS service multisig + ERC-8004 agent wallet) with a Polymarket deposit wallet — required for new accounts under the CLOB v2 rollout — is provided here:
+- [SafeAndDepositWalletCreator](./contracts/multisigs/SafeAndDepositWalletCreator.sol)
+
+It produces the Safe with `RecoveryModule` enabled atomically (via `Safe.setup`) and verifies a deposit wallet that is pre-deployed out-of-band by Polymarket's relayer (the `DepositWalletFactory.deploy` entry point is operator-gated, so the deposit wallet must be provisioned via an off-chain HTTP call before the on-chain `serviceManager.deploy` is submitted). The Safe and the deposit wallet are independent peers bridged by the agent-instance EOA: the EOA is one of the Safe's owners and the deposit wallet's sole EOA owner. ERC-8004 `setAgentWallet` works through the Safe via the standard `SignMessageLib` + `CompatibilityFallbackHandler` path. See [`clob_v2_deposit_wallet_creator_plan.md`](./clob_v2_deposit_wallet_creator_plan.md) for the full architecture and threat model.
+
 To verify the multisig data when redeploying the service using the GnosisSafeSameAddressMultisig contract while changing service multisig owners (with updated agent instance addresses),
 see the guidelines and corresponding scripts [here](./scripts/multisig/)
 
@@ -134,11 +139,14 @@ Run tests with Forge (skip fork testing):
 ```
 forge test --match-contract Staking -vvv
 forge test --match-contract PolySafeCreator -vvv
+forge test --match-contract SafeAndDepositWalletCreator -vvv
 ```
 Run fork tests with Forge:
 ```
 forge test -f $FORK_NODE_URL --match-contract IdentityRegistry -vvv
 forge test -f $FORK_NODE_URL --match-contract StakePolySafe -vvv
+forge test -f $FORK_NODE_URL --match-contract SafeAndDepositWalletCreatorFork -vvv
+forge test -f $FORK_NODE_URL --match-contract SafeAndDepositWalletCreatorE2E -vvv
 ```
 
 ### Test with instrumented code
