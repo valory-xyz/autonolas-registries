@@ -25,6 +25,7 @@
     - [19. slash and proportional RewardDistributionType split](#19-slash-and-proportional-rewarddistributiontype-split)
     - [20. checkpoint function during absence of rewards](#20-checkpoint-function-during-absence-of-rewards)
     - [21. calculateStakingLastReward rounding dust](#21-calculatestakinglastreward-rounding-dust)
+    - [22. ServiceRegistry registerAgents / update / activateRegistration missing reentrancy guard](#22-serviceregistry-registeragents--update--activateregistration-missing-reentrancy-guard)
 
 ## Involved contracts and level of the bugs
 
@@ -356,9 +357,17 @@ Those functions utilize Safe's execTransaction calls and must revert if they ret
 failure. The current implementation ignores this return value, allowing recovery attempts
 or multisig creation to silently fail.
 
-It is straightforward to perform the off-chain check for the recovery module. As for other
-multisig creating contracts invoked via the create() function during service deployment,
-the guard is enforced at the ServiceManager level (see PR #241).
+It is straightforward to perform the off-chain check for the recovery module.
+
+For the multisig creating contracts invoked via the create() function during service
+deployment, the situation is partial:
+
+- `ServiceManager.deploy()` checks `multisig != address(0)` after `IService(serviceRegistry).deploy(...)` returns (PR #241). This guards against an `IMultisig.create()` implementation that fails entirely and returns the zero address.
+- It does NOT guard against the L-11 silent-failure scenario in `PolySafeCreatorWithRecoveryModule.create()`. There, the Safe proxy is deployed and codehash-checked *before* `execTransaction(enableModule)` is invoked, so the returned `multisig` is always non-zero regardless of whether the module-enabling call silently failed. The zero-address check therefore cannot detect the case where the Safe is created without the Recovery Module enabled.
+
+What protects the deployed system today is the Safe v1.3.0 `execTransaction` revert semantics under the deployed parameters: `PolySafeCreatorWithRecoveryModule` calls `execTransaction` with `safeTxGas = 0` and `gasPrice = 0`. Per Safe v1.3.0, when both are zero and the inner call fails, `execTransaction` reverts with `GS013` rather than silently returning `false`. So the only way the call returns is on inner-call success, in which case the returned bool is `true` and ignoring it is a stylistic — not security — issue. This implicit guarantee is parameter-dependent and would not survive a future Safe revision or a different `safeTxGas` / `gasPrice` parameterisation.
+
+Recommendation: for defence-in-depth, either (a) consume the bool explicitly in `PolySafeCreatorWithRecoveryModule.create` and revert on `false`, or (b) add an explicit post-condition check (e.g. confirm the recovery module is enabled via Safe's `getModulesPaginated`).
 
 ### 14. `registerAgentsWithSignature` operator whitelist bypass
 
@@ -391,19 +400,27 @@ The following function is implemented in the ServiceManager contract:
 function registerAgentsWithSignature(address operator, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, bytes memory signature) external payable returns (bool success)
 ```
 
-In registerAgents(), the native-token branch strictly enforces: `require(msg.value == agentInstances.length * BOND_WRAPPER)`. However, in registerAgentsWithSignature(),
-the function forwards `{value: agentInstances.length * BOND_WRAPPER}` to the registry
-without validating the caller-supplied msg.value.
+The forwarded value depends on the service's bond token:
 
-If msg.value exceeds the required bond wrapper amount, the excess ETH is not refunded
-and remains permanently stored in the ServiceManager contract, as no refund or
-withdrawal mechanism exists. This does not enable theft or privilege escalation. However,
-it introduces a locked ETH risk, where users may unintentionally overpay and permanently
-lose funds.
+- **Token-secured services** (custom ERC20 bond): `registerAgentsWithSignature` forwards
+  `{value: agentInstances.length * BOND_WRAPPER}` (i.e. `length * 1 wei`) to
+  `ServiceRegistry.registerAgents`. Any excess `msg.value` above this constant is
+  unrefunded and trapped permanently in `ServiceManager`, since no refund or withdrawal
+  mechanism exists.
+- **Native (ETH-secured) services**: `registerAgentsWithSignature` forwards
+  `{value: msg.value}` directly. The downstream check
+  `if (msg.value != totalBond) revert IncorrectAgentBondingValue(...)` in
+  `ServiceRegistry.registerAgents` enforces an exact match against the sum of stored
+  `agentParams.bond`, so excess simply causes a revert — no trapping.
+
+The trapping case is therefore confined to the token-secured signature path. It does not
+enable theft or privilege escalation; it introduces a locked ETH risk where users may
+unintentionally overpay the wrapper amount and permanently lose the difference.
 
 This is not an exploitable vulnerability but represents improper input validation that can
-result in permanent ETH lock. The registerAgentsWithSignature() function needs to be
-corrected by adding the specified msg.value check. Note: One of the duplicate
+result in permanent ETH lock on the token-secured signature path. The
+registerAgentsWithSignature() function could be corrected by adding an explicit
+`msg.value` check that mirrors the per-service branch logic. Note: One of the duplicate
 submissions (#S-1175) was assessed as out of scope per the Known Issues section
 regarding misconfigured registration from users.
 
@@ -557,3 +574,36 @@ negligible in practice.
 
 No fix is required, but callers of calculateStakingLastReward() should be aware that the actual
 reward for the first staked service may be marginally higher than reported.
+
+### 22. `ServiceRegistry` `registerAgents` / `update` / `activateRegistration` missing reentrancy guard
+
+**Severity**: Low
+**Source**: Internal audit 15 (Stream B Low) — re-verified in internal audit 17
+
+The following functions on `ServiceRegistry` and `ServiceRegistryL2` do not carry an inline
+`_locked` reentrancy block:
+
+```solidity
+function update(address serviceOwner, bytes32 configHash, uint32[] memory agentIds, AgentParams[] memory agentParams, uint32 threshold, uint256 serviceId) external returns (bool success)
+function activateRegistration(address serviceOwner, uint256 serviceId) external payable returns (bool success)
+function registerAgents(address operator, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds) external payable returns (bool success)
+```
+
+By contrast, `create`, `deploy`, `terminate`, `unbond`, and `drain` on the same contract are
+each wrapped in an inline `if (_locked > 1) revert ReentrancyGuard(); _locked = 2;` /
+`_locked = 1;` block.
+
+The mitigation is role-based, not code-level: every call to these three functions must come
+from the address holding the `manager` role on the registry (enforced by the
+`ManagerOnly` check at the top of each function). On all production deployments the
+`manager` role is set to `ServiceManager`, and the `ServiceManager` periphery wraps every
+externally callable entry point in its own `_locked` guard (see `ServiceManager.sol`
+`update`, `activateRegistration`, `registerAgents`, `registerAgentsWithSignature`). So in
+practice the reentrancy surface is closed by the manager-side lock.
+
+This entry documents the residual risk that any future deployment which assigns the
+`manager` role to a contract that does NOT carry an analogous reentrancy lock would
+re-open the path. Operational guidance: the `manager` role on `ServiceRegistry` /
+`ServiceRegistryL2` should always be held by a contract with an equivalent inline
+`_locked` guard on every state-mutating external. This is the case for the Timelock-
+managed `ServiceManager` deployed today.
