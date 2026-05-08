@@ -1,7 +1,7 @@
 # Polymarket Deposit-Wallet — Multisig Creator Contract Plan
 
-**Date:** 2026-05-02 (initial); 2026-05-04 (probe correction — see §"Probe results")
-**Status:** Analysis only, no code changes proposed yet.
+**Date:** 2026-05-02 (initial); 2026-05-04 (probe correction — see §"Probe results"); 2026-05-09 (fresh code-side re-verification — see §"Re-verification 2026-05-09"); 2026-05-10 (design lock-in — see §"Design lock-in 2026-05-10")
+**Status:** Design locked-in to corrected Design C (Option B). Two prior load-bearing caveats (DW recovery weakness, front-running) explicitly accepted by the product team. Implementation ready to scope.
 **⚠️ READER NOTE:** Sections below pre-2026-05-04 assume a "Safe wraps DepositWallet by being its owner" topology. **That topology was invalidated by the 2026-05-04 source probe** — the DepositWallet's `isValidSignature` does plain ECDSA recovery against the owner, so the owner must be an EOA, not a Safe. See §"Probe results — 2026-05-04 — major design correction" immediately below for the corrected topology. The detailed sections that follow (Design B in depth, Design C, Recommended design) are preserved for historical context but their core "Safe-as-DW-owner" assumption is wrong; read them after the Probe results section.
 **Companion to:** `clob_v2_impact_polySafeCreator.md` (impact on existing
 PolySafeCreator) and `../wildcard/CLOB_V2_FOLLOWUPS.md` (full architecture
@@ -1826,6 +1826,79 @@ shape — both models are 1-of-1 at the trading layer.
 custom two-step EIP-712-signed handover, distinct from solady's standard).
 The standard solady Ownable is also kept for reference at
 `/tmp/poly-probe/Ownable-solady.sol` to show the diff.
+
+### Re-verification 2026-05-09 — fresh code-side probe of CTFExchange v2 + DW stack + SDKs (no reliance on prior FOLLOWUPS entries)
+
+Triggered by an "are these claims still accurate?" check. Re-fetched everything from primary sources today; all DW-stack findings hold; the CLOB exchange contract is verified as the place where the partner-channel rejection cannot live.
+
+**On-chain CTFExchange v2 (`0xE111…996B`) and NegRiskCTFExchange v2 (`0xe222…0F59`) — load-bearing for "what enforces the partner-channel allowlist?".** Solidity sources are byte-identical (only `constructor-args.txt` and `creator-tx-hash.txt` differ). GitHub head still `ccc0596074` (2026-04-13 — 26 days unchanged). Critical:
+
+- `Trading.sol::_validateOrder` (lines 46-63) does three checks total: non-zero `makerAmount`, valid signature, maker-not-paused. **No wallet-type gating, no allowlist lookup, no creation-time check.**
+- `Signatures.sol::_isValidSignature` accepts all four sigTypes (EOA / POLY_GNOSIS_SAFE / POLY_1271 / POLY_PROXY) unconditionally. `_verifyPolySafeSignature` only checks ECDSA + CREATE2-derived safe address.
+- **No allowlist storage of any kind anywhere in the deployed bytecode.** Exhaustive grep over `mixins/`, `libraries/`, `interfaces/` returns only `Auth.sol`'s admin/operator maps and `UserPausable`'s pause map. No `mapping(address=>bool) allowedTraders`, no `authorizedSigners`, no per-wallet policy.
+- Admin functions (`pauseTrading`, `setUserPauseBlockInterval`, `setFeeReceiver`, `setMaxFeeRate`) cannot disable a sigType or maintain a per-wallet allowlist.
+
+**Conclusion:** the rejection of new PolySafes from CLOB trading (per 2026-05-08 partner statement) is **provably enforced exclusively off-chain at Polymarket's CLOB API ingest service.** No on-chain layer could implement it without a contract upgrade, and no such upgrade has been deployed or even committed to the public repo. This *strengthens* — not weakens — Reading B: the partner statement is fully consistent with on-chain reality, and on-chain reality forecloses any alternative interpretation.
+
+**DepositWallet stack re-verified (Sourcify full-match today):**
+- `DepositWalletFactory.deploy()`/`proxy()` `onlyOperator` — re-confirmed lines 192/214. No meta-tx variant in ABI. Path 2 permanently off the table (re-confirmed against bytecode-verified source, not just commit history).
+- `DepositWallet._erc1271IsValidSignatureNowCalldata` pure ECDSA with literal comment `// always ECDSA, regardless of signer.code.length` — re-confirmed lines 442-451. Safe-as-DW-owner remains structurally sealed.
+- `DepositWallet.execute()` `onlyFactory` — re-confirmed line 172.
+
+**Public-doc delta (relevant to plan).** `/trading/deposit-wallet-migration` (last-modified 2026-05-02 per Mintlify metadata) is now stronger than prior FOLLOWUPS sweeps captured. Verbatim implementation checklist: *"Use deposit wallets only for new API users in this phase. Keep existing proxy and Safe users on their current signature type."* — explicit prescription, not just permission. Public-doc-vs-partner-channel gap is narrower than the 2026-05-08 sweep concluded; the substantive policy is now in public docs even though the "allowlist"/"grandfather" mechanism vocabulary remains partner-channel-exclusive. `/api-reference/authentication` (last-modified 2026-04-28 — predates rollout) still recommends sigType=2 for new users — confirmed real docs bug, not stale-cache illusion.
+
+**Implication for this plan.**
+
+1. **Reading B is now triple-anchored** — partner channel (2026-05-08), public docs (2026-05-02), and on-chain code structure (rejection cannot be on-chain → must be the CLOB API service the partner named). The 2026-05-04 plan's "Reading A remains the cleanest escape" caveat is materially weaker today; the smoke test would confirm rather than potentially refute.
+2. **The plan's contract design is fully validated against fresh source.** No on-chain claim in this doc has shifted under re-verification.
+3. **Build trigger threshold lowered.** Previously: build on confirmed Reading B *plus* product greenlight to commit to the relayer dependency. Now: same threshold, but the "is Reading B real?" component has triple confirmation. The remaining gate is product-side (accept relayer hard-dependency + accept self-custody-from-minute-zero loss).
+
+**Source artifact:** all on-chain findings cross-recorded in `../wildcard/CLOB_V2_FOLLOWUPS.md` §"2026-05-09 sweep — fresh code/docs/SDK re-verification" with full reconciliation table (claim ↔ public-doc ↔ partner-channel ↔ on-chain code).
+
+### Design lock-in 2026-05-10
+
+Confirmed with product team: implementation will follow the **corrected Design C** (a.k.a. Option B from the 2026-05-10 design discussion). Same as §"Recommended design — Design C in detail" except for the post-probe ownership correction:
+
+```solidity
+// Step 6 of create() — corrected post-probe ownership check:
+require(IDepositWallet(depositWalletAddr).owner() == agentInstances[0]);
+//                                                    ^^^^^^^^^^^^^^^^^^
+//        NOT == newSafe (pre-probe Design C had this; the EOA-only DW
+//        owner constraint forecloses Safe-as-DW-owner).
+```
+
+The contract surface, `data` payload shape, off-chain pre-flow (Pearl predicts addresses → relayer pre-deploys DW in parallel with OLAS service registration), and on-chain link-record (`mapMultisigDepositWallets` + `DepositWalletLinked` event) are unchanged from §"Recommended design — Design C in detail". The `READER NOTE` at the top of this plan still applies — read §"Probe results — 2026-05-04" and §"Corrected design — Safe + DepositWallet as independent peers" for the load-bearing topology, not the original Design C lines 850-1006.
+
+**On-chain footprint:** **exactly 1 user transaction** (`ServiceManager.deploy` → `safeAndDWCreator.create()`). Off-chain HTTP roundtrips are unconstrained — Pearl can fire any number of relayer calls before/after. The "1 tx" property is what matters; HTTP count is not a constraint.
+
+**Two prior load-bearing caveats explicitly accepted by product:**
+
+1. **DW recovery weakness defused by Privy custody.** The 2026-05-04 plan flagged "lose agent EOA → DW funds stranded" as the load-bearing risk and proposed a "sweep DW balance regularly" mitigation. Under Privy's key custody for the agent-instance EOA, the EOA isn't losable in the normal sense (Privy handles MPC/social recovery on the user-experience side). RecoveryModule still recovers the Safe (governance + ERC-8004 agent wallet status) for the OLAS-side via the existing `recover_funds_lost_agent_eoa.py` flow; Privy handles the DW-owner-EOA side. **No DW-side recovery sweep mitigation needed.** The "sweep regularly" line item from the plan can be dropped.
+
+2. **Front-running acknowledged but not a blocker.** The CREATE2 collision-revert in `LibClone.deployDeterministicERC1967` (one-owner-one-DW-ever) plus the agent-instance EOA being a Pearl-internal value (not user-visible / not contention-prone) keep the surface small. Document in the vuln-list for completeness — no on-chain countermeasure required beyond the factory's existing collision behaviour.
+
+**What stays load-bearing (unchanged):**
+
+- `DepositWalletFactory.deploy()` is `onlyOperator` → DW pre-deploy is HTTP-blocking. If Polymarket's relayer is down at the moment Pearl's user submits the on-chain tx, `create()` reverts on the `code.length > 0` check. Pearl must surface "deploy retry needed" UX. Unavoidable structural cost of the rollout.
+- Phase 4 (session-signer auth + approvals) is `onlyFactory`-gated → cannot be inlined. Trading-ready lags service-deployed by one relayer roundtrip (~5-30s). Worth surfacing in Pearl UX.
+- `agentInstance` is one of the Safe's owners *and* the DW's sole owner. Asymmetric topology — **not** "Safe owns DW" (which the source forecloses). Worth documenting in the contract NatSpec so future readers don't assume the wrong shape.
+- Whitelisting the new creator in `ServiceRegistryL2.mapMultisigs` via `changeMultisigPermission` requires a governance proposal — same shape as past creator additions.
+
+**Implementation scoping (rough):**
+
+- New contract: `contracts/multisigs/SafeAndDepositWalletCreator.sol` (or similar — naming TBD). Fork of `SafeMultisigWithRecoveryModule.sol` plus the DW-link verification (~60-80 LoC delta). New immutables: `depositWalletFactory`, `depositWalletBytecodeHash`. New storage: `mapMultisigDepositWallets`. New event: `DepositWalletLinked`. New interface: `IDepositWallet` (just `owner()`).
+- Mock contract: `contracts/test/MockDepositWalletFactory.sol`, mirroring the `MockPolySafeFactory.sol` pattern.
+- Tests:
+  - Unit (Hardhat or Forge): the canonical happy-path + failure modes (DW not pre-deployed, DW owner mismatch, DW codehash mismatch).
+  - Forge fork-test against Polygon: end-to-end `serviceManager.deploy → creator.create()` against the live `DepositWalletFactory` with a relayer-deployed DW. Pattern: `test/StakePolySafe.sol`'s `testExternalCreatePolySafeAndStake` is the closest analogue.
+- Off-chain (Pearl): new `predictDepositWalletAddress(agentInstance)` helper, relayer client integration (use `@polymarket/builder-relayer-client@0.0.9`), pre-tx orchestration of DW deploy + post-tx Phase 4 batch.
+- Estimated effort: ~3-4 days for the contract + tests; ~2-3 days for off-chain orchestration; ~1 day for governance proposal + whitelisting. ~1 week of focused engineering total.
+
+**Vuln-list items to record (acknowledged-not-blocking):**
+
+- CREATE2 front-running on the DW pre-deploy. Mitigated by the factory's collision-revert and the agent-instance EOA being a Pearl-internal value. No on-chain countermeasure required.
+- Relayer hard-dependency for new-account onboarding. Loss of the self-custody-from-minute-zero / permissionless-wallet-creation property. Architectural trade explicitly accepted by product.
+- DW-side recovery: relies on Privy's EOA custody. If Privy custody is breached, DW funds at risk. Out-of-scope for this contract; tracked at the product layer.
 
 ## Out of scope for this plan
 
