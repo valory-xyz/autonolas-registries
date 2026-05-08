@@ -179,7 +179,7 @@ Services are deployed as multisigs. Multiple implementations are supported via t
 - `SafeMultisigWithRecoveryModule`: Includes Recovery Module for access recovery
 - `RecoveryModule`: Provides recovery functionality for Safe multisigs
 - `PolySafeCreatorWithRecoveryModule`: Creates Safe multisigs with recovery on Polygon/other chains
-- `SafeAndDepositWalletCreator`: Creates a Safe multisig with Recovery Module and links it to a Polymarket deposit wallet (Polygon-specific). The Safe is the OLAS service multisig + ERC-8004 agent wallet; the deposit wallet is a separate per-service Polymarket trading account, deployed out-of-band by Polymarket's relayer with the agent-instance EOA as its sole owner. The two are independent peers bridged by the agent EOA — the Safe cannot own the deposit wallet because Polymarket's `_erc1271IsValidSignatureNowCalldata` is pure ECDSA. See `clob_v2_deposit_wallet_creator_plan.md` for the full design.
+- `SafeAndDepositWalletCreator`: Creates a Safe multisig with Recovery Module and links it to a Polymarket deposit wallet (Polygon-specific). The Safe is the OLAS service multisig + ERC-8004 agent wallet; the deposit wallet is a separate per-service Polymarket trading account, deployed out-of-band by Polymarket's relayer with the agent-instance EOA as its sole owner. The two are independent peers bridged by the agent EOA — the Safe cannot own the deposit wallet because Polymarket's `_erc1271IsValidSignatureNowCalldata` is pure ECDSA. See `docs/polymarket/clob_v2_deposit_wallet_creator_plan.md` for the full design (and `docs/polymarket/clob_v2_impact_polySafeCreator.md` / `docs/polymarket/clob_v2_impact_subgraphs.md` for impact write-ups).
 
 Multisig policies are tracked in `mapMultisigs` mapping in ServiceRegistry.
 

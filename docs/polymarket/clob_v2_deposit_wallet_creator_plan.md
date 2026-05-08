@@ -1934,6 +1934,55 @@ The contract surface, `data` payload shape, off-chain pre-flow (Pearl predicts a
 5. **Reading A vs Reading B itself.** Until the smoke test runs, all of
    the above is contingent. Plan stays in drawer.
 
+## Pre-production follow-up — `mapMultisigDepositWallets` persistence (2026-05-08)
+
+`SafeAndDepositWalletCreator` keeps an on-chain mapping
+`mapping(address => address) public mapMultisigDepositWallets` recording, for
+every Safe it has produced, the linked Polymarket deposit wallet. The pair is
+emitted as `MultisigCreated` + `DepositWalletLinked` events at create-time,
+but the mapping is the only **stateful read path**: indexers, dashboards,
+ERC-8004 traders and any downstream code that wants "given this Safe, what's
+the deposit wallet" without scanning logs reads this slot. Today's storage is
+local to the contract instance — if the creator is replaced (bug fix,
+parameter change, audit recommendation), every mapping entry deployed under
+the old creator becomes inaccessible by direct read; consumers fall back to
+re-indexing `DepositWalletLinked` events, which is workable but couples
+on-chain consumers to off-chain indexers.
+
+**Decision (deferred, must resolve before mainnet production deploy):**
+
+Three shapes are on the table:
+
+1. **Replace the contract with a UUPS proxy** — `SafeAndDepositWalletCreator`
+   becomes the implementation, fronted by a proxy at a stable address. The
+   mapping survives across upgrades; `mapMultisigs` whitelist registration
+   keeps pointing at the proxy. Cost: extra deploy step, an upgrade key
+   (governance), and the usual proxy storage-layout discipline. **Lowest
+   blast radius if implementation needs to change post-launch.**
+
+2. **Move the link into `ServiceManager`** — `serviceId → depositWallet`
+   recorded by the SM at the same time it calls `IMultisig(creator).create()`,
+   keyed by service Id rather than multisig address. Cost: SM grows a
+   Polygon-specific code path that other chains carry but never use.
+   Cross-chain SM forks would need to keep the field but no-op it. Probably
+   not worth it for a single-chain feature.
+
+3. **Drop the mapping; rely on events only** — pure log-based discovery, no
+   read API. Cost: every consumer must run an indexer. **Lowest on-chain
+   cost, highest off-chain coupling.**
+
+**Recommendation:** option 1 (UUPS proxy) for production. It localises the
+upgrade surface inside the multisig-creator family, keeps Polygon-specific
+code out of the cross-chain SM, and preserves a stable `mapMultisigs`
+whitelist binding. Required before the production whitelist proposal.
+
+**Status — testnet/mainnet-test deploy (`0x3Ca1bCE9b3AD5E38FC13e24D5BaaDB7A807aF126`,
+Polygon, 2026-05-08):** non-proxy, deployed for end-to-end Pearl Mini testing
+only. Acknowledged that any post-deploy parameter change or bug fix on this
+test deployment forces a fresh creator + a new whitelist entry; existing
+mapping entries from this address are abandoned (consumers fall back to log
+scanning if they care). Do not promote this address to production.
+
 ## Related repo files
 
 - `contracts/multisigs/PolySafeCreatorWithRecoveryModule.sol` — current Polymarket creator
