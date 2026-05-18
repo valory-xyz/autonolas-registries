@@ -52,7 +52,7 @@ This audit is a **full re-audit** of `autonolas-registries` against the Code4ren
 - Verify the §A.5 derivative reentrancy lock that `internal16` recommended as a follow-up has been implemented correctly on-code (commits `36609be` → `d60f7ef5`, PR #288).
 - Map every applicable C4A finding to the registries repo and verify the fix in the current code.
 - Build an on-chain owner map for all deployed registries contracts and run the OpSec checks (multisig threshold, timelock, EOA owner exposure).
-- Re-verify the 21 entries in `docs/Vulnerabilities_list_registries.md` against current code.
+- Re-verify the 22 entries in `docs/Vulnerabilities_list_registries.md` against current code.
 - Confirm prior internal15 and internal16 findings still hold on HEAD `d60f7ef5`.
 
 Out of scope: Gnosis Safe core, OpenZeppelin library sources, solmate ERC721 / ERC721TokenReceiver, external activity checker and custom rewards distributor implementations. Inherited OZ / solmate / Safe code is trusted.
@@ -152,15 +152,15 @@ function deposit(uint256 amount) external {
 **Lock semantics on derivatives:**
 
 - On a **fresh proxy clone** `_locked` starts at `0` (inline initializer does not apply to clones; see `internal16` Notes). First call sees `0 > 1 = false` → passes guard → sets `2` → writes storage → sets `1` on exit. Subsequent calls follow `1 → 2 → 1`.
-- **Nested call under outer lock:** outer flow `_withdraw → _transfer → attacker.receive → stakingX.{receive, deposit}` sees `_locked == 2` → reverts with `ReentrancyGuard()`. Low-level `.call{value}` in `_transfer` reports `success = false` → outer flow reverts with `TransferFailed` → all state unwound.
+- **Nested call under outer lock:** outer flow `_withdraw → _transfer → attacker.receive → stakingX.{receive, deposit}` sees `_locked == 2` → reverts with `ReentrancyGuard()`. The inner revert propagates back into `attacker.receive`; the outer flow's behaviour from there depends on whether the attacker swallows the inner revert. In the dedicated test (`test_Reentrancy_NestedReceive_RevertsWithGuard`) the attacker does swallow the inner revert via low-level `.call`, so the outer `claim`/`_withdraw` still completes successfully — but the nested write to `balance` / `availableRewards` never lands, so no desync of staking accounting is possible. If the attacker does not swallow the revert, the outer flow reverts via `TransferFailed` and all state is unwound. Either way, the lock prevents the cross-service insolvency surface.
 - **CEI for `deposit`:** state writes happen *before* `safeTransferFrom`, but the lock is held during the transfer, so any hook-carrying ERC20 (ERC777 / ERC1363) that tries to re-enter reverts.
 
-**Test coverage (new on this branch):** `test/StakingDerivativeReentrancy.t.sol` (+260 LOC):
+**Test coverage (new on this branch):** `test/StakingDerivativeReentrancy.t.sol` (399 LOC, 4 tests):
 
-- `test_Reentrancy_NestedReceive_Reverts` — attacker's `receive()` re-enters `stakingNativeToken` via `{value: Y}` from within an outer `_withdraw` — reverts.
-- `test_Reentrancy_NestedDeposit_Reverts` — attacker's callback re-enters `stakingToken.deposit(amount)` — reverts.
-- `test_Receive_LegitimateDepositSucceeds` / `test_Deposit_LegitimateDepositSucceeds` — happy path still works.
-- `test_Receive_NestedCallDuringDepositReverts` / `test_Deposit_NestedCallDuringDepositReverts` — deposit-during-deposit reentry also blocked (symmetric coverage).
+- `test_Reentrancy_NestedReceive_RevertsWithGuard` — attacker's `receive()` re-enters `stakingNativeToken.receive{value: Y}` from within an outer `checkpointAndClaim → _withdraw → _transfer` flow. The inner re-entry reverts with `ReentrancyGuard`; the attacker swallows the revert via low-level `.call`, so the outer claim still completes — but the nested `balance` / `availableRewards` write never lands, so no desync.
+- `test_Reentrancy_NestedDeposit_RevertsWithGuard` — a hook-carrying ERC20's `transferFrom` callback re-enters `stakingToken.deposit(amount)` during the outer `deposit`'s `safeTransferFrom`. Inner revert with `ReentrancyGuard`; outer deposit still lands exactly once (no double-counting from the rejected nested call).
+- `test_Receive_HonestDepositSucceeds` — direct ETH transfer to `stakingNativeToken` post-lock-extension still credits `balance` / `availableRewards` by `msg.value`.
+- `test_Deposit_HonestDepositSucceeds` — direct `stakingToken.deposit(amount)` post-lock-extension still pulls the ERC20 via `safeTransferFrom` and credits accounting by `amount`.
 
 **Exploitability of the pre-fix gap:**
 
@@ -497,14 +497,14 @@ Re-checking five key staking invariants on HEAD `d60f7ef5`:
 - **Nested ETH deposit** (`attacker.receive() → stakingNativeToken.receive{value}`) is now blocked — derivative `receive()` sees `_locked == 2` and reverts.
 - **Nested ERC20 deposit** (`attacker.receive() → stakingToken.deposit(amount)`) is now blocked symmetrically.
 - **Deposit-during-deposit** (hook-carrying token's `tokensReceived` / `onTransferReceived` callback during `safeTransferFrom` re-enters `deposit` or `receive`) is now blocked — both are lock-guarded and CEI-safe under the lock.
-- **Lock release on revert:** when the inner nested call reverts, the outer `_withdraw` reverts transitively, undoing the outer `_locked = 2` SSTORE as part of the revert. Release is automatic; no manual cleanup required.
+- **Lock release on revert vs. swallowed revert:** when the inner nested call reverts and the outer caller propagates that revert (does not catch via low-level `.call`), the outer entry point reverts transitively and the `_locked = 2` SSTORE is undone as part of the revert — no manual cleanup. When the outer caller swallows the inner revert (as in `test_Reentrancy_NestedReceive_RevertsWithGuard`), the outer entry point completes successfully and the `_locked = 1` line at function end runs normally, releasing the lock. Both paths leave a consistent `_locked = 1` post-state; the security property is that the nested write never lands, regardless of which branch the outer caller takes.
 - **No new external entry point introduced** — the delta only adds lock-acquire/release around pre-existing function bodies. No new surface.
 - **Import of `ReentrancyGuard`** from `StakingBase` into the derivatives is syntactically valid (file-scope error, re-exportable) and does not introduce a name clash.
 - **Pragma bump `^0.8.25 → ^0.8.30`** on the derivatives — no behavioural regression; 0.8.30 is already used elsewhere in the repo.
 
 ## 7. `docs/Vulnerabilities_list_registries.md` hygiene
 
-Document tracks 21 items. Re-verified each against HEAD `d60f7ef5`.
+Document tracks 22 items. Re-verified each against HEAD `d60f7ef5`.
 
 | # | Title | Severity | Code still present? | Mitigation in place? |
 |---|---|---|---|---|
@@ -529,6 +529,7 @@ Document tracks 21 items. Re-verified each against HEAD `d60f7ef5`.
 | 19 | `slash` + proportional split (C4A M-08 / C4R S-885) | Info | ✅ yes | ✅ decoupled by design; `Custom` distributor escape hatch |
 | 20 | `checkpoint` during absence of rewards (C4A M-10 / C4R S-763) | Info | ✅ yes | ✅ wei-level top-up discipline |
 | 21 | `calculateStakingLastReward` rounding dust | Info | ✅ yes | ✅ cosmetic only |
+| 22 | `ServiceRegistry` `registerAgents` / `update` / `activateRegistration` missing inline reentrancy guard | Info | ✅ yes | ✅ manager-role-mitigated (only Timelock-controlled `ServiceManager` can call; the `ServiceManager.registerAgents` / `registerAgentsWithSignature` wrappers are themselves lock-guarded — see §4.2 caveat). New entry added this audit pass; not a C4R finding. |
 
 **Hygiene recommendations:**
 
@@ -552,7 +553,7 @@ Document tracks 21 items. Re-verified each against HEAD `d60f7ef5`.
 
 | Rule | Compliance |
 |---|---|
-| 1. Exhaustive checking | ✓ C4A (11H+12M+15L) triaged; Vulnerabilities_list (21 entries) all checked; internal15 + internal16 findings all re-verified |
+| 1. Exhaustive checking | ✓ C4A (11H+12M+15L) triaged; Vulnerabilities_list (22 entries) all checked; internal15 + internal16 findings all re-verified |
 | 2. Cross-domain patterns | ✓ DeFi reentrancy + callback + CEI + proxy-storage patterns applied; staking-specific patterns (custom distributor, lock extension to derivative entries) covered |
 | 3. Checklist log | ✓ this document (§4 matrix + §6.3 internal15 table + §6.2 internal16 table + §7 hygiene table) |
 | 4. Playbook updates all-or-nothing | ✓ v2.22 applied; registry / staking / multisig patterns covered |

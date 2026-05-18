@@ -400,19 +400,27 @@ The following function is implemented in the ServiceManager contract:
 function registerAgentsWithSignature(address operator, uint256 serviceId, address[] memory agentInstances, uint32[] memory agentIds, bytes memory signature) external payable returns (bool success)
 ```
 
-In registerAgents(), the native-token branch strictly enforces: `require(msg.value == agentInstances.length * BOND_WRAPPER)`. However, in registerAgentsWithSignature(),
-the function forwards `{value: agentInstances.length * BOND_WRAPPER}` to the registry
-without validating the caller-supplied msg.value.
+The forwarded value depends on the service's bond token:
 
-If msg.value exceeds the required bond wrapper amount, the excess ETH is not refunded
-and remains permanently stored in the ServiceManager contract, as no refund or
-withdrawal mechanism exists. This does not enable theft or privilege escalation. However,
-it introduces a locked ETH risk, where users may unintentionally overpay and permanently
-lose funds.
+- **Token-secured services** (custom ERC20 bond): `registerAgentsWithSignature` forwards
+  `{value: agentInstances.length * BOND_WRAPPER}` (i.e. `length * 1 wei`) to
+  `ServiceRegistry.registerAgents`. Any excess `msg.value` above this constant is
+  unrefunded and trapped permanently in `ServiceManager`, since no refund or withdrawal
+  mechanism exists.
+- **Native (ETH-secured) services**: `registerAgentsWithSignature` forwards
+  `{value: msg.value}` directly. The downstream check
+  `if (msg.value != totalBond) revert IncorrectAgentBondingValue(...)` in
+  `ServiceRegistry.registerAgents` enforces an exact match against the sum of stored
+  `agentParams.bond`, so excess simply causes a revert — no trapping.
+
+The trapping case is therefore confined to the token-secured signature path. It does not
+enable theft or privilege escalation; it introduces a locked ETH risk where users may
+unintentionally overpay the wrapper amount and permanently lose the difference.
 
 This is not an exploitable vulnerability but represents improper input validation that can
-result in permanent ETH lock. The registerAgentsWithSignature() function needs to be
-corrected by adding the specified msg.value check. Note: One of the duplicate
+result in permanent ETH lock on the token-secured signature path. The
+registerAgentsWithSignature() function could be corrected by adding an explicit
+`msg.value` check that mirrors the per-service branch logic. Note: One of the duplicate
 submissions (#S-1175) was assessed as out of scope per the Known Issues section
 regarding misconfigured registration from users.
 

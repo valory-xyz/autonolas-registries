@@ -544,3 +544,4 @@ ee3cc126d87e1cf8f96d9e481caf66c218f88f2e:scripts/deployment/l2/globals_celo_main
 07ff4f4e6ef54185cc220500b127034e1f9b4b83:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:30
 07ff4f4e6ef54185cc220500b127034e1f9b4b83:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:46
 c44128526ace9324dd81f67cedc266e55400d182:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:46
+cbf9b49b0643c42d50af9dadbdb7356cc908cb43:test/SafeAndDepositWalletCreatorFork.sol:generic-api-key:227
