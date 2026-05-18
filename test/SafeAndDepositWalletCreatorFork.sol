@@ -6,12 +6,18 @@ import {Vm} from "forge-std/Vm.sol";
 import {Utils} from "./utils/Utils.sol";
 import {GnosisSafe, Enum} from "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
 import {SignMessageLib} from "@gnosis.pm/safe-contracts/contracts/examples/libraries/SignMessage.sol";
-import {SafeAndDepositWalletCreator, IDepositWallet} from "../contracts/multisigs/SafeAndDepositWalletCreator.sol";
+import {
+    SafeAndDepositWalletCreator,
+    IDepositWallet,
+    WrongDepositWalletAddress,
+    DepositWalletNotDeployed
+} from "../contracts/multisigs/SafeAndDepositWalletCreator.sol";
 
 // Polymarket DepositWalletFactory ABI subset used by this fork test
 interface IDepositWalletFactory {
     function deploy(address[] calldata _owners, bytes32[] calldata _ids) external;
     function rolesOf(address) external view returns (uint256);
+    function predictWalletAddress(address _implementation, bytes32 _id) external view returns (address);
 }
 
 /// @dev Fork test only. Run with `forge test -f $POLYGON_RPC_URL --match-contract SafeAndDepositWalletCreatorFork -vvv`.
@@ -24,6 +30,10 @@ contract SafeAndDepositWalletCreatorFork is Test {
     address internal constant SAFE_PROXY_FACTORY = 0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2;
     address internal constant RECOVERY_MODULE = 0x02C26437B292D86c5F4F21bbCcE0771948274f84;
     address internal constant DEPOSIT_WALLET_FACTORY = 0x00000000000Fb5C9ADea0298D729A0CB3823Cc07;
+    // Polymarket DepositWallet logic implementation on Polygon (per Sourcify probe; see
+    // docs/polymarket/clob_v2_deposit_wallet_creator_plan.md "Verified factory + impl addresses" table).
+    // Differs from Amoy (`0x50a88fE9…D7Fbd`).
+    address internal constant DEPOSIT_WALLET_IMPLEMENTATION = 0x58CA52ebe0DadfdF531Cde7062e76746de4Db1eB;
     address internal constant FALLBACK_HANDLER = 0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4;
 
     // Known caller of the very first DepositWalletFactory.deploy() on Polygon (block 86272144,
@@ -40,7 +50,8 @@ contract SafeAndDepositWalletCreatorFork is Test {
             SAFE_SINGLETON,
             SAFE_PROXY_FACTORY,
             RECOVERY_MODULE,
-            DEPOSIT_WALLET_FACTORY
+            DEPOSIT_WALLET_FACTORY,
+            DEPOSIT_WALLET_IMPLEMENTATION
         );
     }
 
@@ -142,19 +153,43 @@ contract SafeAndDepositWalletCreatorFork is Test {
         assertEq(creator.mapMultisigDepositWallets(multisigB), dwB);
     }
 
-    /// @dev Reverts when the deposit wallet is not pre-deployed: simulates the relayer being unreachable at the
-    ///      moment the user submits the on-chain tx.
-    function testFork_Create_RevertsWhenRelayerSkipped() public {
-        (address agentInstance, ) = makeAddrAndKey("agentInstance-fork-norelayer");
-        // Use any address with no code as the "deposit wallet" — the predicted address would not exist either
-        address noCodeAddr = makeAddr("not-a-deposit-wallet");
-        assertEq(noCodeAddr.code.length, 0);
+    /// @dev Reverts with `WrongDepositWalletAddress` when the caller supplies an address that doesn't match the
+    ///      live factory's CREATE2 prediction for the agent EOA. Exercises the M-1 audit-fix check against the
+    ///      real `DepositWalletFactory.predictWalletAddress` rather than a mock.
+    function testFork_Create_RevertsOnWrongDepositWalletAddress() public {
+        (address agentInstance, ) = makeAddrAndKey("agentInstance-fork-wrongaddr");
+        address bogus = makeAddr("not-a-deposit-wallet");
+
+        bytes32 walletId = bytes32(uint256(uint160(agentInstance)));
+        address predicted = IDepositWalletFactory(DEPOSIT_WALLET_FACTORY)
+            .predictWalletAddress(DEPOSIT_WALLET_IMPLEMENTATION, walletId);
+        assertTrue(bogus != predicted);
 
         address[] memory owners = new address[](1);
         owners[0] = agentInstance;
-        bytes memory data = abi.encode(FALLBACK_HANDLER, uint256(0), noCodeAddr);
+        bytes memory data = abi.encode(FALLBACK_HANDLER, uint256(0), bogus);
 
-        vm.expectRevert();
+        vm.expectRevert(abi.encodeWithSelector(WrongDepositWalletAddress.selector, predicted, bogus));
+        creator.create(owners, 1, data);
+    }
+
+    /// @dev Reverts with `DepositWalletNotDeployed` when the caller supplies the canonical predicted address but
+    ///      the relayer has not yet executed `DepositWalletFactory.deploy` — simulates Pearl racing Phase 3 ahead
+    ///      of the off-chain HTTP-call mining.
+    function testFork_Create_RevertsWhenRelayerSkipped() public {
+        (address agentInstance, ) = makeAddrAndKey("agentInstance-fork-norelayer");
+
+        bytes32 walletId = bytes32(uint256(uint160(agentInstance)));
+        address predicted = IDepositWalletFactory(DEPOSIT_WALLET_FACTORY)
+            .predictWalletAddress(DEPOSIT_WALLET_IMPLEMENTATION, walletId);
+        // The canonical address must currently have no code on the forked block (we did not deploy)
+        assertEq(predicted.code.length, 0);
+
+        address[] memory owners = new address[](1);
+        owners[0] = agentInstance;
+        bytes memory data = abi.encode(FALLBACK_HANDLER, uint256(0), predicted);
+
+        vm.expectRevert(abi.encodeWithSelector(DepositWalletNotDeployed.selector, predicted));
         creator.create(owners, 1, data);
     }
 }
@@ -219,6 +254,10 @@ contract SafeAndDepositWalletCreatorE2E is Test {
     address internal constant SAFE_PROXY_FACTORY = 0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2;
     address internal constant RECOVERY_MODULE = 0x02C26437B292D86c5F4F21bbCcE0771948274f84;
     address internal constant DEPOSIT_WALLET_FACTORY = 0x00000000000Fb5C9ADea0298D729A0CB3823Cc07;
+    // Polymarket DepositWallet logic implementation on Polygon (per Sourcify probe; see
+    // docs/polymarket/clob_v2_deposit_wallet_creator_plan.md "Verified factory + impl addresses" table).
+    // Differs from Amoy (`0x50a88fE9…D7Fbd`).
+    address internal constant DEPOSIT_WALLET_IMPLEMENTATION = 0x58CA52ebe0DadfdF531Cde7062e76746de4Db1eB;
     address internal constant FALLBACK_HANDLER = 0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4;
     address internal constant POLYMARKET_OPERATOR = 0x829BDEf266CEA938A81D911BaA68b5D138b3ba02;
 
@@ -247,7 +286,7 @@ contract SafeAndDepositWalletCreatorE2E is Test {
 
         // Deploy creator
         creator = new SafeAndDepositWalletCreator(
-            SAFE_SINGLETON, SAFE_PROXY_FACTORY, RECOVERY_MODULE, DEPOSIT_WALLET_FACTORY
+            SAFE_SINGLETON, SAFE_PROXY_FACTORY, RECOVERY_MODULE, DEPOSIT_WALLET_FACTORY, DEPOSIT_WALLET_IMPLEMENTATION
         );
 
         // Whitelist creator on the on-chain ServiceRegistryL2. In production this requires a governance proposal

@@ -18,6 +18,7 @@ gnosisSafeAddress=$(jq -r '.gnosisSafeAddress' $globals)
 gnosisSafeProxyFactoryAddress=$(jq -r '.gnosisSafeProxyFactoryAddress' $globals)
 recoveryModuleAddress=$(jq -r '.recoveryModuleAddress' $globals)
 depositWalletFactoryAddress=$(jq -r '.depositWalletFactoryAddress' $globals)
+depositWalletImplementationAddress=$(jq -r '.depositWalletImplementationAddress' $globals)
 
 # Check for Alchemy keys
 if [[ "$networkURL" == *"alchemy.com"* ]]; then
@@ -35,7 +36,7 @@ fi
 
 contractName="SafeAndDepositWalletCreator"
 contractPath="contracts/multisigs/$contractName.sol:$contractName"
-constructorArgs="$gnosisSafeAddress $gnosisSafeProxyFactoryAddress $recoveryModuleAddress $depositWalletFactoryAddress"
+constructorArgs="$gnosisSafeAddress $gnosisSafeProxyFactoryAddress $recoveryModuleAddress $depositWalletFactoryAddress $depositWalletImplementationAddress"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
 # Get deployer based on the ledger flag
@@ -71,7 +72,7 @@ echo "$(jq '. += {"safeAndDepositWalletCreatorAddress":"'$safeAndDepositWalletCr
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
-  contractParams="$safeAndDepositWalletCreatorAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address,address,address)" $constructorArgs)"
+  contractParams="$safeAndDepositWalletCreatorAddress $contractPath --constructor-args $(cast abi-encode "constructor(address,address,address,address,address)" $constructorArgs)"
   echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."

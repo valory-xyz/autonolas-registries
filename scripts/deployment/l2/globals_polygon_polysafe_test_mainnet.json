@@ -24,6 +24,7 @@
   "polySafeProxyFactoryAddress": "0xaacFeEa03eb1561C4e67d661e40682Bd20E3541b",
   "polySafeProxyBytecodeHash": "0x92565062fdea8761e07d9df2fcdbd66c0582af6ddf0e0355bc07754ad97400b0",
   "depositWalletFactoryAddress": "0x00000000000Fb5C9ADea0298D729A0CB3823Cc07",
+  "depositWalletImplementationAddress": "0x58CA52ebe0DadfdF531Cde7062e76746de4Db1eB",
   "identityRegistryAddress": "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
   "agent8004BaseURI": "https://marketplace.olas.network/erc8004/polygon/ai-agents/",
   "serviceRegistryAddress": "0x3f2aEBBd2CBd98f6F83F6Fb23b1745e4eA52307a",

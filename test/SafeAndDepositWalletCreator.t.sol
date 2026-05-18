@@ -15,7 +15,8 @@ import {
     IncorrectDataLength,
     WrongNumOwners,
     DepositWalletNotDeployed,
-    WrongDepositWalletOwner
+    WrongDepositWalletOwner,
+    WrongDepositWalletAddress
 } from "../contracts/multisigs/SafeAndDepositWalletCreator.sol";
 import {MockDepositWalletFactory, MockDepositWallet} from "../contracts/test/MockDepositWalletFactory.sol";
 
@@ -28,6 +29,9 @@ contract BaseSetup is Test {
     RecoveryModule internal recoveryModule;
     MockDepositWalletFactory internal depositWalletFactory;
     SafeAndDepositWalletCreator internal creator;
+    // Stand-in for Polymarket's deposit wallet implementation address. The mock factory ignores this argument
+    // when computing CREATE2 addresses (see MockDepositWalletFactory NatSpec); any non-zero address works.
+    address internal depositWalletImplementation;
 
     address payable[] internal users;
     address internal deployer;
@@ -47,15 +51,17 @@ contract BaseSetup is Test {
         // Deploy recovery module (serviceRegistry not exercised in the create() path, any non-zero address suffices)
         recoveryModule = new RecoveryModule(address(multiSend), address(gnosisSafe));
 
-        // Deploy deposit wallet mock factory
+        // Deploy deposit wallet mock factory and pick a stand-in implementation address
         depositWalletFactory = new MockDepositWalletFactory();
+        depositWalletImplementation = address(0xC0DE);
 
         // Deploy creator
         creator = new SafeAndDepositWalletCreator(
             address(gnosisSafe),
             address(gnosisSafeProxyFactory),
             address(recoveryModule),
-            address(depositWalletFactory)
+            address(depositWalletFactory),
+            depositWalletImplementation
         );
     }
 
@@ -82,22 +88,32 @@ contract SafeAndDepositWalletCreatorConstructor is BaseSetup {
     function testConstructor_RevertsOnZeroAddress() public {
         vm.expectRevert(ZeroAddress.selector);
         new SafeAndDepositWalletCreator(
-            address(0), address(gnosisSafeProxyFactory), address(recoveryModule), address(depositWalletFactory)
+            address(0), address(gnosisSafeProxyFactory), address(recoveryModule),
+            address(depositWalletFactory), depositWalletImplementation
         );
 
         vm.expectRevert(ZeroAddress.selector);
         new SafeAndDepositWalletCreator(
-            address(gnosisSafe), address(0), address(recoveryModule), address(depositWalletFactory)
+            address(gnosisSafe), address(0), address(recoveryModule),
+            address(depositWalletFactory), depositWalletImplementation
         );
 
         vm.expectRevert(ZeroAddress.selector);
         new SafeAndDepositWalletCreator(
-            address(gnosisSafe), address(gnosisSafeProxyFactory), address(0), address(depositWalletFactory)
+            address(gnosisSafe), address(gnosisSafeProxyFactory), address(0),
+            address(depositWalletFactory), depositWalletImplementation
         );
 
         vm.expectRevert(ZeroAddress.selector);
         new SafeAndDepositWalletCreator(
-            address(gnosisSafe), address(gnosisSafeProxyFactory), address(recoveryModule), address(0)
+            address(gnosisSafe), address(gnosisSafeProxyFactory), address(recoveryModule),
+            address(0), depositWalletImplementation
+        );
+
+        vm.expectRevert(ZeroAddress.selector);
+        new SafeAndDepositWalletCreator(
+            address(gnosisSafe), address(gnosisSafeProxyFactory), address(recoveryModule),
+            address(depositWalletFactory), address(0)
         );
     }
 
@@ -107,6 +123,7 @@ contract SafeAndDepositWalletCreatorConstructor is BaseSetup {
         assertEq(creator.safeProxyFactory(), address(gnosisSafeProxyFactory));
         assertEq(creator.recoveryModule(), address(recoveryModule));
         assertEq(creator.depositWalletFactory(), address(depositWalletFactory));
+        assertEq(creator.depositWalletImplementation(), depositWalletImplementation);
         assertEq(creator.SAFE_SETUP_SELECTOR(), bytes4(0xb63e800d));
         assertEq(creator.ENABLE_MODULE_SELECTOR(), bytes4(0x24292962));
         assertEq(creator.DEFAULT_DATA_LENGTH(), 96);
@@ -179,7 +196,47 @@ contract SafeAndDepositWalletCreatorCreate is BaseSetup {
         assertTrue(sawLinked);
     }
 
-    /// @dev Reverts when the deposit wallet has not been pre-deployed at the predicted address.
+    /// @dev Reverts with `WrongDepositWalletAddress` when the provided address differs from the canonical
+    ///      CREATE2 prediction. This is the primary defense added by the M-1 audit fix: even an attacker-controlled
+    ///      contract exposing `owner()` returning the agent EOA will be rejected unless it sits at the canonical
+    ///      address derived from `(factory, impl, walletId)`.
+    function testCreate_RevertsOnWrongDepositWalletAddress() public {
+        address agentInstance = users[3];
+        address predicted = depositWalletFactory.computeWalletAddress(agentInstance);
+        address bogus = address(0xBAD);
+
+        address[] memory owners = new address[](1);
+        owners[0] = agentInstance;
+
+        bytes memory data = abi.encode(address(fallbackHandler), uint256(0), bogus);
+
+        vm.expectRevert(abi.encodeWithSelector(WrongDepositWalletAddress.selector, predicted, bogus));
+        creator.create(owners, 1, data);
+    }
+
+    /// @dev Address prediction check rejects a fake "DepositWallet" lookalike contract — the exact attack vector
+    ///      M-1 highlighted. A `Fake { address public owner; constructor(address o){owner=o;} }` deployed at an
+    ///      arbitrary address satisfies the legacy shape checks but not the canonical CREATE2 prediction.
+    function testCreate_RejectsFakeDepositWalletAtNonCanonicalAddress() public {
+        address agentInstance = users[4];
+        address[] memory owners = new address[](1);
+        owners[0] = agentInstance;
+
+        // Deploy a deceptive lookalike: exposes owner() returning the agent EOA, but not at the canonical address
+        FakeDepositWalletLookalike fake = new FakeDepositWalletLookalike(agentInstance);
+        assertEq(fake.owner(), agentInstance);
+
+        address predicted = depositWalletFactory.computeWalletAddress(agentInstance);
+        assertTrue(address(fake) != predicted);
+
+        bytes memory data = abi.encode(address(fallbackHandler), uint256(0), address(fake));
+
+        vm.expectRevert(abi.encodeWithSelector(WrongDepositWalletAddress.selector, predicted, address(fake)));
+        creator.create(owners, 1, data);
+    }
+
+    /// @dev Reverts with `DepositWalletNotDeployed` when the canonical address is supplied but no wallet has been
+    ///      deployed there yet — simulates Pearl submitting Phase 3 before the off-chain relayer-deploy has mined.
     function testCreate_RevertsWhenDepositWalletNotDeployed() public {
         address agentInstance = users[3];
         address predicted = depositWalletFactory.computeWalletAddress(agentInstance);
@@ -193,29 +250,25 @@ contract SafeAndDepositWalletCreatorCreate is BaseSetup {
         creator.create(owners, 1, data);
     }
 
-    /// @dev Reverts when the contract at the deposit wallet slot does not expose the `IDepositWallet.owner()` shape.
-    /// @notice Combined with `code.length > 0`, the `owner()` staticcall provides the practical defense against
-    ///         arbitrary contracts at the predicted address: a non-DW contract at the address either lacks
-    ///         `owner()` (the staticcall reverts and bubbles up) or returns a non-matching address (caught by
-    ///         the `WrongDepositWalletOwner` check). A bytecode hash check is not feasible because Polymarket's
-    ///         wallets bake per-wallet immutable args into bytecode.
-    function testCreate_RevertsOnNonDepositWalletAtAddress() public {
-        address agentInstance = users[4];
-        address[] memory owners = new address[](1);
-        owners[0] = agentInstance;
-
-        // The Safe singleton has code but no `owner()` getter — staticcall will revert
-        bytes memory data = abi.encode(address(fallbackHandler), uint256(0), address(gnosisSafe));
-
-        vm.expectRevert();
-        creator.create(owners, 1, data);
-    }
-
-    /// @dev Reverts when the deposit wallet's owner does not match the first owner.
+    /// @dev Reverts with `WrongDepositWalletOwner` when the wallet sits at the canonical address but was
+    ///      initialized for a different owner — exercises the operator-chosen-`_ids` deviation the factory permits
+    ///      (factory does not enforce `_ids[i] == bytes32(_owners[i])`; that is a relayer convention). The
+    ///      address-prediction check passes because the wallet was deployed with `walletId = bytes32(agentInstance)`,
+    ///      while the `_owners[i]` argument was a different EOA — only the owner cross-check catches it.
     function testCreate_RevertsWhenDepositWalletOwnerMismatch() public {
         address agentInstance = users[5];
         address other = users[6];
-        address depositWallet = _preDeployDepositWallet(other);
+
+        // Deploy via mock factory at the agentInstance-predicted address but with `other` as the owner —
+        // exactly what an operator deviating from the relayer's `bytes32(owner)` convention would produce.
+        address[] memory deployOwners = new address[](1);
+        deployOwners[0] = other;
+        bytes32[] memory deployIds = new bytes32[](1);
+        deployIds[0] = bytes32(uint256(uint160(agentInstance)));
+        depositWalletFactory.deploy(deployOwners, deployIds);
+
+        address depositWallet = depositWalletFactory.computeWalletAddress(agentInstance);
+        assertEq(MockDepositWallet(depositWallet).owner(), other);
 
         address[] memory owners = new address[](1);
         owners[0] = agentInstance;
@@ -288,5 +341,16 @@ contract SafeAndDepositWalletCreatorCreate is BaseSetup {
         assertEq(creator.mapMultisigDepositWallets(multisigA), dwA);
         assertEq(creator.mapMultisigDepositWallets(multisigB), dwB);
         assertTrue(multisigA != multisigB);
+    }
+}
+
+/// @dev Minimal lookalike contract used by `testCreate_RejectsFakeDepositWalletAtNonCanonicalAddress` — the exact
+///      attack pattern flagged by M-1. Satisfies the legacy `owner()` shape check but is not at the canonical
+///      CREATE2 address `DepositWalletFactory.predictWalletAddress(impl, walletId)` would compute.
+contract FakeDepositWalletLookalike {
+    address public owner;
+
+    constructor(address _owner) {
+        owner = _owner;
     }
 }

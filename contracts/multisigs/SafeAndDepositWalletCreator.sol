@@ -24,6 +24,18 @@ interface IDepositWallet {
     function owner() external view returns (address);
 }
 
+// Polymarket DepositWalletFactory interface (verified source at
+// https://polygonscan.com/address/0x00000000000Fb5C9ADea0298D729A0CB3823Cc07#code).
+interface IDepositWalletFactory {
+    /// @dev Computes the deterministic CREATE2 address that `deploy(...)` would assign for the supplied
+    ///      `(_implementation, _id)` pair. Mirrors solady's `LibClone.predictDeterministicAddressERC1967` over
+    ///      `salt = keccak256(abi.encode(factory, _id))` and `initCodeHashERC1967(_implementation, encode(factory, _id))`.
+    /// @param _implementation Deposit wallet logic implementation the factory should clone.
+    /// @param _id Wallet identifier. Relayer convention is `bytes32(uint256(uint160(ownerEOA)))`.
+    /// @return Predicted deposit wallet address.
+    function predictWalletAddress(address _implementation, bytes32 _id) external view returns (address);
+}
+
 /// @dev Provided zero address.
 error ZeroAddress();
 
@@ -48,6 +60,11 @@ error DepositWalletNotDeployed(address depositWallet);
 /// @param expected Expected deposit wallet owner.
 /// @param provided Provided deposit wallet owner.
 error WrongDepositWalletOwner(address expected, address provided);
+
+/// @dev Provided deposit wallet address does not match the factory's canonical CREATE2 prediction.
+/// @param expected Predicted deposit wallet address from `DepositWalletFactory.predictWalletAddress`.
+/// @param provided Provided deposit wallet address.
+error WrongDepositWalletAddress(address expected, address provided);
 
 /// @dev Caught reentrancy violation.
 error ReentrancyGuard();
@@ -86,8 +103,19 @@ contract SafeAndDepositWalletCreator {
     address public immutable recoveryModule;
     // Polymarket Deposit Wallet Factory address
     address public immutable depositWalletFactory;
+    // Polymarket Deposit Wallet implementation pinned at deploy time
+    // Chain-specific (Polygon: `0x58CA52ebe0DadfdF531Cde7062e76746de4Db1eB`, Amoy: `0x50a88fE9…D7Fbd`); a future
+    // Polymarket impl rotation would require redeploying (or proxy-upgrading) this creator.
+    address public immutable depositWalletImplementation;
 
-    // Multisig address => linked deposit wallet address
+    // Multisig address => linked deposit wallet address.
+    // Entries are inserted unconditionally by any `create()` caller — the contract itself does not gate writes
+    // (matches the open-caller convention of `SafeMultisigWithRecoveryModule` and `PolySafeCreatorWithRecoveryModule`).
+    // Consumers reading this mapping for OLAS-service-multisig provenance MUST cross-validate against the canonical
+    // `ServiceRegistry`: confirm `ServiceRegistry.mapMultisigs(<creator>) == true` and resolve the multisig back to
+    // an existing service via the registry. Entries written via direct calls outside the `ServiceManager.deploy`
+    // flow will not satisfy the second condition. The deposit-wallet identity itself is independently authenticated
+    // on write by `DepositWalletFactory.predictWalletAddress` + `owner()` (see `create()` below).
     mapping(address => address) public mapMultisigDepositWallets;
 
     // Reentrancy lock
@@ -98,15 +126,17 @@ contract SafeAndDepositWalletCreator {
     /// @param _safeProxyFactory Safe proxy factory contract address.
     /// @param _recoveryModule Recovery module address.
     /// @param _depositWalletFactory Polymarket Deposit Wallet Factory address.
+    /// @param _depositWalletImplementation Polymarket Deposit Wallet logic implementation cloned by the factory.
     constructor (
         address _safe,
         address _safeProxyFactory,
         address _recoveryModule,
-        address _depositWalletFactory
+        address _depositWalletFactory,
+        address _depositWalletImplementation
     ) {
         // Check for zero addresses
         if (_safe == address(0) || _safeProxyFactory == address(0) || _recoveryModule == address(0)
-            || _depositWalletFactory == address(0)) {
+            || _depositWalletFactory == address(0) || _depositWalletImplementation == address(0)) {
             revert ZeroAddress();
         }
 
@@ -114,11 +144,15 @@ contract SafeAndDepositWalletCreator {
         safeProxyFactory = _safeProxyFactory;
         recoveryModule = _recoveryModule;
         depositWalletFactory = _depositWalletFactory;
+        depositWalletImplementation = _depositWalletImplementation;
     }
 
     /// @dev Creates a Safe multisig with Recovery Module enabled atomically and links it to a pre-deployed deposit wallet.
     /// @notice Number of owners is required to be 1: the agent-instance EOA that bridges the Safe and the deposit wallet.
     ///         The deposit wallet must already be deployed by Polymarket's relayer at the address provided in `data`.
+    /// @notice `fallbackHandler` is upstream-supplied and not whitelisted on-chain; in the canonical Pearl flow it is the
+    ///         Polygon-canonical `CompatibilityFallbackHandler` (`0xf48f…5e4`) so the Safe's ERC-1271 routes through
+    ///         `signedMessages`. Integrators substituting a custom handler accept full responsibility for its behavior.
     /// @param owners Set of multisig owners. Must contain a single agent-instance EOA matching the deposit wallet owner.
     /// @param threshold Number of required confirmations for a multisig transaction.
     /// @param data Encoded `(address fallbackHandler, uint256 saltNonce, address depositWallet)` payload.
@@ -149,18 +183,31 @@ contract SafeAndDepositWalletCreator {
         (address fallbackHandler, uint256 saltNonce, address depositWallet) =
             abi.decode(data, (address, uint256, address));
 
-        // Verify the deposit wallet is deployed at the expected address
+        // Authenticate the deposit wallet against the canonical factory's CREATE2 prediction. Compute the relayer-
+        // convention walletId from the agent-instance EOA and require `depositWallet` to match what the canonical
+        // `DepositWalletFactory.predictWalletAddress(impl, walletId)` would return. CREATE2 collision rules then
+        // guarantee any contract at that address was deployed with the canonical proxy bytecode pointing at the
+        // pinned implementation. A bytecode-hash check on the wallet itself is not feasible because Polymarket's
+        // wallets use solady's `deployDeterministicERC1967WithImmutableArgs` variant, which bakes per-wallet
+        // immutable args (factory, walletId) into the proxy bytecode — so each wallet has a distinct runtime
+        // codehash.
+        bytes32 walletId = bytes32(uint256(uint160(owners[0])));
+        address predictedDepositWallet =
+            IDepositWalletFactory(depositWalletFactory).predictWalletAddress(depositWalletImplementation, walletId);
+        if (depositWallet != predictedDepositWallet) {
+            revert WrongDepositWalletAddress(predictedDepositWallet, depositWallet);
+        }
+
+        // Verify the deposit wallet is actually deployed at the canonical address — guards against the relayer-
+        // pending-deploy race (off-chain HTTP fired but on-chain `DepositWalletFactory.deploy` not yet mined).
         if (depositWallet.code.length == 0) {
             revert DepositWalletNotDeployed(depositWallet);
         }
 
-        // Verify the deposit wallet owner matches the agent-instance EOA: this is the bridge invariant linking the
-        // two peers and the load-bearing check enforced by Polymarket's pure-ECDSA `_erc1271IsValidSignatureNowCalldata`.
-        // Combined with code.length, the owner() lookup also implicitly authenticates the deposit wallet shape:
-        // a non-DW contract at the predicted address would either lack `owner()` (revert) or return a non-matching
-        // address (revert). A bytecode-hash check is not feasible because Polymarket's wallets use solady's
-        // `deployDeterministicERC1967WithImmutableArgs` variant, which bakes per-wallet immutable args
-        // (factory, walletId) into the proxy bytecode — so each wallet has a distinct runtime codehash.
+        // Belt-and-braces owner cross-check: the load-bearing invariant for the EOA-only-owner design enforced by
+        // Polymarket's pure-ECDSA `_erc1271IsValidSignatureNowCalldata`. The factory's `_ids` array is operator-
+        // chosen and not constrained on-chain to `bytes32(owner)`, so this check ensures the relayer followed the
+        // convention even if a future factory revision relaxed it.
         address depositWalletOwner = IDepositWallet(depositWallet).owner();
         if (depositWalletOwner != owners[0]) {
             revert WrongDepositWalletOwner(owners[0], depositWalletOwner);

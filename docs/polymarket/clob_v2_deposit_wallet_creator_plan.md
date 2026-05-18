@@ -1411,7 +1411,16 @@ coding spike is unblocked.
   is at the canonical CREATE2 address — and CREATE2 collision rules mean
   any contract at that address must be the canonical bytecode. Cleaner
   than capturing and pinning a hash that depends on the network's specific
-  factory + impl pair.
+  factory + impl pair. **Implemented in
+  `contracts/multisigs/SafeAndDepositWalletCreator.sol` per the 2026-05-18
+  77ph audit (M-1):** the creator now captures `depositWalletImplementation`
+  as a 5th constructor immutable (chain-specific — Polygon
+  `0x58CA52ebe0DadfdF531Cde7062e76746de4Db1eB`; Amoy `0x50a88fE9…D7Fbd`) and
+  calls `predictWalletAddress(impl, bytes32(uint256(uint160(agentInstance))))`
+  in `create()`, reverting with `WrongDepositWalletAddress` on mismatch. The
+  `0x3Ca1bCE9b3AD5E38FC13e24D5BaaDB7A807aF126` Pearl-Mini deployment was
+  built against the 4-arg constructor and is now stale; redeploy is required
+  before further testing.
 - [x] **[RESOLVED]** Session-signer ABI:
   - `authorizeSessionSigner(address, uint256) external onlySelf` (called via execute)
   - `revokeSessionSigner(address) external onlySelf` (called via execute)
@@ -1982,6 +1991,46 @@ only. Acknowledged that any post-deploy parameter change or bug fix on this
 test deployment forces a fresh creator + a new whitelist entry; existing
 mapping entries from this address are abandoned (consumers fall back to log
 scanning if they care). Do not promote this address to production.
+
+## Audit follow-ups — 2026-05-18 (77ph)
+
+77ph review of the implementation flagged one Medium and one Low worth addressing on top of the design plan's
+pre-flight checklist. Both are now fixed in `contracts/multisigs/SafeAndDepositWalletCreator.sol` on the
+`doc/clob-v2-deposit-wallet-plan` branch.
+
+- **M-1 (Medium): Deposit wallet authenticity check relied on shape, not canonical origin.** The original
+  implementation only validated `code.length > 0` + `IDepositWallet(dw).owner() == agentInstance`. A rogue
+  operator could publish a minimal `contract Fake { address public owner; constructor(address o){owner=o;} }`
+  at an arbitrary address, satisfying both checks, and inject a non-canonical entry into
+  `mapMultisigDepositWallets`. **Fix:** added a 5th constructor immutable `depositWalletImplementation`
+  (chain-specific — Polygon `0x58CA52ebe0DadfdF531Cde7062e76746de4Db1eB`, Amoy `0x50a88fE9…D7Fbd`) and
+  enforced `dw == IDepositWalletFactory(factory).predictWalletAddress(impl, bytes32(uint256(uint160(agentInstance))))`
+  in `create()` via a new `WrongDepositWalletAddress` custom error. CREATE2 collision rules then guarantee any
+  contract at the canonical address was deployed with the canonical proxy bytecode pointing at the pinned impl.
+  New unit test `testCreate_RejectsFakeDepositWalletAtNonCanonicalAddress` exercises the exact attack pattern;
+  new fork test `testFork_Create_RevertsOnWrongDepositWalletAddress` exercises the check against the
+  live Polygon factory.
+
+- **L-1 (Low): No access control on `create()` — `mapMultisigDepositWallets` pollutable.** Family convention
+  (`SafeMultisigWithRecoveryModule`, `PolySafeCreatorWithRecoveryModule`) leaves creators caller-open;
+  enforcement of "is this a real service multisig?" is the `ServiceRegistry`'s job via
+  `ServiceRegistry.mapMultisigs(creator) == true` + service existence. The new
+  `mapMultisigDepositWallets` slot is the new public-read surface that this PR adds, so the trust model
+  needed to be made explicit. **Fix:** added detailed NatSpec on the mapping declaration documenting that
+  consumers MUST cross-validate against the canonical `ServiceRegistry` before treating entries as
+  service-multisig-authoritative. Note that the deposit-wallet *identity* is now independently authenticated
+  on write by the M-1 factory-prediction check, so the residual L-1 risk is limited to fake-multisig keys
+  pointing at canonical deposit wallets — which the SR cross-check resolves.
+
+Informational findings I-1 (Prague EVM target — documented chain capability assumption), I-2 (`fallbackHandler`
+upstream-supplied — added NatSpec on `create()` documenting the trust assumption), I-3 (front-running griefing —
+acknowledged design choice carried over from PolySafe), I-4 (external call before state mutation — guarded by
+`_locked`, benign), and I-5 (caret pragma — convention choice, no action) require no code changes.
+
+**Deployment status:** the existing Pearl-Mini deployment at
+[`0x3Ca1bCE9b3AD5E38FC13e24D5BaaDB7A807aF126`](https://polygonscan.com/address/0x3ca1bce9b3ad5e38fc13e24d5baadb7a807af126)
+was built against the pre-audit 4-arg constructor and is now stale. A redeploy with the 5-arg constructor
+(adding `depositWalletImplementation`) is required before any further mainnet-test exercise of this stack.
 
 ## Related repo files
 
