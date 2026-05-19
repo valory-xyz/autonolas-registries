@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+[1.3.3-post-external-audit]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.7...v1.3.3-post-external-audit
 [1.2.7]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.6...v1.2.7
 [1.2.6]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.4...v1.2.6
 [1.2.4]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.3...v1.2.4
@@ -25,6 +26,24 @@ The format is based on [Common Changelog](https://common-changelog.org).
 [1.0.1]: https://github.com/valory-xyz/autonolas-registries/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/valory-xyz/autonolas-registries/releases/tag/v1.0.0
 
+
+## [v1.3.3-post-external-audit] - 2026-05-07
+
+### Changed
+
+- Created `IdentityRegistry` and `IdentityRegistryBridger` contracts implementing the ERC-8004 extension, with `ServiceManager` updated to support 8004 linking ([#232](https://github.com/valory-xyz/autonolas-registries/pull/232), [#234](https://github.com/valory-xyz/autonolas-registries/pull/234), [#235](https://github.com/valory-xyz/autonolas-registries/pull/235), [#239](https://github.com/valory-xyz/autonolas-registries/pull/239), [#241](https://github.com/valory-xyz/autonolas-registries/pull/241))
+- Created `ApplicationClassifier` and `ApplicationClassifierProxy` contracts ([#231](https://github.com/valory-xyz/autonolas-registries/pull/231), [#244](https://github.com/valory-xyz/autonolas-registries/pull/244))
+- Refactored reward distribution flow on `StakingBase` ([#227](https://github.com/valory-xyz/autonolas-registries/pull/227), [#229](https://github.com/valory-xyz/autonolas-registries/pull/229))
+- Added recovery script and tests covering loss of service Agent EOA access via the `RecoveryModule` contract ([#283](https://github.com/valory-xyz/autonolas-registries/pull/283))
+- Deployed `ServiceManager` (post-8004) across production chains ([#243](https://github.com/valory-xyz/autonolas-registries/pull/243), [#246](https://github.com/valory-xyz/autonolas-registries/pull/246), [#270](https://github.com/valory-xyz/autonolas-registries/pull/270))
+- Deployed `IdentityRegistry` and `IdentityRegistryBridger` on Arbitrum, Base, Gnosis and Optimism ([#271](https://github.com/valory-xyz/autonolas-registries/pull/271))
+- Deployed `ComplementaryServiceMetadata` on Arbitrum and Celo ([#281](https://github.com/valory-xyz/autonolas-registries/pull/281))
+- Deployed staking and recovery contracts on Celo ([#272](https://github.com/valory-xyz/autonolas-registries/pull/272), [#273](https://github.com/valory-xyz/autonolas-registries/pull/273))
+- Deployed `HashCheckpoint` ([#256](https://github.com/valory-xyz/autonolas-registries/pull/256))
+- Participated in the Code4rena (C4A) Olas 2026-01 external audit and addressed findings, including post-C4R hardening of `StakingBase`, `StakingNativeToken` and `StakingToken` and an extended reentrancy lock on derivative entry points ([#286](https://github.com/valory-xyz/autonolas-registries/pull/286), [#287](https://github.com/valory-xyz/autonolas-registries/pull/287), [#288](https://github.com/valory-xyz/autonolas-registries/pull/288), [#289](https://github.com/valory-xyz/autonolas-registries/pull/289))
+- Performed internal audits 13–17 covering the 8004 extension, reward distribution, recovery flow and post-C4A re-audit ([audit13](https://github.com/valory-xyz/autonolas-registries/tree/main/audits/internal13), [audit14](https://github.com/valory-xyz/autonolas-registries/tree/main/audits/internal14), [audit15](https://github.com/valory-xyz/autonolas-registries/tree/main/audits/internal15), [audit16](https://github.com/valory-xyz/autonolas-registries/tree/main/audits/internal16), [audit17](https://github.com/valory-xyz/autonolas-registries/tree/main/audits/internal17))
+- Migrated `docs/Vulnerabilities_list_registries.md` to markdown with relative links and updated the static-audit pipeline ([#274](https://github.com/valory-xyz/autonolas-registries/pull/274), [#277](https://github.com/valory-xyz/autonolas-registries/pull/277), [#285](https://github.com/valory-xyz/autonolas-registries/pull/285))
+- Updated documentation
 
 ## [v1.2.7] - 2025-08-08
 - Development of `ComplementaryServiceMetadata` contract
