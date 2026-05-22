@@ -5,9 +5,9 @@
 # L2 this is the bridge mediator; on Arbitrum it is the L1-aliased Timelock —
 # both are stored as bridgeMediatorAddress in the per-network globals.
 #
-# The script is idempotent: it pre-checks that the signer derived from
-# $derivationPath is the current proxy owner (otherwise changeOwner reverts with
-# OwnerOnly), and is a no-op if the proxy is already owned by the target.
+# The script is idempotent: it is a no-op if the proxy is already owned by the
+# target, and otherwise pre-checks that the signer derived from $derivationPath
+# is the current proxy owner (changeOwner would revert with OwnerOnly otherwise).
 
 # Check if $1 is provided
 if [ -z "$1" ]; then
@@ -35,17 +35,16 @@ networkURL=$(jq -r '.networkURL' $globals)
 
 identityRegistryBridgerProxyAddress=$(jq -r '.identityRegistryBridgerProxyAddress' $globals)
 bridgeMediatorAddress=$(jq -r '.bridgeMediatorAddress' $globals)
-timelockAddress=$(jq -r '.timelockAddress' $globals)
 
-# New owner: bridge mediator on L2, Timelock on L1 mainnet.
-if [ "$bridgeMediatorAddress" != "null" ] && [ -n "$bridgeMediatorAddress" ]; then
-  newOwnerAddress="$bridgeMediatorAddress"
-elif [ "$timelockAddress" != "null" ] && [ -n "$timelockAddress" ]; then
-  newOwnerAddress="$timelockAddress"
-else
-  echo "${red}!!! Neither bridgeMediatorAddress nor timelockAddress is set in $globals${reset}"
+# New owner: the chain's governance control point — the bridge mediator on L2,
+# or the L1-aliased Timelock on Arbitrum — stored as bridgeMediatorAddress. It
+# is required and has no fallback: timelockAddress is the non-aliased L1
+# Timelock, an address nobody controls on an L2.
+if [ "$bridgeMediatorAddress" == "null" ] || [ -z "$bridgeMediatorAddress" ]; then
+  echo "${red}!!! bridgeMediatorAddress is not set in $globals${reset}"
   exit 1
 fi
+newOwnerAddress="$bridgeMediatorAddress"
 
 if [ "$identityRegistryBridgerProxyAddress" == "null" ] || [ -z "$identityRegistryBridgerProxyAddress" ]; then
   echo "${red}!!! identityRegistryBridgerProxyAddress is not set in $globals${reset}"
@@ -76,18 +75,29 @@ else
   deployer=$(cast wallet address $walletArgs)
 fi
 
-# Pre-flight: current owner must equal the signer; otherwise changeOwner reverts.
+# Pre-flight: read the current owner. Addresses are lowercased before comparison
+# because the globals JSON may not be EIP-55 checksummed; tr is used instead of
+# the ${var,,} expansion so the script also runs on bash 3.2 (macOS default).
 currentOwner=$(cast call --rpc-url $networkURL$API_KEY $identityRegistryBridgerProxyAddress "owner()(address)")
-if [ "${currentOwner,,}" != "${deployer,,}" ]; then
+if [ -z "$currentOwner" ]; then
+  echo "${red}!!! Failed to read the current IdentityRegistryBridgerProxy owner (RPC error?)${reset}"
+  exit 1
+fi
+currentOwnerLc=$(echo "$currentOwner" | tr '[:upper:]' '[:lower:]')
+deployerLc=$(echo "$deployer" | tr '[:upper:]' '[:lower:]')
+newOwnerLc=$(echo "$newOwnerAddress" | tr '[:upper:]' '[:lower:]')
+
+# No-op if already owned by the target.
+if [ "$currentOwnerLc" == "$newOwnerLc" ]; then
+  echo "${green}IdentityRegistryBridgerProxy $identityRegistryBridgerProxyAddress is already owned by $newOwnerAddress. Nothing to do.${reset}"
+  exit 0
+fi
+
+# The signer must be the current owner; otherwise changeOwner reverts with OwnerOnly.
+if [ "$currentOwnerLc" != "$deployerLc" ]; then
   echo "${red}!!! Signer $deployer is not the current IdentityRegistryBridgerProxy owner ($currentOwner).${reset}"
   echo "${red}    Set derivationPath in $globals to the path that controls $currentOwner, then re-run.${reset}"
   exit 1
-fi
-
-# No-op if already owned by the target
-if [ "${currentOwner,,}" == "${newOwnerAddress,,}" ]; then
-  echo "${green}IdentityRegistryBridgerProxy $identityRegistryBridgerProxyAddress is already owned by $newOwnerAddress. Nothing to do.${reset}"
-  exit 0
 fi
 
 castSendHeader="cast send --rpc-url $networkURL$API_KEY $walletArgs"
@@ -98,3 +108,8 @@ echo $castArgs
 castCmd="$castSendHeader $castArgs"
 result=$($castCmd)
 echo "$result" | grep "status"
+if ! echo "$result" | grep -qE "status[[:space:]]+1"; then
+  echo "${red}!!! changeOwner transaction did not succeed${reset}"
+  exit 1
+fi
+echo "${green}IdentityRegistryBridgerProxy owner changed to $newOwnerAddress.${reset}"
