@@ -46,6 +46,11 @@ if [ "$bridgeMediatorAddress" == "null" ] || [ -z "$bridgeMediatorAddress" ]; th
 fi
 newOwnerAddress="$bridgeMediatorAddress"
 
+if [ "$newOwnerAddress" == "0x0000000000000000000000000000000000000000" ]; then
+  echo "${red}!!! newOwnerAddress is the zero address — check $globals${reset}"
+  exit 1
+fi
+
 if [ "$serviceManagerProxyAddress" == "null" ] || [ -z "$serviceManagerProxyAddress" ]; then
   echo "${red}!!! serviceManagerProxyAddress is not set in $globals${reset}"
   exit 1
@@ -79,8 +84,8 @@ fi
 # because the globals JSON may not be EIP-55 checksummed; tr is used instead of
 # the ${var,,} expansion so the script also runs on bash 3.2 (macOS default).
 currentOwner=$(cast call --rpc-url $networkURL$API_KEY $serviceManagerProxyAddress "owner()(address)")
-if [ -z "$currentOwner" ]; then
-  echo "${red}!!! Failed to read the current ServiceManagerProxy owner (RPC error?)${reset}"
+if ! [[ "$currentOwner" =~ ^0x[0-9a-fA-F]{40}$ ]]; then
+  echo "${red}!!! Failed to read the current ServiceManagerProxy owner (got: $currentOwner)${reset}"
   exit 1
 fi
 currentOwnerLc=$(echo "$currentOwner" | tr '[:upper:]' '[:lower:]')
@@ -107,8 +112,9 @@ castArgs="$serviceManagerProxyAddress changeOwner(address) $newOwnerAddress"
 echo $castArgs
 castCmd="$castSendHeader $castArgs"
 result=$($castCmd)
-echo "$result" | grep "status"
-if ! echo "$result" | grep -qE "status[[:space:]]+1"; then
+statusLine=$(echo "$result" | grep -E "^status[[:space:]]+[0-9]")
+echo "$statusLine"
+if ! echo "$statusLine" | grep -qE "^status[[:space:]]+1[[:space:]]"; then
   echo "${red}!!! changeOwner transaction did not succeed${reset}"
   exit 1
 fi
