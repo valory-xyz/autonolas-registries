@@ -26,6 +26,7 @@
     - [20. checkpoint function during absence of rewards](#20-checkpoint-function-during-absence-of-rewards)
     - [21. calculateStakingLastReward rounding dust](#21-calculatestakinglastreward-rounding-dust)
     - [22. ServiceRegistry registerAgents / update / activateRegistration missing reentrancy guard](#22-serviceregistry-registeragents--update--activateregistration-missing-reentrancy-guard)
+    - [23. deploy same-address multisig takeover (RecoveryModule)](#23-deploy-same-address-multisig-takeover-recoverymodule)
 
 ## Involved contracts and level of the bugs
 
@@ -607,3 +608,46 @@ re-open the path. Operational guidance: the `manager` role on `ServiceRegistry` 
 `ServiceRegistryL2` should always be held by a contract with an equivalent inline
 `_locked` guard on every state-mutating external. This is the case for the Timelock-
 managed `ServiceManager` deployed today.
+
+### 23. `deploy` same-address multisig takeover (RecoveryModule)
+
+**Severity**: High
+**Source**: Immunefi report 81064
+
+A service that is `terminate()`d and `unbond()`ed returns to `PreRegistration` while the
+registry keeps its `multisig` pointer — the Agent Safe (and its funds) persists. Before this
+fix, `deploy()` did not enforce that a multisig belongs to a single service, so via the
+`GnosisSafeSameAddressMultisig` adapter an unprivileged attacker could adopt a parked,
+recovery-enabled victim Safe:
+
+1. `create` an attacker service and `registerAgents` with the victim Safe's (now free) owners;
+2. `deploy(attackerService, GnosisSafeSameAddressMultisig, victimSafe)` — the adapter verifies
+   owners/threshold/proxy-code-hash against the real victim Safe and the ServiceManager bound it
+   to the attacker's service;
+3. `terminate` → `unbond` → `RecoveryModule.recoverAccess(attackerService)` makes the attacker
+   the sole owner of the victim Safe, which is then drained.
+
+Mitigation: `ServiceManager` now enforces a permanent 1:1 multisig↔service binding. `deploy()`
+records `mapMultisigServiceIds[multisig]` and reverts `MultisigAlreadyBound` when the multisig is
+already claimed by a different service; it releases the previous binding on a genuine move and is
+a no-op on a same-address redeploy. A permissionless, idempotent `bindMultisig(uint256[])`
+back-fills the binding for already-deployed services without a redeploy.
+
+```solidity
+uint256 boundServiceId = mapMultisigServiceIds[multisig];
+if (boundServiceId != serviceId) {
+    if (boundServiceId != 0) {
+        revert MultisigAlreadyBound(multisig, boundServiceId, serviceId);
+    }
+    mapMultisigServiceIds[multisig] = serviceId;
+    // ... release the service's previous binding on a genuine move
+}
+```
+
+- Contract: [ServiceManager](../contracts/ServiceManager.sol) (`deploy`, `bindMultisig`, `MultisigAlreadyBound`)
+- Tests: [ServiceManagerMultisigBinding.t.sol](../test/ServiceManagerMultisigBinding.t.sol)
+- Back-fill + audit tooling: [scripts/multisig_binding](../scripts/multisig_binding)
+
+The fixed implementation is deployed behind the `ServiceManagerProxy` on Ethereum and all
+supported L2s (see [configuration.json](./configuration.json)), and the binding was back-filled
+across the existing fleet.

@@ -75,6 +75,12 @@ interface IERC721 {
 /// @dev Storage is already initialized.
 error AlreadyInitialized();
 
+/// @dev Multisig is already bound to a different service.
+/// @param multisig Multisig address.
+/// @param existingServiceId Service Id the multisig is already bound to.
+/// @param serviceId Service Id attempting to bind the multisig.
+error MultisigAlreadyBound(address multisig, uint256 existingServiceId, uint256 serviceId);
+
 /// @title Service Manager - Periphery smart contract for managing services with custom ERC20 tokens or ETH
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
@@ -84,6 +90,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     event IdentityRegistryBridgerUpdated(address indexed identityRegistryBridger);
     event ImplementationUpdated(address indexed implementation);
     event CreateMultisig(address indexed multisig);
+    event MultisigBound(address indexed multisig, uint256 indexed serviceId);
     event UnbondWithSignatureExecuted(address indexed operator, uint256 indexed serviceId, uint256 refund);
     event RegisterAgentsWithSignatureExecuted(
         address indexed operator, uint256 indexed serviceId, address[] agentInstances, uint32[] agentIds
@@ -114,6 +121,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
 
     // Reentrancy lock
     uint256 internal _locked = 1;
+
+    // Global multisig -> owning service Id binding. A multisig belongs to at most one service.
+    mapping(address => uint256) public mapMultisigServiceIds;
 
     /// @dev ServiceManager constructor.
     /// @param _serviceRegistry Service Registry address.
@@ -438,6 +448,22 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
             revert ZeroAddress();
         }
 
+        // Bind multisig to service: revert if owned by another, claim if unowned, release the previous one on change
+        uint256 boundServiceId = mapMultisigServiceIds[multisig];
+        if (boundServiceId != serviceId) {
+            if (boundServiceId != 0) {
+                revert MultisigAlreadyBound(multisig, boundServiceId, serviceId);
+            }
+            mapMultisigServiceIds[multisig] = serviceId;
+            emit MultisigBound(multisig, serviceId);
+
+            // Release the service's previous multisig only if it is still bound to this service
+            if (lastMultisig != address(0) && lastMultisig != multisig && mapMultisigServiceIds[lastMultisig] == serviceId) {
+                mapMultisigServiceIds[lastMultisig] = 0;
+                emit MultisigBound(lastMultisig, 0);
+            }
+        }
+
         // 8004 Identity Registry workflow: check if current and last multisigs are different
         if ((identityRegistryBridger != address(0)) && (multisig != lastMultisig)) {
             // Update corresponding multisig records and unset wallet in 8004 agent Id, if required
@@ -445,6 +471,31 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         }
 
         emit CreateMultisig(multisig);
+
+        _locked = 1;
+    }
+
+    /// @dev Back-fills the multisig <-> service binding for services deployed before this upgrade.
+    /// @notice Permissionless and idempotent: for each service Id it records only that service's OWN current
+    ///         multisig (read from the registry), and skips entries with no multisig or already bound. It can
+    ///         therefore only ever write the registry's true binding and cannot forge a foreign one. Anyone may
+    ///         call it to back-fill the existing fleet in bulk.
+    /// @param serviceIds Set of service Ids to back-fill.
+    function bindMultisig(uint256[] calldata serviceIds) external {
+        // Reentrancy guard
+        if (_locked > 1) {
+            revert ReentrancyGuard();
+        }
+        _locked = 2;
+
+        for (uint256 i = 0; i < serviceIds.length; ++i) {
+            (, address multisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceIds[i]);
+            // Check for multisig to be non zero and not yet recorded
+            if (multisig != address(0) && mapMultisigServiceIds[multisig] == 0) {
+                mapMultisigServiceIds[multisig] = serviceIds[i];
+                emit MultisigBound(multisig, serviceIds[i]);
+            }
+        }
 
         _locked = 1;
     }

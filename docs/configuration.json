@@ -31,7 +31,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0x4443ddD8EC67CbCf7E291ee3198f81dD0326b3A1"
+        "address": "0xA8C52f0bB977F423E31400d151F1b98181511f2e"
       },
       {
         "name": "ServiceManagerProxy",
@@ -112,7 +112,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0xC720f1Ada2a882a4B375dCCd0aAc3F3B3e58bc84"
+        "address": "0x69E679AF02D7F18157A8730189f9aFa8cf9c9a2a"
       },
       {
         "name": "ServiceManagerProxy",
@@ -208,7 +208,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0xe8a85A78E11F4AD8D48d94f90e45827de54Ff2D6"
+        "address": "0x2D2754EAc33C4B456e96C7438C3141735C3b60B8"
       },
       {
         "name": "ServiceManagerProxy",
@@ -294,7 +294,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0x1c80bDBeD23dBb4ACEdCA136382bEa0162550515"
+        "address": "0x7fc0ddf4DFB61CfA5519db2A5eE7B2Eb02De0140"
       },
       {
         "name": "ServiceManagerProxy",
@@ -375,7 +375,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0xA749f605D93B3efcc207C54270d83C6E8fa70fF8"
+        "address": "0x43fB32f25dce34EB76c78C7A42C8F40F84BCD237"
       },
       {
         "name": "ServiceManagerProxy",
@@ -461,7 +461,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0x1eAccD29c86fFc52Bd7cC0117C03D089306Cbc29"
+        "address": "0x32B5A40B43C4eDb123c9cFa6ea97432380a38dDF"
       },
       {
         "name": "ServiceManagerProxy",
@@ -547,7 +547,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0x46C0D07F55d4F9B5Eed2Fc9680B5953e5fd7b461"
+        "address": "0xd00Cb760Bf30183EAFE67f0E590BEeE190F35Cf3"
       },
       {
         "name": "ServiceManagerProxy",
@@ -628,7 +628,7 @@
       {
         "name": "ServiceManager",
         "artifact": "abis/0.8.30/ServiceManager.json",
-        "address": "0x984cf72FDe8B5aA910e9e508aC5e007ae5BDcC9C"
+        "address": "0xaea9ef993d8a1A164397642648DF43F053d43D85"
       },
       {
         "name": "ServiceManagerProxy",
