@@ -20,7 +20,7 @@
   "AMBContractProxyForeignAddress": "0x4C36d2919e407f0Cc2Ee3c993ccF8ac26d9CE64e",
   "bridgeMediatorAddress": "0x15bd56669F57192a97dF41A2aa8f4403e9491776",
   "serviceRegistryAddress": "0x9338b5153AE39BB89f50468E608eD9d764B755fD",
-  "serviceManagerAddress": "0xe8a85A78E11F4AD8D48d94f90e45827de54Ff2D6",
+  "serviceManagerAddress": "0x2D2754EAc33C4B456e96C7438C3141735C3b60B8",
   "gnosisSafeMultisigImplementationAddress": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE",
   "gnosisSafeSameAddressMultisigImplementationAddress": "0x6e7f594f680f7aBad18b7a63de50F0FeE47dfD06",
   "operatorWhitelistAddress": "0x526E064cB694E8f5B7DB299158e17F33055B3943",
