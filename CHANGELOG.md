@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
-[1.3.3-post-external-audit]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.7...v1.3.3-post-external-audit
+[1.3.3]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.7...v1.3.3
 [1.2.7]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.6...v1.2.7
 [1.2.6]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.4...v1.2.6
 [1.2.4]: https://github.com/valory-xyz/autonolas-registries/compare/v1.2.3...v1.2.4
@@ -27,7 +27,7 @@ The format is based on [Common Changelog](https://common-changelog.org).
 [1.0.0]: https://github.com/valory-xyz/autonolas-registries/releases/tag/v1.0.0
 
 
-## [v1.3.3-post-external-audit] - 2026-05-07
+## [v1.3.3] - 2026-05-07
 
 ### Changed
 
@@ -41,6 +41,7 @@ The format is based on [Common Changelog](https://common-changelog.org).
 - Deployed staking and recovery contracts on Celo ([#272](https://github.com/valory-xyz/autonolas-registries/pull/272), [#273](https://github.com/valory-xyz/autonolas-registries/pull/273))
 - Deployed `HashCheckpoint` ([#256](https://github.com/valory-xyz/autonolas-registries/pull/256))
 - Participated in the Code4rena (C4A) Olas 2026-01 external audit and addressed findings, including post-C4R hardening of `StakingBase`, `StakingNativeToken` and `StakingToken` and an extended reentrancy lock on derivative entry points ([#286](https://github.com/valory-xyz/autonolas-registries/pull/286), [#287](https://github.com/valory-xyz/autonolas-registries/pull/287), [#288](https://github.com/valory-xyz/autonolas-registries/pull/288), [#289](https://github.com/valory-xyz/autonolas-registries/pull/289))
+- Hardened `ServiceManager` to enforce a 1:1 multisig↔service binding (added `bindMultisig` and the `MultisigAlreadyBound` guard in `deploy`), remediating an Immunefi-reported same-address `RecoveryModule` takeover (report 81064); deployed the fixed implementation across production chains and back-filled the binding for the existing service fleet ([#307](https://github.com/valory-xyz/autonolas-registries/pull/307))
 - Performed internal audits 13–17 covering the 8004 extension, reward distribution, recovery flow and post-C4A re-audit ([audit13](https://github.com/valory-xyz/autonolas-registries/tree/main/audits/internal13), [audit14](https://github.com/valory-xyz/autonolas-registries/tree/main/audits/internal14), [audit15](https://github.com/valory-xyz/autonolas-registries/tree/main/audits/internal15), [audit16](https://github.com/valory-xyz/autonolas-registries/tree/main/audits/internal16), [audit17](https://github.com/valory-xyz/autonolas-registries/tree/main/audits/internal17))
 - Migrated `docs/Vulnerabilities_list_registries.md` to markdown with relative links and updated the static-audit pipeline ([#274](https://github.com/valory-xyz/autonolas-registries/pull/274), [#277](https://github.com/valory-xyz/autonolas-registries/pull/277), [#285](https://github.com/valory-xyz/autonolas-registries/pull/285))
 - Updated documentation
