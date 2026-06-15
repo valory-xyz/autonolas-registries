@@ -646,6 +646,7 @@ if (boundServiceId != serviceId) {
 
 - Contract: [ServiceManager](../contracts/ServiceManager.sol) (`deploy`, `bindMultisig`, `MultisigAlreadyBound`)
 - Tests: [ServiceManagerMultisigBinding.t.sol](../test/ServiceManagerMultisigBinding.t.sol)
+- Back-fill + audit tooling: [scripts/multisig_binding](../scripts/multisig_binding)
 
 The fixed implementation is deployed behind the `ServiceManagerProxy` on Ethereum and all
 supported L2s (see [configuration.json](./configuration.json)), and the binding was back-filled
