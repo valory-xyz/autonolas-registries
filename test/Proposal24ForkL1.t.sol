@@ -33,7 +33,7 @@ interface IGuardCM { function getTargetSelectorChainId(address target, bytes4 se
 contract Proposal24ForkL1Test is Test, Proposal24Builder {
     address internal constant NEW_GOV = 0x060D0CBdDFb0498d610E2EF55C01516B5B1251E6; // live GovernorOLAS
     address internal constant WVEOLAS = 0x4039B809E0C0Ad04F6Fc880193366b251dDf4B40;
-    address internal constant TOKENOMICS = 0xc096362fa6f4A4B1a9ea68b1043416f3381ce300;
+    address internal constant TOKENOMICS = 0xc096362fa6f4A4B1a9ea68b1043416f3381ce300; // gitleaks:allow - public TokenomicsProxy address, not a secret
     bytes32 internal constant PROPOSER_ROLE = keccak256("PROPOSER_ROLE");
     uint8 internal constant SUCCEEDED = 4;
     uint8 internal constant EXECUTED = 7;
