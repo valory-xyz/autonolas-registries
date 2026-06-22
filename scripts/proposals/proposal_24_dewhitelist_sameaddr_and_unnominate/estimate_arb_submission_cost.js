@@ -40,13 +40,16 @@ async function main() {
             excessFeeRefundAddress: ARB_MEDIATOR_L2, callValueRefundAddress: AddressZero, data: calldata },
         await getBaseFee(mainnetProvider), mainnetProvider, overrides);
 
-    const gasPriceBid = await arbitrumProvider.getGasPrice();
-    const value = p.deposit.mul(10);
+    // Bake the SDK's BUFFERED maxFeePerGas (the maxFeePerGas override above is +1000%), NOT the raw current
+    // L2 gas price: msg.value being overfunded does not change the ticket's gas bid, so the explicit
+    // maxFeePerGas argument must itself carry headroom or the retryable can fail to auto-redeem if L2 gas rises.
+    const gasPriceBid = await arbitrumProvider.getGasPrice(); // raw, for reference only
+    const value = p.deposit.mul(10); // deposit already uses the buffered maxFeePerGas
 
     console.log("inbox:", inboxAddress);
     console.log("ARB_MAX_SUBMISSION_COST =", p.maxSubmissionCost.toString());
     console.log("ARB_GAS_LIMIT          =", p.gasLimit.toString());
-    console.log("ARB_MAX_FEE_PER_GAS    =", gasPriceBid.toString());
+    console.log("ARB_MAX_FEE_PER_GAS    =", p.maxFeePerGas.toString(), "(buffered; raw gasPrice =", gasPriceBid.toString() + ")");
     console.log("deposit                =", p.deposit.toString());
     console.log("ARB_RETRYABLE_VALUE    = deposit*10 =", value.toString());
 }

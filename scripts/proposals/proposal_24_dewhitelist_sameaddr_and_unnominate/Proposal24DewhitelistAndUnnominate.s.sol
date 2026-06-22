@@ -98,10 +98,10 @@ abstract contract Proposal24Builder {
     // autonolas-registries/scripts/proposals/proposal_15 (default base + maxSubmissionFee/maxFeePerGas
     // +1000% buffers, gasLimit min 2M +30%), then value = deposit * 10. Concrete baked values from
     // scripts/proposals/_estimate_arb_proposal24.js (re-run right before submission to refresh).
-    uint256 internal constant ARB_MAX_SUBMISSION_COST = 3_076_886_361_824;     // SDK maxSubmissionCost (already +1000%)
+    uint256 internal constant ARB_MAX_SUBMISSION_COST = 4_944_601_833_776;     // SDK maxSubmissionCost (already +1000%)
     uint256 internal constant ARB_GAS_LIMIT           = 2_000_000;             // SDK gasLimit (2M min)
-    uint256 internal constant ARB_MAX_FEE_PER_GAS     = 20_190_000;            // live L2 gas price bid
-    uint256 internal constant ARB_RETRYABLE_VALUE     = 4_432_968_863_618_240; // SDK deposit * 10
+    uint256 internal constant ARB_MAX_FEE_PER_GAS     = 220_000_000;           // SDK BUFFERED maxFeePerGas (+1000%), not the raw gas price
+    uint256 internal constant ARB_RETRYABLE_VALUE     = 4_449_446_018_337_760; // SDK deposit * 10
 
     // NOTE: regenerate description.txt to match this byte-for-byte before submission.
     string internal constant DESCRIPTION =
