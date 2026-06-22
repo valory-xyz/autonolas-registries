@@ -44,6 +44,7 @@ const ADDR = {
     "0xfa517d01daa100cb1932fa4345f68874f7e7ef46": "GnosisSafeSameAddressMultisig (Ethereum)",
     "0x6e7f594f680f7abad18b7a63de50f0fee47dfd06": "GnosisSafeSameAddressMultisig (Gnosis)",
     "0xd8bcc126ff31d2582018715d5291a508530587b0": "GnosisSafeSameAddressMultisig (Polygon)",
+    "0xbcb1bac84b5bcab350c89c50adc9064ed15a4485": "PolySafeSameAddressMultisig (Polygon)",
     "0xbb7e1d6cb6f243d6bde81ce92a9f2aff7fbe7eac": "GnosisSafeSameAddressMultisig (Arbitrum, Celo)",
     "0xb09ccf0dbf0c178806aaee28956c74bd66d21f73": "GnosisSafeSameAddressMultisig (Optimism)",
     "0xfbbec0c8b13b38a9ac0499694a69a10204c5e2ab": "GnosisSafeSameAddressMultisig (Base, Mode)",

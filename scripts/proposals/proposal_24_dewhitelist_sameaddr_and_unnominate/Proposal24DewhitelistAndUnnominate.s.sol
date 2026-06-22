@@ -65,6 +65,8 @@ abstract contract Proposal24Builder {
     address internal constant SAME_MAINNET  = 0xfa517d01DaA100cB1932FA4345F68874f7E7eF46;
     address internal constant SAME_GNOSIS   = 0x6e7f594f680f7aBad18b7a63de50F0FeE47dfD06;
     address internal constant SAME_POLYGON  = 0xd8BCC126ff31d2582018715d5291A508530587b0;
+    // Polygon also has a PolySafeSameAddressMultisig (same adopt-existing-Safe primitive, PolySafe proxy hash).
+    address internal constant SAME_POLYGON_POLYSAFE = 0xBcb1BAC84B5BcAb350C89c50ADc9064eD15a4485;
     address internal constant SAME_ARBITRUM = 0xBb7e1D6Cb6F243D6bdE81CE92a9f2aFF7Fbe7eac;
     address internal constant SAME_OPTIMISM = 0xb09CcF0Dbf0C178806Aaee28956c74bd66d21f73;
     address internal constant SAME_BASE     = 0xFbBEc0C8b13B38a9aC0499694A69a10204c5E2aB;
@@ -103,7 +105,7 @@ abstract contract Proposal24Builder {
 
     // NOTE: regenerate description.txt to match this byte-for-byte before submission.
     string internal constant DESCRIPTION =
-        "Olas protocol security hardening, staking nominee cleanup, and Community Multisig guard whitelist extension. This proposal: (1) de-whitelists the GnosisSafeSameAddressMultisig multisig implementation from the ServiceRegistry on Ethereum and the ServiceRegistryL2 on each supported network (Gnosis, Polygon, Arbitrum, Optimism, Base, Celo, Mode) by calling changeMultisigPermission(address,false), removing the same-address multisig adoption path from service deployment; (2) removes a set of staking contract nominees from the VoteWeighting contract by calling removeNominee(bytes32,uint256) for the corresponding (account, chainId) pairs across Ethereum, Gnosis, Base, Polygon, Optimism, Celo and Arbitrum; and (3) extends the Community Multisig GuardCM allowlist via setTargetSelectorChainIds with 19 additional (target, selector, chainId) combinations enabling emergency pause actions across Ethereum and all supported L2 networks (Dispenser setPauseState, ServiceManager and RegistriesManager pause, and TargetDispenserL2 pause on each L2) together with the Mode ServiceRegistryL2 and ServiceRegistryTokenUtility drain backfill. In accordance with Autonolas DAO Constitution at ipfs://bafybeibrhz6hnxsxcbv7dkzerq4chssotexb276pidzwclbytzj7m4t47u";
+        "Olas protocol security hardening, staking nominee cleanup, and Community Multisig guard whitelist extension. This proposal: (1) de-whitelists the same-address multisig implementations (GnosisSafeSameAddressMultisig on Ethereum and the ServiceRegistryL2 of each supported network: Gnosis, Polygon, Arbitrum, Optimism, Base, Celo, Mode; and additionally the PolySafeSameAddressMultisig on Polygon) by calling changeMultisigPermission(address,false), removing the same-address multisig adoption path from service deployment; (2) removes a set of staking contract nominees from the VoteWeighting contract by calling removeNominee(bytes32,uint256) for the corresponding (account, chainId) pairs across Ethereum, Gnosis, Base, Polygon, Optimism, Celo and Arbitrum; and (3) extends the Community Multisig GuardCM allowlist via setTargetSelectorChainIds with 19 additional (target, selector, chainId) combinations enabling emergency pause actions across Ethereum and all supported L2 networks (Dispenser setPauseState, ServiceManager and RegistriesManager pause, and TargetDispenserL2 pause on each L2) together with the Mode ServiceRegistryL2 and ServiceRegistryTokenUtility drain backfill. In accordance with Autonolas DAO Constitution at ipfs://bafybeibrhz6hnxsxcbv7dkzerq4chssotexb276pidzwclbytzj7m4t47u";
 
     function buildProposal()
         public
@@ -250,9 +252,14 @@ abstract contract Proposal24Builder {
         return abi.encodeWithSignature("requireToPassMessage(address,bytes,uint256)", HOME_MEDIATOR_L2, l2call, uint256(MIN_GAS));
     }
 
-    /// @dev Polygon (FxRoot): sendMessageToChild(FxGovernorTunnel, packed).
+    /// @dev Polygon (FxRoot): sendMessageToChild(FxGovernorTunnel, packed). Polygon carries TWO same-address
+    ///      adapters (GnosisSafeSameAddressMultisig + PolySafeSameAddressMultisig), batched as two concatenated
+    ///      tuples in one message (FxGovernorTunnel.processMessageFromRoot loops over them).
     function _polygon() internal pure returns (bytes memory) {
-        return abi.encodeWithSignature("sendMessageToChild(address,bytes)", FX_TUNNEL_L2, _packed(SRL2_POLYGON, _changePerm(SAME_POLYGON)));
+        bytes memory packed = bytes.concat(
+            _packed(SRL2_POLYGON, _changePerm(SAME_POLYGON)),
+            _packed(SRL2_POLYGON, _changePerm(SAME_POLYGON_POLYSAFE)));
+        return abi.encodeWithSignature("sendMessageToChild(address,bytes)", FX_TUNNEL_L2, packed);
     }
 
     /// @dev Arbitrum (Inbox): direct retryable to the L2 registry; refunds to the aliased L1 Timelock.

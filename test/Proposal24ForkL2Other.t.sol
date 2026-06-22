@@ -46,19 +46,26 @@ contract Proposal24ForkL2OtherTest is Test, Proposal24Builder {
     }
 
     /// @dev Polygon: FxGovernorTunnel.processMessageFromRoot, caller = fxChild, rootMessageSender = rootGovernor.
+    ///      Polygon de-whitelists TWO same-address adapters in one batched message (GnosisSafeSameAddressMultisig
+    ///      + PolySafeSameAddressMultisig); the tunnel loops over the two concatenated tuples.
     function test_L2_polygon() public {
         vm.createSelectFork(vm.envOr("POLYGON_RPC", string("https://polygon.drpc.org")));
-        assertTrue(IServiceRegistry(SRL2_POLYGON).mapMultisigs(SAME_POLYGON), "adapter not whitelisted pre-exec?");
+        assertTrue(IServiceRegistry(SRL2_POLYGON).mapMultisigs(SAME_POLYGON), "gnosis-sameaddr not whitelisted pre-exec?");
+        assertTrue(IServiceRegistry(SRL2_POLYGON).mapMultisigs(SAME_POLYGON_POLYSAFE), "polysafe-sameaddr not whitelisted pre-exec?");
         assertEq(IServiceRegistry(SRL2_POLYGON).owner(), FX_TUNNEL_L2, "registry not owned by FxGovernorTunnel");
 
         address fxChild = IFxGovernorTunnel(FX_TUNNEL_L2).fxChild();
         address rg = IFxGovernorTunnel(FX_TUNNEL_L2).rootGovernor();
-        bytes memory packed = _packed(SRL2_POLYGON, _changePerm(SAME_POLYGON));
+        // The EXACT batched payload the proposal sends: two concatenated tuples.
+        bytes memory packed = bytes.concat(
+            _packed(SRL2_POLYGON, _changePerm(SAME_POLYGON)),
+            _packed(SRL2_POLYGON, _changePerm(SAME_POLYGON_POLYSAFE)));
 
         vm.prank(fxChild);
         IFxGovernorTunnel(FX_TUNNEL_L2).processMessageFromRoot(0, rg, packed);
 
-        assertFalse(IServiceRegistry(SRL2_POLYGON).mapMultisigs(SAME_POLYGON), "polygon adapter still whitelisted");
+        assertFalse(IServiceRegistry(SRL2_POLYGON).mapMultisigs(SAME_POLYGON), "GnosisSafeSameAddressMultisig still whitelisted");
+        assertFalse(IServiceRegistry(SRL2_POLYGON).mapMultisigs(SAME_POLYGON_POLYSAFE), "PolySafeSameAddressMultisig still whitelisted");
     }
 
     /// @dev Arbitrum: the retryable runs with msg.sender = aliased L1 Timelock (ARB_MEDIATOR_L2), calling

@@ -2,10 +2,12 @@
 
 A single GovernorOLAS proposal (41 actions) bundling three protocol-maintenance changes:
 
-1. **De-whitelist `GnosisSafeSameAddressMultisig`** (8 calls) — `changeMultisigPermission(adapter, false)` on the
-   `ServiceRegistry` (Ethereum) and `ServiceRegistryL2` (Gnosis, Polygon, Arbitrum, Optimism, Base, Celo, Mode).
-   Removes the same-address multisig adoption path from service deployment. Mainnet is a direct Timelock call;
-   each L2 is bridged through its mediator (AMB / FxRoot / Arbitrum Inbox retryable / OP-stack messenger).
+1. **De-whitelist the same-address multisig adapters** (8 calls) — `changeMultisigPermission(adapter, false)` on
+   the `ServiceRegistry` (Ethereum) and `ServiceRegistryL2` (Gnosis, Polygon, Arbitrum, Optimism, Base, Celo,
+   Mode). Removes the same-address multisig adoption path from service deployment. Mainnet is a direct Timelock
+   call; each L2 is bridged through its mediator (AMB / FxRoot / Arbitrum Inbox retryable / OP-stack messenger).
+   Polygon carries **two** such adapters — `GnosisSafeSameAddressMultisig` and `PolySafeSameAddressMultisig` —
+   batched as two concatenated tuples in the single FxRoot message.
 2. **Un-nominate staking contracts** (32 calls) — `VoteWeighting.removeNominee(bytes32, uint256)` for the
    retired (account, chainId) pairs across Ethereum, Gnosis, Base, Polygon, Optimism, Celo and Arbitrum.
 3. **Extend the GuardCM allowlist** (1 call) — `setTargetSelectorChainIds(...)` adding 19 (target, selector,
