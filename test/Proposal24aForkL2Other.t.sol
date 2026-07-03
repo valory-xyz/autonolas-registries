@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {Test} from "forge-std/Test.sol";
-import {Proposal24Builder} from "../scripts/proposals/proposal_24_dewhitelist_sameaddr_and_unnominate/Proposal24DewhitelistAndUnnominate.s.sol";
+import {Proposal24aBuilder} from "../scripts/proposals/proposal_24a_dewhitelist_and_guard/Proposal24aDewhitelistAndGuard.s.sol";
 
 interface IHomeMediator {
     function AMBContractProxyHome() external view returns (address);
@@ -22,12 +22,12 @@ interface IServiceRegistry {
     function owner() external view returns (address);
 }
 
-/// @notice Bridge-delivery sims for the non-OP-stack L2s: Gnosis (AMB/HomeMediator), Polygon (FxRoot/
+/// @notice Bridge-delivery sims for proposal 24a's non-OP-stack L2s: Gnosis (AMB/HomeMediator), Polygon (FxRoot/
 ///         FxGovernorTunnel) and Arbitrum (retryable executed as the aliased L1 Timelock). Each feeds the
-///         mediator the EXACT payload proposal 24 sends and asserts the GnosisSafeSameAddressMultisig adapter
-///         is removed from the registry whitelist (mapMultisigs -> false).
-///         Run: forge test --match-contract Proposal24ForkL2OtherTest -vvv
-contract Proposal24ForkL2OtherTest is Test, Proposal24Builder {
+///         mediator the EXACT payload proposal 24a sends and asserts the same-address adapter is removed from the
+///         registry whitelist (mapMultisigs -> false). Payloads are byte-identical to the original proposal 24.
+///         Run: forge test --match-contract Proposal24aForkL2OtherTest -vvv
+contract Proposal24aForkL2OtherTest is Test, Proposal24aBuilder {
     /// @dev Gnosis: HomeMediator.processMessageFromForeign, caller = AMB, AMB.messageSender() = foreignGovernor.
     function test_L2_gnosis() public {
         vm.createSelectFork(vm.envOr("GNOSIS_RPC", string("https://rpc.gnosischain.com")));
@@ -56,7 +56,6 @@ contract Proposal24ForkL2OtherTest is Test, Proposal24Builder {
 
         address fxChild = IFxGovernorTunnel(FX_TUNNEL_L2).fxChild();
         address rg = IFxGovernorTunnel(FX_TUNNEL_L2).rootGovernor();
-        // The EXACT batched payload the proposal sends: two concatenated tuples.
         bytes memory packed = bytes.concat(
             _packed(SRL2_POLYGON, _changePerm(SAME_POLYGON)),
             _packed(SRL2_POLYGON, _changePerm(SAME_POLYGON_POLYSAFE)));

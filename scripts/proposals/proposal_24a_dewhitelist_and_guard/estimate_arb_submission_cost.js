@@ -1,7 +1,7 @@
 /*global process*/
 // One-off estimator for proposal 24's Arbitrum de-whitelist retryable (mirrors proposal_15's method:
 // SDK estimateAll with default base + big buffers, then value = deposit * 10). Prints concrete numbers to
-// bake into the staging builder. Run: npx hardhat run scripts/proposals/proposal_24_dewhitelist_sameaddr_and_unnominate/estimate_arb_submission_cost.js
+// bake into the staging builder. Run: npx hardhat run scripts/proposals/proposal_24a_dewhitelist_and_guard/estimate_arb_submission_cost.js
 const { ethers } = require("hardhat");
 const { L1ToL2MessageGasEstimator } = require("@arbitrum/sdk/dist/lib/message/L1ToL2MessageGasEstimator");
 const { EthBridger, getL2Network } = require("@arbitrum/sdk");

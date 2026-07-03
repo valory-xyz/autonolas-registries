@@ -4,34 +4,33 @@ pragma solidity ^0.8.30;
 import {Script, console2} from "forge-std/Script.sol";
 
 // ============================================================================================
-// PRIVATE STAGING COPY — do NOT push to the public autonolas-governance repo.
-// Builds a single GovernorOLAS proposal that:
-//   (1) DE-WHITELISTS the GnosisSafeSameAddressMultisig implementation from ServiceRegistry (L1) /
+// PROPOSAL 24a — de-whitelist same-address multisigs + extend the GuardCM allowlist.
+//
+// This is the FIRST of the two proposals that replace the original single 41-action proposal 24,
+// which reverted on-chain (tx 0x540c...20f) because its execute() needed ~19.9M gas while
+// EIP-7825 (Fusaka) caps a single transaction at 2^24 = 16,777,216 gas. The bundle was split so
+// each proposal's execute stays well under that cap. 24a carries the de-whitelists + GuardCM
+// batch (~10.3M gas measured on a mainnet fork); the 32 removeNominee calls (~9.55M) are in 24b.
+//
+// Actions (9):
+//   (1) DE-WHITELIST the same-address multisig implementations from ServiceRegistry (L1) /
 //       ServiceRegistryL2 (every L2) via changeMultisigPermission(address,false) — closing the
-//       same-address multisig adoption path; and
-//   (2) UN-NOMINATES a set of staking contracts from VoteWeighting via removeNominee(bytes32,uint256).
+//       same-address multisig adoption path. Mainnet direct; each L2 bridged through its mediator
+//       (AMB / FxRoot / Arbitrum-retryable / OP-stack). Polygon carries TWO adapters
+//       (GnosisSafeSameAddressMultisig + PolySafeSameAddressMultisig), batched in one FxRoot message.
+//   (2) EXTEND the GuardCM allowlist via setTargetSelectorChainIds with 19 (target, selector,
+//       chainId) emergency-pause/drain triples (all statuses = true).
 //
-// Bridge encodings mirror proposals/proposal_11_sm_update/Proposal11SmUpdate.s.sol verbatim
-// (same mediators, same _packed tuple, same OP-stack / AMB / FxRoot / Arbitrum-retryable shapes).
-// Only the inner calldata differs: changeMultisigPermission(sameAddr,false) instead of changeImplementation.
-//
-// OWNERSHIP (verified on-chain): every target registry's owner is the chain's mediator (or the Timelock on
-// L1), so all 8 de-whitelist calls are governance-reachable — INCLUDING Mode (its SRL2 owner is the Mode
-// OptimismMessenger 0x9338…755fD, unlike the Mode SM proxy which was EOA-owned and excluded from proposal 11).
-// VoteWeighting is on L1 and owned by the Timelock; removeNominee is owner-only and reverts NomineeDoesNotExist
-// if a target is not a live nominee — all 32 below are currently nominated.
-//
-// Arbitrum retryable params are placeholders (mirror proposal_11): RECOMPUTE maxSubmissionCost/gasLimit/
-// maxFeePerGas and the entry value at submission via the Arbitrum SDK. The msg.value is supplied by the
-// executor of execute(); it flows Governor -> Timelock -> Inbox (the Timelock needs no balance).
+// Bridge encodings and the GuardCM batch are byte-for-byte identical to the original proposal 24
+// (same mediators, same _packed tuple, same MIN_GAS, same Arbitrum retryable params), so the L2
+// delivery was already simulated; only the bundling changed.
 //
 // proposalId = keccak256(abi.encode(targets, values, calldatas, keccak256(bytes(description)))).
 // description.txt MUST match the DESCRIPTION string below byte-for-byte before on-chain submission.
 // ============================================================================================
-abstract contract Proposal24Builder {
+abstract contract Proposal24aBuilder {
     // ---- core ----
     address internal constant TIMELOCK = 0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE;
-    address internal constant VOTE_WEIGHTING = 0x95418b46d5566D3d1ea62C12Aea91227E566c5c1;
 
     // ---- L1 bridge entry points ----
     address internal constant AMB_L1     = 0x4C36d2919e407f0Cc2Ee3c993ccF8ac26d9CE64e; // Gnosis
@@ -61,7 +60,7 @@ abstract contract Proposal24Builder {
     address internal constant SRL2_CELO     = 0xE3607b00E75f6405248323A9417ff6b39B244b50;
     address internal constant SRL2_MODE     = 0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE;
 
-    // ---- GnosisSafeSameAddressMultisig per chain (the implementation being disabled) ----
+    // ---- same-address multisig implementations per chain (the implementations being disabled) ----
     address internal constant SAME_MAINNET  = 0xfa517d01DaA100cB1932FA4345F68874f7E7eF46;
     address internal constant SAME_GNOSIS   = 0x6e7f594f680f7aBad18b7a63de50F0FeE47dfD06;
     address internal constant SAME_POLYGON  = 0xd8BCC126ff31d2582018715d5291A508530587b0;
@@ -72,16 +71,6 @@ abstract contract Proposal24Builder {
     address internal constant SAME_BASE     = 0xFbBEc0C8b13B38a9aC0499694A69a10204c5E2aB;
     address internal constant SAME_CELO     = 0xBb7e1D6Cb6F243D6bdE81CE92a9f2aFF7Fbe7eac;
     address internal constant SAME_MODE     = 0xFbBEc0C8b13B38a9aC0499694A69a10204c5E2aB;
-
-    // ---- chain ids ----
-    uint256 internal constant CID_MAINNET  = 1;
-    uint256 internal constant CID_OPTIMISM = 10;
-    uint256 internal constant CID_GNOSIS   = 100;
-    uint256 internal constant CID_POLYGON  = 137;
-    uint256 internal constant CID_BASE     = 8453;
-    uint256 internal constant CID_CELO     = 42220;
-    uint256 internal constant CID_ARBITRUM = 42161;
-    uint256 internal constant CID_MODE     = 34443;
 
     uint32 internal constant MIN_GAS = 2_000_000; // changeMultisigPermission is a trivial sstore
 
@@ -95,9 +84,9 @@ abstract contract Proposal24Builder {
     bytes4 internal constant SEL_DRAIN_ADDRESS   = 0xece53132; // drain(address)
 
     // Arbitrum retryable params — estimated via the Arbitrum SDK estimateAll the same way as
-    // autonolas-registries/scripts/proposals/proposal_15 (default base + maxSubmissionFee/maxFeePerGas
-    // +1000% buffers, gasLimit min 2M +30%), then value = deposit * 10. Concrete baked values from
-    // scripts/proposals/_estimate_arb_proposal24.js (re-run right before submission to refresh).
+    // scripts/proposals/proposal_15 (default base + maxSubmissionFee/maxFeePerGas +1000% buffers,
+    // gasLimit min 2M +30%), then value = deposit * 10. Re-run estimate_arb_submission_cost.js right
+    // before submission to refresh against L1 basefee drift.
     uint256 internal constant ARB_MAX_SUBMISSION_COST = 4_944_601_833_776;     // SDK maxSubmissionCost (already +1000%)
     uint256 internal constant ARB_GAS_LIMIT           = 2_000_000;             // SDK gasLimit (2M min)
     uint256 internal constant ARB_MAX_FEE_PER_GAS     = 220_000_000;           // SDK BUFFERED maxFeePerGas (+1000%), not the raw gas price
@@ -105,25 +94,25 @@ abstract contract Proposal24Builder {
 
     // NOTE: regenerate description.txt to match this byte-for-byte before submission.
     string internal constant DESCRIPTION =
-        "Olas protocol security hardening, staking nominee cleanup, and Community Multisig guard whitelist extension. This proposal: (1) de-whitelists the same-address multisig implementations (GnosisSafeSameAddressMultisig on Ethereum and the ServiceRegistryL2 of each supported network: Gnosis, Polygon, Arbitrum, Optimism, Base, Celo, Mode; and additionally the PolySafeSameAddressMultisig on Polygon) by calling changeMultisigPermission(address,false), removing the same-address multisig adoption path from service deployment; (2) removes a set of staking contract nominees from the VoteWeighting contract by calling removeNominee(bytes32,uint256) for the corresponding (account, chainId) pairs across Ethereum, Gnosis, Base, Polygon, Optimism, Celo and Arbitrum; and (3) extends the Community Multisig GuardCM allowlist via setTargetSelectorChainIds with 19 additional (target, selector, chainId) combinations enabling emergency pause actions across Ethereum and all supported L2 networks (Dispenser setPauseState, ServiceManager and RegistriesManager pause, and TargetDispenserL2 pause on each L2) together with the Mode ServiceRegistryL2 and ServiceRegistryTokenUtility drain backfill. In accordance with Autonolas DAO Constitution at ipfs://bafybeibrhz6hnxsxcbv7dkzerq4chssotexb276pidzwclbytzj7m4t47u";
+        "Olas protocol security hardening and Community Multisig guard whitelist extension. This proposal: (1) de-whitelists the same-address multisig implementations (GnosisSafeSameAddressMultisig on Ethereum and the ServiceRegistryL2 of each supported network: Gnosis, Polygon, Arbitrum, Optimism, Base, Celo, Mode; and additionally the PolySafeSameAddressMultisig on Polygon) by calling changeMultisigPermission(address,false), removing the same-address multisig adoption path from service deployment; and (2) extends the Community Multisig GuardCM allowlist via setTargetSelectorChainIds with 19 additional (target, selector, chainId) combinations enabling emergency pause actions across Ethereum and all supported L2 networks (Dispenser setPauseState, ServiceManager and RegistriesManager pause, and TargetDispenserL2 pause on each L2) together with the Mode ServiceRegistryL2 and ServiceRegistryTokenUtility drain backfill. In accordance with Autonolas DAO Constitution at ipfs://bafybeibrhz6hnxsxcbv7dkzerq4chssotexb276pidzwclbytzj7m4t47u";
 
     function buildProposal()
         public
         pure
         returns (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description)
     {
-        // 8 de-whitelist + 32 un-nominate + 1 GuardCM Phase 1 whitelist = 41
-        targets = new address[](41);
-        values = new uint256[](41);
-        calldatas = new bytes[](41);
+        // 8 de-whitelist + 1 GuardCM Phase 1 whitelist = 9
+        targets = new address[](9);
+        values = new uint256[](9);
+        calldatas = new bytes[](9);
         uint256 k;
 
-        // ===================== Part 1: de-whitelist GnosisSafeSameAddressMultisig (8) =====================
+        // ===================== Part 1: de-whitelist same-address multisigs (8) =====================
         // 1.1 mainnet — direct Timelock call
         targets[k] = SR_MAINNET; calldatas[k++] = _changePerm(SAME_MAINNET);
         // 1.2 Gnosis (AMB)
         targets[k] = AMB_L1; calldatas[k++] = _gnosis();
-        // 1.3 Polygon (FxRoot)
+        // 1.3 Polygon (FxRoot) — two adapters batched
         targets[k] = FXROOT_L1; calldatas[k++] = _polygon();
         // 1.4 Arbitrum (Inbox retryable — carries value; recompute at submission)
         targets[k] = INBOX_L1; values[k] = ARB_RETRYABLE_VALUE; calldatas[k++] = _arbitrum();
@@ -133,57 +122,14 @@ abstract contract Proposal24Builder {
         targets[k] = CELO_L1CDM; calldatas[k++] = _opStack(CELO_MESSENGER_L2, SRL2_CELO,     SAME_CELO);
         targets[k] = MODE_L1CDM; calldatas[k++] = _opStack(MODE_MESSENGER_L2, SRL2_MODE,     SAME_MODE);
 
-        // ===================== Part 2: un-nominate staking contracts (32) =====================
-        // VoteWeighting lives on L1 and tracks nominees for all chains via the chainId arg, so every call is
-        // a DIRECT L1 Timelock call regardless of where the staking contract is deployed.
-
-        // -- Gnosis (100): QS Mech MarketPlace Expert 1..13, MarketPlace Demand Alpha 1 & 2, Supply Alpha (16) --
-        k = _rm(targets, calldatas, k, 0xdB9E2713c3dA3C403F2eA6E570eB978b00304e9E, CID_GNOSIS); // Expert 1
-        k = _rm(targets, calldatas, k, 0x1E90522b45c771DCF5f79645B9e96551d2ECaF62, CID_GNOSIS); // Expert 2
-        k = _rm(targets, calldatas, k, 0x75EECA6207be98cAc3fDE8a20eCd7B01e50b3472, CID_GNOSIS); // Expert 3
-        k = _rm(targets, calldatas, k, 0x9c7F6103e3a72E4d1805b9C683Ea5B370Ec1a99f, CID_GNOSIS); // Expert 4
-        k = _rm(targets, calldatas, k, 0xcdC603e0Ee55Aae92519f9770f214b2Be4967f7d, CID_GNOSIS); // Expert 5
-        k = _rm(targets, calldatas, k, 0x22D6cd3d587D8391C3aAE83a783f26c67ab54A85, CID_GNOSIS); // Expert 6
-        k = _rm(targets, calldatas, k, 0xaaEcdf4d0CBd6Ca0622892Ac6044472f3912A5f3, CID_GNOSIS); // Expert 7
-        k = _rm(targets, calldatas, k, 0x168aED532a0CD8868c22Fc77937Af78b363652B1, CID_GNOSIS); // Expert 8
-        k = _rm(targets, calldatas, k, 0xdDa9cD214F12e7C2D58E871404A0A3B1177065C8, CID_GNOSIS); // Expert 9
-        k = _rm(targets, calldatas, k, 0x53a38655B4e659eF4C7F88A26fbF5c67932C7156, CID_GNOSIS); // Expert 10
-        k = _rm(targets, calldatas, k, 0x1eaDe40561C61fa7AcC5D816b1FC55a8d9B58519, CID_GNOSIS); // Expert 11
-        k = _rm(targets, calldatas, k, 0x99Fe6B5C9980Fc3A44b1Dc32A76Db6aDfcf4c75e, CID_GNOSIS); // Expert 12
-        k = _rm(targets, calldatas, k, 0x1F81cF353051dAA8919d1777c58b667025794dDc, CID_GNOSIS); // Expert 13
-        k = _rm(targets, calldatas, k, 0x9d6e7aB0B5B48aE5c146936147C639fEf4575231, CID_GNOSIS); // Demand Alpha 1
-        k = _rm(targets, calldatas, k, 0x9fb17E549FefcCA630dd92Ea143703CeE4Ea4340, CID_GNOSIS); // Demand Alpha 2
-        k = _rm(targets, calldatas, k, 0xCAbD0C941E54147D40644CF7DA7e36d70DF46f44, CID_GNOSIS); // Supply Alpha
-
-        // -- Base (8453): OneSoul x2, Agents.fun 4, Supply Alpha, Contribute Beta I/II/III, Demand Alpha 1/2, 2x n/a (11) --
-        k = _rm(targets, calldatas, k, 0x4D804a665097855b1158CD8045A819ee9fD0e540, CID_BASE); // OneSoul (1)
-        k = _rm(targets, calldatas, k, 0xc279Cf9Fc8DD0c4A58227ef1189cbb3f0f575F40, CID_BASE); // OneSoul (2)
-        k = _rm(targets, calldatas, k, 0xb93607d2173f847a18567809dB51345d4EA38bAd, CID_BASE); // Agents.fun 4
-        k = _rm(targets, calldatas, k, 0xB14Cd66c6c601230EA79fa7Cc072E5E0C2F3A756, CID_BASE); // Supply Alpha
-        k = _rm(targets, calldatas, k, 0xe2E68dDafbdC0Ae48E39cDd1E778298e9d865cF4, CID_BASE); // Contribute Beta I
-        k = _rm(targets, calldatas, k, 0x6Ce93E724606c365Fc882D4D6dfb4A0a35fE2387, CID_BASE); // Contribute Beta II
-        k = _rm(targets, calldatas, k, 0x28877FFc6583170a4C9eD0121fc3195d06fd3A26, CID_BASE); // Contribute Beta III
-        k = _rm(targets, calldatas, k, 0x38Eb3838Dab06932E7E1E965c6F922aDfE494b88, CID_BASE); // Demand Alpha 1
-        k = _rm(targets, calldatas, k, 0xBE6E12364B549622395999dB0dB53f163994D7AF, CID_BASE); // Demand Alpha 2
-        k = _rm(targets, calldatas, k, 0x66A92CDa5B319DCCcAC6c1cECbb690CA3Fb59488, CID_BASE); // n/a (id 9)
-        k = _rm(targets, calldatas, k, 0x51c5f4982B9b0B3c0482678f5847EA6228Cc8E54, CID_BASE); // n/a (id 2)
-
-        // -- single cross-chain MarketPlace Supply Alpha deployments (5) --
-        k = _rm(targets, calldatas, k, 0xBB375C8d8517e6956AF7044Fe676F2100505624f, CID_OPTIMISM); // Supply Alpha
-        k = _rm(targets, calldatas, k, 0x3aE11E2dd9a055af3dA61Ae2e36515D1612d7D93, CID_POLYGON);  // Supply Alpha
-        k = _rm(targets, calldatas, k, 0x5A40e2661b3eE672e945445f885f975a51a6C461, CID_MAINNET);  // Supply Alpha
-        k = _rm(targets, calldatas, k, 0x6cc3A0d25E2AC7D8fF119Ef92d5523259C6DC821, CID_CELO);     // Supply Alpha
-        k = _rm(targets, calldatas, k, 0x646EcBE31DF12D17a949d65764187408f6bb095d, CID_ARBITRUM); // Supply Alpha
-
-        // ===================== Part 3: GuardCM Phase 1 whitelist additions (1 call, direct L1) =====================
+        // ===================== Part 2: GuardCM Phase 1 whitelist additions (1 call, direct L1) =====================
         targets[k] = GUARD_CM; calldatas[k++] = _phase1Allowlist();
 
-        require(k == 41, "length mismatch");
+        require(k == 9, "length mismatch");
         description = DESCRIPTION;
     }
 
     /// @dev GuardCM Phase 1 (Option A0): 19 (target, selector, chainId) triples, all statuses = true (additions).
-    ///      Pure pauses across Ethereum + 7 L2s, plus the Mode drain backfill that Phase 0 omitted.
     function _phase1Allowlist() internal pure returns (bytes memory) {
         (address[] memory t, bytes4[] memory s, uint256[] memory c, bool[] memory st) = phase1Triples();
         return abi.encodeWithSignature(
@@ -226,15 +172,6 @@ abstract contract Proposal24Builder {
         return abi.encodeWithSignature("changeMultisigPermission(address,bool)", adapter, false);
     }
 
-    /// @dev removeNominee(bytes32 account, uint256 chainId) on VoteWeighting (direct L1).
-    function _rm(address[] memory targets, bytes[] memory calldatas, uint256 k, address account, uint256 chainId)
-        internal pure returns (uint256)
-    {
-        targets[k] = VOTE_WEIGHTING;
-        calldatas[k] = abi.encodeWithSignature("removeNominee(bytes32,uint256)", bytes32(uint256(uint160(account))), chainId);
-        return k + 1;
-    }
-
     /// @dev Olas bridge packing: target(20) | value(uint96=0) | payloadLength(uint32) | payload.
     function _packed(address target, bytes memory inner) internal pure returns (bytes memory) {
         return abi.encodePacked(target, uint96(0), uint32(inner.length), inner);
@@ -265,7 +202,6 @@ abstract contract Proposal24Builder {
     /// @dev Arbitrum (Inbox): direct retryable to the L2 registry; refunds to the aliased L1 Timelock.
     function _arbitrum() internal pure returns (bytes memory) {
         // excessFeeRefund = aliased L1 Timelock (ARB_MEDIATOR_L2); callValueRefund = address(0) (l2CallValue 0).
-        // Mirrors proposal_15's createRetryableTicket argument shape.
         return abi.encodeWithSignature(
             "createRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
             SRL2_ARBITRUM, uint256(0), ARB_MAX_SUBMISSION_COST,
@@ -274,12 +210,12 @@ abstract contract Proposal24Builder {
     }
 }
 
-/// @notice forge script proposals/proposal_24_dewhitelist_sameaddr_and_unnominate/Proposal24DewhitelistAndUnnominate.s.sol:Proposal24DewhitelistAndUnnominate
-contract Proposal24DewhitelistAndUnnominate is Script, Proposal24Builder {
+/// @notice forge script scripts/proposals/proposal_24a_dewhitelist_and_guard/Proposal24aDewhitelistAndGuard.s.sol:Proposal24aDewhitelistAndGuard
+contract Proposal24aDewhitelistAndGuard is Script, Proposal24aBuilder {
     function run() external view {
         (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
             buildProposal();
-        console2.log("=== Proposal 24: de-whitelist GnosisSafeSameAddressMultisig + un-nominate ===");
+        console2.log("=== Proposal 24a: de-whitelist same-address multisigs + GuardCM Phase 1 ===");
         console2.log("entries:", targets.length);
         for (uint256 i; i < targets.length; ++i) {
             console2.log("--- index", i, "---");
