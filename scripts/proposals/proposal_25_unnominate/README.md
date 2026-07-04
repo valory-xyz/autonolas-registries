@@ -1,10 +1,10 @@
-# Proposal 24b — un-nominate retired staking contracts
+# Proposal 25 — un-nominate retired staking contracts
 
-The second of the two proposals that replace the original single 41-action **proposal 24**, which reverted
+The second of the two proposals that replace the original single 41-action bundle, which reverted
 on-chain ([tx `0x540c…20f`](https://etherscan.io/tx/0x540c2026c0a122465806240becdd8381489e19e61d74e74ec184a9660621e20f))
 because its `execute()` needed **~19.9M gas** while **EIP-7825** (Fusaka) caps a single transaction at
 **2²⁴ = 16,777,216 gas**. This half (**32 actions**) measures **~9.55M gas**; the de-whitelists + GuardCM batch
-(~10.3M) live in proposal 24a.
+(~10.3M) live in proposal 24.
 
 ## Action (32)
 **Un-nominate staking contracts** — `VoteWeighting.removeNominee(bytes32 account, uint256 chainId)` for each
@@ -13,16 +13,16 @@ retired (account, chainId) pair across Ethereum, Gnosis, Base, Polygon, Optimism
 direct L1 Timelock calls** — there are **no L2 bridge messages** in this proposal, and therefore no L2 fork test.
 
 ## Files
-- `Proposal24bUnnominate.s.sol` — the builder (`buildProposal()` returns `targets/values/calldatas/description`
+- `Proposal25Unnominate.s.sol` — the builder (`buildProposal()` returns `targets/values/calldatas/description`
   and prints the `proposalId`).
 - `description.txt` — byte-for-byte equal to the builder's `DESCRIPTION`.
 
 ## Fork test (`test/`)
-- `Proposal24bForkL1.t.sol` — full propose → vote → queue → execute through the live GovernorOLAS; asserts every
+- `Proposal25ForkL1.t.sol` — full propose → vote → queue → execute through the live GovernorOLAS; asserts every
   one of the 32 nominees is removed from `VoteWeighting`.
 
 ```
-forge test --match-contract Proposal24bForkL1 -vvv    # uses ETH_RPC or the public RPC default
+forge test --match-contract Proposal25ForkL1 -vvv    # uses ETH_RPC or the public RPC default
 ```
 
 ## Operational notes

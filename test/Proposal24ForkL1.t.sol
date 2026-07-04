@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {Proposal24aBuilder} from "../scripts/proposals/proposal_24a_dewhitelist_and_guard/Proposal24aDewhitelistAndGuard.s.sol";
+import {Proposal24Builder} from "../scripts/proposals/proposal_24_dewhitelist_and_guard/Proposal24DewhitelistAndGuard.s.sol";
 
 // Minimal OZ-Governor surface (GovernorOLAS).
 interface IGovernor {
@@ -20,17 +20,17 @@ interface ITimelock { function hasRole(bytes32 role, address account) external v
 interface IServiceRegistry { function mapMultisigs(address multisig) external view returns (bool); }
 interface IGuardCM { function getTargetSelectorChainId(address target, bytes4 selector, uint256 chainId) external view returns (bool); }
 
-/// @notice Full governance lifecycle (propose -> vote -> queue -> execute) for proposal 24a on a MAINNET fork,
+/// @notice Full governance lifecycle (propose -> vote -> queue -> execute) for proposal 24 on a MAINNET fork,
 ///         through the CURRENTLY-LIVE GovernorOLAS (NEW_GOV; proposal 11 already migrated the Timelock roles).
 ///         Proves the L1-observable effects land: the mainnet same-address adapter is de-whitelisted and all 19
 ///         GuardCM triples are set. The 7 L2 de-whitelists are bridge ENQUEUES here (their L1 calls must not
 ///         revert); their L2 effect is verified in the L2 fork tests. The Arbitrum entry's value is supplied by
 ///         the EXECUTOR (executor -> Governor -> Timelock -> Inbox; the Timelock needs no balance).
 ///
-///         This proposal exists because the original single 41-action proposal 24 reverted on-chain at the
-///         EIP-7825 per-tx gas cap (2^24 = 16,777,216); 24a is the sub-cap de-whitelist + GuardCM half.
-///         Run: forge test --match-contract Proposal24aForkL1Test -vvv
-contract Proposal24aForkL1Test is Test, Proposal24aBuilder {
+///         This proposal exists because the original single 41-action bundle reverted on-chain at the
+///         EIP-7825 per-tx gas cap (2^24 = 16,777,216); 24 is the sub-cap de-whitelist + GuardCM half.
+///         Run: forge test --match-contract Proposal24ForkL1Test -vvv
+contract Proposal24ForkL1Test is Test, Proposal24Builder {
     address internal constant NEW_GOV = 0x060D0CBdDFb0498d610E2EF55C01516B5B1251E6; // live GovernorOLAS
     address internal constant WVEOLAS = 0x4039B809E0C0Ad04F6Fc880193366b251dDf4B40;
     bytes32 internal constant PROPOSER_ROLE = keccak256("PROPOSER_ROLE");
@@ -102,7 +102,7 @@ contract Proposal24aForkL1Test is Test, Proposal24aBuilder {
 
         _assertL1Effects();
         assertEq(TIMELOCK.balance, 0, "Timelock should not retain funds");
-        console2.log("L1 24a effects asserted: mainnet de-whitelisted + 19 GuardCM triples set; 7 L2 messages enqueued");
+        console2.log("L1 24 effects asserted: mainnet de-whitelisted + 19 GuardCM triples set; 7 L2 messages enqueued");
     }
 
     /// @dev Fast path: execute the full proposal directly as the Timelock (no governor), same L1 assertions.

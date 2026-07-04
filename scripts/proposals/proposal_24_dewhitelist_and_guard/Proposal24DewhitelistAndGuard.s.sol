@@ -4,13 +4,13 @@ pragma solidity ^0.8.30;
 import {Script, console2} from "forge-std/Script.sol";
 
 // ============================================================================================
-// PROPOSAL 24a — de-whitelist same-address multisigs + extend the GuardCM allowlist.
+// PROPOSAL 24 — de-whitelist same-address multisigs + extend the GuardCM allowlist.
 //
-// This is the FIRST of the two proposals that replace the original single 41-action proposal 24,
+// This is the FIRST of the two proposals that replace the original single 41-action bundle,
 // which reverted on-chain (tx 0x540c...20f) because its execute() needed ~19.9M gas while
 // EIP-7825 (Fusaka) caps a single transaction at 2^24 = 16,777,216 gas. The bundle was split so
-// each proposal's execute stays well under that cap. 24a carries the de-whitelists + GuardCM
-// batch (~10.3M gas measured on a mainnet fork); the 32 removeNominee calls (~9.55M) are in 24b.
+// each proposal's execute stays well under that cap. 24 carries the de-whitelists + GuardCM
+// batch (~10.3M gas measured on a mainnet fork); the 32 removeNominee calls (~9.55M) are in 25.
 //
 // Actions (9):
 //   (1) DE-WHITELIST the same-address multisig implementations from ServiceRegistry (L1) /
@@ -21,14 +21,14 @@ import {Script, console2} from "forge-std/Script.sol";
 //   (2) EXTEND the GuardCM allowlist via setTargetSelectorChainIds with 19 (target, selector,
 //       chainId) emergency-pause/drain triples (all statuses = true).
 //
-// Bridge encodings and the GuardCM batch are byte-for-byte identical to the original proposal 24
+// Bridge encodings and the GuardCM batch are byte-for-byte identical to the original bundle
 // (same mediators, same _packed tuple, same MIN_GAS, same Arbitrum retryable params), so the L2
 // delivery was already simulated; only the bundling changed.
 //
 // proposalId = keccak256(abi.encode(targets, values, calldatas, keccak256(bytes(description)))).
 // description.txt MUST match the DESCRIPTION string below byte-for-byte before on-chain submission.
 // ============================================================================================
-abstract contract Proposal24aBuilder {
+abstract contract Proposal24Builder {
     // ---- core ----
     address internal constant TIMELOCK = 0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE;
 
@@ -210,12 +210,12 @@ abstract contract Proposal24aBuilder {
     }
 }
 
-/// @notice forge script scripts/proposals/proposal_24a_dewhitelist_and_guard/Proposal24aDewhitelistAndGuard.s.sol:Proposal24aDewhitelistAndGuard
-contract Proposal24aDewhitelistAndGuard is Script, Proposal24aBuilder {
+/// @notice forge script scripts/proposals/proposal_24_dewhitelist_and_guard/Proposal24DewhitelistAndGuard.s.sol:Proposal24DewhitelistAndGuard
+contract Proposal24DewhitelistAndGuard is Script, Proposal24Builder {
     function run() external view {
         (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
             buildProposal();
-        console2.log("=== Proposal 24a: de-whitelist same-address multisigs + GuardCM Phase 1 ===");
+        console2.log("=== Proposal 24: de-whitelist same-address multisigs + GuardCM Phase 1 ===");
         console2.log("entries:", targets.length);
         for (uint256 i; i < targets.length; ++i) {
             console2.log("--- index", i, "---");

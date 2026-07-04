@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {Test} from "forge-std/Test.sol";
-import {Proposal24aBuilder} from "../scripts/proposals/proposal_24a_dewhitelist_and_guard/Proposal24aDewhitelistAndGuard.s.sol";
+import {Proposal24Builder} from "../scripts/proposals/proposal_24_dewhitelist_and_guard/Proposal24DewhitelistAndGuard.s.sol";
 
 interface IHomeMediator {
     function AMBContractProxyHome() external view returns (address);
@@ -22,12 +22,12 @@ interface IServiceRegistry {
     function owner() external view returns (address);
 }
 
-/// @notice Bridge-delivery sims for proposal 24a's non-OP-stack L2s: Gnosis (AMB/HomeMediator), Polygon (FxRoot/
+/// @notice Bridge-delivery sims for proposal 24's non-OP-stack L2s: Gnosis (AMB/HomeMediator), Polygon (FxRoot/
 ///         FxGovernorTunnel) and Arbitrum (retryable executed as the aliased L1 Timelock). Each feeds the
-///         mediator the EXACT payload proposal 24a sends and asserts the same-address adapter is removed from the
-///         registry whitelist (mapMultisigs -> false). Payloads are byte-identical to the original proposal 24.
-///         Run: forge test --match-contract Proposal24aForkL2OtherTest -vvv
-contract Proposal24aForkL2OtherTest is Test, Proposal24aBuilder {
+///         mediator the EXACT payload proposal 24 sends and asserts the same-address adapter is removed from the
+///         registry whitelist (mapMultisigs -> false). Payloads are byte-identical to the original bundle.
+///         Run: forge test --match-contract Proposal24ForkL2OtherTest -vvv
+contract Proposal24ForkL2OtherTest is Test, Proposal24Builder {
     /// @dev Gnosis: HomeMediator.processMessageFromForeign, caller = AMB, AMB.messageSender() = foreignGovernor.
     function test_L2_gnosis() public {
         vm.createSelectFork(vm.envOr("GNOSIS_RPC", string("https://rpc.gnosischain.com")));

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {Proposal24bBuilder} from "../scripts/proposals/proposal_24b_unnominate/Proposal24bUnnominate.s.sol";
+import {Proposal25Builder} from "../scripts/proposals/proposal_25_unnominate/Proposal25Unnominate.s.sol";
 
 // Minimal OZ-Governor surface (GovernorOLAS).
 interface IGovernor {
@@ -19,15 +19,15 @@ interface IGovernor {
 interface ITimelock { function hasRole(bytes32 role, address account) external view returns (bool); }
 interface IVoteWeighting { function mapNomineeIds(bytes32 nomineeHash) external view returns (uint256); }
 
-/// @notice Full governance lifecycle (propose -> vote -> queue -> execute) for proposal 24b on a MAINNET fork,
+/// @notice Full governance lifecycle (propose -> vote -> queue -> execute) for proposal 25 on a MAINNET fork,
 ///         through the CURRENTLY-LIVE GovernorOLAS. Asserts every one of the 32 nominees is removed from
 ///         VoteWeighting. All 32 removeNominee calls are DIRECT L1 calls (VoteWeighting tracks all chains via
 ///         the chainId arg), so there is NO L2 propagation to simulate for this proposal.
 ///
-///         This proposal exists because the original single 41-action proposal 24 reverted on-chain at the
-///         EIP-7825 per-tx gas cap (2^24 = 16,777,216); 24b is the sub-cap nominee-cleanup half.
-///         Run: forge test --match-contract Proposal24bForkL1Test -vvv
-contract Proposal24bForkL1Test is Test, Proposal24bBuilder {
+///         This proposal exists because the original single 41-action bundle reverted on-chain at the
+///         EIP-7825 per-tx gas cap (2^24 = 16,777,216); 25 is the sub-cap nominee-cleanup half.
+///         Run: forge test --match-contract Proposal25ForkL1Test -vvv
+contract Proposal25ForkL1Test is Test, Proposal25Builder {
     address internal constant NEW_GOV = 0x060D0CBdDFb0498d610E2EF55C01516B5B1251E6; // live GovernorOLAS
     address internal constant WVEOLAS = 0x4039B809E0C0Ad04F6Fc880193366b251dDf4B40;
     address internal constant TIMELOCK = 0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE;
@@ -106,7 +106,7 @@ contract Proposal24bForkL1Test is Test, Proposal24bBuilder {
         assertEq(gov.state(id), EXECUTED, "not Executed");
 
         _assertNomineesRemoved(targets, calldatas);
-        console2.log("L1 24b effects asserted: 32 nominees removed");
+        console2.log("L1 25 effects asserted: 32 nominees removed");
     }
 
     /// @dev Fast path: execute directly as the Timelock (no governor), same assertions.

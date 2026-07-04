@@ -1,10 +1,10 @@
-# Proposal 24a — de-whitelist same-address multisigs + extend the GuardCM allowlist
+# Proposal 24 — de-whitelist same-address multisigs + extend the GuardCM allowlist
 
-The first of the two proposals that replace the original single 41-action **proposal 24**, which reverted
+The first of the two proposals that replace the original single 41-action bundle, which reverted
 on-chain ([tx `0x540c…20f`](https://etherscan.io/tx/0x540c2026c0a122465806240becdd8381489e19e61d74e74ec184a9660621e20f))
 because its `execute()` needed **~19.9M gas** while **EIP-7825** (Fusaka) caps a single transaction at
 **2²⁴ = 16,777,216 gas**. The bundle was split so each proposal's execute stays well under the cap. This half
-(**9 actions**) measures **~10.3M gas**; the 32 `removeNominee` calls (~9.55M) live in proposal 24b.
+(**9 actions**) measures **~10.3M gas**; the 32 `removeNominee` calls (~9.55M) live in proposal 25.
 
 ## Actions (9)
 1. **De-whitelist the same-address multisig adapters** (8 calls) — `changeMultisigPermission(adapter, false)` on
@@ -22,7 +22,7 @@ The bridge encodings and the GuardCM batch are **byte-for-byte identical** to th
 L2 delivery was already simulated; only the bundling changed.
 
 ## Files
-- `Proposal24aDewhitelistAndGuard.s.sol` — the builder (`buildProposal()` returns `targets/values/calldatas/
+- `Proposal24DewhitelistAndGuard.s.sol` — the builder (`buildProposal()` returns `targets/values/calldatas/
   description` and prints the `proposalId`).
 - `description.txt` — byte-for-byte equal to the builder's `DESCRIPTION` (`proposalId` is computed from
   `keccak256(abi.encode(targets, values, calldatas, keccak256(description)))`).
@@ -31,13 +31,13 @@ L2 delivery was already simulated; only the bundling changed.
   the baked `ARB_*` constants against L1 basefee drift.
 
 ## Fork tests (`test/`)
-- `Proposal24aForkL1.t.sol` — full propose → vote → queue → execute through the live GovernorOLAS; asserts the
+- `Proposal24ForkL1.t.sol` — full propose → vote → queue → execute through the live GovernorOLAS; asserts the
   mainnet de-whitelist and all 19 GuardCM triples; Arbitrum retryable is executor-funded (Timelock keeps no balance).
-- `Proposal24aForkL2OpStack.t.sol` — Optimism / Base / Celo / Mode mediator replay → adapter de-whitelisted.
-- `Proposal24aForkL2Other.t.sol` — Gnosis (AMB) / Polygon (FxRoot, two adapters) / Arbitrum (aliased Timelock).
+- `Proposal24ForkL2OpStack.t.sol` — Optimism / Base / Celo / Mode mediator replay → adapter de-whitelisted.
+- `Proposal24ForkL2Other.t.sol` — Gnosis (AMB) / Polygon (FxRoot, two adapters) / Arbitrum (aliased Timelock).
 
 ```
-forge test --match-contract Proposal24aFork -vvv      # uses ETH_RPC / OP_RPC / ... or public RPC defaults
+forge test --match-contract Proposal24Fork -vvv      # uses ETH_RPC / OP_RPC / ... or public RPC defaults
 ```
 
 ## Operational notes

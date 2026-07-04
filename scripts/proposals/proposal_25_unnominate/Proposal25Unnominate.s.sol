@@ -4,13 +4,13 @@ pragma solidity ^0.8.30;
 import {Script, console2} from "forge-std/Script.sol";
 
 // ============================================================================================
-// PROPOSAL 24b — un-nominate retired staking contracts from VoteWeighting.
+// PROPOSAL 25 — un-nominate retired staking contracts from VoteWeighting.
 //
-// This is the SECOND of the two proposals that replace the original single 41-action proposal 24,
+// This is the SECOND of the two proposals that replace the original single 41-action bundle,
 // which reverted on-chain (tx 0x540c...20f) because its execute() needed ~19.9M gas while
-// EIP-7825 (Fusaka) caps a single transaction at 2^24 = 16,777,216 gas. 24b carries only the 32
+// EIP-7825 (Fusaka) caps a single transaction at 2^24 = 16,777,216 gas. 25 carries only the 32
 // removeNominee calls (~9.55M gas measured on a mainnet fork); the de-whitelists + GuardCM batch
-// (~10.3M) are in 24a. Both stay comfortably under the cap.
+// (~10.3M) are in 24. Both stay comfortably under the cap.
 //
 // Action (32): VoteWeighting.removeNominee(bytes32 account, uint256 chainId) for each retired
 // (account, chainId) pair. VoteWeighting lives on L1 and tracks nominees for every chain via the
@@ -26,7 +26,7 @@ import {Script, console2} from "forge-std/Script.sol";
 // proposalId = keccak256(abi.encode(targets, values, calldatas, keccak256(bytes(description)))).
 // description.txt MUST match the DESCRIPTION string below byte-for-byte before on-chain submission.
 // ============================================================================================
-abstract contract Proposal24bBuilder {
+abstract contract Proposal25Builder {
     address internal constant VOTE_WEIGHTING = 0x95418b46d5566D3d1ea62C12Aea91227E566c5c1;
 
     // ---- chain ids ----
@@ -104,12 +104,12 @@ abstract contract Proposal24bBuilder {
     }
 }
 
-/// @notice forge script scripts/proposals/proposal_24b_unnominate/Proposal24bUnnominate.s.sol:Proposal24bUnnominate
-contract Proposal24bUnnominate is Script, Proposal24bBuilder {
+/// @notice forge script scripts/proposals/proposal_25_unnominate/Proposal25Unnominate.s.sol:Proposal25Unnominate
+contract Proposal25Unnominate is Script, Proposal25Builder {
     function run() external view {
         (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
             buildProposal();
-        console2.log("=== Proposal 24b: un-nominate staking contracts ===");
+        console2.log("=== Proposal 25: un-nominate staking contracts ===");
         console2.log("entries:", targets.length);
         for (uint256 i; i < targets.length; ++i) {
             console2.log("--- index", i, "---");
