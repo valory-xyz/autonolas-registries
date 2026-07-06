@@ -12,23 +12,25 @@ import {Script, console2} from "forge-std/Script.sol";
 // each proposal's execute stays well under that cap. 24 carries the de-whitelists + GuardCM
 // batch + OLAS mech-factory de-whitelists; the 32 removeNominee calls (~9.55M) are in 25.
 //
-// Actions (16):
-//   (1) DE-WHITELIST the same-address multisig implementations from ServiceRegistry (L1) /
-//       ServiceRegistryL2 (every L2) via changeMultisigPermission(address,false) — closing the
-//       same-address multisig adoption path. Mainnet direct; each L2 bridged through its mediator
-//       (AMB / FxRoot / Arbitrum-retryable / OP-stack). Polygon carries TWO adapters
-//       (GnosisSafeSameAddressMultisig + PolySafeSameAddressMultisig), batched in one FxRoot message.
-//   (2) EXTEND the GuardCM allowlist via setTargetSelectorChainIds with 19 (target, selector,
-//       chainId) emergency-pause/drain triples (all statuses = true).
-//   (3) DE-WHITELIST the OLAS fixed-price-token mech factory on the Mech Marketplace of each network
-//       where it is currently enabled (Ethereum, Gnosis, Polygon, Arbitrum, Optimism, Base, Celo) via
-//       setMechFactoryStatuses([olasFactory], [false]) — removing the ability to create any new mech
-//       that takes payment in OLAS. Same mediators as Part 1 (each MM's owner == that chain's mediator,
-//       verified on-chain). The 3 OP-stack sends use a small FACTORY_MIN_GAS so execute stays under the cap.
+// Three effects, ACCUMULATED into 11 actions:
+//   (1) DE-WHITELIST the same-address multisig implementations (ServiceRegistry L1 / ServiceRegistryL2 on
+//       every L2) via changeMultisigPermission(address,false) — closing the same-address adoption path.
+//       Polygon carries TWO adapters (GnosisSafeSameAddressMultisig + PolySafeSameAddressMultisig).
+//   (2) EXTEND the GuardCM allowlist via setTargetSelectorChainIds with 19 (target, selector, chainId)
+//       emergency-pause/drain triples (all statuses = true) — direct L1 call.
+//   (3) DE-WHITELIST the OLAS fixed-price-token mech factory on the Mech Marketplace of each network where
+//       it is currently enabled (Ethereum, Gnosis, Polygon, Arbitrum, Optimism, Base, Celo) via
+//       setMechFactoryStatuses([olasFactory], [false]) — removing the ability to create any new mech that
+//       takes payment in OLAS. Each MM's owner == that chain's governance mediator (verified on-chain).
 //
-// Bridge encodings for Part 1/2 and the GuardCM batch are byte-for-byte identical to the original bundle
-// (same mediators, same _packed tuple, same MIN_GAS, same Arbitrum retryable params), so the L2
-// delivery was already simulated; only the bundling changed. Part 3 reuses the same routes/mediators.
+// Effects (1) and (3) for the SAME L2 chain ride in ONE bridge message: each L2 BridgeMediator loops over
+// concatenated (target,value,len,payload) tuples, so Gnosis (HomeMediator, 2 tuples), Polygon
+// (FxGovernorTunnel, 3 tuples) and Optimism/Base/Celo (OP-stack, 2 tuples) each carry the registry AND the
+// marketplace call in a single send. Arbitrum is the exception — its retryable targets a single L2 address
+// with no looping mediator, so its two calls are two Inbox retryables. Mode has no OLAS factory (de-whitelist
+// only). Mainnet is two direct Timelock calls. This collapses the naive 16 actions to 11 and drops 5 redundant
+// bridge sends. All bridge routes/mediators/_packed tuple/MIN_GAS/Arbitrum retryable params are unchanged from
+// the original bundle; only the batching (more tuples per message) differs.
 //
 // proposalId = keccak256(abi.encode(targets, values, calldatas, keccak256(bytes(description)))).
 // description.txt MUST match the DESCRIPTION string below byte-for-byte before on-chain submission.
@@ -99,11 +101,6 @@ abstract contract Proposal24Builder {
     address internal constant MF_BASE     = 0x97371B1C0cDA1D04dFc43DFb50a04645b7Bc9BEe;
     address internal constant MF_CELO     = 0xA123748Ce7609F507060F947b70298D0bde621E6;
 
-    // setMechFactoryStatuses is a single sstore; provision the OP-stack factory-disable messages with a small
-    // minGasLimit (vs MIN_GAS=2M) so the 3 extra OP-stack sends keep proposal 24's execute under the EIP-7825
-    // 16,777,216-gas cap. Verified sufficient in the L2 delivery fork tests (actual L2 delivery << this).
-    uint32 internal constant FACTORY_MIN_GAS = 300_000;
-
     // ---- GuardCM Phase 1 whitelist additions (team-approved Option A0: pure pauses + Mode drain backfill) ----
     // GuardCM is on L1, owned by the Timelock; setTargetSelectorChainIds is a direct L1 call. This is the SAME
     // live guard that holds the Phase 0 batch (verified: Phase 0 triples already true, Phase 1 triples not yet).
@@ -131,47 +128,40 @@ abstract contract Proposal24Builder {
         pure
         returns (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description)
     {
-        // 8 de-whitelist + 1 GuardCM Phase 1 whitelist + 7 OLAS-mech-factory de-whitelist = 16
-        targets = new address[](16);
-        values = new uint256[](16);
-        calldatas = new bytes[](16);
+        // Both effects (Part 1: de-whitelist same-address multisig; Part 3: de-whitelist OLAS mech factory) are
+        // ACCUMULATED into ONE bridge message per L2 chain wherever the L2 BridgeMediator loops over concatenated
+        // (target,value,len,payload) tuples — Gnosis (HomeMediator), Polygon (FxGovernorTunnel), and the OP-stack
+        // mediators (Optimism/Base/Celo). Arbitrum is the exception: its retryable hits a single L2 target with no
+        // looping mediator, so the ServiceRegistryL2 and Mech Marketplace calls need two separate Inbox retryables.
+        // Mainnet is two direct Timelock calls (different targets). This collapses the earlier 16 actions to 11 and
+        // drops 5 redundant bridge sends. Ordering: directs, combined bridges, Arbitrum retryables, GuardCM.
+        // 8 de-whitelist + 2 mech-factory (mainnet+arbitrum, un-combinable) + 1 GuardCM, minus 5 merged = 11.
+        targets = new address[](11);
+        values = new uint256[](11);
+        calldatas = new bytes[](11);
         uint256 k;
 
-        // ===================== Part 1: de-whitelist same-address multisigs (8) =====================
-        // 1.1 mainnet — direct Timelock call
-        targets[k] = SR_MAINNET; calldatas[k++] = _changePerm(SAME_MAINNET);
-        // 1.2 Gnosis (AMB)
-        targets[k] = AMB_L1; calldatas[k++] = _gnosis();
-        // 1.3 Polygon (FxRoot) — two adapters batched
-        targets[k] = FXROOT_L1; calldatas[k++] = _polygon();
-        // 1.4 Arbitrum (Inbox retryable — carries value; recompute at submission)
-        targets[k] = INBOX_L1; values[k] = ARB_RETRYABLE_VALUE; calldatas[k++] = _arbitrum();
-        // 1.5 Optimism / Base / Celo / Mode (OP-stack)
-        targets[k] = OP_L1CDM;   calldatas[k++] = _opStack(OP_MESSENGER_L2,   SRL2_OPTIMISM, SAME_OPTIMISM);
-        targets[k] = BASE_L1CDM; calldatas[k++] = _opStack(BASE_MESSENGER_L2, SRL2_BASE,     SAME_BASE);
-        targets[k] = CELO_L1CDM; calldatas[k++] = _opStack(CELO_MESSENGER_L2, SRL2_CELO,     SAME_CELO);
-        targets[k] = MODE_L1CDM; calldatas[k++] = _opStack(MODE_MESSENGER_L2, SRL2_MODE,     SAME_MODE);
+        // ---- mainnet: two direct Timelock calls (different targets, cannot be batched on L1) ----
+        targets[k] = SR_MAINNET; calldatas[k++] = _changePerm(SAME_MAINNET);           // same-address multisig
+        targets[k] = MM_MAINNET; calldatas[k++] = _disableFactory(MF_MAINNET);         // OLAS mech factory
 
-        // ===================== Part 2: GuardCM Phase 1 whitelist additions (1 call, direct L1) =====================
+        // ---- combined bridge messages (de-whitelist + factory in one packed payload) ----
+        targets[k] = AMB_L1;     calldatas[k++] = _gnosisCombined();                   // Gnosis (AMB): 2 tuples
+        targets[k] = FXROOT_L1;  calldatas[k++] = _polygonCombined();                  // Polygon (FxRoot): 3 tuples (2 adapters + factory)
+        targets[k] = OP_L1CDM;   calldatas[k++] = _opStackCombined(OP_MESSENGER_L2,   SRL2_OPTIMISM, SAME_OPTIMISM, MM_OPTIMISM, MF_OPTIMISM);
+        targets[k] = BASE_L1CDM; calldatas[k++] = _opStackCombined(BASE_MESSENGER_L2, SRL2_BASE,     SAME_BASE,     MM_BASE,     MF_BASE);
+        targets[k] = CELO_L1CDM; calldatas[k++] = _opStackCombined(CELO_MESSENGER_L2, SRL2_CELO,     SAME_CELO,     MM_CELO,     MF_CELO);
+        // Mode has no OLAS mech factory: de-whitelist only, single tuple.
+        targets[k] = MODE_L1CDM; calldatas[k++] = _opStack(MODE_MESSENGER_L2, SRL2_MODE, SAME_MODE);
+
+        // ---- Arbitrum: two separate Inbox retryables (single-target, no looping mediator) — each carries value ----
+        targets[k] = INBOX_L1; values[k] = ARB_RETRYABLE_VALUE; calldatas[k++] = _arbitrum();        // same-address multisig
+        targets[k] = INBOX_L1; values[k] = ARB_RETRYABLE_VALUE; calldatas[k++] = _arbitrumFactory();  // OLAS mech factory
+
+        // ---- GuardCM Phase 1 whitelist additions (direct L1) ----
         targets[k] = GUARD_CM; calldatas[k++] = _phase1Allowlist();
 
-        // ===================== Part 3: de-whitelist OLAS mech factories on the Mech Marketplace (7) =====================
-        // setMechFactoryStatuses([olasFactory], [false]) so no new OLAS-payment mech can be created. Same bridge
-        // routes / mediators as Part 1 (owner of each Mech Marketplace == that chain's governance mediator, verified).
-        // 3.1 mainnet — direct Timelock call (MM owned by the Timelock)
-        targets[k] = MM_MAINNET; calldatas[k++] = _disableFactory(MF_MAINNET);
-        // 3.2 Gnosis (AMB)
-        targets[k] = AMB_L1; calldatas[k++] = _gnosisFactory();
-        // 3.3 Polygon (FxRoot) — single factory, single tuple
-        targets[k] = FXROOT_L1; calldatas[k++] = _polygonFactory();
-        // 3.4 Arbitrum (Inbox retryable — carries value; recompute at submission)
-        targets[k] = INBOX_L1; values[k] = ARB_RETRYABLE_VALUE; calldatas[k++] = _arbitrumFactory();
-        // 3.5 Optimism / Base / Celo (OP-stack; small FACTORY_MIN_GAS to stay under the EIP-7825 cap)
-        targets[k] = OP_L1CDM;   calldatas[k++] = _opStackFactory(OP_MESSENGER_L2,   MM_OPTIMISM, MF_OPTIMISM);
-        targets[k] = BASE_L1CDM; calldatas[k++] = _opStackFactory(BASE_MESSENGER_L2, MM_BASE,     MF_BASE);
-        targets[k] = CELO_L1CDM; calldatas[k++] = _opStackFactory(CELO_MESSENGER_L2, MM_CELO,     MF_CELO);
-
-        require(k == 16, "length mismatch");
+        require(k == 11, "length mismatch");
         description = DESCRIPTION;
     }
 
@@ -229,19 +219,25 @@ abstract contract Proposal24Builder {
         return abi.encodeWithSignature("sendMessage(address,bytes,uint32)", l2messenger, l2call, MIN_GAS);
     }
 
-    /// @dev Gnosis (AMB): requireToPassMessage(HomeMediator, processMessageFromForeign(packed), gas).
-    function _gnosis() internal pure returns (bytes memory) {
-        bytes memory l2call = abi.encodeWithSignature("processMessageFromForeign(bytes)", _packed(SRL2_GNOSIS, _changePerm(SAME_GNOSIS)));
+    /// @dev Gnosis (AMB) COMBINED: HomeMediator delivers TWO tuples in one message — de-whitelist the same-address
+    ///      multisig (ServiceRegistryL2) + de-whitelist the OLAS mech factory (Mech Marketplace). Both are owned by
+    ///      HOME_MEDIATOR_L2, which loops over the concatenated tuples in processMessageFromForeign.
+    function _gnosisCombined() internal pure returns (bytes memory) {
+        bytes memory packed = bytes.concat(
+            _packed(SRL2_GNOSIS, _changePerm(SAME_GNOSIS)),
+            _packed(MM_GNOSIS,   _disableFactory(MF_GNOSIS)));
+        bytes memory l2call = abi.encodeWithSignature("processMessageFromForeign(bytes)", packed);
         return abi.encodeWithSignature("requireToPassMessage(address,bytes,uint256)", HOME_MEDIATOR_L2, l2call, uint256(MIN_GAS));
     }
 
-    /// @dev Polygon (FxRoot): sendMessageToChild(FxGovernorTunnel, packed). Polygon carries TWO same-address
-    ///      adapters (GnosisSafeSameAddressMultisig + PolySafeSameAddressMultisig), batched as two concatenated
-    ///      tuples in one message (FxGovernorTunnel.processMessageFromRoot loops over them).
-    function _polygon() internal pure returns (bytes memory) {
+    /// @dev Polygon (FxRoot) COMBINED: FxGovernorTunnel delivers THREE tuples in one message — the TWO same-address
+    ///      adapters (GnosisSafeSameAddressMultisig + PolySafeSameAddressMultisig) + the OLAS mech factory. All are
+    ///      owned by FX_TUNNEL_L2, which loops over the concatenated tuples in processMessageFromRoot.
+    function _polygonCombined() internal pure returns (bytes memory) {
         bytes memory packed = bytes.concat(
             _packed(SRL2_POLYGON, _changePerm(SAME_POLYGON)),
-            _packed(SRL2_POLYGON, _changePerm(SAME_POLYGON_POLYSAFE)));
+            _packed(SRL2_POLYGON, _changePerm(SAME_POLYGON_POLYSAFE)),
+            _packed(MM_POLYGON,   _disableFactory(MF_POLYGON)));
         return abi.encodeWithSignature("sendMessageToChild(address,bytes)", FX_TUNNEL_L2, packed);
     }
 
@@ -265,21 +261,17 @@ abstract contract Proposal24Builder {
         return abi.encodeWithSignature("setMechFactoryStatuses(address[],bool[])", f, st);
     }
 
-    /// @dev OP-stack factory disable: sendMessage on the L1CrossDomainMessenger with the small FACTORY_MIN_GAS.
-    function _opStackFactory(address l2messenger, address mm, address factory) internal pure returns (bytes memory) {
-        bytes memory l2call = abi.encodeWithSignature("processMessageFromSource(bytes)", _packed(mm, _disableFactory(factory)));
-        return abi.encodeWithSignature("sendMessage(address,bytes,uint32)", l2messenger, l2call, FACTORY_MIN_GAS);
-    }
-
-    /// @dev Gnosis (AMB) factory disable. Keeps MIN_GAS for the home-chain execution (AMB gas is not billed on L1).
-    function _gnosisFactory() internal pure returns (bytes memory) {
-        bytes memory l2call = abi.encodeWithSignature("processMessageFromForeign(bytes)", _packed(MM_GNOSIS, _disableFactory(MF_GNOSIS)));
-        return abi.encodeWithSignature("requireToPassMessage(address,bytes,uint256)", HOME_MEDIATOR_L2, l2call, uint256(MIN_GAS));
-    }
-
-    /// @dev Polygon (FxRoot) factory disable — single factory, single tuple.
-    function _polygonFactory() internal pure returns (bytes memory) {
-        return abi.encodeWithSignature("sendMessageToChild(address,bytes)", FX_TUNNEL_L2, _packed(MM_POLYGON, _disableFactory(MF_POLYGON)));
+    /// @dev OP-stack (Optimism/Base/Celo) COMBINED: one sendMessage carrying TWO tuples — de-whitelist the
+    ///      same-address multisig (ServiceRegistryL2) + de-whitelist the OLAS mech factory (Mech Marketplace).
+    ///      Both are owned by the L2 messenger, which loops over the tuples in processMessageFromSource.
+    function _opStackCombined(address l2messenger, address registry, address adapter, address mm, address factory)
+        internal pure returns (bytes memory)
+    {
+        bytes memory packed = bytes.concat(
+            _packed(registry, _changePerm(adapter)),
+            _packed(mm,       _disableFactory(factory)));
+        bytes memory l2call = abi.encodeWithSignature("processMessageFromSource(bytes)", packed);
+        return abi.encodeWithSignature("sendMessage(address,bytes,uint32)", l2messenger, l2call, MIN_GAS);
     }
 
     /// @dev Arbitrum (Inbox) factory disable — direct retryable to the L2 Mech Marketplace; refunds to aliased Timelock.

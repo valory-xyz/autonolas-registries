@@ -165,21 +165,25 @@ function decodePacked(packed, chainId) {
 }
 
 const DEWHITELIST_SELS = ["0x82694b1d", "0x3dbb202b", "0xdc8601b3", "0xb4720477", "0x679b6ded"];
-// Part 1 and Part 3 share the outer bridge selectors, so mech-factory entries are keyed off the INNER
-// setMechFactoryStatuses selector (087f08d4) present anywhere in the calldata (direct or bridged payload).
+// Effects are keyed off the INNER selectors present anywhere in the calldata: changeMultisigPermission
+// (82694b1d) and setMechFactoryStatuses (087f08d4). A single L2 message can carry BOTH (combined).
 function category(calldata) {
     const sel = calldata.slice(0, 10);
     if (sel === "0xc54dd0d4") return "nominee";
     if (sel === "0x5d78d469") return "guard";
-    if (sel === "0x087f08d4" || calldata.includes("087f08d4")) return "mechfactory";
-    if (DEWHITELIST_SELS.includes(sel)) return "dewhitelist";
+    const hasFactory = calldata.includes("087f08d4");
+    const hasDewl = calldata.includes("82694b1d");
+    if (hasFactory && hasDewl) return "combined";
+    if (hasFactory) return "mechfactory";
+    if (hasDewl || DEWHITELIST_SELS.includes(sel)) return "dewhitelist";
     return "other";
 }
 const GROUP_ORDER = [
-    ["dewhitelist", "De-whitelist same-address multisigs (Ethereum direct + L2s bridged)"],
+    ["dewhitelist", "De-whitelist same-address multisigs (single effect: Ethereum direct, Mode + Arbitrum bridged)"],
+    ["combined", "De-whitelist same-address multisig + OLAS mech factory (one combined message per L2: Gnosis, Polygon, Optimism, Base, Celo)"],
+    ["mechfactory", "De-whitelist OLAS mech factories (single effect: Ethereum direct + Arbitrum retryable)"],
     ["nominee", "Un-nominate retired staking contracts (VoteWeighting.removeNominee, direct L1)"],
     ["guard", "Extend GuardCM emergency-pause allowlist"],
-    ["mechfactory", "De-whitelist OLAS mech factories (setMechFactoryStatuses -> false; Ethereum direct + L2s bridged)"],
     ["other", "Other"],
 ];
 

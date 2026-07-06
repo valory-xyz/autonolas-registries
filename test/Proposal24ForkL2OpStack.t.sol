@@ -48,52 +48,47 @@ contract Proposal24ForkL2OpStackTest is Test, Proposal24Builder {
         _deliver(mediator, registry, adapter);
     }
 
-    /// @dev Part 3: deliver setMechFactoryStatuses([factory],[false]) to the Mech Marketplace via the same OP-stack
-    ///      mediator (MM owner == mediator). Measures the actual L2 delivery gas to prove FACTORY_MIN_GAS is ample.
-    function _simOpStackFactory(string memory rpc, address mediator, address mm, address factory) internal {
+    /// @dev COMBINED delivery: one processMessageFromSource carrying BOTH tuples (de-whitelist same-address
+    ///      multisig + de-whitelist OLAS mech factory). Asserts both effects land and measures the combined L2
+    ///      delivery gas (proves the single MIN_GAS-provisioned message covers both actions).
+    function _simOpStackCombined(
+        string memory rpc, address mediator, address registry, address adapter, address mm, address factory
+    ) internal {
         vm.createSelectFork(rpc);
+        assertTrue(IServiceRegistry(registry).mapMultisigs(adapter), "adapter not whitelisted pre-exec?");
         assertTrue(IMechMarketplace(mm).mapMechFactories(factory), "OLAS factory not whitelisted pre-exec?");
+        assertEq(IServiceRegistry(registry).owner(), mediator, "registry not owned by the L2 mediator");
         assertEq(IMechMarketplace(mm).owner(), mediator, "Mech Marketplace not owned by the L2 mediator");
 
         address cdm = IOptimismMessenger(mediator).CDMContractProxyHome();
         address gov = IOptimismMessenger(mediator).sourceGovernor();
-        bytes memory packed = _packed(mm, _disableFactory(factory));
+        bytes memory packed = bytes.concat(_packed(registry, _changePerm(adapter)), _packed(mm, _disableFactory(factory)));
 
         vm.mockCall(cdm, abi.encodeWithSelector(bytes4(keccak256("xDomainMessageSender()"))), abi.encode(gov));
         vm.prank(cdm);
         uint256 g = gasleft();
         IOptimismMessenger(mediator).processMessageFromSource(packed);
-        console2.log("OP-stack factory-disable L2 delivery gas:", g - gasleft(), "(FACTORY_MIN_GAS =", FACTORY_MIN_GAS);
+        console2.log("OP-stack COMBINED L2 delivery gas:", g - gasleft(), "(MIN_GAS =", MIN_GAS);
 
+        assertFalse(IServiceRegistry(registry).mapMultisigs(adapter), "adapter still whitelisted after de-whitelist");
         assertFalse(IMechMarketplace(mm).mapMechFactories(factory), "OLAS factory still whitelisted after de-whitelist");
     }
 
+    // ---- Optimism / Base / Celo: ONE combined message per chain (de-whitelist + factory) ----
     function test_L2_optimism() public {
-        _simOpStack(vm.envOr("OP_RPC", string("https://mainnet.optimism.io")), OP_MESSENGER_L2, SRL2_OPTIMISM, SAME_OPTIMISM);
+        _simOpStackCombined(vm.envOr("OP_RPC", string("https://mainnet.optimism.io")), OP_MESSENGER_L2, SRL2_OPTIMISM, SAME_OPTIMISM, MM_OPTIMISM, MF_OPTIMISM);
     }
 
     function test_L2_base() public {
-        _simOpStack(vm.envOr("BASE_RPC", string("https://mainnet.base.org")), BASE_MESSENGER_L2, SRL2_BASE, SAME_BASE);
+        _simOpStackCombined(vm.envOr("BASE_RPC", string("https://mainnet.base.org")), BASE_MESSENGER_L2, SRL2_BASE, SAME_BASE, MM_BASE, MF_BASE);
     }
 
     function test_L2_celo() public {
-        _simOpStack(vm.envOr("CELO_RPC", string("https://forno.celo.org")), CELO_MESSENGER_L2, SRL2_CELO, SAME_CELO);
+        _simOpStackCombined(vm.envOr("CELO_RPC", string("https://forno.celo.org")), CELO_MESSENGER_L2, SRL2_CELO, SAME_CELO, MM_CELO, MF_CELO);
     }
 
+    // ---- Mode: de-whitelist only (no OLAS mech factory) ----
     function test_L2_mode() public {
         _simOpStack(vm.envOr("MODE_RPC", string("https://mainnet.mode.network")), MODE_MESSENGER_L2, SRL2_MODE, SAME_MODE);
-    }
-
-    // ---- Part 3: OLAS mech-factory de-whitelist delivery (Mode has no OLAS mech factory) ----
-    function test_L2_optimism_factory() public {
-        _simOpStackFactory(vm.envOr("OP_RPC", string("https://mainnet.optimism.io")), OP_MESSENGER_L2, MM_OPTIMISM, MF_OPTIMISM);
-    }
-
-    function test_L2_base_factory() public {
-        _simOpStackFactory(vm.envOr("BASE_RPC", string("https://mainnet.base.org")), BASE_MESSENGER_L2, MM_BASE, MF_BASE);
-    }
-
-    function test_L2_celo_factory() public {
-        _simOpStackFactory(vm.envOr("CELO_RPC", string("https://forno.celo.org")), CELO_MESSENGER_L2, MM_CELO, MF_CELO);
     }
 }

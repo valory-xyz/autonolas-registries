@@ -111,7 +111,7 @@ contract Proposal24ForkL1Test is Test, Proposal24Builder {
 
         _assertL1Effects();
         assertEq(TIMELOCK.balance, 0, "Timelock should not retain funds");
-        console2.log("L1 24 effects asserted: mainnet same-address + OLAS mech factory de-whitelisted + 19 GuardCM triples set; 13 L2 messages enqueued");
+        console2.log("L1 24 effects asserted: mainnet same-address + OLAS mech factory de-whitelisted + 19 GuardCM triples set; 8 L2 messages enqueued (5 combined + Mode + 2 Arbitrum retryables)");
     }
 
     /// @dev Fast path: execute the full proposal directly as the Timelock (no governor), same L1 assertions.
