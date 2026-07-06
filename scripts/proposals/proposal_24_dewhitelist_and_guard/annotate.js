@@ -71,6 +71,7 @@ const ADDR = {
 };
 const SELSIG = {
     "0x82694b1d": "changeMultisigPermission(address,bool)",
+    "0x087f08d4": "setMechFactoryStatuses(address[],bool[])",
     "0xc54dd0d4": "removeNominee(bytes32,uint256)",
     "0x5d78d469": "setTargetSelectorChainIds(address[],bytes4[],uint256[],bool[])",
     "0x3dbb202b": "sendMessage(address,bytes,uint32)",
@@ -124,11 +125,23 @@ function callBox(title, inner, open = true) {
 }
 const addrFromBytes32 = (b32) => ethers.utils.getAddress("0x" + b32.slice(-40));
 
+function mechFactoryRows(facs, sts, chainId) {
+    let rows = "";
+    for (let i = 0; i < facs.length; i++) {
+        rows += row(`mechFactory[${i}] (OLAS)`, addrSpan(facs[i], chainId)) + row(`status[${i}]`, boolSpan(sts[i]));
+    }
+    return rows;
+}
+
 function renderPayload(payload, chainId) {
     const sel = payload.slice(0, 10);
     if (sel === "0x82694b1d") {
         const [ms, perm] = abi.decode(["address", "bool"], "0x" + payload.slice(10));
         return callBox(selSpan(sel), row("multisig", addrSpan(ms, chainId)) + row("permission", boolSpan(perm)), true);
+    }
+    if (sel === "0x087f08d4") {
+        const [facs, sts] = abi.decode(["address[]", "bool[]"], "0x" + payload.slice(10));
+        return callBox(selSpan(sel), mechFactoryRows(facs, sts, chainId), true);
     }
     return callBox(selSpan(sel), `<div class="row note">payload: ${esc(payload)}</div>`, true);
 }
@@ -152,9 +165,13 @@ function decodePacked(packed, chainId) {
 }
 
 const DEWHITELIST_SELS = ["0x82694b1d", "0x3dbb202b", "0xdc8601b3", "0xb4720477", "0x679b6ded"];
-function category(sel) {
+// Part 1 and Part 3 share the outer bridge selectors, so mech-factory entries are keyed off the INNER
+// setMechFactoryStatuses selector (087f08d4) present anywhere in the calldata (direct or bridged payload).
+function category(calldata) {
+    const sel = calldata.slice(0, 10);
     if (sel === "0xc54dd0d4") return "nominee";
     if (sel === "0x5d78d469") return "guard";
+    if (sel === "0x087f08d4" || calldata.includes("087f08d4")) return "mechfactory";
     if (DEWHITELIST_SELS.includes(sel)) return "dewhitelist";
     return "other";
 }
@@ -162,6 +179,7 @@ const GROUP_ORDER = [
     ["dewhitelist", "De-whitelist same-address multisigs (Ethereum direct + L2s bridged)"],
     ["nominee", "Un-nominate retired staking contracts (VoteWeighting.removeNominee, direct L1)"],
     ["guard", "Extend GuardCM emergency-pause allowlist"],
+    ["mechfactory", "De-whitelist OLAS mech factories (setMechFactoryStatuses -> false; Ethereum direct + L2s bridged)"],
     ["other", "Other"],
 ];
 
@@ -173,6 +191,10 @@ function decodeEntry(e) {
     if (sel === "0x82694b1d") {
         const [ms, perm] = abi.decode(["address", "bool"], args);
         return callBox(head, row("multisig", addrSpan(ms, 1)) + row("permission", boolSpan(perm)));
+    }
+    if (sel === "0x087f08d4") {
+        const [facs, sts] = abi.decode(["address[]", "bool[]"], args);
+        return callBox(head, mechFactoryRows(facs, sts, 1));
     }
     if (sel === "0xc54dd0d4") {
         const [acct, cid] = abi.decode(["bytes32", "uint256"], args);
@@ -248,7 +270,7 @@ function main() {
 
     // auto-group by selector category
     const byCat = {};
-    entries.forEach((e, i) => { (byCat[category(e.calldata.slice(0, 10))] ||= []).push(i); });
+    entries.forEach((e, i) => { (byCat[category(e.calldata)] ||= []).push(i); });
     const nonZero = entries.map((e, i) => (e.value !== "0" ? i : -1)).filter((i) => i >= 0);
 
     const jsonArr = (a) => "[" + a.map((x) => `"${x}"`).join(",") + "]";

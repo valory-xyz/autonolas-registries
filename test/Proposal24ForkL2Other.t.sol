@@ -22,6 +22,12 @@ interface IServiceRegistry {
     function owner() external view returns (address);
 }
 
+interface IMechMarketplace {
+    function mapMechFactories(address factory) external view returns (bool);
+    function setMechFactoryStatuses(address[] calldata mechFactories, bool[] calldata statuses) external;
+    function owner() external view returns (address);
+}
+
 /// @notice Bridge-delivery sims for proposal 24's non-OP-stack L2s: Gnosis (AMB/HomeMediator), Polygon (FxRoot/
 ///         FxGovernorTunnel) and Arbitrum (retryable executed as the aliased L1 Timelock). Each feeds the
 ///         mediator the EXACT payload proposal 24 sends and asserts the same-address adapter is removed from the
@@ -78,5 +84,55 @@ contract Proposal24ForkL2OtherTest is Test, Proposal24Builder {
         IServiceRegistry(SRL2_ARBITRUM).changeMultisigPermission(SAME_ARBITRUM, false);
 
         assertFalse(IServiceRegistry(SRL2_ARBITRUM).mapMultisigs(SAME_ARBITRUM), "arbitrum adapter still whitelisted");
+    }
+
+    // ============================ Part 3: OLAS mech-factory de-whitelist ============================
+
+    /// @dev Gnosis (AMB): HomeMediator delivers processMessageFromForeign(packed(MM_GNOSIS, disableFactory)).
+    function test_L2_gnosis_factory() public {
+        vm.createSelectFork(vm.envOr("GNOSIS_RPC", string("https://rpc.gnosischain.com")));
+        assertTrue(IMechMarketplace(MM_GNOSIS).mapMechFactories(MF_GNOSIS), "gnosis OLAS factory not whitelisted pre-exec?");
+        assertEq(IMechMarketplace(MM_GNOSIS).owner(), HOME_MEDIATOR_L2, "MM not owned by HomeMediator");
+
+        address amb = IHomeMediator(HOME_MEDIATOR_L2).AMBContractProxyHome();
+        address fg = IHomeMediator(HOME_MEDIATOR_L2).foreignGovernor();
+        bytes memory packed = _packed(MM_GNOSIS, _disableFactory(MF_GNOSIS));
+
+        vm.mockCall(amb, abi.encodeWithSelector(bytes4(keccak256("messageSender()"))), abi.encode(fg));
+        vm.prank(amb);
+        IHomeMediator(HOME_MEDIATOR_L2).processMessageFromForeign(packed);
+
+        assertFalse(IMechMarketplace(MM_GNOSIS).mapMechFactories(MF_GNOSIS), "gnosis OLAS factory still whitelisted");
+    }
+
+    /// @dev Polygon (FxRoot): FxGovernorTunnel delivers packed(MM_POLYGON, disableFactory) — single factory.
+    function test_L2_polygon_factory() public {
+        vm.createSelectFork(vm.envOr("POLYGON_RPC", string("https://polygon.drpc.org")));
+        assertTrue(IMechMarketplace(MM_POLYGON).mapMechFactories(MF_POLYGON), "polygon OLAS factory not whitelisted pre-exec?");
+        assertEq(IMechMarketplace(MM_POLYGON).owner(), FX_TUNNEL_L2, "MM not owned by FxGovernorTunnel");
+
+        address fxChild = IFxGovernorTunnel(FX_TUNNEL_L2).fxChild();
+        address rg = IFxGovernorTunnel(FX_TUNNEL_L2).rootGovernor();
+        bytes memory packed = _packed(MM_POLYGON, _disableFactory(MF_POLYGON));
+
+        vm.prank(fxChild);
+        IFxGovernorTunnel(FX_TUNNEL_L2).processMessageFromRoot(0, rg, packed);
+
+        assertFalse(IMechMarketplace(MM_POLYGON).mapMechFactories(MF_POLYGON), "polygon OLAS factory still whitelisted");
+    }
+
+    /// @dev Arbitrum: retryable runs with msg.sender = aliased L1 Timelock (owner of the Mech Marketplace),
+    ///      calling setMechFactoryStatuses directly.
+    function test_L2_arbitrum_factory() public {
+        vm.createSelectFork(vm.envOr("ARBITRUM_RPC", string("https://arb1.arbitrum.io/rpc")));
+        assertTrue(IMechMarketplace(MM_ARBITRUM).mapMechFactories(MF_ARBITRUM), "arbitrum OLAS factory not whitelisted pre-exec?");
+        assertEq(IMechMarketplace(MM_ARBITRUM).owner(), ARB_MEDIATOR_L2, "MM not owned by aliased L1 Timelock");
+
+        address[] memory f = new address[](1); f[0] = MF_ARBITRUM;
+        bool[] memory st = new bool[](1);
+        vm.prank(ARB_MEDIATOR_L2);
+        IMechMarketplace(MM_ARBITRUM).setMechFactoryStatuses(f, st);
+
+        assertFalse(IMechMarketplace(MM_ARBITRUM).mapMechFactories(MF_ARBITRUM), "arbitrum OLAS factory still whitelisted");
     }
 }

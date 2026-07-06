@@ -19,6 +19,7 @@ interface IGovernor {
 interface ITimelock { function hasRole(bytes32 role, address account) external view returns (bool); }
 interface IServiceRegistry { function mapMultisigs(address multisig) external view returns (bool); }
 interface IGuardCM { function getTargetSelectorChainId(address target, bytes4 selector, uint256 chainId) external view returns (bool); }
+interface IMechMarketplace { function mapMechFactories(address factory) external view returns (bool); }
 
 /// @notice Full governance lifecycle (propose -> vote -> queue -> execute) for proposal 24 on a MAINNET fork,
 ///         through the CURRENTLY-LIVE GovernorOLAS (NEW_GOV; proposal 11 already migrated the Timelock roles).
@@ -59,6 +60,8 @@ contract Proposal24ForkL1Test is Test, Proposal24Builder {
         for (uint256 i; i < gt.length; ++i) {
             assertTrue(IGuardCM(GUARD_CM).getTargetSelectorChainId(gt[i], gs[i], gc[i]), "GuardCM triple not set");
         }
+        // (3) mainnet OLAS mech factory de-whitelisted on the Mech Marketplace
+        assertFalse(IMechMarketplace(MM_MAINNET).mapMechFactories(MF_MAINNET), "mainnet OLAS mech factory still whitelisted");
     }
 
     function test_preconditions() public {
@@ -66,6 +69,7 @@ contract Proposal24ForkL1Test is Test, Proposal24Builder {
         assertTrue(ITimelock(TIMELOCK).hasRole(PROPOSER_ROLE, NEW_GOV), "NEW_GOV not the live proposer");
         assertTrue(IServiceRegistry(SR_MAINNET).mapMultisigs(SAME_MAINNET), "mainnet adapter not whitelisted pre-exec");
         assertFalse(IGuardCM(GUARD_CM).getTargetSelectorChainId(0x94a1892D91c05D0C61c3f49F42205D2285b914c9, 0x8456cb59, 1), "phase1 triple already set?");
+        assertTrue(IMechMarketplace(MM_MAINNET).mapMechFactories(MF_MAINNET), "mainnet OLAS mech factory not whitelisted pre-exec");
     }
 
     function test_L1_fullGovernanceLifecycle() public {
@@ -97,12 +101,17 @@ contract Proposal24ForkL1Test is Test, Proposal24Builder {
         vm.deal(TIMELOCK, 0);
         vm.deal(executor, totalValue);
         vm.prank(executor);
+        uint256 gBefore = gasleft();
         gov.execute{value: totalValue}(targets, values, calldatas, dh);
+        uint256 executeGas = gBefore - gasleft();
         assertEq(gov.state(id), EXECUTED, "not Executed");
+        console2.log("Governor.execute() gas used:", executeGas);
+        console2.log("EIP-7825 per-tx cap:        ", uint256(16777216));
+        assertLt(executeGas, 16777216, "execute exceeds EIP-7825 per-tx gas cap");
 
         _assertL1Effects();
         assertEq(TIMELOCK.balance, 0, "Timelock should not retain funds");
-        console2.log("L1 24 effects asserted: mainnet de-whitelisted + 19 GuardCM triples set; 7 L2 messages enqueued");
+        console2.log("L1 24 effects asserted: mainnet same-address + OLAS mech factory de-whitelisted + 19 GuardCM triples set; 13 L2 messages enqueued");
     }
 
     /// @dev Fast path: execute the full proposal directly as the Timelock (no governor), same L1 assertions.

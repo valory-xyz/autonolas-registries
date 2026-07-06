@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, console2} from "forge-std/Test.sol";
 import {Proposal24Builder} from "../scripts/proposals/proposal_24_dewhitelist_and_guard/Proposal24DewhitelistAndGuard.s.sol";
 
 interface IOptimismMessenger {
@@ -12,6 +12,11 @@ interface IOptimismMessenger {
 
 interface IServiceRegistry {
     function mapMultisigs(address multisig) external view returns (bool);
+    function owner() external view returns (address);
+}
+
+interface IMechMarketplace {
+    function mapMechFactories(address factory) external view returns (bool);
     function owner() external view returns (address);
 }
 
@@ -43,6 +48,26 @@ contract Proposal24ForkL2OpStackTest is Test, Proposal24Builder {
         _deliver(mediator, registry, adapter);
     }
 
+    /// @dev Part 3: deliver setMechFactoryStatuses([factory],[false]) to the Mech Marketplace via the same OP-stack
+    ///      mediator (MM owner == mediator). Measures the actual L2 delivery gas to prove FACTORY_MIN_GAS is ample.
+    function _simOpStackFactory(string memory rpc, address mediator, address mm, address factory) internal {
+        vm.createSelectFork(rpc);
+        assertTrue(IMechMarketplace(mm).mapMechFactories(factory), "OLAS factory not whitelisted pre-exec?");
+        assertEq(IMechMarketplace(mm).owner(), mediator, "Mech Marketplace not owned by the L2 mediator");
+
+        address cdm = IOptimismMessenger(mediator).CDMContractProxyHome();
+        address gov = IOptimismMessenger(mediator).sourceGovernor();
+        bytes memory packed = _packed(mm, _disableFactory(factory));
+
+        vm.mockCall(cdm, abi.encodeWithSelector(bytes4(keccak256("xDomainMessageSender()"))), abi.encode(gov));
+        vm.prank(cdm);
+        uint256 g = gasleft();
+        IOptimismMessenger(mediator).processMessageFromSource(packed);
+        console2.log("OP-stack factory-disable L2 delivery gas:", g - gasleft(), "(FACTORY_MIN_GAS =", FACTORY_MIN_GAS);
+
+        assertFalse(IMechMarketplace(mm).mapMechFactories(factory), "OLAS factory still whitelisted after de-whitelist");
+    }
+
     function test_L2_optimism() public {
         _simOpStack(vm.envOr("OP_RPC", string("https://mainnet.optimism.io")), OP_MESSENGER_L2, SRL2_OPTIMISM, SAME_OPTIMISM);
     }
@@ -57,5 +82,18 @@ contract Proposal24ForkL2OpStackTest is Test, Proposal24Builder {
 
     function test_L2_mode() public {
         _simOpStack(vm.envOr("MODE_RPC", string("https://mainnet.mode.network")), MODE_MESSENGER_L2, SRL2_MODE, SAME_MODE);
+    }
+
+    // ---- Part 3: OLAS mech-factory de-whitelist delivery (Mode has no OLAS mech factory) ----
+    function test_L2_optimism_factory() public {
+        _simOpStackFactory(vm.envOr("OP_RPC", string("https://mainnet.optimism.io")), OP_MESSENGER_L2, MM_OPTIMISM, MF_OPTIMISM);
+    }
+
+    function test_L2_base_factory() public {
+        _simOpStackFactory(vm.envOr("BASE_RPC", string("https://mainnet.base.org")), BASE_MESSENGER_L2, MM_BASE, MF_BASE);
+    }
+
+    function test_L2_celo_factory() public {
+        _simOpStackFactory(vm.envOr("CELO_RPC", string("https://forno.celo.org")), CELO_MESSENGER_L2, MM_CELO, MF_CELO);
     }
 }
