@@ -1,13 +1,14 @@
 /*global process, __dirname*/
-// Generates a self-contained, color-coded, collapsible HTML breakdown of proposal 24. It DECODES the
-// authoritative calldata produced by the Forge builder (Proposal24DewhitelistAndUnnominate.s.sol), so the
-// artifact cannot drift from what is voted.
+// Generates a self-contained, color-coded, collapsible HTML breakdown of a split proposal (24 or 25). It
+// DECODES the authoritative calldata produced by the Forge builder (calldata.json, parsed from the builder's
+// run() output), so the artifact cannot drift from what is voted. Groups are auto-derived from the selectors,
+// so the same script renders both proposal 24 (de-whitelist + GuardCM) and proposal 25 (removeNominee).
 //
-// Usage:
-//   forge script scripts/proposals/proposal_24_dewhitelist_sameaddr_and_unnominate/Proposal24DewhitelistAndUnnominate.s.sol:Proposal24DewhitelistAndUnnominate > /tmp/run.txt
-//   # parse [{index,target,value,calldata}] into calldata.json (see README), then:
-//   node scripts/proposals/proposal_24_dewhitelist_sameaddr_and_unnominate/annotate.js   (reads ./calldata.json + ./description.txt)
-// Writes ./proposal_24_dewhitelist_sameaddr_and_unnominate.html next to this script.
+// Usage (from repo root):
+//   forge script scripts/proposals/<folder>/<Builder>.s.sol:<Builder> > /tmp/run.txt
+//   # parse the [--- index N ---/target/value/calldata] blocks into <folder>/calldata.json, then:
+//   node scripts/proposals/<folder>/annotate.js "Proposal 24 — de-whitelist same-address multisigs + GuardCM allowlist extension"
+// Writes <folder>.html next to this script (name derived from the folder).
 
 const fs = require("fs");
 const path = require("path");
@@ -40,7 +41,7 @@ const ADDR = {
     "0x48b6af7b12c71f09e2fc8af4855de4ff54e775ca": "ServiceRegistry (Ethereum)",
     "0xe3607b00e75f6405248323a9417ff6b39b244b50": "ServiceRegistryL2 (Polygon, Arbitrum, Celo)",
     "0x3d77596beb0f130a4415df3d2d8232b3d3d31e44": "ServiceRegistryL2 (Optimism)",
-    // GnosisSafeSameAddressMultisig (implementation being disabled)
+    // same-address multisig implementations (being disabled)
     "0xfa517d01daa100cb1932fa4345f68874f7e7ef46": "GnosisSafeSameAddressMultisig (Ethereum)",
     "0x6e7f594f680f7abad18b7a63de50f0fee47dfd06": "GnosisSafeSameAddressMultisig (Gnosis)",
     "0xd8bcc126ff31d2582018715d5291a508530587b0": "GnosisSafeSameAddressMultisig (Polygon)",
@@ -70,6 +71,7 @@ const ADDR = {
 };
 const SELSIG = {
     "0x82694b1d": "changeMultisigPermission(address,bool)",
+    "0x087f08d4": "setMechFactoryStatuses(address[],bool[])",
     "0xc54dd0d4": "removeNominee(bytes32,uint256)",
     "0x5d78d469": "setTargetSelectorChainIds(address[],bytes4[],uint256[],bool[])",
     "0x3dbb202b": "sendMessage(address,bytes,uint32)",
@@ -84,12 +86,11 @@ const SELSIG = {
     "0xece53132": "drain(address)",
 };
 const CHAIN = { 1: "Ethereum", 100: "Gnosis", 137: "Polygon", 42161: "Arbitrum", 10: "Optimism", 8453: "Base", 42220: "Celo", 34443: "Mode" };
-// OP-stack sendMessage target (L2 messenger) -> chainId, to render inner addresses on the right chain.
 const MSGR2CHAIN = {
     "0x87c511c8ae3faf0063b3f3cf9c6ab96c4aa5c60c": 10,
     "0xe49cb081e8d96920c38aa7ab90cb0294ab4bc8ea": 8453,
     "0xc14e191a64a7fb0e5790a8a0b9a58683dffce04d": 42220,
-    "0x9338b5153ae39bb89f50468e608ed9d764b755fd": 34443, // Mode OptimismMessenger (same address is Polygon FxTunnel, reached via sendMessageToChild)
+    "0x9338b5153ae39bb89f50468e608ed9d764b755fd": 34443,
 };
 const EXPLORER = {
     1: "https://etherscan.io/address/",
@@ -124,12 +125,23 @@ function callBox(title, inner, open = true) {
 }
 const addrFromBytes32 = (b32) => ethers.utils.getAddress("0x" + b32.slice(-40));
 
-// Decode an inner target payload (the leaf call executed on L2 / L1 target).
+function mechFactoryRows(facs, sts, chainId) {
+    let rows = "";
+    for (let i = 0; i < facs.length; i++) {
+        rows += row(`mechFactory[${i}] (OLAS)`, addrSpan(facs[i], chainId)) + row(`status[${i}]`, boolSpan(sts[i]));
+    }
+    return rows;
+}
+
 function renderPayload(payload, chainId) {
     const sel = payload.slice(0, 10);
     if (sel === "0x82694b1d") {
         const [ms, perm] = abi.decode(["address", "bool"], "0x" + payload.slice(10));
         return callBox(selSpan(sel), row("multisig", addrSpan(ms, chainId)) + row("permission", boolSpan(perm)), true);
+    }
+    if (sel === "0x087f08d4") {
+        const [facs, sts] = abi.decode(["address[]", "bool[]"], "0x" + payload.slice(10));
+        return callBox(selSpan(sel), mechFactoryRows(facs, sts, chainId), true);
     }
     return callBox(selSpan(sel), `<div class="row note">payload: ${esc(payload)}</div>`, true);
 }
@@ -152,23 +164,50 @@ function decodePacked(packed, chainId) {
     return out;
 }
 
+const DEWHITELIST_SELS = ["0x82694b1d", "0x3dbb202b", "0xdc8601b3", "0xb4720477", "0x679b6ded"];
+// Effects are keyed off the INNER selectors present anywhere in the calldata: changeMultisigPermission
+// (82694b1d) and setMechFactoryStatuses (087f08d4). A single L2 message can carry BOTH (combined).
+function category(calldata) {
+    const sel = calldata.slice(0, 10);
+    if (sel === "0xc54dd0d4") return "nominee";
+    if (sel === "0x5d78d469") return "guard";
+    const hasFactory = calldata.includes("087f08d4");
+    const hasDewl = calldata.includes("82694b1d");
+    if (hasFactory && hasDewl) return "combined";
+    if (hasFactory) return "mechfactory";
+    if (hasDewl || DEWHITELIST_SELS.includes(sel)) return "dewhitelist";
+    return "other";
+}
+const GROUP_ORDER = [
+    ["dewhitelist", "De-whitelist same-address multisigs (single effect: Ethereum direct, Mode + Arbitrum bridged)"],
+    ["combined", "De-whitelist same-address multisig + OLAS mech factory (one combined message per L2: Gnosis, Polygon, Optimism, Base, Celo)"],
+    ["mechfactory", "De-whitelist OLAS mech factories (single effect: Ethereum direct + Arbitrum retryable)"],
+    ["nominee", "Un-nominate retired staking contracts (VoteWeighting.removeNominee, direct L1)"],
+    ["guard", "Extend GuardCM emergency-pause allowlist"],
+    ["other", "Other"],
+];
+
 function decodeEntry(e) {
     const sel = e.calldata.slice(0, 10);
     const args = "0x" + e.calldata.slice(10);
     const head = selSpan(sel);
 
-    if (sel === "0x82694b1d") { // changeMultisigPermission(address,bool) — mainnet direct
+    if (sel === "0x82694b1d") {
         const [ms, perm] = abi.decode(["address", "bool"], args);
         return callBox(head, row("multisig", addrSpan(ms, 1)) + row("permission", boolSpan(perm)));
     }
-    if (sel === "0xc54dd0d4") { // removeNominee(bytes32 account, uint256 chainId)
+    if (sel === "0x087f08d4") {
+        const [facs, sts] = abi.decode(["address[]", "bool[]"], args);
+        return callBox(head, mechFactoryRows(facs, sts, 1));
+    }
+    if (sel === "0xc54dd0d4") {
         const [acct, cid] = abi.decode(["bytes32", "uint256"], args);
         const c = Number(cid);
         return callBox(head, row("account (bytes32)", `<span class="val">${esc(acct)}</span>`) +
             row("&rarr; address", addrSpan(addrFromBytes32(acct), c)) +
             row("chainId", valSpan(cid.toString(), CHAIN[c] || "")));
     }
-    if (sel === "0x5d78d469") { // setTargetSelectorChainIds(address[],bytes4[],uint256[],bool[])
+    if (sel === "0x5d78d469") {
         const [t, s, c, st] = abi.decode(["address[]", "bytes4[]", "uint256[]", "bool[]"], args);
         let rows = "";
         for (let i = 0; i < t.length; i++) {
@@ -183,7 +222,7 @@ function decodeEntry(e) {
         }
         return callBox(head, `<table class="al"><thead><tr><th>#</th><th>target</th><th>address</th><th>selector</th><th>function</th><th>chain</th><th>status</th></tr></thead><tbody>${rows}</tbody></table>`);
     }
-    if (sel === "0x3dbb202b") { // OP-stack sendMessage(target, message, minGas)
+    if (sel === "0x3dbb202b") {
         const [target, message, minGas] = abi.decode(["address", "bytes", "uint32"], args);
         const cid = MSGR2CHAIN[lc(target)] || 1;
         const pSel = message.slice(0, 10);
@@ -192,7 +231,7 @@ function decodeEntry(e) {
         return callBox(head, row("_target (L2 receiver)", addrSpan(target, cid)) + row("_minGasLimit", valSpan(minGas.toString())) +
             "<div class=\"row\"><span class=\"key\">_message</span> &darr;</div>" + procBox);
     }
-    if (sel === "0xdc8601b3") { // Gnosis AMB requireToPassMessage(l2mediator, data, gas)
+    if (sel === "0xdc8601b3") {
         const [l2med, data, gas] = abi.decode(["address", "bytes", "uint256"], args);
         const pSel = data.slice(0, 10);
         const [packed] = abi.decode(["bytes"], "0x" + data.slice(10));
@@ -200,12 +239,12 @@ function decodeEntry(e) {
         return callBox(head, row("_contract (HomeMediator, Gnosis L2)", addrSpan(l2med, 100)) + row("_gas", valSpan(gas.toString())) +
             "<div class=\"row\"><span class=\"key\">_data</span> &darr;</div>" + procBox);
     }
-    if (sel === "0xb4720477") { // Polygon FxRoot sendMessageToChild(fxTunnel, packed)
+    if (sel === "0xb4720477") {
         const [tunnel, packed] = abi.decode(["address", "bytes"], args);
         return callBox(head, row("_receiver (FxGovernorTunnel, Polygon L2)", addrSpan(tunnel, 137)) +
             "<div class=\"row\"><span class=\"key\">_data (packed)</span> &darr;</div>" + decodePacked(packed, 137));
     }
-    if (sel === "0x679b6ded") { // Arbitrum createRetryableTicket(...)
+    if (sel === "0x679b6ded") {
         const [to, l2v, maxSub, exRef, cvRef, gasLim, maxFee, data] = abi.decode(
             ["address", "uint256", "uint256", "address", "address", "uint256", "uint256", "bytes"], args);
         return callBox(head,
@@ -225,21 +264,18 @@ function computeProposalId(targets, values, calldatas, description) {
 }
 
 function main() {
-    const jsonPath = process.argv[2] || path.join(__dirname, "calldata.json");
-    const entries = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+    const title = process.argv[2] || "Proposal (annotated)";
+    const entries = JSON.parse(fs.readFileSync(path.join(__dirname, "calldata.json"), "utf8"));
     const description = fs.readFileSync(path.join(__dirname, "description.txt"), "utf8").replace(/\n$/, "");
     const targets = entries.map((e) => e.target);
     const values = entries.map((e) => e.value);
     const calldatas = entries.map((e) => e.calldata);
     const { id: proposalId, descHash } = computeProposalId(targets, values, calldatas, description);
 
-    const nomineeIdx = [];
-    for (let i = 8; i <= 39; i++) nomineeIdx.push(i);
-    const groups = [
-        { name: "Part 1 — De-whitelist GnosisSafeSameAddressMultisig (Ethereum direct + 7 L2s bridged)", idx: [0, 1, 2, 3, 4, 5, 6, 7] },
-        { name: "Part 2 — Un-nominate retired staking contracts (VoteWeighting.removeNominee, direct L1)", idx: nomineeIdx },
-        { name: "Part 3 — Extend GuardCM emergency-pause allowlist (19 triples)", idx: [40] },
-    ];
+    // auto-group by selector category
+    const byCat = {};
+    entries.forEach((e, i) => { (byCat[category(e.calldata)] ||= []).push(i); });
+    const nonZero = entries.map((e, i) => (e.value !== "0" ? i : -1)).filter((i) => i >= 0);
 
     const jsonArr = (a) => "[" + a.map((x) => `"${x}"`).join(",") + "]";
     const proposeInputs =
@@ -252,16 +288,21 @@ function main() {
         `<div class="pk">descriptionHash</div><pre class="cp">${esc(descHash)}</pre></div></div>`;
 
     let body = proposeInputs;
-    for (const g of groups) {
-        body += `<h2>${esc(g.name)}</h2>`;
-        for (const i of g.idx) {
+    for (const [cat, name] of GROUP_ORDER) {
+        const idx = byCat[cat];
+        if (!idx || !idx.length) continue;
+        body += `<h2>${esc(name)} (${idx.length})</h2>`;
+        for (const i of idx) {
             const e = entries[i];
             body += `<div class="entry"><div class="ehead"><span class="ix">[${i}]</span> target = ${addrSpan(e.target)} &nbsp; value = <span class="val">${esc(e.value)}</span></div>` +
                 decodeEntry(e) +
                 `<details class="raw"><summary>raw calldata</summary><pre>${esc(e.calldata)}</pre></details></div>`;
         }
     }
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Proposal 24 — de-whitelist same-address multisig, nominee cleanup, GuardCM allowlist</title>
+    const valNote = nonZero.length
+        ? `All values are 0 EXCEPT ${nonZero.map((i) => "entry [" + i + "]").join(", ")} (Arbitrum retryable), which carries a non-zero value (deposit&times;10 buffer) supplied by the executor of execute() and forwarded through the Timelock to the Inbox.`
+        : "Every entry has value 0.";
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title>
 <style>
 :root{--bg:#0f1115;--fg:#e6e6e6;--mut:#8a93a2;--sel:#c792ea;--addr:#82aaff;--val:#c3e88d;--role:#89ddff;--box:#161922;--bd:#2a2f3a;--ok:#7fd1a0;--bad:#ff8b8b;--cp:#8a93a2}
 body{background:var(--bg);color:var(--fg);font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;margin:0;padding:24px}
@@ -282,19 +323,17 @@ details.raw pre{white-space:pre-wrap;word-break:break-all;color:var(--mut);backg
 .pk{color:#fff;margin:8px 0 2px;font-weight:bold} pre.cp{white-space:pre-wrap;word-break:break-all;background:#0b0d12;border:1px solid var(--bd);border-radius:6px;padding:8px;color:var(--cp)}
 .pid{color:var(--ok);font-weight:bold} a{color:var(--addr)}
 </style></head><body>
-<h1>Proposal 24 — de-whitelist GnosisSafeSameAddressMultisig, staking nominee cleanup, GuardCM allowlist extension (annotated)</h1>
+<h1>${esc(title)} (annotated)</h1>
 <p class="lead">Submit via <b>propose()</b> on the live GovernorOLAS (0x060D0C&hellip;251E6), which holds the Timelock
-roles. <b>${entries.length} entries</b>; every call is executed by the Timelock. All values are 0 EXCEPT entry [3]
-(Arbitrum retryable) which carries a non-zero value (deposit&times;10 buffer) supplied by the executor of execute()
-and forwarded through the Timelock to the Inbox. Decoded directly from the Forge builder's verified calldata —
-hover any address/selector for its label; expand nested calls.</p>
+roles. <b>${entries.length} entries</b>; every call is executed by the Timelock. ${valNote} Decoded directly from
+the Forge builder's verified calldata — hover any address/selector for its label; expand nested calls.</p>
 <p class="lead">Pre-computed <span class="pid">proposalId = ${esc(proposalId)}</span></p>
 ${body}
 <h2>proposalId</h2>
 <div class="entry"><pre class="cp pid">${esc(proposalId)}</pre>
 <div class="note">= uint256(keccak256(abi.encode(targets, values, calldatas, keccak256(bytes(description)))))</div></div>
 </body></html>`;
-    const outPath = path.join(__dirname, "proposal_24_dewhitelist_sameaddr_and_unnominate.html");
+    const outPath = path.join(__dirname, path.basename(__dirname) + ".html");
     fs.writeFileSync(outPath, html);
     console.log("Wrote", outPath, "(" + entries.length + " entries)");
     console.log("proposalId:", proposalId);
