@@ -79,6 +79,21 @@ Once all agent instances are registered, the service owner re-deploys the servic
 The implementation of such multisig is provided here:
 - [GnosisSafeSameAddressMultisig](./contracts/multisigs/GnosisSafeSameAddressMultisig.sol)
 
+> **Deprecated.** `GnosisSafeSameAddressMultisig` (and its Polygon counterpart
+> `PolySafeSameAddressMultisig`) are **no longer whitelisted on any supported chain** —
+> `mapMultisigs` returns `false` for them on Ethereum, Gnosis, Polygon, Base, Optimism, Arbitrum,
+> Celo and Mode, so `deploy()` reverts `UnauthorizedMultisig` if either is passed. The contracts
+> remain deployed and their sources are retained here as the record of that deployed bytecode, but
+> they must not be used for new service deployments. Use
+> [SafeMultisigWithRecoveryModule](./contracts/multisigs/SafeMultisigWithRecoveryModule.sol) or
+> [RecoveryModule](./contracts/multisigs/RecoveryModule.sol) instead.
+>
+> These are also the only multisig implementations that could ever set a service multisig to a
+> **caller-supplied existing** address; every other implementation creates a fresh Safe proxy against
+> its own pinned singleton. See item 24 in
+> [Vulnerabilities_list_registries.md](./docs/Vulnerabilities_list_registries.md) for why that
+> distinction matters.
+
 The updated version with the access recovery feature is provided in the Recovery Module contract itself here:
 - [RecoveryModule](./contracts/multisigs/RecoveryModule.sol)
 

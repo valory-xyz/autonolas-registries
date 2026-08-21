@@ -27,6 +27,10 @@
     - [21. calculateStakingLastReward rounding dust](#21-calculatestakinglastreward-rounding-dust)
     - [22. ServiceRegistry registerAgents / update / activateRegistration missing reentrancy guard](#22-serviceregistry-registeragents--update--activateregistration-missing-reentrancy-guard)
     - [23. deploy same-address multisig takeover (RecoveryModule)](#23-deploy-same-address-multisig-takeover-recoverymodule)
+    - [24. Safe proxy-hash validation checks proxy shape, not singleton identity](#24-safe-proxy-hash-validation-checks-proxy-shape-not-singleton-identity)
+    - [25. ERC-8004 legacy migration overwrites a shared Safe's existing service identity](#25-erc-8004-legacy-migration-overwrites-a-shared-safes-existing-service-identity)
+    - [26. Former service agent can mutate the ERC-8004 identity after final unbond](#26-former-service-agent-can-mutate-the-erc-8004-identity-after-final-unbond)
+    - [27. Direct unbond leaves a pre-signed unbond authorization replayable](#27-direct-unbond-leaves-a-pre-signed-unbond-authorization-replayable)
 
 ## Involved contracts and level of the bugs
 
@@ -651,3 +655,127 @@ if (boundServiceId != serviceId) {
 The fixed implementation is deployed behind the `ServiceManagerProxy` on Ethereum and all
 supported L2s (see [configuration.json](./configuration.json)), and the binding was back-filled
 across the existing fleet.
+
+### 24. Safe proxy-hash validation checks proxy shape, not singleton identity
+
+**Severity**: Informative
+**Source**: internal review
+
+`GnosisSafeSameAddressMultisig` and `StakingBase` validate a service multisig by comparing the
+account's `codehash` against a configured `proxyHash`:
+
+```solidity
+if (proxyHash != multisigProxyHash) {
+    revert UnauthorizedMultisig(multisig);
+}
+```
+
+```solidity
+bytes32 multisigProxyHash = service.multisig.codehash;
+if (proxyHash != multisigProxyHash) {
+    revert UnauthorizedMultisig(service.multisig);
+}
+```
+
+That comparison establishes *"this account holds Safe-proxy bytecode"*. It does **not** establish
+*"this proxy delegates to the canonical Safe singleton"*, for two reasons:
+
+1. **The singleton is not part of the code.** A Safe proxy stores its singleton in storage slot 0 and
+   loads it at run time; the proxy's runtime bytecode contains an address *mask* (`PUSH20 0xff…ff`)
+   and an `SLOAD(0)`, not the singleton address. Every proxy produced from a given factory therefore
+   has byte-identical runtime code, and an identical `codehash`, whatever singleton it points at.
+2. **The factory does not constrain the singleton.** `GnosisSafeProxyFactory.createProxyWithNonce(address
+   _singleton, bytes initializer, uint256 saltNonce)` takes the singleton as a caller-supplied
+   parameter on a permissionless factory. "Deployed by the canonical Safe factory" therefore implies
+   nothing about where a proxy delegates.
+
+**Why this is not exploitable.** Singleton identity is guaranteed upstream, by construction, rather
+than by the `proxyHash` comparison. `service.multisig` is only ever assigned from the return value of
+`IMultisig(implementation).create(...)`, over the implementations whitelisted in `mapMultisigs`, and
+every whitelisted implementation *builds* the multisig itself against its own pinned constants:
+
+| Implementation | What pins the singleton | Returns a caller-supplied address? |
+|---|---|---|
+| `GnosisSafeMultisig` | `immutable gnosisSafe` + `immutable gnosisSafeProxyFactory`, passed to `createProxyWithNonce` | No — always a fresh proxy |
+| `SafeMultisigWithRecoveryModule` | `immutable safe` + `immutable safeProxyFactory` | No — always a fresh proxy |
+| `PolySafeCreatorWithRecoveryModule` | `immutable polySafeProxyFactory` + `immutable polySafeProxyBytecodeHash`, address computed deterministically | No — always a fresh proxy |
+| `RecoveryModule.create` | reads `multisig` from the **deploying service's own** `mapServices(serviceId)` and requires the supplied owners to equal that service's registered agent instances | No — re-verification only |
+| `GnosisSafeSameAddressMultisig` / `PolySafeSameAddressMultisig` | — | **Yes** — but both are de-whitelisted on every supported chain (see the note in [README](../README.md)) |
+
+So a proxy carrying a non-canonical singleton can be created by anyone at any time, and there is no
+function that will accept it as a service multisig.
+
+**Why it is worth recording.** The load-bearing control is the pinned `immutable` in each creating
+implementation, not the `proxyHash` check — and that is not obvious from reading either call site. A
+future multisig implementation that adopts a **caller-supplied** multisig address would restore the
+gap, and whoever writes it may reasonably assume the existing `proxyHash` comparison already covers
+implementation identity. It does not.
+
+**Guidance.** Any multisig implementation added to `mapMultisigs` that accepts a caller-supplied
+multisig address must validate the singleton explicitly — read the implementation slot (or call
+`masterCopy()`) and compare it against an approved singleton — in addition to the `codehash` check.
+`proxyHash` alone will not do it.
+
+- Contracts: [GnosisSafeSameAddressMultisig](../contracts/multisigs/GnosisSafeSameAddressMultisig.sol), [StakingBase](../contracts/staking/StakingBase.sol), [GnosisSafeMultisig](../contracts/multisigs/GnosisSafeMultisig.sol), [SafeMultisigWithRecoveryModule](../contracts/multisigs/SafeMultisigWithRecoveryModule.sol), [RecoveryModule](../contracts/multisigs/RecoveryModule.sol)
+
+### 25. ERC-8004 legacy migration overwrites a shared Safe's existing service identity
+
+**Severity**: Low
+**Source**: internal review
+
+`IdentityRegistryBridger` keys its Safe→agent mapping by multisig address:
+`mapMultisigAgentIds[newMultisig] = agentId`. The permissionless legacy migration path
+(`linkServiceIdAgentIds()` → `_updateAgentWallet`) writes that mapping unconditionally. When two legacy
+services point at the **same Safe**, the later migration iteration overwrites `mapMultisigAgentIds[Safe]`
+with its own `agentId`, so Safe-originated wallet and metadata wrappers (`setAgentWallet` /
+`setMetadata`) resolve to whichever service migrated last — even though both service-to-agent records
+remain populated.
+
+**No fund loss; identity mis-resolution only.** This is a narrow legacy edge case (two services sharing one
+Safe) and affects ERC-8004 identity resolution, not balances or staking accounting. The fix is to handle the
+shared-multisig case in the migration — e.g. reject or disambiguate a second service migrating onto a Safe
+that already carries a mapping — rather than silently overwriting.
+
+Source code: [IdentityRegistryBridger.sol](../contracts/8004/IdentityRegistryBridger.sol)
+
+### 26. Former service agent can mutate the ERC-8004 identity after final unbond
+
+**Severity**: Low
+**Source**: internal review
+
+Final `ServiceRegistry.unbond()` returns the service to `PreRegistration` (when `numAgentInstances == 0`)
+and deletes operator attribution (`delete mapAgentInstanceOperators[...]`), but the ERC-8004 side is not
+reset: `IdentityRegistryBridger.mapMultisigAgentIds` is left populated (the bridger has no unbond hook). A
+former one-agent Safe owner therefore retains authorization to call the bridger's mutating entry points
+(`unsetAgentWallet()`, mutable `setMetadata()`) after the service has been fully unbonded and before any
+recovery or re-registration.
+
+**No value at risk; a post-unbond identity-integrity window.** The impact is that a stale actor can mutate
+the service's ERC-8004 identity (unset an agent wallet, change metadata) during the post-unbond /
+pre-recovery window; scope is the single-agent-Safe case where the former owner still controls the Safe. The
+fix is a lifecycle cleanup: clear `mapMultisigAgentIds` (and any wallet links) when the service unbonds to
+`PreRegistration`.
+
+Source code: [IdentityRegistryBridger.sol](../contracts/8004/IdentityRegistryBridger.sol), [ServiceRegistry.sol](../contracts/ServiceRegistry.sol)
+
+### 27. Direct unbond leaves a pre-signed unbond authorization replayable
+
+**Severity**: Informative
+**Source**: internal review
+
+`ServiceManager.unbondWithSignature()` consumes and increments a per-`(operator|serviceId)` nonce, so a
+signature cannot be replayed once used. The **direct** `unbond()` path does not touch
+`mapOperatorUnbondNonces`. If an operator signs an `unbondWithSignature` authorization for the current nonce
+`N` and that signature is never consumed — because the service owner instead calls the direct `unbond()` —
+the nonce stays at `N`. After the service is reactivated and the operator re-registers instances, the old
+signature (still valid for nonce `N`, same `operator` / `serviceOwner` / `serviceId`) can be replayed to
+unbond the operator's new instances without fresh consent.
+
+**No fund loss; operator-avoidable stale-consent edge.** Unbonding returns the operator's own bond to the
+operator; the harm is a forced unbond of instances registered post-reactivation, a griefing / stale-consent
+issue with a narrow precondition (a pre-signed, unused authorization plus re-registration of the same
+`serviceId` under the same owner). Operators avoid it by not pre-signing an unbond they do not intend to have
+executed. A future revision could advance the same nonce on the direct `unbond()` path, invalidating any
+outstanding signed authorization.
+
+Source code: [ServiceManager.sol](../contracts/ServiceManager.sol)
