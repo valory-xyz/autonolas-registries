@@ -282,7 +282,7 @@ staking contracts are urged to configure them with no more than 100 of staking s
 
 ### 11. `deploy` function
 
-**Severity**: Informational
+**Severity**: Informative
 
 The following function is implemented in the ServiceRegistry and ServiceRegistryL2
 contracts:
@@ -714,7 +714,16 @@ implementation identity. It does not.
 **Guidance.** Any multisig implementation added to `mapMultisigs` that accepts a caller-supplied
 multisig address must validate the singleton explicitly — read the implementation slot (or call
 `masterCopy()`) and compare it against an approved singleton — in addition to the `codehash` check.
-`proxyHash` alone will not do it.
+`proxyHash` alone will not do it. This requirement is also recorded as a comment at both `proxyHash`
+comparison sites (`GnosisSafeSameAddressMultisig`, `StakingBase`), because the person who would
+reintroduce the gap is writing a new implementation rather than reading this list.
+
+**The de-whitelisting is load-bearing for two entries.** Both this item and item 23 (`deploy`
+same-address multisig takeover) currently rest on the same state: `mapMultisigs` returning `false`
+for `GnosisSafeSameAddressMultisig` and `PolySafeSameAddressMultisig`. That is a governance-mutable
+flag, not a code property. Re-whitelisting either implementation would reopen **both** items
+simultaneously, so such a proposal should be treated as a security change gated on the singleton
+validation above landing first — not as a configuration tweak.
 
 - Contracts: [GnosisSafeSameAddressMultisig](../contracts/multisigs/GnosisSafeSameAddressMultisig.sol), [StakingBase](../contracts/staking/StakingBase.sol), [GnosisSafeMultisig](../contracts/multisigs/GnosisSafeMultisig.sol), [SafeMultisigWithRecoveryModule](../contracts/multisigs/SafeMultisigWithRecoveryModule.sol), [RecoveryModule](../contracts/multisigs/RecoveryModule.sol)
 
@@ -750,6 +759,10 @@ former one-agent Safe owner therefore retains authorization to call the bridger'
 (`unsetAgentWallet()`, mutable `setMetadata()`) after the service has been fully unbonded and before any
 recovery or re-registration.
 
+**Related.** Item 27 is the same shape on a different piece of state: the direct `unbond()` path does
+not perform cleanup that the alternative path does — the bridger mapping here, the operator nonce
+there. A lifecycle fix to the unbond path should address both rather than one.
+
 **No value at risk; a post-unbond identity-integrity window.** The impact is that a stale actor can mutate
 the service's ERC-8004 identity (unset an agent wallet, change metadata) during the post-unbond /
 pre-recovery window; scope is the single-agent-Safe case where the former owner still controls the Safe. The
@@ -770,6 +783,8 @@ signature cannot be replayed once used. The **direct** `unbond()` path does not 
 the nonce stays at `N`. After the service is reactivated and the operator re-registers instances, the old
 signature (still valid for nonce `N`, same `operator` / `serviceOwner` / `serviceId`) can be replayed to
 unbond the operator's new instances without fresh consent.
+
+**Related.** Item 26 is the same shape on a different piece of state — see the note there.
 
 **No fund loss; operator-avoidable stale-consent edge.** Unbonding returns the operator's own bond to the
 operator; the harm is a forced unbond of instances registered post-reactivation, a griefing / stale-consent
