@@ -128,8 +128,7 @@ function update(address serviceOwner, bytes32 configHash, uint32[] memory agentI
 ```
 
 As described earlier, this function allows updating a service in a *pre-registration* state in a
-CRUD way. However, considering that there is no possible direct damage to the protocol
-and to save on transaction gas costs, the function is implemented via an optimistic
+CRUD way. To save on transaction gas costs, the function is implemented via an optimistic
 approach.
 
 Specifically, the service owner might not specify that some of the *agent Ids* of the
@@ -143,6 +142,26 @@ previous setup, declaring that they actually run on current ones (as retrieved v
 We strongly recommend not abusing the *update()* function in order to deploy the service
 to perform any malicious actions by using undeclared *agent Ids*, since this behavior is
 easily spotted off-chain.
+
+**The stale mapping can also freeze a service, which this entry previously did not record.**
+Earlier revisions stated there was "no possible direct damage to the protocol". That
+understates it. Because the omitted ids keep their `(serviceId, agentId)` parameters, a later
+`registerAgents()` can consume the service's remaining slot capacity against those stale ids,
+while `_getAgentInstances()` enumerates only the *current* canonical ids. Deployment then builds
+an owner array containing a zero address, Safe setup reverts, and the service cannot be deployed.
+Terminating it leaves it in `TerminatedBonded` until the operator unbonds, so the service's
+lifecycle is stuck until that happens.
+
+The damage is confined to the service whose owner performed the `update()` — no other service,
+and no protocol-level accounting, is affected — and the escape hatch (operator unbond) always
+exists. But it is a real stuck state reachable through ordinary use of the function, not merely
+a bookkeeping discrepancy, and a service owner should treat leaving stale agent ids in place as
+capable of bricking their own service rather than as a cosmetic inconsistency.
+
+**Mitigation.** When calling `update()`, explicitly zero the `slots` for every agent id being
+removed, so no stale `(serviceId, agentId)` parameters remain to be registered against. On a
+future `ServiceRegistry` revision, clear the parameters of omitted ids inside `update()` rather
+than leaving them for the caller to tidy.
 
 ### 5. `drain` function
 
