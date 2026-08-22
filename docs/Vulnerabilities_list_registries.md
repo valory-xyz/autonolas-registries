@@ -656,6 +656,17 @@ The fixed implementation is deployed behind the `ServiceManagerProxy` on Ethereu
 supported L2s (see [configuration.json](./configuration.json)), and the binding was back-filled
 across the existing fleet.
 
+**Accepted, not fixed in code: the binding is released on a genuine migration.** When a service
+legitimately moves to a new multisig, `deploy()` clears the previous entry — the service really
+has moved, so keeping the old claim would block the new one. A multisig a service has migrated
+away from is therefore no longer bound to anything, and the 1:1 binding is not what protects it
+from that point on. This is by design and no code change is planned.
+
+The control is operational rather than contract-level: **a service multisig is emptied before it
+is released.** Service operators should treat migration the same way — move the assets out as
+part of the migration, and do not leave value in a multisig the service no longer points at.
+A Safe left funded after its service has moved on is outside what this item's fix covers.
+
 ### 24. Safe proxy-hash validation checks proxy shape, not singleton identity
 
 **Severity**: Informative
