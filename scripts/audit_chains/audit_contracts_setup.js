@@ -20,6 +20,9 @@ const norm = (a) => (a ? ethers.utils.getAddress(a) : a);
 // Global accumulator for CSV rows (collected during setup checks)
 const ownershipRows = [];
 
+// Set by checkBytecode() when a Tier-1 (code length) mismatch is seen, so main() can exit non-zero.
+let bytecodeMismatchFound = false;
+
 // Custom expect that is wrapped into try / catch block
 function customExpect(arg1, arg2, log) {
     try {
@@ -101,6 +104,18 @@ async function checkBytecode(provider, configContracts, contractName, log) {
     // Get the contract number from the set of configuration contracts
     for (let i = 0; i < configContracts.length; i++) {
         if (configContracts[i]["name"] === contractName) {
+            // A configuration entry may name an artifact the repo does not ship. That is itself an audit
+            // finding — the repo cannot verify what is deployed at that address — but an unguarded
+            // readFileSync turns it into an uncaught ENOENT that aborts the whole run at that contract,
+            // leaving every later chain and contract unchecked. Report and carry on instead.
+            if (!fs.existsSync(configContracts[i]["artifact"])) {
+                console.log(log + ", address: " + configContracts[i]["address"]
+                    + ", FAIL: artifact not found: " + configContracts[i]["artifact"]);
+                console.log("\n");
+                bytecodeMismatchFound = true;
+                return;
+            }
+
             // Get the contract instance
             const contractFromJSON = fs.readFileSync(configContracts[i]["artifact"], "utf8");
             const parsedFile = JSON.parse(contractFromJSON);
@@ -110,17 +125,44 @@ async function checkBytecode(provider, configContracts, contractName, log) {
                 // Hardhat JSON
                 bytecode = parsedFile["deployedBytecode"];
             }
-            const onChainCreationCode = await provider.getCode(configContracts[i]["address"]);
+            const onChainCode = await provider.getCode(configContracts[i]["address"]);
+            const tag = log + ", address: " + configContracts[i]["address"];
             // Bytecode DEBUG
             //if (contractName === "ContractName") {
-            //    console.log("onChainCreationCode", onChainCreationCode);
+            //    console.log("onChainCode", onChainCode);
             //    console.log("bytecode", bytecode);
             //}
 
-            // Compare last 43 bytes as they reflect the deployed contract metadata hash
-            // We cannot compare the full one since the repo deployed bytecode does not contain immutable variable info
-            customExpectContain(onChainCreationCode, bytecode.slice(-86),
-                log + ", address: " + configContracts[i]["address"] + ", failed bytecode comparison");
+            // Tier 1 (BLOCKING): on-chain code length must match the artifact's deployedBytecode length.
+            // Immutables occupy fixed slots, so they change the bytes but never the length — a length
+            // difference means the deployed instruction code differs from the artifact in the repo, which is
+            // the strongest "wrong implementation deployed" signal available. Flag the run to exit non-zero
+            // (see main()). Ported from the tokenomics auditor (autonolas-tokenomics#322).
+            if (onChainCode.length !== bytecode.length) {
+                console.log(tag + ", FAIL: bytecode length mismatch: artifact="
+                    + Math.max(0, (bytecode.length - 2) / 2) + "B onchain="
+                    + Math.max(0, (onChainCode.length - 2) / 2) + "B");
+                console.log("\n");
+                bytecodeMismatchFound = true;
+                return;
+            }
+
+            // Tier 2 (warning): same length but the trailing CBOR metadata (last 43 bytes) differs.
+            // Common when the deployed bytecode was compiled with a slightly different context
+            // (solc patch version, optimizer settings, source-tree state) than the artifact in main.
+            // This is not a code-level discrepancy, so we emit a single-line warning rather than
+            // dumping the entire on-chain bytecode via an AssertionError.
+            const artifactTail = bytecode.slice(-86).toLowerCase();
+            const onchainTail = onChainCode.slice(-86).toLowerCase();
+            if (artifactTail !== onchainTail) {
+                // Show the leading bytes of the 43-byte CBOR trailer: that is where the metadata hash
+                // sits and therefore where the difference is. The trailing bytes encode the solc version
+                // and are identical whenever both were built by the same compiler, so printing those
+                // would show two identical strings next to the word "drift".
+                console.log(tag + ", WARN: metadata-trailer drift "
+                    + "(artifact " + artifactTail.slice(0, 16) + "..., onchain " + onchainTail.slice(0, 16)
+                    + "...); code length matches.");
+            }
             return;
         }
     }
@@ -733,7 +775,13 @@ async function main() {
 }
 
 main()
-    .then(() => process.exit(0))
+    .then(() => {
+        if (bytecodeMismatchFound) {
+            console.error("AUDIT FAILED: at least one on-chain bytecode length mismatch (Tier 1) — see FAIL lines above.");
+            process.exit(1);
+        }
+        process.exit(0);
+    })
     .catch((error) => {
         console.error(error);
         process.exit(1);

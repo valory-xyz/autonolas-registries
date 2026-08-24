@@ -576,12 +576,12 @@
       },
       {
         "name": "StakingVerifier",
-        "artifact": "abis/0.8.25/StakingVerifier.json",
+        "artifact": "abis/0.8.30/StakingVerifier.json",
         "address": "0x4aba1Cf7a39a51D75cBa789f5f21cf4882162519"
       },
       {
         "name": "StakingFactory",
-        "artifact": "abis/0.8.25/StakingFactory.json",
+        "artifact": "abis/0.8.25-paris/StakingFactory.json",
         "address": "0x1c2cD884127b080F940b7546c1e9aaf525b1FA55"
       },
       {
