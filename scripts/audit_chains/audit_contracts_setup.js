@@ -453,6 +453,27 @@ async function checkServiceRegistryTokenUtility(chainId, provider, globalsInstan
 
 // Check operator whitelist: chain Id, provider, parsed globals, configuration contracts, contract name
 // At the moment the check is applicable to L1 only
+// Check ComplementaryServiceMetadata: chain Id, provider, parsed globals, configuration contracts, contract name
+async function checkComplementaryServiceMetadata(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Get the contract instance - not deployed on every chain
+    const complementaryServiceMetadata = await findContractInstance(provider, configContracts, contractName);
+    if (typeof complementaryServiceMetadata === "undefined") {
+        warnNotConfigured(log, contractName);
+        return;
+    }
+
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    log += ", address: " + complementaryServiceMetadata.address;
+
+    // Check the service registry it was constructed against. This is the contract's only wiring - it
+    // is not Ownable, and permissions derive from serviceRegistry.ownerOf(), so a wrong registry here
+    // is the whole failure mode rather than one of several.
+    const serviceRegistry = await complementaryServiceMetadata.serviceRegistry();
+    customExpect(serviceRegistry, globalsInstance["serviceRegistryAddress"], log + ", function: serviceRegistry()");
+}
+
 // Check HashCheckpoint: chain Id, provider, parsed globals, configuration contracts, contract name
 async function checkHashCheckpoint(chainId, provider, globalsInstance, configContracts, contractName, log) {
     // Get the contract instance - HashCheckpoint is only deployed on some chains
@@ -777,6 +798,9 @@ async function main() {
 
             log = initLog + ", contract: " + "HashCheckpoint";
             await checkHashCheckpoint(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "HashCheckpoint", log);
+
+            log = initLog + ", contract: " + "ComplementaryServiceMetadata";
+            await checkComplementaryServiceMetadata(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "ComplementaryServiceMetadata", log);
 
             log = initLog + ", contract: " + "GnosisSafeMultisig";
             await checkGnosisSafeMultisig(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeMultisig", log);

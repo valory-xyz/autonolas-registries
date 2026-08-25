@@ -262,7 +262,7 @@
       },
       {
         "name": "ComplementaryServiceMetadata",
-        "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
+        "artifact": "abis/0.8.30-no-optimizer/ComplementaryServiceMetadata.json",
         "address": "0x0598081D48FB80B0A7E52FAD2905AE9beCd6fC69"
       },
       {
@@ -515,7 +515,7 @@
       },
       {
         "name": "ComplementaryServiceMetadata",
-        "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
+        "artifact": "abis/0.8.30-no-optimizer/ComplementaryServiceMetadata.json",
         "address": "0x28C1edC7CEd549F7f80B732fDC19f0370160707d"
       },
       {
@@ -679,6 +679,11 @@
         "name": "SafeMultisigWithRecoveryModule",
         "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
         "address": "0x7Fd1F4b764fA41d19fe3f63C85d12bf64d2bbf68"
+      },
+      {
+        "name": "ComplementaryServiceMetadata",
+        "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
+        "address": "0x24F792D51b398928459Dfbb4181bDb4D5d2CD472"
       }
     ]
   }
