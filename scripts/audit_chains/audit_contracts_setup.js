@@ -55,6 +55,16 @@ function customExpectContain(arg1, arg2, log) {
     }
 }
 
+// Report a contract that has no configuration entry on this chain.
+// Absence must be visible: a contract that is simply not deployed here and a contract that SHOULD be
+// here but was never recorded look identical to the auditor, and silently returning turns the second
+// one into a pass. Warn and let a reader decide which it is.
+function warnNotConfigured(log, contractName) {
+    console.log(log + ", WARN: no configuration entry on this chain - not audited."
+        + " If " + contractName + " is expected here, the entry is missing; if it is genuinely not"
+        + " deployed on this chain, this line is the record of that.");
+}
+
 // Write ownership CSV
 function writeOwnershipCsv(rows, outPath) {
     const headers = [
@@ -363,9 +373,18 @@ async function checkServiceManagerProxy(chainId, provider, globalsInstance, conf
     const operatorWhitelist = await serviceManager.operatorWhitelist();
     customExpect(operatorWhitelist, globalsInstance["operatorWhitelistAddress"], log + ", function: operatorWhitelist()");
 
-    // Check identity registry bridger
-    const identityRegistryBridger = await serviceManager.identityRegistryBridger();
-    customExpect(identityRegistryBridger, globalsInstance["identityRegistryBridgerProxyAddress"], log + ", function: identityRegistryBridger()");
+    // Check identity registry bridger, where the chain has one. Not every chain does - mode has no
+    // IdentityRegistryBridgerProxy entry and its globals carry no address - and asserting against an
+    // absent global compares the on-chain zero address to undefined, which fails on a chain that is
+    // correctly configured.
+    if (globalsInstance["identityRegistryBridgerProxyAddress"]) {
+        const identityRegistryBridger = await serviceManager.identityRegistryBridger();
+        customExpect(identityRegistryBridger, globalsInstance["identityRegistryBridgerProxyAddress"],
+            log + ", function: identityRegistryBridger()");
+    } else {
+        console.log(log + ", WARN: globals carry no identityRegistryBridgerProxyAddress,"
+            + " so identityRegistryBridger() is unverified on this chain.");
+    }
 }
 
 // Check identity registry bridger proxy: chain Id, provider, parsed globals, configuration contracts, contract name
@@ -373,8 +392,13 @@ async function checkIdentityRegistryBridgerProxy(chainId, provider, globalsInsta
     // Check the bytecode
     await checkBytecode(provider, configContracts, contractName, log);
 
-    // Get the contract instance
+    // Get the contract instance. Not deployed on every chain; without this guard checkOwner() reads
+    // .owner of undefined and the TypeError propagates out of main(), ending the run.
     const identityRegistryBridger = await findContractInstance(provider, configContracts, contractName);
+    if (typeof identityRegistryBridger === "undefined") {
+        warnNotConfigured(log, contractName);
+        return;
+    }
 
     // Check owner + record CSV
     const ownerInfo = await checkOwner(chainId, identityRegistryBridger, globalsInstance, log);
@@ -429,6 +453,26 @@ async function checkServiceRegistryTokenUtility(chainId, provider, globalsInstan
 
 // Check operator whitelist: chain Id, provider, parsed globals, configuration contracts, contract name
 // At the moment the check is applicable to L1 only
+// Check HashCheckpoint: chain Id, provider, parsed globals, configuration contracts, contract name
+async function checkHashCheckpoint(chainId, provider, globalsInstance, configContracts, contractName, log) {
+    // Get the contract instance - HashCheckpoint is only deployed on some chains
+    const hashCheckpoint = await findContractInstance(provider, configContracts, contractName);
+    if (typeof hashCheckpoint === "undefined") {
+        warnNotConfigured(log, contractName);
+        return;
+    }
+
+    // Check the bytecode
+    await checkBytecode(provider, configContracts, contractName, log);
+
+    log += ", address: " + hashCheckpoint.address;
+
+    // Check the owner. HashCheckpoint is Ownable and was previously not checked at all, so nothing
+    // reported that it is still held by the deployer on every chain it is deployed to.
+    const ownerInfo = await checkOwner(chainId, hashCheckpoint, globalsInstance, log);
+    recordOwnershipRow(chainId, contractName, hashCheckpoint.address, ownerInfo);
+}
+
 async function checkOperatorWhitelist(chainId, provider, globalsInstance, configContracts, contractName, log) {
     // Check the bytecode
     await checkBytecode(provider, configContracts, contractName, log);
@@ -671,7 +715,8 @@ async function main() {
             "arbitrum": "scripts/deployment/l2/globals_arbitrum_mainnet.json",
             "optimism": "scripts/deployment/l2/globals_optimism_mainnet.json",
             "base": "scripts/deployment/l2/globals_base_mainnet.json",
-            "celo": "scripts/deployment/l2/globals_celo_mainnet.json"
+            "celo": "scripts/deployment/l2/globals_celo_mainnet.json",
+            "mode": "scripts/deployment/l2/globals_mode_mainnet.json"
         };
 
         const providerLinks = {
@@ -681,18 +726,14 @@ async function main() {
             "arbitrum": "https://arb1.arbitrum.io/rpc",
             "optimism": "https://optimism.drpc.org",
             "base": "https://mainnet.base.org",
-            "celo": "https://forno.celo.org"
+            "celo": "https://forno.celo.org",
+            "mode": "https://mainnet.mode.network"
         };
 
         // Get all the globals processed
         const globals = new Array();
         const providers = new Array();
         for (let i = 0; i < numChains; i++) {
-            // TODO Remove when mode is fully decommissioned
-            if (configs[i]["name"] === "mode") {
-                continue;
-            }
-
             const dataJSON = fs.readFileSync(globalNames[configs[i]["name"]], "utf8");
             globals.push(JSON.parse(dataJSON));
             const provider = new ethers.providers.JsonRpcProvider(providerLinks[configs[i]["name"]]);
@@ -702,11 +743,6 @@ async function main() {
         console.log("\nVerifying deployed contracts setup... If no error is output, then the contracts are correct.");
 
         for (let i = 0; i < numChains; i++) {
-            // TODO Remove when mode is fully decommissioned
-            if (configs[i]["name"] === "mode") {
-                continue;
-            }
-
             console.log("\n######## Verifying setup on CHAIN ID", configs[i]["chainId"]);
 
             const initLog = "ChainId: " + configs[i]["chainId"] + ", network: " + configs[i]["name"];
@@ -738,6 +774,9 @@ async function main() {
 
             log = initLog + ", contract: " + "OperatorWhitelist";
             await checkOperatorWhitelist(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "OperatorWhitelist", log);
+
+            log = initLog + ", contract: " + "HashCheckpoint";
+            await checkHashCheckpoint(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "HashCheckpoint", log);
 
             log = initLog + ", contract: " + "GnosisSafeMultisig";
             await checkGnosisSafeMultisig(configs[i]["chainId"], providers[i], globals[i], configs[i]["contracts"], "GnosisSafeMultisig", log);

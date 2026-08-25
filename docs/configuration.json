@@ -171,7 +171,7 @@
       },
       {
         "name": "HashCheckpoint",
-        "artifact": "abis/0.8.21/HashCheckpoint.json",
+        "artifact": "abis/0.8.28/HashCheckpoint.json",
         "address": "0x820ca542d5876FDEf240584F6f3924852D527FED"
       },
       {
@@ -424,7 +424,7 @@
       },
       {
         "name": "HashCheckpoint",
-        "artifact": "abis/0.8.21/HashCheckpoint.json",
+        "artifact": "abis/0.8.28/HashCheckpoint.json",
         "address": "0x4E82BC73BFB9647074aA71CBF467e66c1808C571"
       },
       {
@@ -510,7 +510,7 @@
       },
       {
         "name": "HashCheckpoint",
-        "artifact": "abis/0.8.21/HashCheckpoint.json",
+        "artifact": "abis/0.8.28/HashCheckpoint.json",
         "address": "0x69E679AF02D7F18157A8730189f9aFa8cf9c9a2a"
       },
       {
