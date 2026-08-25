@@ -679,6 +679,11 @@
         "name": "SafeMultisigWithRecoveryModule",
         "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
         "address": "0x7Fd1F4b764fA41d19fe3f63C85d12bf64d2bbf68"
+      },
+      {
+        "name": "ComplementaryServiceMetadata",
+        "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
+        "address": "0x24F792D51b398928459Dfbb4181bDb4D5d2CD472"
       }
     ]
   }
