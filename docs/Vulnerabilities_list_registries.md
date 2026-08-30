@@ -31,6 +31,11 @@
     - [25. ERC-8004 legacy migration overwrites a shared Safe's existing service identity](#25-erc-8004-legacy-migration-overwrites-a-shared-safes-existing-service-identity)
     - [26. Former service agent can mutate the ERC-8004 identity after final unbond](#26-former-service-agent-can-mutate-the-erc-8004-identity-after-final-unbond)
     - [27. Direct unbond leaves a pre-signed unbond authorization replayable](#27-direct-unbond-leaves-a-pre-signed-unbond-authorization-replayable)
+    - [28. Direct registration leaves a pre-signed registration authorization replayable](#28-direct-registration-leaves-a-pre-signed-registration-authorization-replayable)
+    - [29. Agent instance addresses are neither validated nor proven controlled](#29-agent-instance-addresses-are-neither-validated-nor-proven-controlled)
+    - [30. PolySafe creation can be front-run, stranding the intended service identity](#30-polysafe-creation-can-be-front-run-stranding-the-intended-service-identity)
+    - [31. `RecoveryModule.recoverAccess` fails when the service owner is already the last Safe owner](#31-recoverymodulerecoveraccess-fails-when-the-service-owner-is-already-the-last-safe-owner)
+    - [32. Staking instance verification is performed once and never revisited](#32-staking-instance-verification-is-performed-once-and-never-revisited)
 
 ## Involved contracts and level of the bugs
 
@@ -158,10 +163,27 @@ exists. But it is a real stuck state reachable through ordinary use of the funct
 a bookkeeping discrepancy, and a service owner should treat leaving stale agent ids in place as
 capable of bricking their own service rather than as a cosmetic inconsistency.
 
+There is a second route to a stuck service through the same stale mapping, which does not require
+a zero address to reach Safe setup. Registrations against an omitted id increment
+`service.numAgentInstances`, but `maxNumAgentInstances` is recomputed over the *kept* ids only and
+therefore excludes those slots. The count can consequently **exceed** the maximum — contradicting
+the invariant stated on the field itself, that it "is less or equal to maxNumAgentInstances" — and
+because the transition to `FinishedRegistration` is a strict equality:
+
+```solidity
+if (service.numAgentInstances == service.maxNumAgentInstances) {
+    service.state = ServiceState.FinishedRegistration;
+}
+```
+
+once the count has overshot, that equality can never hold again for the round and the service cannot
+reach deployment at all.
+
 **Mitigation.** When calling `update()`, explicitly zero the `slots` for every agent id being
 removed, so no stale `(serviceId, agentId)` parameters remain to be registered against. On a
 future `ServiceRegistry` revision, clear the parameters of omitted ids inside `update()` rather
-than leaving them for the caller to tidy.
+than leaving them for the caller to tidy — note this is reachable from `ServiceManager`, which
+wraps `update()`, so it does not require changing the registry itself.
 
 ### 5. `drain` function
 
@@ -824,3 +846,167 @@ executed. A future revision could advance the same nonce on the direct `unbond()
 outstanding signed authorization.
 
 Source code: [ServiceManager.sol](../contracts/ServiceManager.sol)
+
+### 28. Direct registration leaves a pre-signed registration authorization replayable
+
+**Severity**: Informative
+**Source**: internal review
+
+The same shape as item 27, on the registration side rather than the unbond side.
+`ServiceManager.registerAgentsWithSignature()` reads and increments
+`mapOperatorRegisterAgentsNonces[(operator | serviceId)]`; the **direct** `registerAgents()` path does not
+touch it. An operator authorization signed for nonce `N` and never consumed — because registration happened
+directly instead — therefore stays valid across terminate / unbond / reset and reactivation, and the service
+owner can replay it to re-enrol that operator without fresh consent.
+
+It grades above item 27 for one reason: unbonding *returns* a bond, whereas this path *takes* one. The
+signed hash covers `(operator, serviceOwner, serviceId, agentInstances, agentIds, nonce)` and **does not
+commit to a bond amount**, so a replay after a reset draws whatever bond is configured at that point,
+limited only by the operator's standing ERC20 allowance — which may exceed what they agreed to when signing.
+
+**Related.** Item 27 is the same asymmetry on `mapOperatorUnbondNonces`.
+
+**Mitigation.** Advance `mapOperatorRegisterAgentsNonces` on the direct `registerAgents()` path as well, so
+an unused authorization cannot outlive the state it was signed against — the same one-line change item 27
+recommends, applied to the second nonce. Both live in `ServiceManager`, so neither needs a registry change.
+Separately, binding the bond amount into the signed hash would remove the "bond may have risen since
+signing" exposure, which an operator cannot otherwise avoid except by managing allowances.
+
+### 29. Agent instance addresses are neither validated nor proven controlled
+
+**Severity**: Low
+**Source**: internal review
+
+`ServiceRegistry.registerAgents` asserts only that an instance differs from the operator and is not already
+engaged:
+
+```solidity
+if (operator == agentInstance) { revert WrongOperator(serviceId); }
+...
+if (mapAgentInstanceOperators[agentInstance] != address(0)) {
+    revert AgentInstanceRegistered(mapAgentInstanceOperators[agentInstance]);
+}
+```
+
+There is no check that the address is usable as a Safe owner, and nothing anywhere requires an instance to
+demonstrate control of its key — `registerAgentsWithSignature` verifies the signature against the
+**operator**, never against the instances. Registered addresses are counted toward capacity and can trip the
+service into `FinishedRegistration`, after which Safe setup decides the outcome:
+
+- `address(0)` and Safe's `SENTINEL_OWNERS` (`address(0x1)`) are rejected by `setupOwners` with `GS203`, so
+  the service cannot deploy and, once terminated, sits in `TerminatedBonded` until the registering operator
+  unbonds.
+- A precompile such as `address(0x2)`, or any ordinary address whose key nobody holds, passes every one of
+  Safe's owner conditions. The Safe then **deploys normally** and is owned by an address that cannot sign,
+  so on a single-slot service with threshold one, any value later sent to it is unrecoverable — the standard
+  multisig creator installs no recovery module.
+
+The second case is the reason a blocklist is not a fix: rejecting the known-special addresses closes the
+deployment-refusal half and leaves the unsignable-Safe half untouched, since it works with an arbitrary
+uncontrolled address.
+
+**Configuration is the control, and it is usually unset.** A service that has not configured an
+`OperatorWhitelist` accepts *any* address as an operator, and in practice almost no service sets one. The
+protocol assumes services are configured with addresses their owners control; asserting proof of control
+on-chain is deliberately out of scope.
+
+**Mitigation.** Service owners should set an `OperatorWhitelist` and enable it
+(`setOperatorsCheck` / `setOperatorsStatuses`), which is the intended control over who may register
+instances — note that `isOperatorWhitelisted` returns `true` unconditionally until the per-service check
+flag is enabled, so adding entries alone is not sufficient. On a future `ServiceManager` revision, rejecting
+`address(0)`, `SENTINEL_OWNERS` and the precompile range before forwarding to the registry would remove the
+accidental cases cheaply; it should be assessed against existing flows first, since it narrows what is
+registrable.
+
+### 30. PolySafe creation can be front-run, stranding the intended service identity
+
+**Severity**: Low
+**Source**: internal review
+
+`PolySafeCreatorWithRecoveryModule.create()` is `external` with no caller restriction, and the address it
+produces derives solely from `owners[0]`:
+
+```solidity
+multisig = IPolySafeProxyFactory(polySafeProxyFactory).computeProxyAddress(owners[0]);
+if (multisig.code.length > 0) {
+    revert MultisigAlreadyExists(multisig);
+}
+```
+
+The signatures carried in `data` are consumed by the proxy factory and the Safe, neither of which is aware
+of who relayed them, so a copied `deploy()` payload reproduces exactly the same address for anyone. Once an
+observer's transaction lands first, the service's own `deploy()` reverts `MultisigAlreadyExists` and the
+service remains in `FinishedRegistration` with no multisig recorded. `PolySafeSameAddressMultisig` is not a
+whitelisted creator, so the already-deployed Safe cannot be bound to the service afterwards.
+
+**The attacker gains nothing** — the Safe is created with the intended owner and the recovery module
+enabled, exactly as the service wanted — and the service can still deploy an ordinary Safe. What is lost is
+the deterministic, owner-derived PolySafe identity and anything that depended on it. The cost to grief is
+one transaction.
+
+**Mitigation.** Where the PolySafe creator is no longer in use, removing it from the registry's whitelisted
+multisig implementations closes this outright with no code change. Otherwise, restrict `create()` to the
+caller permitted to use it, or make a pre-existing Safe at the computed address usable rather than fatal —
+the checks needed to verify it matches the expected owner, threshold and codehash are already performed
+further down the same function.
+
+### 31. `RecoveryModule.recoverAccess` fails when the service owner is already the last Safe owner
+
+**Severity**: Low
+**Source**: internal review
+
+`recoverAccess()` removes every Safe owner but the last, then unconditionally swaps that last one for the
+caller:
+
+```solidity
+payload = abi.encodeCall(IMultisig.swapOwner, (SENTINEL_ADDRESS, multisigOwners[numOwners - 1], msg.sender));
+```
+
+Safe's `swapOwner` requires `owners[newOwner] == address(0)` (`GS204`, no duplicate owners), so when the
+service owner is already that last owner the call reverts. Because every payload is concatenated into a
+single `multiSend` executed as one `execTransactionFromModule` delegatecall, the revert unwinds the owner
+removals with it and the Safe is left exactly as it was. Only the last position triggers this — an owner
+appearing earlier is removed by the loop first, after which the swap succeeds.
+
+Nothing prevents the configuration: `registerAgents` compares an agent instance against the **operator**,
+never against the service owner, so a service owner may legitimately be an agent instance and therefore a
+Safe owner.
+
+The consequence is narrow but lands badly: while the threshold can still be met the owner controls the Safe
+directly and never needs the module, so this surfaces precisely when recovery is the remaining option —
+threshold above one and the other instances unavailable.
+
+**Mitigation.** Handle the case explicitly: when the caller is already the last owner, the swap is
+unnecessary, so remove the others and set the threshold to one instead. More generally the routine assumes
+the caller is not among the current owners, which the registry does not guarantee — a membership check
+before building the payload covers this and any future change in owner ordering.
+
+### 32. Staking instance verification is performed once and never revisited
+
+**Severity**: Informative
+**Source**: internal review
+
+`StakingFactory.verifyInstanceAndGetEmissionsAmount` deliberately does not re-verify an instance that is
+already enabled:
+
+```solidity
+// An already verified proxy instance should not be re-verified
+// DAO governance might have changed verification rules in the mean-time which would render the instance unusable
+bool isEnabled = mapInstanceParams[instance].isEnabled;
+```
+
+This is an intentional stability guarantee: instances created under one set of rules keep working when the
+rules later tighten, rather than being stranded by a governance change they had no part in. The consequence
+is the flip side of the same property — an instance created while `implementationsCheck` was disabled
+remains emission-eligible afterwards, even though the same instance could not be created under the current
+rules.
+
+Recorded because the trade-off is not otherwise visible from the code: verification state is a
+point-in-time fact, not a continuing one, and any reasoning about what is currently allowed should not be
+applied backwards to instances that already exist.
+
+**Mitigation.** None recommended — re-verification would strand existing instances, which is the outcome
+the comment above exists to prevent. When tightening verification rules, treat existing enabled instances as
+grandfathered and, if a specific instance must be excluded, disable it explicitly rather than assuming a
+rules change reaches it.
+
