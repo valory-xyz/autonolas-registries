@@ -15,7 +15,7 @@
     - [9. unstake function](#9-unstake-function)
     - [10. checkpoint function: O(n) complexity due to gas overflow](#10-checkpoint-function-on-complexity-and-dos-due-to-gas-overflow)
     - [11. deploy function](#11-deploy-function)
-    - [12. create function](#12-create-function-1)
+    - [12. create function](#12-create-function)
     - [13. execTransaction return value in RecoveryModule and other multisig creating contracts](#13-exectransaction-return-value-in-recoverymodule-and-other-multisig-creating-contracts)
     - [14. registerAgentsWithSignature operator whitelist bypass](#14-registeragentswithsignature-operator-whitelist-bypass)
     - [15. registerAgentsWithSignature missing msg.value validation](#15-registeragentswithsignature-missing-msgvalue-validation)
