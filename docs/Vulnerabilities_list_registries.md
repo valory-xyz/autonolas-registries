@@ -36,6 +36,8 @@
     - [30. PolySafe creation can be front-run, stranding the intended service identity](#30-polysafe-creation-can-be-front-run-stranding-the-intended-service-identity)
     - [31. `RecoveryModule.recoverAccess` fails when the service owner is already the last Safe owner](#31-recoverymodulerecoveraccess-fails-when-the-service-owner-is-already-the-last-safe-owner)
     - [32. Staking instance verification is performed once and never revisited](#32-staking-instance-verification-is-performed-once-and-never-revisited)
+    - [33. Staking snapshots are suppressed while the reward reserve is empty](#33-staking-snapshots-are-suppressed-while-the-reward-reserve-is-empty)
+    - [34. `RecoveryModule.create` accepts a Safe that has no recovery module enabled](#34-recoverymodulecreate-accepts-a-safe-that-has-no-recovery-module-enabled)
 
 ## Involved contracts and level of the bugs
 
@@ -905,6 +907,21 @@ The second case is the reason a blocklist is not a fix: rejecting the known-spec
 deployment-refusal half and leaves the unsignable-Safe half untouched, since it works with an arbitrary
 uncontrolled address.
 
+**The occupancy map also runs in the opposite direction.** `mapAgentInstanceOperators` is global, and
+`registerAgents` rejects an *operator* that is already recorded as an instance anywhere:
+
+```solidity
+// Operator address must not be used as an agent instance anywhere else
+if (mapAgentInstanceOperators[operator] != address(0)) { revert WrongOperator(serviceId); }
+```
+
+So registering a third party's address as an agent instance in an unrelated service permanently prevents
+that address from ever acting as an operator, for as long as the registering operator declines to unbond.
+Where the address is a fixed, publicly known protocol contract that registers services on users' behalf,
+this blocks that contract's whole workflow rather than one service — a denial that costs the attacker one
+registration and a bond they simply never reclaim. The same absence of validation is the cause; only the
+direction differs.
+
 **Configuration is the control, and it is usually unset.** A service that has not configured an
 `OperatorWhitelist` accepts *any* address as an operator, and in practice almost no service sets one. The
 protocol assumes services are configured with addresses their owners control; asserting proof of control
@@ -1010,3 +1027,62 @@ the comment above exists to prevent. When tightening verification rules, treat e
 grandfathered and, if a specific instance must be excluded, disable it explicitly rather than assuming a
 rules change reaches it.
 
+### 33. Staking snapshots are suppressed while the reward reserve is empty
+
+**Severity**: Low
+**Source**: internal review
+
+`StakingBase._calculateStakingRewards` gates its entire snapshot and eligibility block on the reserve being
+non-empty:
+
+```solidity
+if (size > 0 && block.timestamp - tsCheckpointLast >= livenessPeriod && lastAvailableRewards > 0) {
+```
+
+While `availableRewards` is zero the block is skipped, so `tsCheckpoint` is not advanced and no per-service
+nonce baseline is refreshed. The instance is not merely paying nothing — it stops observing.
+
+When the reserve is later replenished, the next permissionless `checkpoint()` compares current nonces
+against a baseline taken *before* the outage, over a `ts` that spans the whole unfunded period. A service
+that was continuously active is then measured across time during which no activity could have been
+credited, and its liveness ratio is diluted accordingly. Repeated across `maxNumInactivityPeriods` this can
+evict a service whose only fault was remaining staked through an unfunded stretch.
+
+The effect is sharper for activity checkers that compare two counters. `MechActivityChecker` additionally
+requires `diffRequestsCounts <= diffNonces`, so a stale baseline can also make an ordinary batched delivery
+look inconsistent rather than merely sparse.
+
+**Mitigation.** Advance `tsCheckpoint` and refresh the nonce baselines even when `availableRewards` is
+zero, paying nothing — the liveness clock should stay honest whenever an instance is unfunded, however that
+state arose. Re-baselining on `deposit()` addresses the same problem more narrowly. Until either lands,
+operators funding an instance after a gap should expect the first checkpoint to under-report activity and
+should not read a single post-refill eviction as evidence of inactivity.
+
+### 34. `RecoveryModule.create` accepts a Safe that has no recovery module enabled
+
+**Severity**: Low
+**Source**: internal review
+
+`RecoveryModule.create()` validates the returned Safe's owner array and threshold against the registered
+agent set, and nothing else. There is no `isModuleEnabled` check anywhere in the contract — enabling is a
+separate, explicitly manual step:
+
+```solidity
+/// For enabling module after multisig is created use direct native Safe enableModule() function call.
+function enableModule() external {
+```
+
+A service first deployed through `GnosisSafeMultisig` therefore retains a plain Safe, and a later
+redeployment through `RecoveryModule.create()` accepts it: owners and threshold still match, so
+`ServiceRegistry.deploy()` records the service as `Deployed`. The registry's state now implies a recovery
+path that does not exist, and a later `recoverAccess()` reverts (`GS104` on Safe v1.3.0) because the module
+was never enabled. If the agent keys become unavailable, the retained Safe and anything it holds or is
+authorised for stay inaccessible.
+
+Nobody else can cause this — it follows from the service's own deployment history — but it is invisible
+from the registry, which is the reason for recording it.
+
+**Mitigation.** Require `isModuleEnabled(address(this))` on the returned Safe in `create()`, or enable the
+module as part of the same call, so that a service recorded as deployed through the recovery-enabled
+creator actually has the module. Operators redeploying an existing service through `RecoveryModule` should
+verify `isModuleEnabled` on the Safe directly rather than inferring it from the service state.
