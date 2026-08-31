@@ -114,10 +114,11 @@ would not be affected by any possible slashing condition if the total operator b
 equal to zero.
 
 This vulnerability is addressed for the ServiceRegistry contract and ServiceRegistryL2 by
-adding the zero-value check on the service manager level. Specifically, [serviceManager](../contracts/ServiceManagerToken.sol)
-contract handles the [check](../contracts/ServiceManagerToken.sol#L120) before calling the original serviceRegistry's update() method.
-See ../test/ServiceManagerToken.js#L326-L333C25
-for a test proving that the issue is resolved.
+adding the zero-value check on the service manager level. Specifically, [serviceManager](../contracts/ServiceManager.sol)
+contract handles the [check](../contracts/ServiceManager.sol#L298-L302) before calling the original serviceRegistry's update() method
+(and the equivalent check on the token path immediately below it).
+See [the test](../test/ServiceManagerToken.js#L326-L333)
+proving that the issue is resolved.
 
 In absence of redeploying a new manager for the ServiceRegistryL2 contract on other
 chains, we recommend that service owners assign a zero-value to agent bonds only if the
@@ -245,7 +246,7 @@ function isRatioPass(uint256[] memory curNonces, uint256[] memory lastNonces, ui
 
 This function checks if the service multisig liveness ratio meets the defined threshold.
 The provided implementation serves as an illustrative example, and we highlight that
-multisig nonces are not tamper-resistant (cf. [InternalAudit4](../docs/internal_audit_4.pdf) for more details on this). It is
+multisig nonces are not tamper-resistant (cf. [InternalAudit4](../audits/internal4/README.md) for more details on this). It is
 therefore recommended to extend the basic `isRatioPass()` functionality in the
 StakingActivityChecker to verify whether specific on-chain actions occur within
 designated time frames. For a tamper-resistant check on on-chain activity, you can
