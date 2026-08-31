@@ -1,5 +1,8 @@
 # Autonolas Registries
 
+## Bounty Program
+:mega::satellite::boom: The Autonolas bounty program and its details are available [here](https://immunefi.com/bounty/autonolas/).
+
 ## Introduction
 
 This repository contains the Autonolas component / agent / service registries part of the on-chain protocol.
