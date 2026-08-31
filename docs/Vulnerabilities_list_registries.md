@@ -115,9 +115,10 @@ equal to zero.
 
 This vulnerability is addressed for the ServiceRegistry contract and ServiceRegistryL2 by
 adding the zero-value check on the service manager level. Specifically, [serviceManager](../contracts/ServiceManager.sol)
-contract handles the [check](../contracts/ServiceManager.sol) before calling the original serviceRegistry's update() method.
-See ../test/ServiceManagerToken.js#L326-L333C25
-for a test proving that the issue is resolved.
+contract handles the [check](../contracts/ServiceManager.sol#L298-L302) before calling the original serviceRegistry's update() method
+(and the equivalent check on the token path immediately below it).
+See [the test](../test/ServiceManagerToken.js#L326-L333)
+proving that the issue is resolved.
 
 In absence of redeploying a new manager for the ServiceRegistryL2 contract on other
 chains, we recommend that service owners assign a zero-value to agent bonds only if the
