@@ -39,6 +39,7 @@
     - [33. Staking snapshots are suppressed while the reward reserve is empty](#33-staking-snapshots-are-suppressed-while-the-reward-reserve-is-empty)
     - [34. `RecoveryModule.create` accepts a Safe that has no recovery module enabled](#34-recoverymodulecreate-accepts-a-safe-that-has-no-recovery-module-enabled)
 
+    - [35. Staking does not verify the instance it stakes into](#35-staking-does-not-verify-the-instance-it-stakes-into)
 ## Involved contracts and level of the bugs
 
 The present document aims to point out some vulnerabilities in the [autonolas-registry](https://github.com/valory-xyz/autonolas-registries)
@@ -1087,3 +1088,25 @@ from the registry, which is the reason for recording it.
 module as part of the same call, so that a service recorded as deployed through the recovery-enabled
 creator actually has the module. Operators redeploying an existing service through `RecoveryModule` should
 verify `isModuleEnabled` on the Safe directly rather than inferring it from the service state.
+
+### 35. Staking does not verify the instance it stakes into
+
+**Severity**: Low
+**Source**: internal review
+
+`StakingBase.stake()` checks the service, the multisig proxy hash and the deposit, but it never asks
+`StakingFactory` whether the instance being staked into is one the factory still verifies —
+`verifyInstance` does not appear in `StakingBase` at all.
+
+An instance that fails `StakingFactory.verifyInstance()` can therefore still accept stakes and, if it holds
+`availableRewards`, still pay them out. Whether that yields anything to an attacker depends entirely on the
+instance's activity checker: a checker that keys liveness to something outside the instance — a
+Safe-level marker rather than an instance-level one — would let a service that never registered with this
+instance satisfy its liveness condition.
+
+**The exposure is currently empty.** Of the staking contracts that hold rewards but are no longer nominated,
+only two fail `verifyInstance()` and neither uses a checker of that kind; both use plain multisig-nonce
+checkers, which are instance-agnostic in a way that does not help an attacker. The design gap is worth
+recording because it is the instance-verification step, not the checker, that ought to be the control —
+relying on checker properties means the safety of `stake()` depends on which checker an instance happens to
+use.
