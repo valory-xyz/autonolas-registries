@@ -38,6 +38,8 @@
     - [32. Staking instance verification is performed once and never revisited](#32-staking-instance-verification-is-performed-once-and-never-revisited)
     - [33. Staking snapshots are suppressed while the reward reserve is empty](#33-staking-snapshots-are-suppressed-while-the-reward-reserve-is-empty)
     - [34. `RecoveryModule.create` accepts a Safe that has no recovery module enabled](#34-recoverymodulecreate-accepts-a-safe-that-has-no-recovery-module-enabled)
+    - [35. Service multisig creation accepts a caller-supplied fallback handler](#35-service-multisig-creation-accepts-a-caller-supplied-fallback-handler)
+    - [36. Agent Ids on the L2 service registry are signalling values, not credentials](#36-agent-ids-on-the-l2-service-registry-are-signalling-values-not-credentials)
 
 ## Involved contracts and level of the bugs
 
@@ -711,6 +713,33 @@ is released.** Service operators should treat migration the same way — move th
 part of the migration, and do not leave value in a multisig the service no longer points at.
 A Safe left funded after its service has moved on is outside what this item's fix covers.
 
+**A second residual: the recovery module does not read the binding.** `RecoveryModule.recoverAccess()`
+authorises on three facts only — the caller owns the service NFT, the service is in `PreRegistration`, and
+its recorded `multisig` is non-zero:
+
+```solidity
+address serviceOwner = IServiceRegistry(serviceRegistry).ownerOf(serviceId);
+if (msg.sender != serviceOwner) revert OwnerOnly(msg.sender, serviceOwner);
+(, address multisig, , , , , state) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
+if (state != ServiceState.PreRegistration) revert WrongServiceState(uint8(state), serviceId);
+if (multisig == address(0)) revert ZeroAddress();
+```
+
+`mapMultisigServiceIds` is never consulted. The binding therefore constrains `deploy()` but not recovery,
+so if two service Ids ever pointed at one Safe — one live, one a stale `PreRegistration` alias — the alias
+owner could recover a Safe in active use. Unlike the migration residual above, the victim Safe cannot be
+emptied first, so the operational control does not reach this case.
+
+**No such Safe exists.** A sweep of every `ServiceRegistry` deployment across the eight supported chains
+found **no multisig referenced by more than one service Id** among 5,187 services, and new ones cannot
+form: `deploy()` reverts `MultisigAlreadyBound`, and every same-address multisig implementation — the only
+route to pointing a service at a pre-existing Safe — reads `0` in `mapMultisigs` on every chain. The gap is
+recorded because it is a real difference between what the binding is described as guaranteeing and what it
+guarantees, not because it is currently reachable.
+
+**Mitigation.** Have `recoverAccess()` require `mapMultisigServiceIds[multisig]` to be either `serviceId`
+or zero, so the 1:1 binding covers the recovery path as well as the deploy path.
+
 ### 24. Safe proxy-hash validation checks proxy shape, not singleton identity
 
 **Severity**: Informative
@@ -1023,6 +1052,14 @@ Recorded because the trade-off is not otherwise visible from the code: verificat
 point-in-time fact, not a continuing one, and any reasoning about what is currently allowed should not be
 applied backwards to instances that already exist.
 
+**What gates emissions is vote weighting, not this flag.** `isEnabled` records that an instance was created
+through the factory and verified at that time; it was never intended to be the authorisation for receiving
+OLAS. Whether an instance is funded is decided by whether governance has voted weight to it in
+`VoteWeighting`, and by that weight clearing the epoch's `minStakingWeight` threshold — so an instance
+created under looser rules is inert until governance chooses to fund it. Reading `isEnabled`, or
+`verifyInstanceAndGetEmissionsAmount` returning a non-zero limit, as permission to receive emissions is a
+misreading of where the control sits.
+
 **Mitigation.** None recommended — re-verification would strand existing instances, which is the outcome
 the comment above exists to prevent. When tightening verification rules, treat existing enabled instances as
 grandfathered and, if a specific instance must be excluded, disable it explicitly rather than assuming a
@@ -1087,3 +1124,64 @@ from the registry, which is the reason for recording it.
 module as part of the same call, so that a service recorded as deployed through the recovery-enabled
 creator actually has the module. Operators redeploying an existing service through `RecoveryModule` should
 verify `isModuleEnabled` on the Safe directly rather than inferring it from the service state.
+
+### 35. Service multisig creation accepts a caller-supplied fallback handler
+
+**Severity**: Informative
+**Source**: internal review
+
+Both whitelisted multisig creators take the Safe setup parameters from caller-supplied `data`.
+`SafeMultisigWithRecoveryModule.create()` decodes a fallback handler and a nonce:
+
+```solidity
+(fallbackHandler, nonce) = abi.decode(data, (address, uint256));
+bytes memory safeParams = abi.encodeWithSelector(SAFE_SETUP_SELECTOR, owners, threshold, recoveryModule,
+    payload, fallbackHandler, address(0), 0, payable(address(0)));
+```
+
+and `GnosisSafeMultisig.create()` has always done the same, additionally passing a caller-supplied
+`to`/`payload` pair that Safe `setup` delegatecalls. Neither validates the handler against an allowlist.
+
+A Safe delegatecalls its fallback handler, so a handler installed this way executes in the Safe's context
+and can make the Safe issue calls without an owner-signed Safe transaction.
+
+**This is by design.** The service owner supplies the deploy payload for their own service, and a Safe is
+the owner's to configure — the protocol does not constrain how an owner sets up a wallet they control. It is
+recorded because the consequence is not local to the moment of creation: the handler persists, so anyone
+receiving a service — through transfer, sale, or `RecoveryModule.recoverAccess` — inherits whatever handler
+the previous owner installed, along with its authority over the Safe.
+
+**Mitigation.** None at the contract level. Anyone acquiring an existing service should read the Safe's
+fallback handler (and its enabled modules) before treating it as theirs, exactly as they would for any Safe
+acquired from a third party. Front-ends that create services should pass the standard compatibility handler
+or the zero address rather than accepting an arbitrary value from the user.
+
+### 36. Agent Ids on the L2 service registry are signalling values, not credentials
+
+**Severity**: Informative
+**Source**: internal review
+
+`ServiceRegistryL2` validates `agentIds` for shape only — non-empty, matched in length to `agentParams`,
+and strictly ascending:
+
+```solidity
+if (agentIds.length == 0 || agentIds.length != agentParams.length) revert WrongArrayLength(...);
+...
+if (agentIds[i] < (lastId + 1)) revert WrongAgentId(agentIds[i]);
+```
+
+There is no agent registry on L2 to validate them against, so an id recorded there asserts nothing about
+the canonical agent of the same number on Ethereum. Any caller can register a service declaring any ids.
+
+**This is by design.** L2 agent Ids exist to signal which agent a service intends to run, and the convention
+that they mirror mainnet ids is one a deployer may choose to follow rather than one the registry enforces.
+It is recorded because the value looks like an identifier and is easy to read as one.
+
+The consequence lands on anything that gates on them. `StakingBase.stake()` compares a service's declared
+`agentIds` against the staking contract's configured ids and nothing else, so declaring the expected id is
+sufficient to satisfy that check — the check confirms a declaration, not an identity.
+
+**Mitigation.** None at the contract level. A staking programme or integration that needs to constrain
+*which* agents participate should gate on something verifiable on the chain it runs on — the multisig proxy
+codehash, the activity checker, or an explicit allowlist — and should not treat an L2 agent Id as evidence
+of the mainnet agent it names.
