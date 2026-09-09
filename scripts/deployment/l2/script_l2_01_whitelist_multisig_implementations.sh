@@ -27,6 +27,8 @@ networkURL=$(jq -r '.networkURL' $globals)
 serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' $globals)
 safeMultisigWithRecoveryModuleAddress=$(jq -r '.safeMultisigWithRecoveryModuleAddress' $globals)
 recoveryModuleAddress=$(jq -r '.recoveryModuleAddress' $globals)
+gnosisSafeMultisigImplementationAddress=$(jq -r '.gnosisSafeMultisigImplementationAddress' $globals)
+gnosisSafeSameAddressMultisigImplementationAddress=$(jq -r '.gnosisSafeSameAddressMultisigImplementationAddress' $globals)
 
 # Check for Alchemy keys
 if [[ "$networkURL" == *"alchemy.com"* ]]; then
@@ -63,6 +65,24 @@ echo "$result" | grep "status"
 
 echo "${green}Whitelist RecoveryModule${reset}"
 castArgs="$serviceRegistryAddress changeMultisigPermission(address,bool) $recoveryModuleAddress true"
+echo $castArgs
+castCmd="$castSendHeader $castArgs"
+result=$($castCmd)
+echo "$result" | grep "status"
+
+# The two Gnosis Safe multisig implementations. These were previously whitelisted only by the hardhat
+# deploy_07_10_change_managers_and_permissions.js, so a chain brought up via the shell route alone ended up
+# with them deployed but not permitted, and ServiceRegistry.deploy() would revert UnauthorizedMultisig for
+# any service trying to use them.
+echo "${green}Whitelist GnosisSafeMultisig${reset}"
+castArgs="$serviceRegistryAddress changeMultisigPermission(address,bool) $gnosisSafeMultisigImplementationAddress true"
+echo $castArgs
+castCmd="$castSendHeader $castArgs"
+result=$($castCmd)
+echo "$result" | grep "status"
+
+echo "${green}Whitelist GnosisSafeSameAddressMultisig${reset}"
+castArgs="$serviceRegistryAddress changeMultisigPermission(address,bool) $gnosisSafeSameAddressMultisigImplementationAddress true"
 echo $castArgs
 castCmd="$castSendHeader $castArgs"
 result=$($castCmd)

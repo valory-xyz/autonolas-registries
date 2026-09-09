@@ -64,7 +64,7 @@ if [ $outputLength != 42 ]; then
 fi
 
 # Write new deployed contract back into JSON
-echo "$(jq '. += {"gnosisSafeSameAddressMultisigAddress":"'$gnosisSafeSameAddressMultisigAddress'"}' $globals)" > $globals
+echo "$(jq '. += {"gnosisSafeSameAddressMultisigImplementationAddress":"'$gnosisSafeSameAddressMultisigAddress'"}' $globals)" > $globals
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then

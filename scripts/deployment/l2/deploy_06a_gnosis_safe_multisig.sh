@@ -29,7 +29,7 @@ if [[ "$networkURL" == *"alchemy.com"* ]]; then
 fi
 
 gnosisSafeAddress=$(jq -r '.gnosisSafeAddress' $globals)
-gnosisSafeProxyFactoryAddress=$(cast calldata "initialize()")
+gnosisSafeProxyFactoryAddress=$(jq -r '.gnosisSafeProxyFactoryAddress' $globals)
 
 contractName="GnosisSafeMultisig"
 contractPath="contracts/multisigs/$contractName.sol:$contractName"
@@ -65,7 +65,7 @@ if [ $outputLength != 42 ]; then
 fi
 
 # Write new deployed contract back into JSON
-echo "$(jq '. += {"gnosisSafeMultisigAddress":"'$gnosisSafeMultisigAddress'"}' $globals)" > $globals
+echo "$(jq '. += {"gnosisSafeMultisigImplementationAddress":"'$gnosisSafeMultisigAddress'"}' $globals)" > $globals
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
