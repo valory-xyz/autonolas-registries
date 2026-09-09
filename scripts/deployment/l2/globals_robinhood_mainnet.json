@@ -37,8 +37,8 @@
   "complementaryServiceMetadataAddress": "0xD1155408D58293BE0743225bcDe28b9FD0C12378",
   "identityRegistryBridgerAddress": "0x397125902ED2cA2d42104F621f448A2cE1bC8Fb7",
   "identityRegistryBridgerProxyAddress": "0xE49CB081e8d96920C38aA7AB90cb0294ab4Bc8EA",
-  "stakingTokenAddress": "",
+  "stakingTokenAddress": "0x87c511c8aE3fAF0063b3F3CF9C6ab96c4AA5C60c",
   "stakingNativeTokenAddress": "",
-  "stakingVerifierAddress": "",
-  "stakingFactoryAddress": ""
+  "stakingVerifierAddress": "0x75D529FAe220bC8db714F0202193726b46881B76",
+  "stakingFactoryAddress": "0x1BD1505B711Fb58C54ca3712e6BEf47A133892d9"
 }
