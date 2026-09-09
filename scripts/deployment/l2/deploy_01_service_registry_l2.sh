@@ -51,9 +51,13 @@ fi
 echo "Deploying from: $deployer"
 echo "Deployment of: $contractArgs"
 
-# Deploy the contract and capture the address
-execCmd="forge create --broadcast --rpc-url $networkURL$API_KEY $walletArgs $contractArgs"
-deploymentOutput=$($execCmd)
+# Deploy the contract and capture the address.
+# The constructor args are passed as separate quoted words rather than through a single
+# $execCmd string: serviceRegistryName is "Service Registry L2", and a string-built command
+# re-split on expansion would pass it as three arguments, silently shifting symbol and baseURI
+# out of the constructor. forge's arity check cannot catch that, since the count still matches.
+deploymentOutput=$(forge create --broadcast --rpc-url "$networkURL$API_KEY" $walletArgs \
+  "$contractPath" --constructor-args "$serviceRegistryName" "$serviceRegistrySymbol" "$baseURI")
 serviceRegistryAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
 
 # Get output length
