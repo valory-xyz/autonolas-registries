@@ -686,5 +686,86 @@
         "address": "0x24F792D51b398928459Dfbb4181bDb4D5d2CD472"
       }
     ]
+  },
+  {
+    "name": "robinhood",
+    "chainId": "4663",
+    "contracts": [
+      {
+        "name": "ServiceRegistryL2",
+        "artifact": "abis/0.8.28/ServiceRegistryL2.json",
+        "address": "0xE3607b00E75f6405248323A9417ff6b39B244b50"
+      },
+      {
+        "name": "ServiceRegistryTokenUtility",
+        "artifact": "abis/0.8.28/ServiceRegistryTokenUtility.json",
+        "address": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44"
+      },
+      {
+        "name": "ServiceManager",
+        "artifact": "abis/0.8.30/ServiceManager.json",
+        "address": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5"
+      },
+      {
+        "name": "ServiceManagerProxy",
+        "artifact": "abis/0.8.30/ServiceManagerProxy.json",
+        "address": "0x63e66d7ad413C01A7b49C7FF4e3Bb765C4E4bd1b"
+      },
+      {
+        "name": "OperatorWhitelist",
+        "artifact": "abis/0.8.28/OperatorWhitelist.json",
+        "address": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE"
+      },
+      {
+        "name": "GnosisSafeMultisig",
+        "artifact": "abis/0.8.28/GnosisSafeMultisig.json",
+        "address": "0xBb7e1D6Cb6F243D6bdE81CE92a9f2aFF7Fbe7eac"
+      },
+      {
+        "name": "GnosisSafeSameAddressMultisig",
+        "artifact": "abis/0.8.28/GnosisSafeSameAddressMultisig.json",
+        "address": "0xFbBEc0C8b13B38a9aC0499694A69a10204c5E2aB"
+      },
+      {
+        "name": "StakingToken",
+        "artifact": "abis/0.8.28/StakingToken.json",
+        "address": "0x87c511c8aE3fAF0063b3F3CF9C6ab96c4AA5C60c"
+      },
+      {
+        "name": "StakingVerifier",
+        "artifact": "abis/0.8.28/StakingVerifier.json",
+        "address": "0x75D529FAe220bC8db714F0202193726b46881B76"
+      },
+      {
+        "name": "StakingFactory",
+        "artifact": "abis/0.8.28/StakingFactory.json",
+        "address": "0x1BD1505B711Fb58C54ca3712e6BEf47A133892d9"
+      },
+      {
+        "name": "RecoveryModule",
+        "artifact": "abis/0.8.30/RecoveryModule.json",
+        "address": "0xE43d4F4103b623B61E095E8bEA34e1bc8979e168"
+      },
+      {
+        "name": "SafeMultisigWithRecoveryModule",
+        "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
+        "address": "0xb09CcF0Dbf0C178806Aaee28956c74bd66d21f73"
+      },
+      {
+        "name": "ComplementaryServiceMetadata",
+        "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
+        "address": "0xD1155408D58293BE0743225bcDe28b9FD0C12378"
+      },
+      {
+        "name": "IdentityRegistryBridger",
+        "artifact": "abis/0.8.30/IdentityRegistryBridger.json",
+        "address": "0x397125902ED2cA2d42104F621f448A2cE1bC8Fb7"
+      },
+      {
+        "name": "IdentityRegistryBridgerProxy",
+        "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
+        "address": "0xE49CB081e8d96920C38aA7AB90cb0294ab4Bc8EA"
+      }
+    ]
   }
 ]

@@ -31,6 +31,16 @@ if [[ "$networkURL" == *"alchemy.com"* ]]; then
   fi
 fi
 
+# Preflight: ComplementaryServiceMetadata copies baseURI out of the ServiceRegistry in its constructor and
+# offers no changeBaseURI, so an empty value here is permanent and tokenURI() is broken for good.
+serviceRegistryBaseURI=$(cast call --rpc-url $networkURL$API_KEY $serviceRegistryAddress "baseURI()(string)")
+if [ -z "$serviceRegistryBaseURI" ] || [ "$serviceRegistryBaseURI" == '""' ]; then
+  echo "!!! ServiceRegistry $serviceRegistryAddress returns an empty baseURI."
+  echo "!!! ComplementaryServiceMetadata would copy it permanently - it has no changeBaseURI. Aborting."
+  exit 1
+fi
+echo "Preflight OK: ServiceRegistry baseURI() = $serviceRegistryBaseURI"
+
 contractPath="contracts/utils/ComplementaryServiceMetadata.sol:ComplementaryServiceMetadata"
 constructorArgs="$serviceRegistryAddress"
 contractArgs="$contractPath --constructor-args $constructorArgs"

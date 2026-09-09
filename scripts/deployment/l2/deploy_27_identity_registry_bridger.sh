@@ -31,6 +31,24 @@ fi
 identityRegistryAddress=$(jq -r '.identityRegistryAddress' $globals)
 serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' $globals)
 
+# Preflight: IdentityRegistryBridger sets its serviceManager as an immutable in the constructor, reading
+# it from IServiceRegistry(serviceRegistry).manager(). Deploying before the manager is set bakes in a
+# permanent address(0): there is no setter, and an immutable lives in the implementation runtime code, so
+# even a proxy cannot override it - the only repair is a redeploy. Run
+# script_l2_02_change_managers_registries.sh first.
+serviceRegistryManager=$(cast call --rpc-url $networkURL$API_KEY $serviceRegistryAddress "manager()(address)")
+if [ ${#serviceRegistryManager} != 42 ]; then
+  echo "!!! Could not read manager() from ServiceRegistry $serviceRegistryAddress - aborting"
+  exit 1
+fi
+if [ "$serviceRegistryManager" == "$(cast address-zero)" ]; then
+  echo "!!! ServiceRegistry $serviceRegistryAddress has no manager set."
+  echo "!!! IdentityRegistryBridger would capture address(0) as its immutable serviceManager, permanently."
+  echo "!!! Run script_l2_02_change_managers_registries.sh first, then re-run this script."
+  exit 1
+fi
+echo "Preflight OK: ServiceRegistry manager() = $serviceRegistryManager"
+
 contractName="IdentityRegistryBridger"
 contractPath="contracts/8004/$contractName.sol:$contractName"
 constructorArgs="$identityRegistryAddress $serviceRegistryAddress"

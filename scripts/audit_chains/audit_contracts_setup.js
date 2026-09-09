@@ -737,7 +737,8 @@ async function main() {
             "optimism": "scripts/deployment/l2/globals_optimism_mainnet.json",
             "base": "scripts/deployment/l2/globals_base_mainnet.json",
             "celo": "scripts/deployment/l2/globals_celo_mainnet.json",
-            "mode": "scripts/deployment/l2/globals_mode_mainnet.json"
+            "mode": "scripts/deployment/l2/globals_mode_mainnet.json",
+            "robinhood": "scripts/deployment/l2/globals_robinhood_mainnet.json"
         };
 
         const providerLinks = {
@@ -748,7 +749,8 @@ async function main() {
             "optimism": "https://optimism.drpc.org",
             "base": "https://mainnet.base.org",
             "celo": "https://forno.celo.org",
-            "mode": "https://mainnet.mode.network"
+            "mode": "https://mainnet.mode.network",
+            "robinhood": "https://rpc.mainnet.chain.robinhood.com"
         };
 
         // Get all the globals processed
