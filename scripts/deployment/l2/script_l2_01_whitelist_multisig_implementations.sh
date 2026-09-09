@@ -61,14 +61,24 @@ castArgs="$serviceRegistryAddress changeMultisigPermission(address,bool) $safeMu
 echo $castArgs
 castCmd="$castSendHeader $castArgs"
 result=$($castCmd)
-echo "$result" | grep "status"
+statusLine=$(echo "$result" | grep -E "^status[[:space:]]+[0-9]")
+echo "$statusLine"
+if ! echo "$statusLine" | grep -qE "^status[[:space:]]+1[[:space:]]"; then
+  echo "${red}!!! changeMultisigPermission transaction did not succeed${reset}"
+  exit 1
+fi
 
 echo "${green}Whitelist RecoveryModule${reset}"
 castArgs="$serviceRegistryAddress changeMultisigPermission(address,bool) $recoveryModuleAddress true"
 echo $castArgs
 castCmd="$castSendHeader $castArgs"
 result=$($castCmd)
-echo "$result" | grep "status"
+statusLine=$(echo "$result" | grep -E "^status[[:space:]]+[0-9]")
+echo "$statusLine"
+if ! echo "$statusLine" | grep -qE "^status[[:space:]]+1[[:space:]]"; then
+  echo "${red}!!! changeMultisigPermission transaction did not succeed${reset}"
+  exit 1
+fi
 
 # The two Gnosis Safe multisig implementations. These were previously whitelisted only by the hardhat
 # deploy_07_10_change_managers_and_permissions.js, so a chain brought up via the shell route alone ended up
@@ -79,11 +89,21 @@ castArgs="$serviceRegistryAddress changeMultisigPermission(address,bool) $gnosis
 echo $castArgs
 castCmd="$castSendHeader $castArgs"
 result=$($castCmd)
-echo "$result" | grep "status"
+statusLine=$(echo "$result" | grep -E "^status[[:space:]]+[0-9]")
+echo "$statusLine"
+if ! echo "$statusLine" | grep -qE "^status[[:space:]]+1[[:space:]]"; then
+  echo "${red}!!! changeMultisigPermission transaction did not succeed${reset}"
+  exit 1
+fi
 
 echo "${green}Whitelist GnosisSafeSameAddressMultisig${reset}"
 castArgs="$serviceRegistryAddress changeMultisigPermission(address,bool) $gnosisSafeSameAddressMultisigImplementationAddress true"
 echo $castArgs
 castCmd="$castSendHeader $castArgs"
 result=$($castCmd)
-echo "$result" | grep "status"
+statusLine=$(echo "$result" | grep -E "^status[[:space:]]+[0-9]")
+echo "$statusLine"
+if ! echo "$statusLine" | grep -qE "^status[[:space:]]+1[[:space:]]"; then
+  echo "${red}!!! changeMultisigPermission transaction did not succeed${reset}"
+  exit 1
+fi

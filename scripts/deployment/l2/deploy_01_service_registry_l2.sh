@@ -54,8 +54,11 @@ echo "Deployment of: $contractArgs"
 # Deploy the contract and capture the address.
 # The constructor args are passed as separate quoted words rather than through a single
 # $execCmd string: serviceRegistryName is "Service Registry L2", and a string-built command
-# re-split on expansion would pass it as three arguments, silently shifting symbol and baseURI
-# out of the constructor. forge's arity check cannot catch that, since the count still matches.
+# re-split on expansion would pass it as three arguments, so the five resulting words
+# "Service|Registry|L2|AUTONOLAS-SERVICE-L2-V1|https://gateway.autonolas.tech/ipfs/" reach a
+# three-string constructor. forge consumes the first three and silently DROPS the surplus - it
+# does not reject the count - which is how the abandoned 0x9338b515 got name()="Service",
+# symbol()="Registry", baseURI()="L2". Confirmed against forge 1.5.1 on anvil.
 deploymentOutput=$(forge create --broadcast --rpc-url "$networkURL$API_KEY" $walletArgs \
   "$contractPath" --constructor-args "$serviceRegistryName" "$serviceRegistrySymbol" "$baseURI")
 serviceRegistryAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')

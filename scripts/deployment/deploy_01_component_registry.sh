@@ -51,9 +51,15 @@ fi
 echo "Deploying from: $deployer"
 echo "Deployment of: $contractArgs"
 
-# Deploy the contract and capture the address
-execCmd="forge create --broadcast --rpc-url $networkURL$API_KEY $walletArgs $contractArgs"
-deploymentOutput=$($execCmd)
+# Deploy the contract and capture the address.
+# The constructor args are passed as separate quoted words rather than through a single
+# $execCmd string: componentRegistryName is "Component Registry", and a string-built command
+# re-split on expansion would hand four words to a three-string constructor. forge consumes the
+# first three and silently drops the rest, giving name()="Component", symbol()="Registry",
+# baseURI()="AUTONOLAS-COMPONENT-V1". deploy_02/deploy_04 take an address as their fourth
+# parameter, so the same mis-split fails loudly there; this script is the silent one.
+deploymentOutput=$(forge create --broadcast --rpc-url "$networkURL$API_KEY" $walletArgs \
+  "$contractPath" --constructor-args "$componentRegistryName" "$componentRegistrySymbol" "$baseURI")
 componentRegistryAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
 
 # Get output length

@@ -35,7 +35,7 @@
   "recoveryModuleAddress": "0xE43d4F4103b623B61E095E8bEA34e1bc8979e168",
   "safeMultisigWithRecoveryModuleAddress": "0xb09CcF0Dbf0C178806Aaee28956c74bd66d21f73",
   "complementaryServiceMetadataAddress": "0xD1155408D58293BE0743225bcDe28b9FD0C12378",
-  "identityRegistryBridgerAddress": "0x397125902ED2cA2d42104F621f448A2cE1bC8Fb7",
+  "identityRegistryBridgerAddress": "0xa4799B083E0068732456EF45ff9fe5c683658327",
   "identityRegistryBridgerProxyAddress": "0xE49CB081e8d96920C38aA7AB90cb0294ab4Bc8EA",
   "stakingTokenAddress": "0x87c511c8aE3fAF0063b3F3CF9C6ab96c4AA5C60c",
   "stakingNativeTokenAddress": "",
