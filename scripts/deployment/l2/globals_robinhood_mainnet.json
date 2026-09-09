@@ -29,7 +29,7 @@
   "operatorWhitelistAddress": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE",
   "serviceRegistryTokenUtilityAddress": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44",
   "serviceManagerAddress": "0x34C895f302D0b5cf52ec0Edd3945321EB0f83dd5",
-  "serviceManagerProxyAddress": "",
+  "serviceManagerProxyAddress": "0x63e66d7ad413C01A7b49C7FF4e3Bb765C4E4bd1b",
   "gnosisSafeMultisigImplementationAddress": "",
   "gnosisSafeSameAddressMultisigImplementationAddress": "",
   "recoveryModuleAddress": "",
