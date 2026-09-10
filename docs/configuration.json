@@ -693,12 +693,12 @@
     "contracts": [
       {
         "name": "ServiceRegistryL2",
-        "artifact": "abis/0.8.28/ServiceRegistryL2.json",
+        "artifact": "abis/deployed/RobinhoodServiceRegistryL2.json",
         "address": "0xE3607b00E75f6405248323A9417ff6b39B244b50"
       },
       {
         "name": "ServiceRegistryTokenUtility",
-        "artifact": "abis/0.8.28/ServiceRegistryTokenUtility.json",
+        "artifact": "abis/deployed/RobinhoodServiceRegistryTokenUtility.json",
         "address": "0x3d77596beb0f130a4415df3D2D8232B3d3D31e44"
       },
       {
@@ -713,17 +713,17 @@
       },
       {
         "name": "OperatorWhitelist",
-        "artifact": "abis/0.8.28/OperatorWhitelist.json",
+        "artifact": "abis/deployed/RobinhoodOperatorWhitelist.json",
         "address": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE"
       },
       {
         "name": "GnosisSafeMultisig",
-        "artifact": "abis/0.8.28/GnosisSafeMultisig.json",
+        "artifact": "abis/deployed/RobinhoodGnosisSafeMultisig.json",
         "address": "0xBb7e1D6Cb6F243D6bdE81CE92a9f2aFF7Fbe7eac"
       },
       {
         "name": "GnosisSafeSameAddressMultisig",
-        "artifact": "abis/0.8.28/GnosisSafeSameAddressMultisig.json",
+        "artifact": "abis/deployed/RobinhoodGnosisSafeSameAddressMultisig.json",
         "address": "0xFbBEc0C8b13B38a9aC0499694A69a10204c5E2aB"
       },
       {
@@ -733,27 +733,27 @@
       },
       {
         "name": "StakingVerifier",
-        "artifact": "abis/0.8.28/StakingVerifier.json",
+        "artifact": "abis/deployed/RobinhoodStakingVerifier.json",
         "address": "0x75D529FAe220bC8db714F0202193726b46881B76"
       },
       {
         "name": "StakingFactory",
-        "artifact": "abis/0.8.28/StakingFactory.json",
+        "artifact": "abis/deployed/RobinhoodStakingFactory.json",
         "address": "0x1BD1505B711Fb58C54ca3712e6BEf47A133892d9"
       },
       {
         "name": "RecoveryModule",
-        "artifact": "abis/0.8.30/RecoveryModule.json",
+        "artifact": "abis/deployed/RobinhoodRecoveryModule.json",
         "address": "0xE43d4F4103b623B61E095E8bEA34e1bc8979e168"
       },
       {
         "name": "SafeMultisigWithRecoveryModule",
-        "artifact": "abis/0.8.30/SafeMultisigWithRecoveryModule.json",
+        "artifact": "abis/deployed/RobinhoodSafeMultisigWithRecoveryModule.json",
         "address": "0xb09CcF0Dbf0C178806Aaee28956c74bd66d21f73"
       },
       {
         "name": "ComplementaryServiceMetadata",
-        "artifact": "abis/0.8.30/ComplementaryServiceMetadata.json",
+        "artifact": "abis/deployed/RobinhoodComplementaryServiceMetadata.json",
         "address": "0xD1155408D58293BE0743225bcDe28b9FD0C12378"
       },
       {
