@@ -146,9 +146,18 @@ for pair in "ServiceRegistryL2:$serviceRegistryAddress" \
     echo "${red}!!! Failed to read $name drainer() (got: $currentDrainer)${reset}"
     exit 1
   fi
-  if [ "$(echo "$currentDrainer" | tr '[:upper:]' '[:lower:]')" == "0x0000000000000000000000000000000000000000" ]; then
-    echo "${red}!!! $name drainer() is still unset. Run script_l2_09_registries_change_drainer.sh first${reset}"
-    echo "${red}    — after this handover, setting it needs a governance proposal over the bridge.${reset}"
+  # Require the intended drainer, not merely a non-zero one. A stale or mistyped value would otherwise
+  # survive the handover, leaving native draining authority (ServiceRegistryL2) or the ERC-20 proceeds
+  # destination (ServiceRegistryTokenUtility) with that address, correctable only by governance.
+  currentDrainerLc=$(echo "$currentDrainer" | tr '[:upper:]' '[:lower:]')
+  if [ "$currentDrainerLc" != "$targetLc" ]; then
+    if [ "$currentDrainerLc" == "0x0000000000000000000000000000000000000000" ]; then
+      echo "${red}!!! $name drainer() is still unset.${reset}"
+    else
+      echo "${red}!!! $name drainer() is $currentDrainer, not the intended $targetAddress.${reset}"
+    fi
+    echo "${red}    Run script_l2_09_registries_change_drainer.sh first — after this handover,${reset}"
+    echo "${red}    changing it needs a governance proposal over the bridge.${reset}"
     exit 1
   fi
 
