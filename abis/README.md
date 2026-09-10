@@ -26,8 +26,21 @@ deployment rather than per solc because that is what they are — the build that
 particular contracts. Four 4663 entries are not here and still point at `abis/0.8.30/`, because
 those files are current forge builds of the same source and already match.
 
-`StakingToken` is the one 4663 contract with no matching artifact anywhere. Its deployed body is
-byte-identical to `abis/0.8.28/StakingToken.json`, but that artifact came from the hardhat era, so no
-forge build reproduces its metadata hash and the trailer check warns by construction. Settings that
-reproduce the body exactly: solc 0.8.28, optimizer on at 750 runs, `evm_version = cancun`, source at
-`5efeb59`. Sourcify records it as `match` rather than `exact_match` for the same reason.
+`StakingToken` is the one 4663 contract with no matching artifact anywhere, and it stays that way on
+purpose. It was deployed deliberately from the older mode-parity source rather than from `main`, which
+is why it is solc 0.8.28 and 13898 B while a `forge create` off current `main` would produce the 0.8.30
+build at 17057 B. That is a fleet-parity choice, not drift: the same source compiled at 0.8.25 gives the
+13868 B build the other six chains run.
+
+It was compiled fresh at deploy time, not replayed from a committed artifact — its creation transaction
+is the same length as `abis/0.8.28/StakingToken.json` and differs from it only in the metadata hash. So
+no artifact in this repo matches its trailer, and the trailer check warns by construction.
+
+The body is reproducible exactly: solc 0.8.28, optimizer on at 750 runs, `evm_version = cancun`, source
+at `5efeb59`. The metadata hash is not, because it covers the whole source set, and a comment anywhere
+in `StakingBase.sol` or its imports moves it without changing a byte of code. Three foundry
+configurations were tried against it — with and without the `@gnosis.pm` remapping, and with
+`bytecode_hash` set explicitly — and none reproduced it; identifying the exact tree would mean
+bisecting for a hash. Do not add a `deployed/RobinhoodStakingToken.json`: any build we can make is not
+the build that produced these bytes, which is the one thing an entry in this directory asserts.
+Sourcify records the contract as `match` rather than `exact_match` for exactly the same reason.
