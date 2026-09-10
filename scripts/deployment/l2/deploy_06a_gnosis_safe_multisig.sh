@@ -51,8 +51,12 @@ echo "Deploying from: $deployer"
 echo "Deployment of: $contractArgs"
 
 # Deploy the contract and capture the address
-execCmd="forge create --broadcast --rpc-url $networkURL$API_KEY $walletArgs $contractArgs"
-deploymentOutput=$($execCmd)
+# Constructor args are passed as separate quoted words rather than through a single $execCmd
+# string, which re-splits on expansion. Safe today because these values cannot contain spaces,
+# but deploy_01 shipped a mis-deployment from exactly this pattern and forge accepts a surplus
+# argument list silently whenever the consumed prefix type-checks.
+deploymentOutput=$(forge create --broadcast --rpc-url "$networkURL$API_KEY" $walletArgs \
+  "$contractPath" --constructor-args "$gnosisSafeAddress" "$gnosisSafeProxyFactoryAddress")
 gnosisSafeMultisigAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
 
 # Get output length
