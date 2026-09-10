@@ -59,11 +59,21 @@ if [ "$targetAddress" == "0x0000000000000000000000000000000000000000" ]; then
   exit 1
 fi
 
-for pair in "ServiceRegistryL2:$serviceRegistryAddress" \
-            "ServiceRegistryTokenUtility:$serviceRegistryTokenUtilityAddress"; do
+# Shape-check every address taken from globals, not just null/empty. jq -r preserves a stray
+# trailing space, which passes a null/empty/zero test and then silently defeats every string
+# comparison below: the idempotency branch can never match, while castCmd re-splits on expansion
+# so the transaction itself is correct. A completed handover would then be reported as a hard
+# failure telling the operator to find a derivation path for the bridge mediator.
+for pair in "bridgeMediatorAddress:$targetAddress" \
+            "serviceRegistryAddress:$serviceRegistryAddress" \
+            "serviceRegistryTokenUtilityAddress:$serviceRegistryTokenUtilityAddress"; do
   key="${pair%%:*}"; val="${pair#*:}"
   if [ "$val" == "null" ] || [ -z "$val" ]; then
-    echo "${red}!!! address for $key is not set in $globals${reset}"
+    echo "${red}!!! $key is not set in $globals${reset}"
+    exit 1
+  fi
+  if ! [[ "$val" =~ ^0x[0-9a-fA-F]{40}$ ]]; then
+    echo "${red}!!! $key in $globals is not a well-formed address: '$val'${reset}"
     exit 1
   fi
 done

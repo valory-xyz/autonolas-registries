@@ -13,7 +13,8 @@
 #
 # Run this AFTER script_l2_09 and after every other owner-gated setup call: once
 # owner() is the bridge mediator, any further configuration becomes a governance
-# proposal crossing the bridge. This is steps 13-15 of docs/deploymentL2.md.
+# proposal crossing the bridge. This is steps 13-14 of docs/deploymentL2.md; step 15, the ServiceManagerToken
+# transfer, is script_l2_07_service_manager_proxy_change_owner.sh.
 
 # Check if $1 is provided
 if [ -z "$1" ]; then
@@ -58,11 +59,21 @@ if [ "$targetAddress" == "0x0000000000000000000000000000000000000000" ]; then
   exit 1
 fi
 
-for pair in "ServiceRegistryL2:$serviceRegistryAddress" \
-            "ServiceRegistryTokenUtility:$serviceRegistryTokenUtilityAddress"; do
+# Shape-check every address taken from globals, not just null/empty. jq -r preserves a stray
+# trailing space, which passes a null/empty/zero test and then silently defeats every string
+# comparison below: the idempotency branch can never match, while castCmd re-splits on expansion
+# so the transaction itself is correct. A completed handover would then be reported as a hard
+# failure telling the operator to find a derivation path for the bridge mediator.
+for pair in "bridgeMediatorAddress:$targetAddress" \
+            "serviceRegistryAddress:$serviceRegistryAddress" \
+            "serviceRegistryTokenUtilityAddress:$serviceRegistryTokenUtilityAddress"; do
   key="${pair%%:*}"; val="${pair#*:}"
   if [ "$val" == "null" ] || [ -z "$val" ]; then
-    echo "${red}!!! address for $key is not set in $globals${reset}"
+    echo "${red}!!! $key is not set in $globals${reset}"
+    exit 1
+  fi
+  if ! [[ "$val" =~ ^0x[0-9a-fA-F]{40}$ ]]; then
+    echo "${red}!!! $key in $globals is not a well-formed address: '$val'${reset}"
     exit 1
   fi
 done
@@ -125,12 +136,28 @@ for pair in "ServiceRegistryL2:$serviceRegistryAddress" \
     continue
   fi
 
-  # The signer must be the current owner; otherwise changeOwner reverts with OwnerOnly.
-  currentOwner=$(cast call --rpc-url $networkURL$API_KEY $addr "owner()(address)")
-  currentOwnerLc=$(echo "$currentOwner" | tr '[:upper:]' '[:lower:]')
-  if [ "$currentOwnerLc" != "$deployerLc" ]; then
-    echo "${red}!!! Signer $deployer is not the current $name owner ($currentOwner).${reset}"
-    echo "${red}    Set derivationPath in $globals to the path that controls $currentOwner, then re-run.${reset}"
+  # Enforce the ordering the header states, rather than only documenting it. Handing ownership over
+  # while drainer() is unset permanently closes both sweep paths from the EOA:
+  # ServiceRegistryL2.drain() requires msg.sender == drainer, and
+  # ServiceRegistryTokenUtility.drain(token) reverts ZeroAddress(). Running _09 afterwards correctly
+  # fails OwnerOnly, by which point restoring the sweep needs a governance proposal over the bridge.
+  currentDrainer=$(cast call --rpc-url $networkURL$API_KEY $addr "drainer()(address)")
+  if ! [[ "$currentDrainer" =~ ^0x[0-9a-fA-F]{40}$ ]]; then
+    echo "${red}!!! Failed to read $name drainer() (got: $currentDrainer)${reset}"
+    exit 1
+  fi
+  if [ "$(echo "$currentDrainer" | tr '[:upper:]' '[:lower:]')" == "0x0000000000000000000000000000000000000000" ]; then
+    echo "${red}!!! $name drainer() is still unset. Run script_l2_09_registries_change_drainer.sh first${reset}"
+    echo "${red}    — after this handover, setting it needs a governance proposal over the bridge.${reset}"
+    exit 1
+  fi
+
+  # The signer must be the current owner; otherwise changeOwner reverts with OwnerOnly. $current was
+  # already read and shape-checked above, so it is reused rather than re-read: a second call is a
+  # second chance for a transient RPC error to produce a misleading "signer is not the owner ()".
+  if [ "$currentLc" != "$deployerLc" ]; then
+    echo "${red}!!! Signer $deployer is not the current $name owner ($current).${reset}"
+    echo "${red}    Set derivationPath in $globals to the path that controls $current, then re-run.${reset}"
     exit 1
   fi
 

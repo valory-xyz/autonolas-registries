@@ -10,8 +10,8 @@
 8. EOA to change the manager of ServiceRegistryTokenUtility to ServiceManagerToken calling `changeManager(ServiceManagerToken)`;
 9. EOA to whitelist GnosisSafeMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeMultisig)`;
 10. EOA to whitelist GnosisSafeSameAddressMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeSameAddressMultisig)`;
-11. EOA to change the drainer of ServiceRegistry to BridgeMediator calling `changeManager(BridgeMediator)`;
-12. EOA to change the drainer of ServiceRegistryTokenUtility to BridgeMediator calling `changeManager(BridgeMediator)`;
+11. EOA to change the drainer of ServiceRegistry to BridgeMediator calling `changeDrainer(BridgeMediator)`;
+12. EOA to change the drainer of ServiceRegistryTokenUtility to BridgeMediator calling `changeDrainer(BridgeMediator)`;
 13. EOA to transfer ownership rights of ServiceRegistry to BridgeMediator calling `changeOwner(BridgeMediator)`;
 14. EOA to transfer ownership rights of ServiceRegistryTokenUtility to BridgeMediator calling `changeOwner(BridgeMediator)`;
 15. EOA to transfer ownership rights of ServiceManagerToken to BridgeMediator calling `changeOwner(BridgeMediator)`.
