@@ -36,11 +36,28 @@ It was compiled fresh at deploy time, not replayed from a committed artifact —
 is the same length as `abis/0.8.28/StakingToken.json` and differs from it only in the metadata hash. So
 no artifact in this repo matches its trailer, and the trailer check warns by construction.
 
-The body is reproducible exactly: solc 0.8.28, optimizer on at 750 runs, `evm_version = cancun`, source
-at `5efeb59`. The metadata hash is not, because it covers the whole source set, and a comment anywhere
-in `StakingBase.sol` or its imports moves it without changing a byte of code. Three foundry
-configurations were tried against it — with and without the `@gnosis.pm` remapping, and with
-`bytecode_hash` set explicitly — and none reproduced it; identifying the exact tree would mean
-bisecting for a hash. Do not add a `deployed/RobinhoodStakingToken.json`: any build we can make is not
-the build that produced these bytes, which is the one thing an entry in this directory asserts.
-Sourcify records the contract as `match` rather than `exact_match` for exactly the same reason.
+The body is reproducible exactly: solc 0.8.28, optimizer on at 750 runs, `evm_version = cancun`, and the
+source anywhere in the `a0ba899..067990b` window — the closure is only four files (`StakingToken.sol`,
+`StakingBase.sol`, `SafeTransferLib.sol`, solmate's `ERC721.sol`) and nothing touched it between
+2024-07-12 and 2025-08-13.
+
+The metadata hash was not reproduced, and the search for it was exhaustive rather than abandoned:
+
+- every one of the 43 commits that has ever touched that four-file closure was built and compared.
+  Two give a byte-identical body; none gives the trailer;
+- the build was repeated inside a copy of the tree that actually performed the deployment, with its
+  own `foundry.toml`, `node_modules` and `lib`, so the full remapping set including
+  `@gnosis.pm/=node_modules/@gnosis.pm/` was present. Still only the body matched;
+- `evm_version` (cancun/shanghai/paris/london — only cancun gives the right length) and an explicit
+  `bytecode_hash = "ipfs"` were varied too.
+
+The deployment was a fresh compile, not a replay: its creation transaction is the same length as
+`abis/0.8.28/StakingToken.json` and differs only in the metadata hash. So the remaining difference is
+in the metadata document rather than the code, and it is not recoverable from this repository's
+history — the original document is not pinned on IPFS either.
+
+Do not add a `deployed/RobinhoodStakingToken.json`. Any build we can make is not the build that produced
+these bytes, which is the one thing an entry in this directory asserts, and it would swap a warn that is
+explained for a warn that looks like an oversight. Sourcify records the contract as `match` rather than
+`exact_match` for exactly the same reason, and that is the honest state: the executable bytes are proven,
+the metadata document is not.
