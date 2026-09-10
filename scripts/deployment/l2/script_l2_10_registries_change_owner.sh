@@ -5,7 +5,7 @@
 # Covers ServiceRegistryL2 and ServiceRegistryTokenUtility, the two contracts the
 # shell deployment route never had a script for: they are reachable only through
 # the hardhat deploy_13_15_change_ownerships.js, so on a shell-route chain the call had to be
-# made by hand with cast send. That is how it was done on chain 4663.
+# made by hand with cast send. This script exists so that no longer has to be true.
 #
 # The script is idempotent per contract: it skips one already set to the target,
 # and otherwise pre-checks that the signer derived from $derivationPath is the
