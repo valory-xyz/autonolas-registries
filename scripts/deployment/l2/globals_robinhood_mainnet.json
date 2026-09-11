@@ -40,5 +40,6 @@
   "stakingTokenAddress": "0x87c511c8aE3fAF0063b3F3CF9C6ab96c4AA5C60c",
   "stakingNativeTokenAddress": "",
   "stakingVerifierAddress": "0x75D529FAe220bC8db714F0202193726b46881B76",
-  "stakingFactoryAddress": "0x1BD1505B711Fb58C54ca3712e6BEf47A133892d9"
+  "stakingFactoryAddress": "0x1BD1505B711Fb58C54ca3712e6BEf47A133892d9",
+  "hashCheckpointAddress": "0x92499E80f50f06C4078794C179986907e7822Ea1"
 }
