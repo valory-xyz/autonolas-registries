@@ -355,6 +355,11 @@
         "name": "IdentityRegistryBridgerProxy",
         "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
         "address": "0x22bE6fDcd3e29851B29b512F714C328A00A96B83"
+      },
+      {
+        "name": "HashCheckpoint",
+        "artifact": "abis/0.8.30/HashCheckpoint.json",
+        "address": "0x343F2B005cF6D70bA610CD9F1F1927049414B582"
       }
     ]
   },
@@ -608,6 +613,11 @@
         "name": "IdentityRegistryBridgerProxy",
         "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
         "address": "0x7fc0ddf4DFB61CfA5519db2A5eE7B2Eb02De0140"
+      },
+      {
+        "name": "HashCheckpoint",
+        "artifact": "abis/0.8.30/HashCheckpoint.json",
+        "address": "0x408dCA2b565f5eC7779C181870feFb51Ed67C3F4"
       }
     ]
   },
@@ -765,6 +775,11 @@
         "name": "IdentityRegistryBridgerProxy",
         "artifact": "abis/0.8.30/IdentityRegistryBridgerProxy.json",
         "address": "0xE49CB081e8d96920C38aA7AB90cb0294ab4Bc8EA"
+      },
+      {
+        "name": "HashCheckpoint",
+        "artifact": "abis/0.8.30/HashCheckpoint.json",
+        "address": "0x92499E80f50f06C4078794C179986907e7822Ea1"
       }
     ]
   }
