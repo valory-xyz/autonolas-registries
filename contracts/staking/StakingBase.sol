@@ -805,12 +805,10 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // NOTE: this proves the account holds Safe-proxy bytecode; it does NOT prove which singleton
         // the proxy delegates to. A Safe proxy keeps its singleton in storage slot 0 and loads it at
         // run time, so every proxy from a given factory has identical runtime code and codehash
-        // whatever it points at, and createProxyWithNonce takes the singleton as a caller-supplied
-        // parameter. Singleton identity is guaranteed upstream instead: every whitelisted multisig
-        // implementation builds the multisig itself against its own pinned immutable. Any future
-        // implementation added to mapMultisigs that accepts a CALLER-SUPPLIED multisig address must
-        // validate the singleton explicitly (implementation slot / masterCopy()) in addition to this
-        // check. See item 24 in docs/Vulnerabilities_list_registries.md.
+        // whatever it points at. Singleton identity is therefore established by the whitelisted multisig
+        // implementations themselves, each of which re-reads masterCopy() after creation and requires it
+        // to equal its own pinned immutable. Any implementation added to mapMultisigs must do the same;
+        // this codehash check is not a substitute for it.
         bytes32 multisigProxyHash = service.multisig.codehash;
         if (proxyHash != multisigProxyHash) {
             revert UnauthorizedMultisig(service.multisig);

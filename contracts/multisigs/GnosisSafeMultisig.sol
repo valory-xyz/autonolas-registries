@@ -14,10 +14,23 @@ interface IGnosisSafeProxyFactory {
     ) external returns (address proxy);
 }
 
+// Gnosis Safe proxy interface. The proxy answers masterCopy() from its own fallback, reading storage
+// slot 0 directly rather than delegating, so the value returned is the singleton the proxy will actually
+// use.
+interface IGnosisSafeProxy {
+    /// @dev Returns the singleton the proxy delegates to.
+    function masterCopy() external view returns (address);
+}
+
 /// @dev Provided incorrect data length.
 /// @param expected Expected minimum data length.
 /// @param provided Provided data length.
 error IncorrectDataLength(uint256 expected, uint256 provided);
+
+/// @dev The created proxy does not delegate to the expected singleton.
+/// @param provided Singleton the created proxy points at.
+/// @param expected Pinned singleton this contract deploys against.
+error UnexpectedSingleton(address provided, address expected);
 
 /// @title Gnosis Safe - Smart contract for Gnosis Safe multisig implementation of a generic multisig interface
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
@@ -104,5 +117,13 @@ contract GnosisSafeMultisig {
 
         // Create a gnosis safe multisig via the proxy factory
         multisig = IGnosisSafeProxyFactory(gnosisSafeProxyFactory).createProxyWithNonce(gnosisSafe, safeParams, nonce);
+
+        // Check that the created proxy delegates to the pinned singleton.
+        // A Safe proxy holds its singleton in storage slot 0 and setup() runs in the proxy's own storage
+        // context, so the value must be re-read after creation rather than assumed from the argument above.
+        address singleton = IGnosisSafeProxy(multisig).masterCopy();
+        if (singleton != gnosisSafe) {
+            revert UnexpectedSingleton(singleton, gnosisSafe);
+        }
     }
 }
