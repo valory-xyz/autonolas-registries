@@ -37,7 +37,7 @@ describe("GnosisSafeSameAddressMultisig", function () {
         bytecodeHash = ethers.utils.keccak256(bytecode);
 
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy(bytecodeHash);
+        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy(bytecodeHash, gnosisSafe.address);
         await gnosisSafeSameAddressMultisig.deployed();
 
         signers = await ethers.getSigners();
@@ -50,8 +50,12 @@ describe("GnosisSafeSameAddressMultisig", function () {
             const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
             const bytes32Zero = "0x" + "0".repeat(64);
             await expect(
-                GnosisSafeSameAddressMultisig.deploy(bytes32Zero)
+                GnosisSafeSameAddressMultisig.deploy(bytes32Zero, gnosisSafe.address)
             ).to.be.revertedWithCustomError(gnosisSafeSameAddressMultisig, "ZeroValue");
+
+            await expect(
+                GnosisSafeSameAddressMultisig.deploy(bytecodeHash, AddressZero)
+            ).to.be.revertedWithCustomError(gnosisSafeSameAddressMultisig, "ZeroAddress");
         });
 
         it("Should fail when passing the non-zero multisig data with the incorrect number of bytes", async function () {
