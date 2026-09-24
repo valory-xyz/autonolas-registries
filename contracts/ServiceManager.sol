@@ -112,8 +112,10 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     // Bond wrapping constant
     uint96 public constant BOND_WRAPPER = 1;
     // Highest address treated as reserved and rejected as an agent instance.
-    // Covers the zero address, Safe's SENTINEL_OWNERS (0x1) and the precompile range.
-    address public constant MAX_RESERVED_AGENT_INSTANCE = address(0x0a);
+    // Covers the zero address, Safe's SENTINEL_OWNERS (0x1) and every precompile: the bound sits far
+    // above the highest allocated one so it does not have to move when a fork adds more. No address in
+    // this range can be controlled, since addresses are derived from hashes.
+    address public constant MAX_RESERVED_AGENT_INSTANCE = address(0xffff);
 
     // Service Registry address
     address public immutable serviceRegistry;

@@ -29,10 +29,11 @@ if [[ "$networkURL" == *"alchemy.com"* ]]; then
 fi
 
 multisigProxyHash130=$(jq -r '.multisigProxyHash130' $globals)
+gnosisSafeAddress=$(jq -r '.gnosisSafeAddress' $globals)
 
 contractName="GnosisSafeSameAddressMultisig"
 contractPath="contracts/multisigs/$contractName.sol:$contractName"
-constructorArgs="$multisigProxyHash130"
+constructorArgs="$multisigProxyHash130 $gnosisSafeAddress"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
 # Get deployer based on the ledger flag
@@ -55,7 +56,7 @@ echo "Deployment of: $contractArgs"
 # but deploy_01 shipped a mis-deployment from exactly this pattern and forge accepts a surplus
 # argument list silently whenever the consumed prefix type-checks.
 deploymentOutput=$(forge create --broadcast --rpc-url "$networkURL$API_KEY" $walletArgs \
-  "$contractPath" --constructor-args "$multisigProxyHash130")
+  "$contractPath" --constructor-args "$multisigProxyHash130" "$gnosisSafeAddress")
 gnosisSafeSameAddressMultisigAddress=$(echo "$deploymentOutput" | grep 'Deployed to:' | awk '{print $3}')
 
 # Get output length
@@ -72,7 +73,7 @@ echo "$(jq '. += {"gnosisSafeSameAddressMultisigImplementationAddress":"'$gnosis
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
-  contractParams="$gnosisSafeSameAddressMultisigAddress $contractPath --constructor-args $(cast abi-encode "constructor(bytes32)" $constructorArgs)"
+  contractParams="$gnosisSafeSameAddressMultisigAddress $contractPath --constructor-args $(cast abi-encode "constructor(bytes32,address)" $constructorArgs)"
   echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."

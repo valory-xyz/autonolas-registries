@@ -28,10 +28,10 @@ async function main() {
     // Transaction signing and execution
     console.log("6b. EOA to deploy GnosisSafeSameAddressMultisig");
     const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-    console.log("You are signing the following transaction: GnosisSafeSameAddressMultisig.connect(EOA).deploy(multisigProxyHash130)");
+    console.log("You are signing the following transaction: GnosisSafeSameAddressMultisig.connect(EOA).deploy(multisigProxyHash130, gnosisSafeAddress)");
 
     // Verify the construct parameters and add them here, if needed
-    const gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.connect(EOA).deploy(parsedData.multisigProxyHash130);
+    const gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.connect(EOA).deploy(parsedData.multisigProxyHash130, parsedData.gnosisSafeAddress);
     const result = await gnosisSafeSameAddressMultisig.deployed();
 
     // Transaction details
