@@ -27,7 +27,7 @@ contract ServiceManagerMultisigBindingTest is RecoverFundsTest {
     // Called inside tests that need it (parent setUp() is not virtual, so it can't be overridden).
     function _setupAdapter() internal {
         bytes32 proxyHash = keccak256(address(agentSafe).code);
-        sameAddrMultisig = new GnosisSafeSameAddressMultisig(proxyHash);
+        sameAddrMultisig = new GnosisSafeSameAddressMultisig(proxyHash, address(gnosisSafe));
         serviceRegistry.changeMultisigPermission(address(sameAddrMultisig), true);
     }
 
