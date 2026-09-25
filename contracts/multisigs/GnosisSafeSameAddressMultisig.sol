@@ -129,13 +129,6 @@ contract GnosisSafeSameAddressMultisig {
             revert UnauthorizedMultisig(multisig);
         }
 
-        // Check that the provided proxy delegates to the pinned singleton. This function accepts a
-        // caller-supplied proxy, so the value has to be read from the proxy itself.
-        address singleton = IGnosisSafeProxy(multisig).masterCopy();
-        if (singleton != gnosisSafe) {
-            revert UnexpectedSingleton(singleton, gnosisSafe);
-        }
-
         // If provided, read the payload that is going to change the multisig ownership and threshold
         // The payload is expected to be the `execTransaction()` function call with all its arguments and signature(s)
         if (dataLength > DEFAULT_DATA_LENGTH) {
@@ -150,6 +143,18 @@ contract GnosisSafeSameAddressMultisig {
             if (!success) {
                 revert MultisigExecFailed(multisig);
             }
+        }
+
+        // Check that the proxy delegates to the pinned singleton. This function accepts a caller-supplied
+        // proxy and executes a caller-supplied payload against it above, and that payload can be an
+        // execTransaction with operation = DelegateCall, which runs in the proxy's own storage and can
+        // rewrite slot 0 (the singleton). So the check has to read masterCopy() from the FINAL state, after
+        // the payload: a check before it would validate a singleton the payload then replaces, and the
+        // getOwners()/getThreshold() calls below would delegate to the substituted singleton. Slot 0 is
+        // read directly by the proxy's own fallback, so a substituted singleton cannot forge this value.
+        address singleton = IGnosisSafeProxy(multisig).masterCopy();
+        if (singleton != gnosisSafe) {
+            revert UnexpectedSingleton(singleton, gnosisSafe);
         }
 
         // Get the provided proxy multisig owners and threshold
