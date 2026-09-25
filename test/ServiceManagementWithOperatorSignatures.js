@@ -74,7 +74,7 @@ describe("ServiceManagementWithOperatorSignatures", function () {
         bytecodeHash = ethers.utils.keccak256(bytecode);
 
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy(bytecodeHash);
+        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy(bytecodeHash, gnosisSafe.address);
         await gnosisSafeSameAddressMultisig.deployed();
 
         const ServiceRegistry = await ethers.getContractFactory("ServiceRegistry");

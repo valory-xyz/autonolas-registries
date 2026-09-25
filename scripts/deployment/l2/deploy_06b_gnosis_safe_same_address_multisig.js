@@ -44,8 +44,8 @@ async function main() {
     console.log("6. EOA to deploy GnosisSafeSameAddressMultisig");
     const gasPrice = ethers.utils.parseUnits(gasPriceInGwei, "gwei");
     const GnosisSafeMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-    console.log("You are signing the following transaction: GnosisSafeSameAddressMultisig.connect(EOA).deploy(multisigProxyHash130)");
-    const gnosisSafeSameAddressMultisig = await GnosisSafeMultisig.connect(EOA).deploy(parsedData.multisigProxyHash130, { gasPrice });
+    console.log("You are signing the following transaction: GnosisSafeSameAddressMultisig.connect(EOA).deploy(multisigProxyHash130, gnosisSafeAddress)");
+    const gnosisSafeSameAddressMultisig = await GnosisSafeMultisig.connect(EOA).deploy(parsedData.multisigProxyHash130, parsedData.gnosisSafeAddress, { gasPrice });
     const result = await gnosisSafeSameAddressMultisig.deployed();
 
     // Transaction details

@@ -110,7 +110,7 @@ describe("Staking", function () {
         serviceParams.proxyHash = bytecodeHash;
 
         const GnosisSafeSameAddressMultisig = await ethers.getContractFactory("GnosisSafeSameAddressMultisig");
-        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy(bytecodeHash);
+        gnosisSafeSameAddressMultisig = await GnosisSafeSameAddressMultisig.deploy(bytecodeHash, gnosisSafe.address);
         await gnosisSafeSameAddressMultisig.deployed();
 
         const MultiSend = await ethers.getContractFactory("MultiSendCallOnly");

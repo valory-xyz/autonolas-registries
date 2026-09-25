@@ -81,6 +81,10 @@ error AlreadyInitialized();
 /// @param serviceId Service Id attempting to bind the multisig.
 error MultisigAlreadyBound(address multisig, uint256 existingServiceId, uint256 serviceId);
 
+/// @dev Provided agent instance address is reserved and cannot hold a service multisig.
+/// @param agentInstance Provided agent instance address.
+error ReservedAgentInstance(address agentInstance);
+
 /// @title Service Manager - Periphery smart contract for managing services with custom ERC20 tokens or ETH
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
@@ -107,6 +111,11 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     address public constant ETH_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     // Bond wrapping constant
     uint96 public constant BOND_WRAPPER = 1;
+    // Highest address treated as reserved and rejected as an agent instance.
+    // Covers the zero address, Safe's SENTINEL_OWNERS (0x1) and every precompile: the bound sits far
+    // above the highest allocated one so it does not have to move when a fork adds more. No address in
+    // this range can be controlled, since addresses are derived from hashes.
+    address public constant MAX_RESERVED_AGENT_INSTANCE = address(0xffff);
 
     // Service Registry address
     address public immutable serviceRegistry;
@@ -371,6 +380,19 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         _locked = 1;
     }
 
+    /// @dev Rejects agent instance addresses that cannot serve as a usable multisig owner.
+    /// @notice Addresses at or below MAX_RESERVED_AGENT_INSTANCE are either rejected by Safe setup, which
+    ///         leaves the service unable to deploy, or accepted while being unsignable. Neither is a
+    ///         configuration any service owner intends.
+    /// @param agentInstances Agent instance addresses.
+    function _checkAgentInstances(address[] memory agentInstances) internal pure {
+        for (uint256 i = 0; i < agentInstances.length; ++i) {
+            if (agentInstances[i] <= MAX_RESERVED_AGENT_INSTANCE) {
+                revert ReservedAgentInstance(agentInstances[i]);
+            }
+        }
+    }
+
     /// @dev Registers agent instances.
     /// @param serviceId Service Id to be updated.
     /// @param agentInstances Agent instance addresses.
@@ -393,6 +415,17 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
                 revert WrongOperator(serviceId);
             }
         }
+
+        // Reject reserved agent instance addresses
+        _checkAgentInstances(agentInstances);
+
+        // Advance the registerAgents nonce on the direct path as well, so an authorization signed for the
+        // current nonce and left unused cannot be replayed against later state
+        // operator occupies first 160 bits
+        uint256 operatorService = uint256(uint160(msg.sender));
+        // serviceId occupies next 32 bits as serviceId is limited by the 2^32 - 1 value
+        operatorService |= serviceId << 160;
+        mapOperatorRegisterAgentsNonces[operatorService]++;
 
         // Record the actual ERC20 bond
         bool isTokenSecured = IServiceTokenUtility(serviceRegistryTokenUtility)
@@ -536,6 +569,13 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         }
         _locked = 2;
 
+        // Advance the unbond nonce on the direct path as well, for the same reason as registerAgents
+        // operator occupies first 160 bits
+        uint256 operatorService = uint256(uint160(msg.sender));
+        // serviceId occupies next 32 bits as serviceId is limited by the 2^32 - 1 value
+        operatorService |= serviceId << 160;
+        mapOperatorUnbondNonces[operatorService]++;
+
         // Withdraw the ERC20 token if the service is token-based
         uint256 tokenRefund = IServiceTokenUtility(serviceRegistryTokenUtility).unbondTokenRefund(msg.sender, serviceId);
 
@@ -652,6 +692,10 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         // serviceId occupies next 32 bits as serviceId is limited by the 2^32 - 1 value
         operatorService |= serviceId << 160;
         uint256 nonce = mapOperatorRegisterAgentsNonces[operatorService];
+
+        // Reject reserved agent instance addresses
+        _checkAgentInstances(agentInstances);
+
         // Get register agents message hash
         bytes32 msgHash = getRegisterAgentsHash(operator, serviceOwner, serviceId, agentInstances, agentIds, nonce);
 

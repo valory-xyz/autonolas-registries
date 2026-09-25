@@ -15,12 +15,24 @@ interface IGnosisSafe {
 /// @dev Zero value when it has to be different from zero.
 error ZeroValue();
 
+// Gnosis Safe proxy interface. The proxy answers masterCopy() from its own fallback, reading storage
+// slot 0 directly rather than delegating, so the value returned is the singleton the proxy will use.
+interface IGnosisSafeProxy {
+    /// @dev Returns the singleton the proxy delegates to.
+    function masterCopy() external view returns (address);
+}
+
 /// @dev Provided zero address.
 error ZeroAddress();
 
 /// @dev Multisig proxy bytecode is not whitelisted.
 /// @param multisig Address of a multisig proxy.
 error UnauthorizedMultisig(address multisig);
+
+/// @dev The provided proxy does not delegate to the expected singleton.
+/// @param provided Singleton the proxy points at.
+/// @param expected Pinned singleton this contract accepts.
+error UnexpectedSingleton(address provided, address expected);
 
 /// @dev Provided incorrect data length.
 /// @param expected Expected minimum data length.
@@ -54,16 +66,24 @@ contract GnosisSafeSameAddressMultisig {
 
     // Approved multisig proxy hash
     bytes32 public immutable proxyHash;
+    // Approved Gnosis Safe singleton the provided proxy must delegate to
+    address public immutable gnosisSafe;
 
     /// @dev GnosisSafeSameAddressMultisig constructor.
     /// @param _proxyHash Approved multisig proxy hash.
-    constructor(bytes32 _proxyHash) {
+    /// @param _gnosisSafe Approved Gnosis Safe singleton address.
+    constructor(bytes32 _proxyHash, address _gnosisSafe) {
         if (_proxyHash == bytes32(0)) {
             revert ZeroValue();
         }
 
-        // Record provided multisig proxy bytecode hash
+        if (_gnosisSafe == address(0)) {
+            revert ZeroAddress();
+        }
+
+        // Record provided multisig proxy bytecode hash and singleton
         proxyHash = _proxyHash;
+        gnosisSafe = _gnosisSafe;
     }
 
     /// @dev Updates and/or verifies the existent gnosis safe multisig for changed owners and threshold.
@@ -99,16 +119,11 @@ contract GnosisSafeSameAddressMultisig {
             multisig := mload(add(data, DEFAULT_DATA_LENGTH))
         }
 
-        // Check that the multisig address corresponds to the authorized multisig proxy bytecode hash
-        // NOTE: this proves the account holds Safe-proxy bytecode; it does NOT prove which singleton
-        // the proxy delegates to. A Safe proxy keeps its singleton in storage slot 0 and loads it at
-        // run time, so every proxy from a given factory has identical runtime code and codehash
-        // whatever it points at, and createProxyWithNonce takes the singleton as a caller-supplied
-        // parameter. Singleton identity is guaranteed upstream instead: every whitelisted multisig
-        // implementation builds the multisig itself against its own pinned immutable. Any future
-        // implementation added to mapMultisigs that accepts a CALLER-SUPPLIED multisig address must
-        // validate the singleton explicitly (implementation slot / masterCopy()) in addition to this
-        // check. See item 24 in docs/Vulnerabilities_list_registries.md.
+        // Check that the multisig address corresponds to the authorized multisig proxy bytecode hash.
+        // This proves the account holds Safe-proxy bytecode. It does not prove which singleton the proxy
+        // delegates to: a Safe proxy keeps its singleton in storage slot 0 and loads it at run time, so
+        // every proxy from a given factory has identical runtime code and codehash whatever it points at.
+        // The singleton is therefore checked separately below.
         bytes32 multisigProxyHash = keccak256(multisig.code);
         if (proxyHash != multisigProxyHash) {
             revert UnauthorizedMultisig(multisig);
@@ -128,6 +143,18 @@ contract GnosisSafeSameAddressMultisig {
             if (!success) {
                 revert MultisigExecFailed(multisig);
             }
+        }
+
+        // Check that the proxy delegates to the pinned singleton. This function accepts a caller-supplied
+        // proxy and executes a caller-supplied payload against it above, and that payload can be an
+        // execTransaction with operation = DelegateCall, which runs in the proxy's own storage and can
+        // rewrite slot 0 (the singleton). So the check has to read masterCopy() from the FINAL state, after
+        // the payload: a check before it would validate a singleton the payload then replaces, and the
+        // getOwners()/getThreshold() calls below would delegate to the substituted singleton. Slot 0 is
+        // read directly by the proxy's own fallback, so a substituted singleton cannot forge this value.
+        address singleton = IGnosisSafeProxy(multisig).masterCopy();
+        if (singleton != gnosisSafe) {
+            revert UnexpectedSingleton(singleton, gnosisSafe);
         }
 
         // Get the provided proxy multisig owners and threshold

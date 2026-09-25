@@ -284,7 +284,20 @@ abstract contract StakingBase is ERC721TokenReceiver {
     event Withdraw(address indexed receiver, uint256 amount);
 
     // Contract version
-    string public constant VERSION = "0.3.0";
+    string public constant VERSION = "0.4.0";
+    // Maximum gas provided to a single activity checker call
+    // The activity checker is an arbitrary external contract and checkpoint() calls it once per staked
+    // service, so each call is given an explicit allowance rather than all the gas that remains. Sized
+    // from measurement: the stock getMultisigNonces costs ~21k in-EVM and a heavier custom checker ~16k,
+    // leaving ample headroom. It is a ceiling and not a spend, so a legitimate checker pays exactly what
+    // it paid before, and a call that does not return within it is handled like any other failed call.
+    uint256 public constant MAX_ACTIVITY_CHECKER_GAS = 100_000;
+    // Maximum bytes copied back from a single activity checker call
+    // The gas allowance bounds the callee's execution, but not the returndata the caller copies afterwards.
+    // A larger response is treated as a failed call rather than copied, so a checker cannot make the caller
+    // copy an unbounded buffer into memory. Sized as an ABI uint256[] head (offset + length) plus 64 nonce
+    // words - far beyond the one or two nonces any real checker returns, so no legitimate response is dropped.
+    uint256 public constant MAX_ACTIVITY_CHECKER_RETURN = 64 + 64 * 32;
     // Staking parameters for initialization
     // Metadata staking information
     bytes32 public metadataHash;
@@ -469,22 +482,91 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Get current service multisig nonce
         // This is a low level call since it must never revert
         bytes memory activityData = abi.encodeCall(IActivityChecker.getMultisigNonces, multisig);
-        (bool success, bytes memory returnData) = activityChecker.staticcall(activityData);
+        (bool success, bytes memory returnData) = _activityStaticcall(activityData, MAX_ACTIVITY_CHECKER_RETURN);
 
-        // If the function call was successful, check the return value
-        // The return data length must be the exact number of full slots
-        if (success && returnData.length > 63 && (returnData.length % 32 == 0)) {
-            // Parse nonces
-            currentNonces = abi.decode(returnData, (uint256[]));
+        // Parse the nonces without reverting: a malformed response is treated as a failed call, not decoded
+        // with abi.decode, which would revert and take checkpoint() down with it
+        if (success) {
+            (bool validNonces, uint256[] memory nonces) = _decodeUintArray(returnData);
+            if (validNonces) {
+                currentNonces = nonces;
 
-            // Get the ratio pass activity check
-            activityData = abi.encodeCall(IActivityChecker.isRatioPass, (currentNonces, lastNonces, ts));
-            (success, returnData) = activityChecker.staticcall(activityData);
+                // Get the ratio pass activity check
+                activityData = abi.encodeCall(IActivityChecker.isRatioPass, (currentNonces, lastNonces, ts));
+                (success, returnData) = _activityStaticcall(activityData, 32);
 
-            // The return data must match the size of bool
-            if (success && returnData.length == 32) {
-                ratioPass = abi.decode(returnData, (bool));
+                // The return data must be exactly a word, read as a clean bool without reverting on a
+                // non-canonical value (anything other than 1 is a fail, so the service scores inactive)
+                if (success && returnData.length == 32) {
+                    uint256 boolWord;
+                    assembly {
+                        boolWord := mload(add(returnData, 0x20))
+                    }
+                    ratioPass = (boolWord == 1);
+                }
             }
+        }
+    }
+
+    /// @dev Decodes a canonical ABI uint256[] from an activity checker response, without reverting.
+    /// @notice Used in place of abi.decode on untrusted returndata: a malformed encoding returns
+    ///         valid=false rather than reverting, so a poisoned checker cannot revert checkpoint().
+    ///         The declared element count is taken from the buffer size, never from the buffer's own
+    ///         length word, so a forged length cannot be trusted or overflow the bound.
+    /// @param data Raw activity checker returndata.
+    /// @return valid True if `data` is a canonical uint256[] encoding.
+    /// @return arr The decoded array, aliased into `data`; empty when valid is false.
+    function _decodeUintArray(bytes memory data) private pure returns (bool valid, uint256[] memory arr) {
+        uint256 len = data.length;
+        // A dynamic array needs at least the offset and length words, and a whole number of words
+        if (len < 64 || (len % 32 != 0)) {
+            return (valid, arr);
+        }
+        assembly {
+            let ptr := add(data, 0x20)
+            let offset := mload(ptr)
+            let declaredLen := mload(add(ptr, 0x20))
+            // Canonical encoding: offset points just past itself (0x20), and the declared element count
+            // fills the buffer exactly. Deriving the expected count from len (not the buffer) bounds it.
+            let expectedLen := div(sub(len, 64), 32)
+            if and(eq(offset, 0x20), eq(declaredLen, expectedLen)) {
+                valid := 1
+                // [length][data...] starts one word into the content: a valid uint256[] memory layout
+                arr := add(ptr, 0x20)
+            }
+        }
+    }
+
+    /// @dev Static-calls the activity checker under a bounded gas allowance and a bounded returndata copy.
+    /// @notice The activity checker is external and untrusted. The call is given MAX_ACTIVITY_CHECKER_GAS,
+    ///         and at most `maxLen` bytes of its response are copied back; a larger response is dropped and
+    ///         reported as a failed call, so the checker cannot force an unbounded copy into the caller's
+    ///         memory. Never reverts on the callee's behalf - a failed or oversized call returns success=false.
+    /// @param activityData Encoded call to the activity checker.
+    /// @param maxLen Maximum number of returndata bytes to copy back.
+    /// @return success True if the call succeeded and its response fit within `maxLen`.
+    /// @return returnData The response, at most `maxLen` bytes, empty when success is false.
+    function _activityStaticcall(bytes memory activityData, uint256 maxLen)
+        private
+        view
+        returns (bool success, bytes memory returnData)
+    {
+        address checker = activityChecker;
+        uint256 gasLimit = MAX_ACTIVITY_CHECKER_GAS;
+        assembly {
+            returnData := mload(0x40)
+            let dataPtr := add(returnData, 0x20)
+            // Copy at most maxLen bytes of the response directly into our buffer; nothing beyond it is read.
+            success := staticcall(gasLimit, checker, add(activityData, 0x20), mload(activityData), dataPtr, maxLen)
+            let size := returndatasize()
+            // A response larger than the buffer is not something we can afford to copy: drop it as a failure.
+            if gt(size, maxLen) {
+                success := 0
+                size := 0
+            }
+            mstore(returnData, size)
+            // Advance the free memory pointer past the reserved buffer, rounded up to a full word.
+            mstore(0x40, add(dataPtr, and(add(maxLen, 0x1f), not(0x1f))))
         }
     }
 
@@ -805,12 +887,12 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // NOTE: this proves the account holds Safe-proxy bytecode; it does NOT prove which singleton
         // the proxy delegates to. A Safe proxy keeps its singleton in storage slot 0 and loads it at
         // run time, so every proxy from a given factory has identical runtime code and codehash
-        // whatever it points at, and createProxyWithNonce takes the singleton as a caller-supplied
-        // parameter. Singleton identity is guaranteed upstream instead: every whitelisted multisig
-        // implementation builds the multisig itself against its own pinned immutable. Any future
-        // implementation added to mapMultisigs that accepts a CALLER-SUPPLIED multisig address must
-        // validate the singleton explicitly (implementation slot / masterCopy()) in addition to this
-        // check. See item 24 in docs/Vulnerabilities_list_registries.md.
+        // whatever it points at. Singleton identity is established by the multisig implementation that
+        // set the service multisig, and what that guarantee rests on differs per implementation: the
+        // creating implementations read masterCopy() back against their own pinned singleton, while the
+        // recovery-module creators rely on a pinned delegatecall target and payload. Any implementation
+        // added to mapMultisigs that accepts a CALLER-SUPPLIED multisig address must check the singleton
+        // explicitly; this codehash check is not a substitute for it.
         bytes32 multisigProxyHash = service.multisig.codehash;
         if (proxyHash != multisigProxyHash) {
             revert UnauthorizedMultisig(service.multisig);
