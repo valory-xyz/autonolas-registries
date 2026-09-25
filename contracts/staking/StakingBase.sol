@@ -284,7 +284,14 @@ abstract contract StakingBase is ERC721TokenReceiver {
     event Withdraw(address indexed receiver, uint256 amount);
 
     // Contract version
-    string public constant VERSION = "0.3.0";
+    string public constant VERSION = "0.4.0";
+    // Maximum gas provided to a single activity checker call
+    // The activity checker is an arbitrary external contract and checkpoint() calls it once per staked
+    // service, so each call is given an explicit allowance rather than all the gas that remains. Sized
+    // from measurement: the stock getMultisigNonces costs ~21k in-EVM and a heavier custom checker ~16k,
+    // leaving ample headroom. It is a ceiling and not a spend, so a legitimate checker pays exactly what
+    // it paid before, and a call that does not return within it is handled like any other failed call.
+    uint256 public constant MAX_ACTIVITY_CHECKER_GAS = 100_000;
     // Staking parameters for initialization
     // Metadata staking information
     bytes32 public metadataHash;
@@ -469,7 +476,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Get current service multisig nonce
         // This is a low level call since it must never revert
         bytes memory activityData = abi.encodeCall(IActivityChecker.getMultisigNonces, multisig);
-        (bool success, bytes memory returnData) = activityChecker.staticcall(activityData);
+        (bool success, bytes memory returnData) = activityChecker.staticcall{gas: MAX_ACTIVITY_CHECKER_GAS}(activityData);
 
         // If the function call was successful, check the return value
         // The return data length must be the exact number of full slots
@@ -479,7 +486,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
             // Get the ratio pass activity check
             activityData = abi.encodeCall(IActivityChecker.isRatioPass, (currentNonces, lastNonces, ts));
-            (success, returnData) = activityChecker.staticcall(activityData);
+            (success, returnData) = activityChecker.staticcall{gas: MAX_ACTIVITY_CHECKER_GAS}(activityData);
 
             // The return data must match the size of bool
             if (success && returnData.length == 32) {
