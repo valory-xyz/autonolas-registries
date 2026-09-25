@@ -3,7 +3,9 @@ const globalsFile = "globals.json";
 const dataFromJSON = fs.readFileSync(globalsFile, "utf8");
 const parsedData = JSON.parse(dataFromJSON);
 const multisigProxyHash130 = parsedData.multisigProxyHash130;
+const gnosisSafeAddress = parsedData.gnosisSafeAddress;
 
 module.exports = [
-    multisigProxyHash130
+    multisigProxyHash130,
+    gnosisSafeAddress
 ];

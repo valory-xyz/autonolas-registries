@@ -29,10 +29,11 @@ if [[ "$networkURL" == *"alchemy.com"* ]]; then
 fi
 
 polySafeProxyBytecodeHash=$(jq -r '.polySafeProxyBytecodeHash' $globals)
+gnosisSafeAddress=$(jq -r '.gnosisSafeAddress' $globals)
 
 contractName="GnosisSafeSameAddressMultisig"
 contractPath="contracts/multisigs/$contractName.sol:$contractName"
-constructorArgs="$polySafeProxyBytecodeHash"
+constructorArgs="$polySafeProxyBytecodeHash $gnosisSafeAddress"
 contractArgs="$contractPath --constructor-args $constructorArgs"
 
 # Get deployer based on the ledger flag
@@ -68,7 +69,7 @@ echo "$(jq '. += {"polySafeSameAddressMultisigAddress":"'$polySafeSameAddressMul
 
 # Verify contract
 if [ "$contractVerification" == "true" ]; then
-  contractParams="$polySafeSameAddressMultisigAddress $contractPath --constructor-args $(cast abi-encode "constructor(bytes32)" $constructorArgs)"
+  contractParams="$polySafeSameAddressMultisigAddress $contractPath --constructor-args $(cast abi-encode "constructor(bytes32,address)" $constructorArgs)"
   echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."
