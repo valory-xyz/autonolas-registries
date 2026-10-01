@@ -151,6 +151,11 @@ error WrongArrayLength(uint256 numValues1, uint256 numValues2);
 /// @param multisig Address of a multisig implementation.
 error UnauthorizedMultisig(address multisig);
 
+/// @dev The activity checker returned more nonce values than allowed.
+/// @param provided Number of values returned.
+/// @param maxAllowed Maximum number of values accepted.
+error TooManyNonces(uint256 provided, uint256 maxAllowed);
+
 /// @dev The contract is already initialized.
 error AlreadyInitialized();
 
@@ -292,12 +297,18 @@ abstract contract StakingBase is ERC721TokenReceiver {
     // leaving ample headroom. It is a ceiling and not a spend, so a legitimate checker pays exactly what
     // it paid before, and a call that does not return within it is handled like any other failed call.
     uint256 public constant MAX_ACTIVITY_CHECKER_GAS = 100_000;
+    // Maximum number of nonce values accepted from a single activity checker call
+    // The returned array is recorded per service, so its length is a per-service cost that the gas
+    // allowance does not bound; it is capped so that cost stays predictable. Four covers every activity
+    // checker in use (the liveness vector is at most four values); a longer response is treated as a
+    // failed call.
+    uint256 public constant MAX_ACTIVITY_CHECKER_NONCES = 4;
     // Maximum bytes copied back from a single activity checker call
     // The gas allowance bounds the callee's execution, but not the returndata the caller copies afterwards.
     // A larger response is treated as a failed call rather than copied, so a checker cannot make the caller
-    // copy an unbounded buffer into memory. Sized as an ABI uint256[] head (offset + length) plus 64 nonce
-    // words - far beyond the one or two nonces any real checker returns, so no legitimate response is dropped.
-    uint256 public constant MAX_ACTIVITY_CHECKER_RETURN = 64 + 64 * 32;
+    // copy an unbounded buffer into memory. Sized as an ABI uint256[] head (offset + length) plus
+    // MAX_ACTIVITY_CHECKER_NONCES words.
+    uint256 public constant MAX_ACTIVITY_CHECKER_RETURN = 64 + MAX_ACTIVITY_CHECKER_NONCES * 32;
     // Staking parameters for initialization
     // Metadata staking information
     bytes32 public metadataHash;
@@ -923,6 +934,10 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // This function might revert if it's incorrectly implemented, however this is not a protocol's responsibility
         // It is safe to revert in this place
         uint256[] memory nonces = IActivityChecker(activityChecker).getMultisigNonces(service.multisig);
+        // Bound the recorded nonce array, matching the checkpoint path, so per-service cost stays predictable
+        if (nonces.length > MAX_ACTIVITY_CHECKER_NONCES) {
+            revert TooManyNonces(nonces.length, MAX_ACTIVITY_CHECKER_NONCES);
+        }
         sInfo.nonces = nonces;
         sInfo.tsStart = block.timestamp;
 
