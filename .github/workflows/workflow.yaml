@@ -64,9 +64,16 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: false
 
-      # Compile the code and run foundry tests
+      # Compile the code and run foundry tests: unit + deploy-fresh mainnet-fork tests.
+      # Excluded (not runnable in recurring CI against a live latest fork): the L2 fork tests and the
+      # state-pinned proposal/bridger fork tests (Proposal24/25ForkL1 replay historical governance proposals;
+      # IdentityRegistryBridger / StakePolySafe expect contracts absent at the latest block). The deploy-fresh
+      # fork tests (e.g. StakingSecurityFixes) read ETH_RPC / ETH_RPC_URL from the environment.
       - name: Run foundry tests
-        run: forge test --match-contract Staking -vvv && forge test --match-contract PolySafeCreator -vvv
+        env:
+          ETH_RPC: ${{ secrets.ETH_RPC_URL }}
+          ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
+        run: forge test --no-match-contract "Proposal2[45]Fork|IdentityRegistry|StakePolySafe" -vvv
 
   scan:
     name: gitleaks
