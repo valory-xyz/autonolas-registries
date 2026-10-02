@@ -64,9 +64,13 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: false
 
-      # Compile the code and run foundry tests
+      # Compile the code and run foundry tests (unit + mainnet-fork; L2 fork tests excluded by path).
+      # The mainnet fork tests read ETH_RPC from the environment (see vm.envOr in test/*ForkL1*.t.sol).
       - name: Run foundry tests
-        run: forge test --match-contract Staking -vvv && forge test --match-contract PolySafeCreator -vvv
+        env:
+          ETH_RPC: ${{ secrets.ETH_RPC_URL }}
+          ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
+        run: forge test --no-match-path "test/Proposal24ForkL2*.t.sol" -vvv
 
   scan:
     name: gitleaks
