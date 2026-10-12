@@ -52,8 +52,12 @@ interface IServiceManagerV1 {
 ///         registration and unbonding, because the contract now computes different digests; the stored approvals
 ///         are left in place. Fresh v1.3.0 signatures and pre-approved hashes work on the same proxy.
 ///
-///         Run: ETH_RPC=<mainnet rpc> forge test --match-contract ServiceManagerSignedMessagesUpgrade -vv
+///         Run: ETH_RPC=<mainnet archive rpc> forge test --match-contract ServiceManagerSignedMessagesUpgrade -vv
 contract ServiceManagerSignedMessagesUpgradeTest is Test {
+    // Starting state: a block at which the live proxy runs the v1.2.0 implementation 0xA8C5...1f2e. Pinned so that the
+    // test keeps exercising the v1.2.0 -> v1.3.0 upgrade after v1.3.0 is deployed. Needs an archive RPC.
+    uint256 internal constant FORK_BLOCK = 26_155_957;
+    address internal constant LIVE_IMPLEMENTATION = 0xA8C52f0bB977F423E31400d151F1b98181511f2e;
     address internal constant PROXY = 0x94a1892D91c05D0C61c3f49F42205D2285b914c9;
     address internal constant SERVICE_REGISTRY = 0x48b6af7B12C71f09e2fC8aF4855De4Ff54e775cA;
     address internal constant TOKEN_UTILITY = 0x3Fb926116D454b95c669B6Bf2E7c3bad8d19affA;
@@ -71,11 +75,16 @@ contract ServiceManagerSignedMessagesUpgradeTest is Test {
     address internal instanceB = makeAddr("instanceB");
 
     function setUp() public {
-        vm.createSelectFork(vm.envString("ETH_RPC"));
+        vm.createSelectFork(vm.envString("ETH_RPC"), FORK_BLOCK);
         (operatorA, operatorAKey) = makeAddrAndKey("operatorA");
         vm.deal(serviceOwner, 100 ether);
         vm.deal(operatorA, 100 ether);
         assertEq(v1.VERSION(), "1.2.0", "live implementation");
+        assertEq(
+            address(uint160(uint256(vm.load(PROXY, keccak256("PROXY_SERVICE_MANAGER"))))),
+            LIVE_IMPLEMENTATION,
+            "v1.2.0 implementation at the fork block"
+        );
     }
 
     function _one(address a) internal pure returns (address[] memory out) {

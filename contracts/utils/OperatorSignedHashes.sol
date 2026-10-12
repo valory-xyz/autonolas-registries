@@ -86,10 +86,10 @@ abstract contract OperatorSignedHashes {
 
     /// @dev Verifies provided message hash against its signature.
     /// @notice Signature bytes are 65 bytes, with the last byte selecting the case:
-    ///         - v = 4, contract operator: r holds the operator contract address and s is zero. These same bytes are
-    ///           passed to the operator's isValidSignature(), so they carry no signer data and the contract must
-    ///           decide from the message hash alone. Wallets that expect owner signatures in the signature bytes,
-    ///           such as Safe, reject them; such wallets approve the hash with operatorApproveHash() (v = 5) instead.
+    ///         - v = 4, contract operator: r holds the operator contract address. The same 65 bytes are passed to the
+    ///           operator's isValidSignature(), and its answer decides; s is not checked here. A wallet that reads
+    ///           its owners' signatures from these bytes, such as Safe, rejects them and can approve the hash with
+    ///           operatorApproveHash() (v = 5) instead.
     ///         - v = 5, pre-approved hash: r holds the operator address that called operatorApproveHash().
     ///         - otherwise, an ECDSA signature of an EOA operator (v of 0 or 1 is adjusted for ledger signatures).
     /// @param operator Operator address.

@@ -609,8 +609,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @dev Unbonds agent instances of the operator by the service owner via the operator's pre-signed message hash.
     /// @notice Note that this function accounts for the operator being the EOA, or the contract that has an
     ///         isValidSignature() function that would confirm the message hash was signed by the operator contract.
-    ///         The signature bytes passed to isValidSignature() carry no signer data, so a wallet that expects owner
-    ///         signatures there, such as Safe, uses the pre-approved hash path instead; see _verifySignedHash().
+    ///         isValidSignature() receives the 65 signature bytes with the operator address in r, so a wallet that
+    ///         reads owner signatures from them, such as Safe, uses the pre-approved hash path; see _verifySignedHash().
     ///         Otherwise, if the message hash has been pre-approved, the corresponding map of hashes is going to
     ///         to verify the signed hash, similar to the Safe contract implementation in v1.3.0:
     ///         https://github.com/safe-global/safe-contracts/blob/186a21a74b327f17fc41217a927dea7064f74604/contracts/GnosisSafe.sol#L240-L304
@@ -677,8 +677,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @dev Registers agent instances of the operator by the service owner via the operator's pre-signed message hash.
     /// @notice Note that this function accounts for the operator being the EOA, or the contract that has an
     ///         isValidSignature() function that would confirm the message hash was signed by the operator contract.
-    ///         The signature bytes passed to isValidSignature() carry no signer data, so a wallet that expects owner
-    ///         signatures there, such as Safe, uses the pre-approved hash path instead; see _verifySignedHash().
+    ///         isValidSignature() receives the 65 signature bytes with the operator address in r, so a wallet that
+    ///         reads owner signatures from them, such as Safe, uses the pre-approved hash path; see _verifySignedHash().
     ///         Otherwise, if the message hash has been pre-approved, the corresponding map of hashes is going to
     ///         to verify the signed hash, similar to the Safe contract implementation in v1.3.0:
     ///         https://github.com/safe-global/safe-contracts/blob/186a21a74b327f17fc41217a927dea7064f74604/contracts/GnosisSafe.sol#L240-L304

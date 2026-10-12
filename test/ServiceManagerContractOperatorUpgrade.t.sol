@@ -57,10 +57,10 @@ interface IServiceManagerV1 {
     function getOperatorUnbondNonce(address operator, uint256 serviceId) external view returns (uint256);
 }
 
-/// @dev Contract operator implementing the existing custom interface ServiceManager supports for contract signatures:
-///      the signature bytes are `(operator address, 0, 4)` and carry no signer data, so the contract decides from the
-///      digest alone, here from digests its controller approved (as MockOperatorContract does). It also accepts the
-///      native refund on unbonding.
+/// @dev Contract operator following the convention these tests use for the contract-signature path (`v = 4`), as
+///      MockOperatorContract does: the signature bytes are `(operator address, 0, 4)`, and isValidSignature() ignores
+///      them and accepts digests its controller approved. ServiceManager only requires r to hold the operator address
+///      and forwards the bytes; validating them is up to the contract. It also accepts the native refund on unbonding.
 contract ContractOperator {
     address public immutable controller;
     mapping(bytes32 => bool) public approvedHashes;
@@ -131,14 +131,18 @@ interface IServiceRegistryState {
 ///         4. invalid signatures still fail.
 ///
 ///         Two mechanisms are covered:
-///         - the contract-signature path (`v = 4`), scoped to the existing custom contract-operator interface
-///           (`ContractOperator` above). A Safe cannot use this path on either version: the signature bytes are not a
-///           valid Safe signature, so the Safe's EIP-1271 handler reverts (`test_safeCannotUseContractSignaturePath`);
+///         - the contract-signature path (`v = 4`), scoped to the convention of `ContractOperator` above. A Safe cannot
+///           use this path on either version: the forwarded bytes are not a valid Safe signature, so the Safe's
+///           EIP-1271 handler reverts (`test_safeCannotUseContractSignaturePath`);
 ///         - the pre-approved hash path (`v = 5`) with a real Safe v1.3.0, the wallet's own transaction calling
 ///           `operatorApproveHash`.
 ///
-///         Run: ETH_RPC=<mainnet rpc> forge test --match-contract ServiceManagerContractOperatorUpgrade -vv
+///         Run: ETH_RPC=<mainnet archive rpc> forge test --match-contract ServiceManagerContractOperatorUpgrade -vv
 contract ServiceManagerContractOperatorUpgradeTest is Test {
+    // Starting state: a block at which the live proxy runs the v1.2.0 implementation 0xA8C5...1f2e. Pinned so that the
+    // test keeps exercising the v1.2.0 -> v1.3.0 upgrade after v1.3.0 is deployed. Needs an archive RPC.
+    uint256 internal constant FORK_BLOCK = 26_155_957;
+    address internal constant LIVE_IMPLEMENTATION = 0xA8C52f0bB977F423E31400d151F1b98181511f2e;
     address internal constant PROXY = 0x94a1892D91c05D0C61c3f49F42205D2285b914c9;
     address internal constant SERVICE_REGISTRY = 0x48b6af7B12C71f09e2fC8aF4855De4Ff54e775cA;
     address internal constant TOKEN_UTILITY = 0x3Fb926116D454b95c669B6Bf2E7c3bad8d19affA;
@@ -157,9 +161,14 @@ contract ServiceManagerContractOperatorUpgradeTest is Test {
     uint256 internal instanceCount;
 
     function setUp() public {
-        vm.createSelectFork(vm.envString("ETH_RPC"));
+        vm.createSelectFork(vm.envString("ETH_RPC"), FORK_BLOCK);
         vm.deal(serviceOwner, 100 ether);
         assertEq(v1.VERSION(), "1.2.0", "live implementation");
+        assertEq(
+            address(uint160(uint256(vm.load(PROXY, keccak256("PROXY_SERVICE_MANAGER"))))),
+            LIVE_IMPLEMENTATION,
+            "v1.2.0 implementation at the fork block"
+        );
     }
 
     // ---------- helpers ----------
@@ -190,7 +199,8 @@ contract ServiceManagerContractOperatorUpgradeTest is Test {
         assertEq(v2.VERSION(), "1.3.0", "upgraded implementation");
     }
 
-    /// @dev Signature bytes of the contract-signature path: the operator contract address in r, s = 0, v = 4.
+    /// @dev Signature bytes of the contract-signature path, as these tests use it: the operator contract address in r,
+    ///      s = 0 (not checked by ServiceManager), v = 4.
     function _contractSignature(address operator) internal pure returns (bytes memory) {
         return abi.encodePacked(bytes32(uint256(uint160(operator))), bytes32(0), uint8(4));
     }
