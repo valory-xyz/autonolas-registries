@@ -797,4 +797,110 @@ describe("ServiceManagementWithOperatorSignatures", function () {
             snapshot.restore();
         });
     });
+
+    context("Bond value of operator-signed registrations", async function () {
+        // Signs the RegisterAgents message of the operator for the service and its current nonce
+        async function signRegisterAgents(serviceOwnerAddress, sId, agentInstancesAddresses, agentIds) {
+            const registerAgentsNonce = await serviceManager.getOperatorRegisterAgentsNonce(operator.address, sId);
+            const agentsData = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(["address[]", "uint32[]"],
+                [agentInstancesAddresses, agentIds]));
+            const registerAgentsTx = { operator: operator.address, serviceOwner: serviceOwnerAddress, serviceId: sId,
+                agentsData: agentsData, nonce: registerAgentsNonce };
+            const EIP712_REGISTER_AGENTS_TX_TYPE = {
+                // "RegisterAgents(address operator,address serviceOwner,uint256 serviceId,bytes32 agentsData,uint256 nonce)"
+                RegisterAgents: [
+                    { type: "address", name: "operator" },
+                    { type: "address", name: "serviceOwner" },
+                    { type: "uint256", name: "serviceId" },
+                    { type: "bytes32", name: "agentsData" },
+                    { type: "uint256", name: "nonce" },
+                ]
+            };
+            const chainId = (await ethers.provider.getNetwork()).chainId;
+            const EIP712_DOMAIN = { name: await serviceManager.NAME(), version: await serviceManager.VERSION(),
+                chainId: chainId, verifyingContract: serviceManager.address };
+            return operator._signTypedData(EIP712_DOMAIN, EIP712_REGISTER_AGENTS_TX_TYPE, registerAgentsTx);
+        }
+
+        it("Token-secured service: the provided value must match the bond wrapper total", async function () {
+            const agentInstancesAddresses = [signers[2].address, signers[3].address];
+            const agentIds = new Array(agentInstancesAddresses.length).fill(agentId);
+            const totalBond = agentInstancesAddresses.length;
+            const serviceOwner = signers[6];
+
+            // Mint tokens to the operator and approve them for the Service Registry Token Utility contract
+            const initSupply = "1" + "0".repeat(20);
+            await token.mint(operator.address, initSupply);
+            await token.mint(serviceOwner.address, initSupply);
+            await token.connect(operator).approve(serviceRegistryTokenUtility.address, initSupply);
+            await token.connect(serviceOwner).approve(serviceRegistryTokenUtility.address, initSupply);
+
+            // Create an agent and a token-secured service, then activate its registration
+            await agentRegistry.create(deployer.address, defaultHash, [1]);
+            await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
+            await serviceManager.connect(serviceOwner).create(serviceOwner.address, token.address, defaultHash, [1],
+                [[agentInstancesAddresses.length, regBond]], agentInstancesAddresses.length);
+            await serviceManager.connect(serviceOwner).activateRegistration(serviceId, {value: 1});
+
+            const signatureBytes = await signRegisterAgents(serviceOwner.address, serviceId, agentInstancesAddresses,
+                agentIds);
+
+            // Try to register with more value than the bond wrapper total
+            await expect(
+                serviceManager.connect(serviceOwner).registerAgentsWithSignature(operator.address, serviceId,
+                    agentInstancesAddresses, agentIds, signatureBytes, {value: totalBond + 1})
+            ).to.be.revertedWithCustomError(serviceManager, "IncorrectAgentBondingValue")
+                .withArgs(totalBond + 1, totalBond, serviceId);
+
+            // Try to register with less value than the bond wrapper total
+            await expect(
+                serviceManager.connect(serviceOwner).registerAgentsWithSignature(operator.address, serviceId,
+                    agentInstancesAddresses, agentIds, signatureBytes)
+            ).to.be.revertedWithCustomError(serviceManager, "IncorrectAgentBondingValue")
+                .withArgs(0, totalBond, serviceId);
+            await expect(
+                serviceManager.connect(serviceOwner).registerAgentsWithSignature(operator.address, serviceId,
+                    agentInstancesAddresses, agentIds, signatureBytes, {value: totalBond - 1})
+            ).to.be.revertedWithCustomError(serviceManager, "IncorrectAgentBondingValue")
+                .withArgs(totalBond - 1, totalBond, serviceId);
+
+            // Register with the exact value
+            await serviceManager.connect(serviceOwner).registerAgentsWithSignature(operator.address, serviceId,
+                agentInstancesAddresses, agentIds, signatureBytes, {value: totalBond});
+            expect(await ethers.provider.getBalance(serviceManager.address)).to.equal(0);
+            const service = await serviceRegistry.getService(serviceId);
+            expect(service.state).to.equal(3);
+        });
+
+        it("ETH-secured service: the operator-signed registration path is unchanged", async function () {
+            const agentInstancesAddresses = [signers[2].address, signers[3].address];
+            const agentIds = new Array(agentInstancesAddresses.length).fill(agentId);
+            const serviceOwner = signers[6];
+
+            // Create an agent and an ETH-secured service, then activate its registration
+            await agentRegistry.create(deployer.address, defaultHash, [1]);
+            await serviceRegistry.changeManager(serviceManager.address);
+            await serviceRegistryTokenUtility.changeManager(serviceManager.address);
+            await serviceManager.connect(serviceOwner).create(serviceOwner.address, ETHAddress, defaultHash, [1],
+                [[agentInstancesAddresses.length, regBond]], agentInstancesAddresses.length);
+            await serviceManager.connect(serviceOwner).activateRegistration(serviceId, {value: regDeposit});
+
+            const signatureBytes = await signRegisterAgents(serviceOwner.address, serviceId, agentInstancesAddresses,
+                agentIds);
+
+            // A wrong value is still rejected by the Service Registry
+            await expect(
+                serviceManager.connect(serviceOwner).registerAgentsWithSignature(operator.address, serviceId,
+                    agentInstancesAddresses, agentIds, signatureBytes, {value: regBond})
+            ).to.be.revertedWithCustomError(serviceRegistry, "IncorrectAgentBondingValue");
+
+            // The full bond registers the agent instances
+            await serviceManager.connect(serviceOwner).registerAgentsWithSignature(operator.address, serviceId,
+                agentInstancesAddresses, agentIds, signatureBytes, {value: regBond * agentInstancesAddresses.length});
+            const service = await serviceRegistry.getService(serviceId);
+            expect(service.state).to.equal(3);
+            expect(await ethers.provider.getBalance(serviceManager.address)).to.equal(0);
+        });
+    });
 });

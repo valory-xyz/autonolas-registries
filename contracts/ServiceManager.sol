@@ -712,9 +712,16 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
 
         // Register agent instances in a main ServiceRegistry contract
         if (isTokenSecured) {
+            // Get total bond wrapper value
+            uint256 totalBond = agentInstances.length * BOND_WRAPPER;
+            // Check for msg.value
+            if (msg.value != totalBond) {
+                revert IncorrectAgentBondingValue(msg.value, totalBond, serviceId);
+            }
+
             // If the service Id is based on the ERC20 token, the provided value to the standard registration is 1
             // multiplied by the number of agent instances
-            success = IService(serviceRegistry).registerAgents{value: agentInstances.length * BOND_WRAPPER}(
+            success = IService(serviceRegistry).registerAgents{value: totalBond}(
                 operator, serviceId, agentInstances, agentIds
             );
         } else {
