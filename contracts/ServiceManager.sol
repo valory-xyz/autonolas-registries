@@ -60,6 +60,12 @@ interface IServiceRegistry {
             ServiceState state
         );
 
+    /// @dev Gets agent parameters for a (service Id | agent Id) pair.
+    /// @param serviceAgent Service Id in the first 32 bits, agent Id in the next 32 bits.
+    /// @return slots Number of agent instances.
+    /// @return bond Bond per agent instance.
+    function mapServiceAndAgentIdAgentParams(uint256 serviceAgent) external view returns (uint32 slots, uint96 bond);
+
     /// @dev Gets service total supply.
     function totalSupply() external view returns (uint256);
 }
@@ -85,6 +91,16 @@ error MultisigAlreadyBound(address multisig, uint256 existingServiceId, uint256 
 /// @param agentInstance Provided agent instance address.
 error ReservedAgentInstance(address agentInstance);
 
+/// @dev Signed bond token is not the service bond token.
+/// @param provided Signed bond token.
+/// @param expected Service bond token, or ETH_TOKEN_ADDRESS for a native-token service.
+error WrongBondToken(address provided, address expected);
+
+/// @dev Total bond of the registration exceeds the signed maximum.
+/// @param totalBond Total bond of the registration.
+/// @param maxBond Signed maximum bond.
+error BondExceedsMax(uint256 totalBond, uint256 maxBond);
+
 /// @title Service Manager - Periphery smart contract for managing services with custom ERC20 tokens or ETH
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
@@ -103,7 +119,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     // Name of a signing domain
     string public constant NAME = "OLAS Service Manager";
     // Version number
-    string public constant VERSION = "1.2.0";
+    string public constant VERSION = "1.3.0";
     // Service Manager proxy address slot
     // keccak256("PROXY_SERVICE_MANAGER") = "0xe39e69948a448ce9239ad71b908b6c5b46225f86ffa735b25a8cd64080315855"
     bytes32 public constant PROXY_SERVICE_MANAGER = 0xe39e69948a448ce9239ad71b908b6c5b46225f86ffa735b25a8cd64080315855;
@@ -593,16 +609,19 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @dev Unbonds agent instances of the operator by the service owner via the operator's pre-signed message hash.
     /// @notice Note that this function accounts for the operator being the EOA, or the contract that has an
     ///         isValidSignature() function that would confirm the message hash was signed by the operator contract.
+    ///         The signature bytes passed to isValidSignature() carry no signer data, so a wallet that expects owner
+    ///         signatures there, such as Safe, uses the pre-approved hash path instead; see _verifySignedHash().
     ///         Otherwise, if the message hash has been pre-approved, the corresponding map of hashes is going to
     ///         to verify the signed hash, similar to the Safe contract implementation in v1.3.0:
     ///         https://github.com/safe-global/safe-contracts/blob/186a21a74b327f17fc41217a927dea7064f74604/contracts/GnosisSafe.sol#L240-L304
     ///         Also note that only the service owner is able to call this function on behalf of the operator.
     /// @param operator Operator address that signed the unbond message hash.
     /// @param serviceId Service Id.
+    /// @param deadline Last timestamp at which the signed message can be used.
     /// @param signature Signature byte array associated with operator message hash signature.
     /// @return success True, if the function executed successfully.
     /// @return refund The amount of refund returned to the operator.
-    function unbondWithSignature(address operator, uint256 serviceId, bytes memory signature)
+    function unbondWithSignature(address operator, uint256 serviceId, uint256 deadline, bytes memory signature)
         external
         returns (bool success, uint256 refund)
     {
@@ -611,6 +630,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
             revert ReentrancyGuard();
         }
         _locked = 2;
+
+        // Check the signed message deadline
+        _checkDeadline(deadline);
 
         // Check the service owner
         address serviceOwner = IERC721(serviceRegistry).ownerOf(serviceId);
@@ -627,7 +649,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         operatorService |= serviceId << 160;
         uint256 nonce = mapOperatorUnbondNonces[operatorService];
         // Get the unbond message hash
-        bytes32 msgHash = getUnbondHash(operator, serviceOwner, serviceId, nonce);
+        bytes32 msgHash = getUnbondHash(operator, serviceOwner, serviceId, deadline, nonce);
 
         // Verify the signed hash against the operator address
         _verifySignedHash(operator, msgHash, signature);
@@ -655,6 +677,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @dev Registers agent instances of the operator by the service owner via the operator's pre-signed message hash.
     /// @notice Note that this function accounts for the operator being the EOA, or the contract that has an
     ///         isValidSignature() function that would confirm the message hash was signed by the operator contract.
+    ///         The signature bytes passed to isValidSignature() carry no signer data, so a wallet that expects owner
+    ///         signatures there, such as Safe, uses the pre-approved hash path instead; see _verifySignedHash().
     ///         Otherwise, if the message hash has been pre-approved, the corresponding map of hashes is going to
     ///         to verify the signed hash, similar to the Safe contract implementation in v1.3.0:
     ///         https://github.com/safe-global/safe-contracts/blob/186a21a74b327f17fc41217a927dea7064f74604/contracts/GnosisSafe.sol#L240-L304
@@ -663,6 +687,10 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @param serviceId Service Id.
     /// @param agentInstances Agent instance addresses.
     /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
+    /// @param bondToken Bond token the operator signed for: the service ERC20 token, or ETH_TOKEN_ADDRESS for a
+    ///        native-token service.
+    /// @param maxBond Maximum total bond the operator signed for, summed over the listed agent instances.
+    /// @param deadline Last timestamp at which the signed message can be used.
     /// @param signature Signature byte array associated with operator message hash signature.
     /// @return success True, if the the function executed successfully.
     function registerAgentsWithSignature(
@@ -670,6 +698,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         uint256 serviceId,
         address[] memory agentInstances,
         uint32[] memory agentIds,
+        address bondToken,
+        uint256 maxBond,
+        uint256 deadline,
         bytes memory signature
     ) external payable returns (bool success) {
         // Reentrancy guard
@@ -678,33 +709,16 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         }
         _locked = 2;
 
-        // Check the service owner
-        address serviceOwner = IERC721(serviceRegistry).ownerOf(serviceId);
-        if (msg.sender != serviceOwner) {
-            revert OwnerOnly(msg.sender, serviceOwner);
-        }
+        // Check the signed message deadline
+        _checkDeadline(deadline);
 
-        // Get the (operator | serviceId) nonce for the registerAgents message
-        // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
-        // as another service might use the operator address at the same time frame
-        // operator occupies first 160 bits
-        uint256 operatorService = uint256(uint160(operator));
-        // serviceId occupies next 32 bits as serviceId is limited by the 2^32 - 1 value
-        operatorService |= serviceId << 160;
-        uint256 nonce = mapOperatorRegisterAgentsNonces[operatorService];
+        // Check the service owner and the operator signature, and advance the operator nonce
+        _verifyRegisterAgentsSignature(
+            operator, serviceId, agentInstances, agentIds, bondToken, maxBond, deadline, signature
+        );
 
-        // Reject reserved agent instance addresses
-        _checkAgentInstances(agentInstances);
-
-        // Get register agents message hash
-        bytes32 msgHash = getRegisterAgentsHash(operator, serviceOwner, serviceId, agentInstances, agentIds, nonce);
-
-        // Verify the signed hash against the operator address
-        _verifySignedHash(operator, msgHash, signature);
-
-        // Update corresponding nonce value
-        nonce++;
-        mapOperatorRegisterAgentsNonces[operatorService] = nonce;
+        // Check the signed bond terms before any bond is collected
+        _checkBondTerms(serviceId, agentInstances, agentIds, bondToken, maxBond);
 
         // Record the actual ERC20 bond
         bool isTokenSecured =
@@ -734,5 +748,103 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         emit RegisterAgentsWithSignatureExecuted(operator, serviceId, agentInstances, agentIds);
 
         _locked = 1;
+    }
+
+    /// @dev Checks the service owner and the operator signature over the register agents message, and advances
+    ///      the operator register agents nonce.
+    /// @param operator Operator address that signed the register agents message hash.
+    /// @param serviceId Service Id.
+    /// @param agentInstances Agent instance addresses.
+    /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
+    /// @param bondToken Signed bond token.
+    /// @param maxBond Signed maximum total bond.
+    /// @param deadline Signed deadline.
+    /// @param signature Signature byte array associated with operator message hash signature.
+    function _verifyRegisterAgentsSignature(
+        address operator,
+        uint256 serviceId,
+        address[] memory agentInstances,
+        uint32[] memory agentIds,
+        address bondToken,
+        uint256 maxBond,
+        uint256 deadline,
+        bytes memory signature
+    ) internal {
+        // Check the service owner
+        address serviceOwner = IERC721(serviceRegistry).ownerOf(serviceId);
+        if (msg.sender != serviceOwner) {
+            revert OwnerOnly(msg.sender, serviceOwner);
+        }
+
+        // Get the (operator | serviceId) nonce for the registerAgents message
+        // Push a pair of key defining variables into one key. Service Id or operator are not enough by themselves
+        // as another service might use the operator address at the same time frame
+        // operator occupies first 160 bits
+        uint256 operatorService = uint256(uint160(operator));
+        // serviceId occupies next 32 bits as serviceId is limited by the 2^32 - 1 value
+        operatorService |= serviceId << 160;
+        uint256 nonce = mapOperatorRegisterAgentsNonces[operatorService];
+
+        // Reject reserved agent instance addresses
+        _checkAgentInstances(agentInstances);
+
+        // Get register agents message hash
+        bytes32 msgHash = getRegisterAgentsHash(
+            operator, serviceOwner, serviceId, agentInstances, agentIds, bondToken, maxBond, deadline, nonce
+        );
+
+        // Verify the signed hash against the operator address
+        _verifySignedHash(operator, msgHash, signature);
+
+        // Update corresponding nonce value
+        mapOperatorRegisterAgentsNonces[operatorService] = nonce + 1;
+    }
+
+    /// @dev Checks the signed bond terms against the bond the registration charges.
+    /// @notice The bond is read per listed agent instance from the same records the registration charges: the token
+    ///         utility agent bond for a token-secured service, the registry agent bond for a native-token service.
+    ///         A repeated agent Id therefore counts once per listed instance.
+    /// @param serviceId Service Id.
+    /// @param agentInstances Agent instance addresses.
+    /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
+    /// @param bondToken Signed bond token.
+    /// @param maxBond Signed maximum total bond.
+    function _checkBondTerms(
+        uint256 serviceId,
+        address[] memory agentInstances,
+        uint32[] memory agentIds,
+        address bondToken,
+        uint256 maxBond
+    ) internal view {
+        // One agent Id per listed agent instance
+        uint256 numAgentInstances = agentInstances.length;
+        if (numAgentInstances != agentIds.length) {
+            revert WrongArrayLength(numAgentInstances, agentIds.length);
+        }
+
+        // The token utility records no token for a native-token service: externally that is ETH_TOKEN_ADDRESS
+        (address token, ) = IServiceTokenUtility(serviceRegistryTokenUtility).mapServiceIdTokenDeposit(serviceId);
+        bool isTokenSecured = (token != address(0));
+        if (!isTokenSecured) {
+            token = ETH_TOKEN_ADDRESS;
+        }
+        if (bondToken != token) {
+            revert WrongBondToken(bondToken, token);
+        }
+
+        uint256 totalBond;
+        for (uint256 i = 0; i < numAgentInstances; ++i) {
+            // serviceId occupies first 32 bits, agentId gets the next 32 bits
+            uint256 serviceAgent = serviceId | (uint256(agentIds[i]) << 32);
+            if (isTokenSecured) {
+                totalBond += IServiceTokenUtility(serviceRegistryTokenUtility).mapServiceAndAgentIdAgentBond(serviceAgent);
+            } else {
+                (, uint96 bond) = IServiceRegistry(serviceRegistry).mapServiceAndAgentIdAgentParams(serviceAgent);
+                totalBond += bond;
+            }
+        }
+        if (totalBond > maxBond) {
+            revert BondExceedsMax(totalBond, maxBond);
+        }
     }
 }
