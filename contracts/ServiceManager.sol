@@ -60,6 +60,22 @@ interface IServiceRegistry {
             ServiceState state
         );
 
+    struct Service {
+        uint96 securityDeposit;
+        address multisig;
+        bytes32 configHash;
+        uint32 threshold;
+        uint32 maxNumAgentInstances;
+        uint32 numAgentInstances;
+        ServiceState state;
+        uint32[] agentIds;
+    }
+
+    /// @dev Gets the service instance.
+    /// @param serviceId Service Id.
+    /// @return service Service instance, including its canonical agent Ids.
+    function getService(uint256 serviceId) external view returns (Service memory service);
+
     /// @dev Gets agent parameters for a (service Id | agent Id) pair.
     /// @param serviceAgent Service Id in the first 32 bits, agent Id in the next 32 bits.
     /// @return slots Number of agent instances.
@@ -291,6 +307,11 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     }
 
     /// @dev Updates a service in a CRUD way.
+    /// @notice Updates clear parameters for agent Ids omitted from the current configuration: they are passed to the
+    ///         registry with zero slots, so no parameters of an omitted agent Id remain to be registered against.
+    ///         This does not automatically clear parameters left by earlier updates, whose agent Ids are no longer in
+    ///         the current configuration; owners can explicitly include those agent Ids with zero slots when updating
+    ///         in PreRegistration.
     /// @param token ERC20 token address for the security deposit, or ETH.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids.
@@ -316,6 +337,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         if (token == address(0)) {
             revert ZeroAddress();
         }
+
+        // Remove the service agent Ids omitted from the new set
+        (agentIds, agentParams) = _addOmittedAgentIds(serviceId, agentIds, agentParams);
 
         uint256 numAgents = agentParams.length;
         if (token == ETH_TOKEN_ADDRESS) {
@@ -845,6 +869,79 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         }
         if (totalBond > maxBond) {
             revert BondExceedsMax(totalBond, maxBond);
+        }
+    }
+
+    /// @dev Adds the service agent Ids omitted from a new agent Id set, with zero parameters, so that the registry
+    ///      removes them.
+    /// @notice The provided set is validated first, so that the additions cannot mask an invalid set: it must be
+    ///         non-empty, match agentParams in length and be strictly ascending. The provided entries are kept in their
+    ///         order, including any explicit zero-slot removals; only agent Ids of the current set that are absent
+    ///         from it are inserted, at their sorted position. Linear in the size of both sets.
+    /// @param serviceId Service Id.
+    /// @param agentIds New canonical agent Ids, strictly ascending.
+    /// @param agentParams New agent parameters, one per agent Id.
+    /// @return mergedAgentIds Agent Ids including the omitted ones.
+    /// @return mergedAgentParams Agent parameters including zero parameters for the omitted agent Ids.
+    function _addOmittedAgentIds(
+        uint256 serviceId,
+        uint32[] memory agentIds,
+        IService.AgentParams[] memory agentParams
+    ) internal view returns (uint32[] memory mergedAgentIds, IService.AgentParams[] memory mergedAgentParams) {
+        uint256 numAgentIds = agentIds.length;
+        if (numAgentIds == 0 || numAgentIds != agentParams.length) {
+            revert WrongArrayLength(numAgentIds, agentParams.length);
+        }
+        uint256 lastId;
+        for (uint256 i = 0; i < numAgentIds; ++i) {
+            if (agentIds[i] <= lastId) {
+                revert WrongAgentId(agentIds[i]);
+            }
+            lastId = agentIds[i];
+        }
+
+        // Current agent Ids, strictly ascending as recorded by the registry
+        uint32[] memory currentAgentIds = IServiceRegistry(serviceRegistry).getService(serviceId).agentIds;
+        uint256 numCurrent = currentAgentIds.length;
+
+        // Count the current agent Ids absent from the new set
+        uint256 numOmitted;
+        uint256 j;
+        for (uint256 i = 0; i < numCurrent; ++i) {
+            while (j < numAgentIds && agentIds[j] < currentAgentIds[i]) {
+                ++j;
+            }
+            if (j == numAgentIds || agentIds[j] != currentAgentIds[i]) {
+                ++numOmitted;
+            }
+        }
+        if (numOmitted == 0) {
+            return (agentIds, agentParams);
+        }
+
+        // Merge both sets in ascending order, the omitted agent Ids with zero parameters
+        mergedAgentIds = new uint32[](numAgentIds + numOmitted);
+        mergedAgentParams = new IService.AgentParams[](numAgentIds + numOmitted);
+        uint256 k;
+        j = 0;
+        for (uint256 i = 0; i < numCurrent; ++i) {
+            while (j < numAgentIds && agentIds[j] < currentAgentIds[i]) {
+                mergedAgentIds[k] = agentIds[j];
+                mergedAgentParams[k] = agentParams[j];
+                ++j;
+                ++k;
+            }
+            if (j == numAgentIds || agentIds[j] != currentAgentIds[i]) {
+                // Omitted: zero slots and bond
+                mergedAgentIds[k] = currentAgentIds[i];
+                ++k;
+            }
+        }
+        while (j < numAgentIds) {
+            mergedAgentIds[k] = agentIds[j];
+            mergedAgentParams[k] = agentParams[j];
+            ++j;
+            ++k;
         }
     }
 }
