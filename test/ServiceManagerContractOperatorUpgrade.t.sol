@@ -145,7 +145,7 @@ contract ServiceManagerContractOperatorUpgradeTest is Test {
     address internal constant LIVE_IMPLEMENTATION = 0xA8C52f0bB977F423E31400d151F1b98181511f2e;
     address internal constant PROXY = 0x94a1892D91c05D0C61c3f49F42205D2285b914c9;
     address internal constant SERVICE_REGISTRY = 0x48b6af7B12C71f09e2fC8aF4855De4Ff54e775cA;
-    address internal constant TOKEN_UTILITY = 0x3Fb926116D454b95c669B6Bf2E7c3bad8d19affA;
+    address internal constant TOKEN_UTILITY = 0x3Fb926116D454b95c669B6Bf2E7c3bad8d19affA; // gitleaks:allow - public ServiceRegistryTokenUtility address, not a secret
     address internal constant ETH_TOKEN_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     // Safe v1.3.0 on Ethereum mainnet
     address internal constant SAFE_SINGLETON = 0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552;
