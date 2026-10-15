@@ -879,7 +879,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         _verifySignedHash(operator, msgHash, signature);
 
         // Update corresponding nonce value
-        mapOperatorRegisterAgentsNonces[operatorService] = nonce + 1;
+        nonce++;
+        mapOperatorRegisterAgentsNonces[operatorService] = nonce;
     }
 
     /// @dev Checks the signed bond terms against the bond the registration charges.
