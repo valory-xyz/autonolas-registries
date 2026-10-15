@@ -562,8 +562,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         if (bridger != address(0)) {
             uint256 agentId = IIdentityRegistryBridger(bridger).mapServiceIdAgentIds(serviceId);
             if (agentId > 0 && IIdentityRegistryBridger(bridger).mapMultisigAgentIds(multisig) != agentId) {
-                // Unlink the previous multisig and unset the agent wallet only if a different multisig is still
-                // linked to this agent Id
+                // Link the deployed multisig; unlink a different previous multisig and unset the old wallet
+                // only if that previous multisig remains authorized for this identity
                 address oldMultisig;
                 if (lastMultisig != address(0) && lastMultisig != multisig &&
                     IIdentityRegistryBridger(bridger).mapMultisigAgentIds(lastMultisig) == agentId) {
@@ -644,7 +644,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
             return;
         }
 
-        // Skip if the service has never been deployed
+        // Skip if the registry records no multisig
         (, address multisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
         if (multisig == address(0)) {
             return;
