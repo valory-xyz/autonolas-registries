@@ -134,8 +134,9 @@ error BondExceedsMax(uint256 totalBond, uint256 maxBond);
 /// @notice ERC-8004 identity: the service owner has no direct access to the service's identity through the
 ///         identity registry bridger; the owner's influence is that deploying the service determines which multisig
 ///         is linked to it. Only the linked multisig can act on the identity through the bridger, from deployment
-///         until the last agent instance unbonds; the final unbond clears the link and unsets the agent wallet, and a
-///         redeployment links the deployed multisig again, whether the same one or a new one.
+///         until the service is terminated; termination clears the link and unsets the agent wallet, unbonding does
+///         not involve the bridger, and a redeployment links the deployed multisig again, whether the same one or a new
+///         one.
 ///         Multisig binding: a service multisig stays bound to its service (mapMultisigServiceIds) after the service
 ///         is terminated and unbonded. The binding is released only when the service is redeployed with a different
 ///         multisig; until then the multisig can be redeployed only under the same service.
@@ -619,6 +620,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         // Terminate the service with the regular service registry routine
         (success, refund) = IService(serviceRegistry).terminate(msg.sender, serviceId);
 
+        // End the multisig's access to the service 8004 agent Id
+        _unlinkAgentWallet(serviceId);
+
         // If the service is token-based, the actual refund is provided via the serviceRegistryTokenUtility contract
         if (tokenRefund > 0) {
             refund = tokenRefund;
@@ -627,10 +631,12 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         _locked = 1;
     }
 
-    /// @dev Unlinks the service multisig from the service 8004 agent Id once the last agent instance has unbonded.
-    /// @notice The link is cleared and the agent wallet unset only if the multisig is linked to this service's
-    ///         agent Id, so a link to another agent Id is never touched. The multisig binding in
-    ///         mapMultisigServiceIds is kept; the next deployment links the deployed multisig again.
+    /// @dev Unlinks the service multisig from the service 8004 agent Id when the service is terminated.
+    /// @notice Runs after every successful termination, whatever the state the service was terminated from, so a link
+    ///         kept from an earlier deployment is cleared as well. The link is cleared and the agent wallet unset only
+    ///         if the multisig is linked to this service's agent Id, so a link to another agent Id is never touched. A
+    ///         failure reverts the termination. The multisig binding in mapMultisigServiceIds is kept; the next
+    ///         deployment links the deployed multisig again.
     /// @param serviceId Service Id.
     function _unlinkAgentWallet(uint256 serviceId) internal {
         address bridger = identityRegistryBridger;
@@ -638,10 +644,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
             return;
         }
 
-        // Skip while agent instances remain bonded, or if the service has never been deployed
-        (, address multisig,,,,, IServiceRegistry.ServiceState state) =
-            IServiceRegistry(serviceRegistry).mapServices(serviceId);
-        if (state != IServiceRegistry.ServiceState.PreRegistration || multisig == address(0)) {
+        // Skip if the service has never been deployed
+        (, address multisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
+        if (multisig == address(0)) {
             return;
         }
 
@@ -674,9 +679,6 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
 
         // Unbond with the regular service registry routine
         (success, refund) = IService(serviceRegistry).unbond(msg.sender, serviceId);
-
-        // Clear the multisig link to the service 8004 agent Id after the last agent instance unbonds
-        _unlinkAgentWallet(serviceId);
 
         // If the service is token-based, the actual refund is provided via the serviceRegistryTokenUtility contract
         if (tokenRefund > 0) {
@@ -743,9 +745,6 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
 
         // Unbond with the regular service registry routine
         (success, refund) = IService(serviceRegistry).unbond(operator, serviceId);
-
-        // Clear the multisig link to the service 8004 agent Id after the last agent instance unbonds
-        _unlinkAgentWallet(serviceId);
 
         // If the service is token-based, the actual refund is provided via the serviceRegistryTokenUtility contract
         if (tokenRefund > 0) {

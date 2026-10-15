@@ -4,17 +4,18 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const safeContracts = require("@gnosis.pm/safe-contracts");
 
-// The final unbond clears the multisig link to the service 8004 agent Id and unsets the agent wallet; a redeployment
-// links the deployed multisig again. Run against both ServiceRegistry and ServiceRegistryL2.
+// Termination clears the multisig link to the service 8004 agent Id and unsets the agent wallet, from any state the
+// service can be terminated in; unbonding does not involve the bridger; a redeployment links the deployed multisig
+// again. Run against both ServiceRegistry and ServiceRegistryL2.
 for (const registryKind of ["ServiceRegistry", "ServiceRegistryL2"]) {
-    describe(`ServiceManager 8004 identity on unbond (${registryKind})`, function () {
+    describe(`ServiceManager 8004 identity on termination (${registryKind})`, function () {
         const defaultHash = "0x" + "5".repeat(64);
         const regBond = 1000;
         const ETHAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
         const AddressZero = ethers.constants.AddressZero;
         const maxDeadline = ethers.constants.MaxUint256;
         const baseURI = "https://localhost/erc8004/service/";
-        const ServiceState = { PreRegistration: 1, Deployed: 4, TerminatedBonded: 5 };
+        const ServiceState = { PreRegistration: 1, ActiveRegistration: 2, FinishedRegistration: 3, Deployed: 4, TerminatedBonded: 5 };
         const EIP712_UNBOND_TX_TYPE = {
             Unbond: [
                 { type: "address", name: "operator" },
@@ -238,190 +239,165 @@ for (const registryKind of ["ServiceRegistry", "ServiceRegistryL2"]) {
         }
 
         // Fault injection: moves the agent Id away from the bridger, so the bridger's wallet unset reverts during
-        // cleanup. It only exercises rollback on a downstream failure; normal operation offers no such transfer.
+        // cleanup. It only exercises behaviour on a downstream failure; normal operation offers no such transfer.
         async function injectCleanupFailure(agentId) {
             const bridgerSigner = await impersonate(bridger.address);
             await identityRegistry.connect(bridgerSigner).transferFrom(bridger.address, signers[12].address, agentId);
         }
 
-        for (const [path, unbond] of Object.entries(unbondPaths)) {
-            describe(`${path} unbond`, function () {
-                it("Final unbond clears the multisig link and the agent wallet, keeps the identity and the binding",
-                    async function () {
-                        const instance = signers[10];
-                        const serviceId = await createService(1);
-                        const safe = await registerAndDeploy(serviceId, [[operator, instance]]);
-                        const agentId = await bridger.mapServiceIdAgentIds(serviceId);
-                        expect(agentId).to.be.gt(0);
 
-                        await expectLinked(safe, agentId);
-                        await setSafeAsAgentWallet(safe, agentId, instance);
-
-                        await serviceManager.connect(serviceOwner).terminate(serviceId);
-                        await expect(unbond(serviceId, operator)).to.emit(bridger, "AgentMultisigUpdated")
-                            .withArgs(serviceId, agentId, safe, AddressZero);
-
-                        expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(
-                            ServiceState.PreRegistration);
-                        await expectUnlinked(safe);
-                        expect(await identityRegistry.getMetadata(agentId, "agentWallet")).to.equal("0x");
-                        await expectIdentityIntact(serviceId, agentId);
-                        // The multisig stays bound to its service
-                        expect(await serviceManager.mapMultisigServiceIds(safe)).to.equal(serviceId);
-                    });
-
-                it("Partial unbond keeps the link until the last agent instance unbonds", async function () {
-                    const serviceId = await createService(2);
-                    const safe = await registerAndDeploy(serviceId, [[operator, signers[10]],
-                        [operator2, signers[11]]]);
-                    const agentId = await bridger.mapServiceIdAgentIds(serviceId);
-
-                    await serviceManager.connect(serviceOwner).terminate(serviceId);
-                    await expect(unbond(serviceId, operator)).to.not.emit(bridger, "AgentMultisigUpdated");
-                    expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(
-                        ServiceState.TerminatedBonded);
-                    await expectLinked(safe, agentId);
-
-                    await expect(unbond(serviceId, operator2)).to.emit(bridger, "AgentMultisigUpdated")
-                        .withArgs(serviceId, agentId, safe, AddressZero);
-                    await expectUnlinked(safe);
-                    await expectIdentityIntact(serviceId, agentId);
-                });
-
-                it("Redeployment with the same Safe links it again", async function () {
-                    const instance = signers[10];
-                    const serviceId = await createService(1);
-                    const safe = await registerAndDeploy(serviceId, [[operator, instance]]);
-                    const agentId = await bridger.mapServiceIdAgentIds(serviceId);
-                    await serviceManager.connect(serviceOwner).terminate(serviceId);
-                    await unbond(serviceId, operator);
-                    await expectUnlinked(safe);
-
-                    // The Safe owners are unchanged, so the same instance redeploys the same Safe
-                    await activateAndRegister(serviceId, [[operator, instance]]);
-                    await expect(serviceManager.connect(serviceOwner).deploy(serviceId,
-                        gnosisSafeSameAddressMultisig.address, ethers.utils.solidityPack(["address"], [safe])))
-                        .to.emit(bridger, "AgentMultisigUpdated").withArgs(serviceId, agentId, AddressZero, safe);
-
-                    expect((await serviceRegistry.mapServices(serviceId)).multisig).to.equal(safe);
-                    await expectLinked(safe, agentId);
-                    await expectIdentityIntact(serviceId, agentId);
-                });
-
-                it("Redeployment with a different Safe links only the new one", async function () {
-                    const serviceId = await createService(1);
-                    const oldSafe = await registerAndDeploy(serviceId, [[operator, signers[10]]]);
-                    const agentId = await bridger.mapServiceIdAgentIds(serviceId);
-                    await serviceManager.connect(serviceOwner).terminate(serviceId);
-                    await unbond(serviceId, operator);
-
-                    const newSafe = await registerAndDeploy(serviceId, [[operator, signers[11]]]);
-                    expect(newSafe).to.not.equal(oldSafe);
-                    await expectLinked(newSafe, agentId);
-                    await expectUnlinked(oldSafe);
-                    await expectIdentityIntact(serviceId, agentId);
-                    expect(await serviceManager.mapMultisigServiceIds(newSafe)).to.equal(serviceId);
-                    expect(await serviceManager.mapMultisigServiceIds(oldSafe)).to.equal(0);
-                });
-
-                it("A failing identity cleanup reverts the whole unbond (fault injection)", async function () {
-                    const serviceId = await createService(1);
-                    const safe = await registerAndDeploy(serviceId, [[operator, signers[10]]]);
-                    const agentId = await bridger.mapServiceIdAgentIds(serviceId);
-                    await serviceManager.connect(serviceOwner).terminate(serviceId);
-
-                    await injectCleanupFailure(agentId);
-
-                    const registryBalance = await ethers.provider.getBalance(serviceRegistry.address);
-                    const unbondNonce = await serviceManager.getOperatorUnbondNonce(operator.address, serviceId);
-                    await expect(unbond(serviceId, operator)).to.be.revertedWith("Not authorized");
-
-                    expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(
-                        ServiceState.TerminatedBonded);
-                    expect(await serviceRegistry.getOperatorBalance(operator.address, serviceId)).to.equal(regBond);
-                    expect(await ethers.provider.getBalance(serviceRegistry.address)).to.equal(registryBalance);
-                    expect(await serviceManager.getOperatorUnbondNonce(operator.address, serviceId)).to.equal(
-                        unbondNonce);
-                    expect(await bridger.mapMultisigAgentIds(safe)).to.equal(agentId);
-                });
-            });
+        // Leaves a service in PreRegistration with its former Safe still linked: the service is deployed, then
+        // terminated and unbonded while no bridger is set.
+        async function linkKeptFromEarlierDeployment(numInstances = 1) {
+            const serviceId = await createService(numInstances);
+            const registrations = [];
+            for (let i = 0; i < numInstances; i++) {
+                registrations.push([i == 0 ? operator : operator2, signers[13 + i]]);
+            }
+            const safe = await registerAndDeploy(serviceId, registrations);
+            const agentId = await bridger.mapServiceIdAgentIds(serviceId);
+            // A one-owner Safe also sets itself as agent wallet
+            if (numInstances == 1) {
+                await setSafeAsAgentWallet(safe, agentId, signers[13]);
+            }
+            await serviceManager.setIdentityRegistryBridger(AddressZero);
+            await serviceManager.connect(serviceOwner).terminate(serviceId);
+            for (const [op] of registrations) {
+                await serviceManager.connect(op).unbond(serviceId);
+            }
+            await serviceManager.setIdentityRegistryBridger(bridger.address);
+            expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(ServiceState.PreRegistration);
+            expect(await bridger.mapMultisigAgentIds(safe)).to.equal(agentId);
+            return { serviceId, agentId, safe };
         }
 
-        it("Final unbond of an ERC20-secured service clears the multisig link and refunds the token bond",
-            async function () {
-                const serviceId = await createService(1, token.address);
-                const safe = await registerAndDeploy(serviceId, [[operator, signers[10]]], token.address);
-                const agentId = await bridger.mapServiceIdAgentIds(serviceId);
-                await expectLinked(safe, agentId);
-
-                await serviceManager.connect(serviceOwner).terminate(serviceId);
-                const balanceBefore = await token.balanceOf(operator.address);
-                await expect(serviceManager.connect(operator).unbond(serviceId))
-                    .to.emit(bridger, "AgentMultisigUpdated").withArgs(serviceId, agentId, safe, AddressZero);
-                expect(await token.balanceOf(operator.address)).to.equal(balanceBefore.add(regBond));
-
-                await expectUnlinked(safe);
-                await expectIdentityIntact(serviceId, agentId);
-            });
-
-        it("A failing identity cleanup reverts the token refund of an ERC20-secured service (fault injection)",
-            async function () {
-                const serviceId = await createService(1, token.address);
-                const safe = await registerAndDeploy(serviceId, [[operator, signers[10]]], token.address);
-                const agentId = await bridger.mapServiceIdAgentIds(serviceId);
-                await serviceManager.connect(serviceOwner).terminate(serviceId);
-
-                await injectCleanupFailure(agentId);
-
-                const operatorTokens = await token.balanceOf(operator.address);
-                const utilityTokens = await token.balanceOf(serviceRegistryTokenUtility.address);
-                await expect(serviceManager.connect(operator).unbond(serviceId)).to.be.revertedWith("Not authorized");
-
-                expect(await token.balanceOf(operator.address)).to.equal(operatorTokens);
-                expect(await token.balanceOf(serviceRegistryTokenUtility.address)).to.equal(utilityTokens);
-                expect(await serviceRegistryTokenUtility.getOperatorBalance(operator.address, serviceId)).to.equal(
-                    regBond);
-                expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(ServiceState.TerminatedBonded);
-                expect(await bridger.mapMultisigAgentIds(safe)).to.equal(agentId);
-            });
-
-        it("Final unbond of a never-deployed service skips the identity cleanup", async function () {
-            const serviceId = await createService(1);
-            const agentId = await bridger.mapServiceIdAgentIds(serviceId);
-            expect(agentId).to.be.gt(0);
-            await activateAndRegister(serviceId, [[operator, signers[10]]]);
-
-            await serviceManager.connect(serviceOwner).terminate(serviceId);
-            await expect(serviceManager.connect(operator).unbond(serviceId)).to.not.emit(bridger,
-                "AgentMultisigUpdated");
-            const service = await serviceRegistry.mapServices(serviceId);
-            expect(service.state).to.equal(ServiceState.PreRegistration);
-            expect(service.multisig).to.equal(AddressZero);
-            await expectIdentityIntact(serviceId, agentId);
-        });
-
-        it("Redeployment with a different Safe unlinks a previous Safe still linked from before this upgrade",
+        it("Termination of a deployed service clears the link and the agent wallet while agents stay bonded",
             async function () {
                 const instance = signers[10];
                 const serviceId = await createService(1);
-                const oldSafe = await registerAndDeploy(serviceId, [[operator, instance]]);
+                const safe = await registerAndDeploy(serviceId, [[operator, instance]]);
                 const agentId = await bridger.mapServiceIdAgentIds(serviceId);
-                await setSafeAsAgentWallet(oldSafe, agentId, instance);
+                await expectLinked(safe, agentId);
+                await setSafeAsAgentWallet(safe, agentId, instance);
 
-                // Unbond without the bridger, as before this upgrade: the old link remains
-                await serviceManager.setIdentityRegistryBridger(AddressZero);
-                await serviceManager.connect(serviceOwner).terminate(serviceId);
-                await serviceManager.connect(operator).unbond(serviceId);
-                await serviceManager.setIdentityRegistryBridger(bridger.address);
-                expect(await bridger.mapMultisigAgentIds(oldSafe)).to.equal(agentId);
+                await expect(serviceManager.connect(serviceOwner).terminate(serviceId))
+                    .to.emit(bridger, "AgentMultisigUpdated").withArgs(serviceId, agentId, safe, AddressZero);
 
-                const newSafe = await registerAndDeploy(serviceId, [[operator, signers[11]]]);
-                await expectLinked(newSafe, agentId);
-                await expectUnlinked(oldSafe);
+                expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(ServiceState.TerminatedBonded);
+                await expectUnlinked(safe);
+                expect(await identityRegistry.getMetadata(agentId, "agentWallet")).to.equal("0x");
+                await expectIdentityIntact(serviceId, agentId);
+                // The multisig stays bound to its service
+                expect(await serviceManager.mapMultisigServiceIds(safe)).to.equal(serviceId);
+            });
+
+        // Terminates a deployed service while no bridger is set, so its Safe stays linked through the unbonds that
+        // follow; a cleanup still reachable from either unbond path would clear that link or, under fault injection,
+        // revert.
+        async function terminatedWithLinkInPlace(registrations) {
+            const serviceId = await createService(registrations.length);
+            const safe = await registerAndDeploy(serviceId, registrations);
+            const agentId = await bridger.mapServiceIdAgentIds(serviceId);
+            await serviceManager.setIdentityRegistryBridger(AddressZero);
+            await serviceManager.connect(serviceOwner).terminate(serviceId);
+            await serviceManager.setIdentityRegistryBridger(bridger.address);
+            expect(await bridger.mapMultisigAgentIds(safe)).to.equal(agentId);
+            return { serviceId, agentId, safe };
+        }
+
+        for (const [path, unbond] of Object.entries(unbondPaths)) {
+            describe(`${path} unbond`, function () {
+                it("Partial and final unbonds leave a link that is still in place untouched", async function () {
+                    const { serviceId, agentId, safe } = await terminatedWithLinkInPlace([[operator, signers[10]],
+                        [operator2, signers[11]]]);
+
+                    await expect(unbond(serviceId, operator)).to.not.emit(bridger, "AgentMultisigUpdated");
+                    expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(
+                        ServiceState.TerminatedBonded);
+                    expect(await bridger.mapMultisigAgentIds(safe)).to.equal(agentId);
+
+                    await expect(unbond(serviceId, operator2)).to.not.emit(bridger, "AgentMultisigUpdated");
+                    expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(
+                        ServiceState.PreRegistration);
+                    expect(await bridger.mapMultisigAgentIds(safe)).to.equal(agentId);
+                });
+
+                it("Final unbond succeeds while the bridger would fail on a link still in place (fault injection)",
+                    async function () {
+                        const { serviceId, agentId, safe } = await terminatedWithLinkInPlace([[operator,
+                            signers[10]]]);
+                        await injectCleanupFailure(agentId);
+
+                        await unbond(serviceId, operator);
+                        expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(
+                            ServiceState.PreRegistration);
+                        expect(await serviceRegistry.getOperatorBalance(operator.address, serviceId)).to.equal(0);
+                        expect(await bridger.mapMultisigAgentIds(safe)).to.equal(agentId);
+                    });
+            });
+        }
+
+        it("Termination from ActiveRegistration without agents clears a link kept from an earlier deployment",
+            async function () {
+                const { serviceId, agentId, safe } = await linkKeptFromEarlierDeployment();
+                await serviceManager.connect(serviceOwner).activateRegistration(serviceId, {value: regBond});
+
+                await expect(serviceManager.connect(serviceOwner).terminate(serviceId))
+                    .to.emit(bridger, "AgentMultisigUpdated").withArgs(serviceId, agentId, safe, AddressZero);
+
+                expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(ServiceState.PreRegistration);
+                await expectUnlinked(safe);
+                expect(await identityRegistry.getMetadata(agentId, "agentWallet")).to.equal("0x");
+                await expectIdentityIntact(serviceId, agentId);
+            });
+
+        it("Termination from ActiveRegistration with an agent registered clears a link kept from an earlier deployment",
+            async function () {
+                const { serviceId, agentId, safe } = await linkKeptFromEarlierDeployment(2);
+                await serviceManager.connect(serviceOwner).activateRegistration(serviceId, {value: regBond});
+                await serviceManager.connect(operator).registerAgents(serviceId, [signers[15].address], [1],
+                    {value: regBond});
+                expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(ServiceState.ActiveRegistration);
+
+                await expect(serviceManager.connect(serviceOwner).terminate(serviceId))
+                    .to.emit(bridger, "AgentMultisigUpdated").withArgs(serviceId, agentId, safe, AddressZero);
+
+                expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(ServiceState.TerminatedBonded);
+                await expectUnlinked(safe);
                 expect(await identityRegistry.getMetadata(agentId, "agentWallet")).to.equal("0x");
             });
 
-        it("Final unbond leaves a link to another service's agent Id untouched", async function () {
+        it("Termination from FinishedRegistration clears a link kept from an earlier deployment", async function () {
+            const { serviceId, agentId, safe } = await linkKeptFromEarlierDeployment();
+            await activateAndRegister(serviceId, [[operator, signers[15]]]);
+            expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(ServiceState.FinishedRegistration);
+
+            await expect(serviceManager.connect(serviceOwner).terminate(serviceId))
+                .to.emit(bridger, "AgentMultisigUpdated").withArgs(serviceId, agentId, safe, AddressZero);
+
+            expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(ServiceState.TerminatedBonded);
+            await expectUnlinked(safe);
+            expect(await identityRegistry.getMetadata(agentId, "agentWallet")).to.equal("0x");
+            await expectIdentityIntact(serviceId, agentId);
+        });
+
+        it("Termination of a never-deployed service does not call the bridger", async function () {
+            // From ActiveRegistration with no agent, and from FinishedRegistration
+            const active = await createService(1);
+            await serviceManager.connect(serviceOwner).activateRegistration(active, {value: regBond});
+            await expect(serviceManager.connect(serviceOwner).terminate(active)).to.not.emit(bridger,
+                "AgentMultisigUpdated");
+
+            const finished = await createService(1);
+            await activateAndRegister(finished, [[operator, signers[10]]]);
+            await expect(serviceManager.connect(serviceOwner).terminate(finished)).to.not.emit(bridger,
+                "AgentMultisigUpdated");
+            const service = await serviceRegistry.mapServices(finished);
+            expect(service.state).to.equal(ServiceState.TerminatedBonded);
+            expect(service.multisig).to.equal(AddressZero);
+        });
+
+        it("Termination leaves a link to another service's agent Id untouched", async function () {
             const serviceId = await createService(1);
             const safe = await registerAndDeploy(serviceId, [[operator, signers[10]]]);
             const otherServiceId = await createService(1);
@@ -432,21 +408,19 @@ for (const registryKind of ["ServiceRegistry", "ServiceRegistryL2"]) {
             await bridger.connect(manager).updateAgentWallet(otherServiceId, AddressZero, safe);
             expect(await bridger.mapMultisigAgentIds(safe)).to.equal(otherAgentId);
 
-            await serviceManager.connect(serviceOwner).terminate(serviceId);
-            await expect(serviceManager.connect(operator).unbond(serviceId)).to.not.emit(bridger,
+            await expect(serviceManager.connect(serviceOwner).terminate(serviceId)).to.not.emit(bridger,
                 "AgentMultisigUpdated");
             expect(await bridger.mapMultisigAgentIds(safe)).to.equal(otherAgentId);
         });
 
-        it("Final unbond without a bridger, or of a service without an agent Id, does not call the bridger",
+        it("Termination without a bridger, or of a service without an agent Id, does not call the bridger",
             async function () {
                 // No bridger set
                 const serviceId = await createService(1);
                 const safe = await registerAndDeploy(serviceId, [[operator, signers[10]]]);
                 await serviceManager.setIdentityRegistryBridger(AddressZero);
                 await serviceManager.connect(serviceOwner).terminate(serviceId);
-                await serviceManager.connect(operator).unbond(serviceId);
-                expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(ServiceState.PreRegistration);
+                expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(ServiceState.TerminatedBonded);
                 expect(await bridger.mapMultisigAgentIds(safe)).to.be.gt(0);
 
                 // Service created while no bridger was set has no agent Id
@@ -454,10 +428,104 @@ for (const registryKind of ["ServiceRegistry", "ServiceRegistryL2"]) {
                 await serviceManager.setIdentityRegistryBridger(bridger.address);
                 const legacySafe = await registerAndDeploy(legacyServiceId, [[operator, signers[11]]]);
                 expect(await bridger.mapServiceIdAgentIds(legacyServiceId)).to.equal(0);
-                await serviceManager.connect(serviceOwner).terminate(legacyServiceId);
-                await expect(serviceManager.connect(operator).unbond(legacyServiceId)).to.not.emit(bridger,
+                await expect(serviceManager.connect(serviceOwner).terminate(legacyServiceId)).to.not.emit(bridger,
                     "AgentMultisigUpdated");
                 expect(await bridger.mapMultisigAgentIds(legacySafe)).to.equal(0);
             });
+
+        it("A failing identity cleanup reverts the termination and its refund (fault injection)", async function () {
+            const serviceId = await createService(1);
+            const safe = await registerAndDeploy(serviceId, [[operator, signers[10]]]);
+            const agentId = await bridger.mapServiceIdAgentIds(serviceId);
+            await injectCleanupFailure(agentId);
+
+            const registryBalance = await ethers.provider.getBalance(serviceRegistry.address);
+            await expect(serviceManager.connect(serviceOwner).terminate(serviceId)).to.be.revertedWith(
+                "Not authorized");
+
+            expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(ServiceState.Deployed);
+            expect(await ethers.provider.getBalance(serviceRegistry.address)).to.equal(registryBalance);
+            expect(await bridger.mapMultisigAgentIds(safe)).to.equal(agentId);
+        });
+
+        it("A failing identity cleanup reverts the token refund of an ERC20-secured termination (fault injection)",
+            async function () {
+                const serviceId = await createService(1, token.address);
+                const safe = await registerAndDeploy(serviceId, [[operator, signers[10]]], token.address);
+                const agentId = await bridger.mapServiceIdAgentIds(serviceId);
+                await injectCleanupFailure(agentId);
+
+                const ownerTokens = await token.balanceOf(serviceOwner.address);
+                const utilityTokens = await token.balanceOf(serviceRegistryTokenUtility.address);
+                const deposit = await serviceRegistryTokenUtility.mapServiceIdTokenDeposit(serviceId);
+                await expect(serviceManager.connect(serviceOwner).terminate(serviceId)).to.be.revertedWith(
+                    "Not authorized");
+
+                expect(await token.balanceOf(serviceOwner.address)).to.equal(ownerTokens);
+                expect(await token.balanceOf(serviceRegistryTokenUtility.address)).to.equal(utilityTokens);
+                const depositAfter = await serviceRegistryTokenUtility.mapServiceIdTokenDeposit(serviceId);
+                expect(depositAfter.securityDeposit).to.equal(deposit.securityDeposit);
+                expect((await serviceRegistry.mapServices(serviceId)).state).to.equal(ServiceState.Deployed);
+                expect(await bridger.mapMultisigAgentIds(safe)).to.equal(agentId);
+            });
+
+        it("Termination of an ERC20-secured service clears the link and refunds the token deposit", async function () {
+            const serviceId = await createService(1, token.address);
+            const safe = await registerAndDeploy(serviceId, [[operator, signers[10]]], token.address);
+            const agentId = await bridger.mapServiceIdAgentIds(serviceId);
+
+            const balanceBefore = await token.balanceOf(serviceOwner.address);
+            await expect(serviceManager.connect(serviceOwner).terminate(serviceId))
+                .to.emit(bridger, "AgentMultisigUpdated").withArgs(serviceId, agentId, safe, AddressZero);
+            expect(await token.balanceOf(serviceOwner.address)).to.equal(balanceBefore.add(regBond));
+
+            await expectUnlinked(safe);
+            await expectIdentityIntact(serviceId, agentId);
+        });
+
+        it("Redeployment with the same Safe after termination links it again", async function () {
+            const instance = signers[10];
+            const serviceId = await createService(1);
+            const safe = await registerAndDeploy(serviceId, [[operator, instance]]);
+            const agentId = await bridger.mapServiceIdAgentIds(serviceId);
+            await serviceManager.connect(serviceOwner).terminate(serviceId);
+            await serviceManager.connect(operator).unbond(serviceId);
+            await expectUnlinked(safe);
+
+            // The Safe owners are unchanged, so the same instance redeploys the same Safe
+            await activateAndRegister(serviceId, [[operator, instance]]);
+            await expect(serviceManager.connect(serviceOwner).deploy(serviceId,
+                gnosisSafeSameAddressMultisig.address, ethers.utils.solidityPack(["address"], [safe])))
+                .to.emit(bridger, "AgentMultisigUpdated").withArgs(serviceId, agentId, AddressZero, safe);
+
+            expect((await serviceRegistry.mapServices(serviceId)).multisig).to.equal(safe);
+            await expectLinked(safe, agentId);
+            await expectIdentityIntact(serviceId, agentId);
+        });
+
+        it("Redeployment with a different Safe after termination links only the new one", async function () {
+            const serviceId = await createService(1);
+            const oldSafe = await registerAndDeploy(serviceId, [[operator, signers[10]]]);
+            const agentId = await bridger.mapServiceIdAgentIds(serviceId);
+            await serviceManager.connect(serviceOwner).terminate(serviceId);
+            await serviceManager.connect(operator).unbond(serviceId);
+
+            const newSafe = await registerAndDeploy(serviceId, [[operator, signers[11]]]);
+            expect(newSafe).to.not.equal(oldSafe);
+            await expectLinked(newSafe, agentId);
+            await expectUnlinked(oldSafe);
+            await expectIdentityIntact(serviceId, agentId);
+            expect(await serviceManager.mapMultisigServiceIds(newSafe)).to.equal(serviceId);
+            expect(await serviceManager.mapMultisigServiceIds(oldSafe)).to.equal(0);
+        });
+
+        it("Redeployment with a different Safe replaces a link kept from an earlier deployment", async function () {
+            const { serviceId, agentId, safe: oldSafe } = await linkKeptFromEarlierDeployment();
+
+            const newSafe = await registerAndDeploy(serviceId, [[operator, signers[16]]]);
+            await expectLinked(newSafe, agentId);
+            await expectUnlinked(oldSafe);
+            expect(await identityRegistry.getMetadata(agentId, "agentWallet")).to.equal("0x");
+        });
     });
 }

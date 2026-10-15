@@ -64,14 +64,14 @@ interface ISafeMinimal {
 
 error ZeroValue();
 
-/// @title ServiceManagerIdentityUnbondUpgradeTest
+/// @title ServiceManagerIdentityTerminateUpgradeTest
 /// @notice Upgrades the live mainnet ServiceManagerProxy from v1.2.0 and runs the ERC-8004 identity lifecycle against
 ///         the live IdentityRegistryBridger and ERC-8004 IdentityRegistry. Every case uses a service created on the
-///         fork. After the final unbond the multisig is unlinked from the service agent Id and the agent wallet is
-///         unset; a redeployment links the deployed multisig again.
+///         fork. Termination unlinks the multisig from the service agent Id and unsets the agent wallet; unbonding does
+///         not involve the bridger; a redeployment links the deployed multisig again.
 ///
-///         Run: ETH_RPC=<mainnet archive rpc> forge test --match-contract ServiceManagerIdentityUnbondUpgrade -vv
-contract ServiceManagerIdentityUnbondUpgradeTest is Test {
+///         Run: ETH_RPC=<mainnet archive rpc> forge test --match-contract ServiceManagerIdentityTerminateUpgrade -vv
+contract ServiceManagerIdentityTerminateUpgradeTest is Test {
     event AgentMultisigUpdated(
         uint256 indexed serviceId, uint256 indexed agentId, address oldMultisig, address indexed newMultisig
     );
@@ -96,6 +96,7 @@ contract ServiceManagerIdentityUnbondUpgradeTest is Test {
     uint96 internal constant BOND = 1000;
     uint8 internal constant PRE_REGISTRATION = 1;
     uint8 internal constant DEPLOYED = 4;
+    uint8 internal constant TERMINATED_BONDED = 5;
 
     ServiceManager internal manager = ServiceManager(PROXY);
     IIdentityRegistryBridgerView internal bridger = IIdentityRegistryBridgerView(BRIDGER);
@@ -103,11 +104,15 @@ contract ServiceManagerIdentityUnbondUpgradeTest is Test {
     address internal serviceOwner = makeAddr("serviceOwner");
     address internal operator;
     uint256 internal operatorKey;
+    address internal operator2;
+    uint256 internal operator2Key;
     uint256 internal safeNonce;
 
     function setUp() public {
         vm.createSelectFork(vm.envString("ETH_RPC"), FORK_BLOCK);
         (operator, operatorKey) = makeAddrAndKey("operator");
+        (operator2, operator2Key) = makeAddrAndKey("operator2");
+        vm.deal(operator2, 1 ether);
         vm.deal(serviceOwner, 1 ether);
         vm.deal(operator, 1 ether);
         assertEq(
@@ -232,72 +237,80 @@ contract ServiceManagerIdentityUnbondUpgradeTest is Test {
         assertEq(identity.getMetadata(agentId, "agentWallet"), abi.encodePacked(safe), "Safe is the agent wallet");
     }
 
-    /// @dev Final unbond by the service owner with the operator's signed message.
-    function _signedUnbond(uint256 serviceId) internal {
+    /// @dev Unbond by the service owner with the operator's signed message.
+    function _signedUnbond(uint256 serviceId, address op, uint256 opKey) internal {
         uint256 deadline = block.timestamp + 100;
-        bytes32 digest = manager.getUnbondHash(
-            operator, serviceOwner, serviceId, deadline, manager.getOperatorUnbondNonce(operator, serviceId)
-        );
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(operatorKey, digest);
+        bytes32 digest =
+            manager.getUnbondHash(op, serviceOwner, serviceId, deadline, manager.getOperatorUnbondNonce(op, serviceId));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(opKey, digest);
         vm.prank(serviceOwner);
-        manager.unbondWithSignature(operator, serviceId, deadline, abi.encodePacked(r, s, v));
+        manager.unbondWithSignature(op, serviceId, deadline, abi.encodePacked(r, s, v));
     }
 
-    /// @notice Final unbond: the agent wallet is unset, the multisig is unlinked, the identity and the multisig binding
-    ///         are kept.
-    function test_finalUnbondUnlinksMultisigAndUnsetsWallet() public {
+    /// @notice Termination with agents still bonded: the agent wallet is unset, the multisig is unlinked, the identity
+    ///         and the multisig binding are kept.
+    function test_terminateUnlinksMultisigAndUnsetsWallet() public {
         _upgrade();
         uint256 instanceKey = 0xA11;
         (uint256 serviceId, uint256 agentId, address safe) = _deployedService(instanceKey);
         _assertLinked(safe, agentId, hex"01");
         _setSafeAsWallet(safe, agentId, instanceKey);
 
-        vm.prank(serviceOwner);
-        manager.terminate(serviceId);
         vm.expectEmit(true, true, true, true, BRIDGER);
         emit AgentMultisigUpdated(serviceId, agentId, safe, address(0));
-        vm.prank(operator);
-        manager.unbond(serviceId);
+        vm.prank(serviceOwner);
+        manager.terminate(serviceId);
 
-        assertEq(_state(serviceId), PRE_REGISTRATION, "back in PreRegistration");
+        assertEq(_state(serviceId), TERMINATED_BONDED, "agents still bonded");
         _assertUnlinked(safe);
         assertEq(identity.getMetadata(agentId, "agentWallet").length, 0, "agent wallet unset");
         _assertIdentityIntact(serviceId, agentId);
         assertEq(manager.mapMultisigServiceIds(safe), serviceId, "multisig binding kept");
     }
 
-    /// @notice Final unbond with the operator's signed message: same outcome.
-    function test_signedFinalUnbondUnlinksMultisigAndUnsetsWallet() public {
-        _upgrade();
-        uint256 instanceKey = 0xA12;
-        (uint256 serviceId, uint256 agentId, address safe) = _deployedService(instanceKey);
-        _setSafeAsWallet(safe, agentId, instanceKey);
-
-        vm.prank(serviceOwner);
-        manager.terminate(serviceId);
-        vm.expectEmit(true, true, true, true, BRIDGER);
-        emit AgentMultisigUpdated(serviceId, agentId, safe, address(0));
-        _signedUnbond(serviceId);
-
-        _assertUnlinked(safe);
-        assertEq(identity.getMetadata(agentId, "agentWallet").length, 0, "agent wallet unset");
-        _assertIdentityIntact(serviceId, agentId);
-        assertEq(manager.mapMultisigServiceIds(safe), serviceId, "multisig binding kept");
-    }
-
-    /// @notice Final unbond of a service whose agent wallet was never set.
-    function test_finalUnbondWithEmptyWallet() public {
+    /// @notice Termination of a service whose agent wallet was never set.
+    function test_terminateWithEmptyWallet() public {
         _upgrade();
         (uint256 serviceId, uint256 agentId, address safe) = _deployedService(0xA13);
 
         vm.prank(serviceOwner);
         manager.terminate(serviceId);
-        vm.prank(operator);
-        manager.unbond(serviceId);
 
         _assertUnlinked(safe);
         assertEq(identity.getMetadata(agentId, "agentWallet").length, 0, "agent wallet still empty");
         _assertIdentityIntact(serviceId, agentId);
+    }
+
+    /// @notice After termination, a direct partial unbond and a signed final unbond make no call to the bridger.
+    function test_unbondsAfterTerminationMakeNoBridgerCall() public {
+        _upgrade();
+        uint32[] memory agentIds = new uint32[](1);
+        agentIds[0] = 1;
+        IService.AgentParams[] memory agentParams = new IService.AgentParams[](1);
+        agentParams[0] = IService.AgentParams({slots: 2, bond: BOND});
+        uint256 serviceId =
+            manager.create(serviceOwner, ETH_TOKEN_ADDRESS, bytes32(uint256(0x8004)), agentIds, agentParams, 2);
+        vm.prank(serviceOwner);
+        manager.activateRegistration{value: BOND}(serviceId);
+        address[] memory instances = new address[](1);
+        instances[0] = vm.addr(0xA16);
+        vm.prank(operator);
+        manager.registerAgents{value: BOND}(serviceId, instances, agentIds);
+        instances[0] = vm.addr(0xA17);
+        vm.prank(operator2);
+        manager.registerAgents{value: BOND}(serviceId, instances, agentIds);
+        address safe = _deployNewSafe(serviceId);
+        vm.prank(serviceOwner);
+        manager.terminate(serviceId);
+        _assertUnlinked(safe);
+
+        // No call of any kind reaches the bridger from here to the end of the test
+        vm.expectCall(BRIDGER, "", 0);
+        vm.prank(operator);
+        manager.unbond(serviceId);
+        assertEq(_state(serviceId), TERMINATED_BONDED, "partial unbond");
+        _signedUnbond(serviceId, operator2, operator2Key);
+        assertEq(_state(serviceId), PRE_REGISTRATION, "final unbond");
     }
 
     /// @notice Redeployment with the same Safe through the recovery module links it again.
