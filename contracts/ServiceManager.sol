@@ -557,7 +557,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         }
 
         // 8004 Identity Registry workflow: link the deployed multisig to the service 8004 agent Id, unless it already is.
-        // The final unbond clears the link, so a redeployment with the same multisig links it again
+        // Termination clears the link, so a redeployment with the same multisig links it again
         address bridger = identityRegistryBridger;
         if (bridger != address(0)) {
             uint256 agentId = IIdentityRegistryBridger(bridger).mapServiceIdAgentIds(serviceId);
