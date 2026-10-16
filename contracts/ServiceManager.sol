@@ -26,6 +26,16 @@ interface IIdentityRegistryBridger {
     /// @param oldMultisig Old multisig address.
     /// @param newMultisig New multisig address.
     function updateAgentWallet(uint256 serviceId, address oldMultisig, address newMultisig) external;
+
+    /// @dev Gets 8004 agent Id corresponding to service Id.
+    /// @param serviceId Service Id.
+    /// @return agentId Corresponding 8004 agent Id, or zero if none.
+    function mapServiceIdAgentIds(uint256 serviceId) external view returns (uint256 agentId);
+
+    /// @dev Gets 8004 agent Id whose identity the multisig is linked to.
+    /// @param multisig Multisig address.
+    /// @return agentId Linked 8004 agent Id, or zero if none.
+    function mapMultisigAgentIds(address multisig) external view returns (uint256 agentId);
 }
 
 interface IServiceRegistry {
@@ -60,6 +70,28 @@ interface IServiceRegistry {
             ServiceState state
         );
 
+    struct Service {
+        uint96 securityDeposit;
+        address multisig;
+        bytes32 configHash;
+        uint32 threshold;
+        uint32 maxNumAgentInstances;
+        uint32 numAgentInstances;
+        ServiceState state;
+        uint32[] agentIds;
+    }
+
+    /// @dev Gets the service instance.
+    /// @param serviceId Service Id.
+    /// @return service Service instance, including its canonical agent Ids.
+    function getService(uint256 serviceId) external view returns (Service memory service);
+
+    /// @dev Gets agent parameters for a (service Id | agent Id) pair.
+    /// @param serviceAgent Service Id in the first 32 bits, agent Id in the next 32 bits.
+    /// @return slots Number of agent instances.
+    /// @return bond Bond per agent instance.
+    function mapServiceAndAgentIdAgentParams(uint256 serviceAgent) external view returns (uint32 slots, uint96 bond);
+
     /// @dev Gets service total supply.
     function totalSupply() external view returns (uint256);
 }
@@ -85,10 +117,29 @@ error MultisigAlreadyBound(address multisig, uint256 existingServiceId, uint256 
 /// @param agentInstance Provided agent instance address.
 error ReservedAgentInstance(address agentInstance);
 
+/// @dev Signed bond token is not the service bond token.
+/// @param provided Signed bond token.
+/// @param expected Service bond token, or ETH_TOKEN_ADDRESS for a native-token service.
+error WrongBondToken(address provided, address expected);
+
+/// @dev Total bond of the registration exceeds the signed maximum.
+/// @param totalBond Total bond of the registration.
+/// @param maxBond Signed maximum bond.
+error BondExceedsMax(uint256 totalBond, uint256 maxBond);
+
 /// @title Service Manager - Periphery smart contract for managing services with custom ERC20 tokens or ETH
 /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
 /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
 /// @author Mariapia Moscatiello - <mariapia.moscatiello@valory.xyz>
+/// @notice ERC-8004 identity: the service owner has no direct access to the service's identity through the
+///         identity registry bridger; the owner's influence is that deploying the service determines which multisig
+///         is linked to it. Only the linked multisig can act on the identity through the bridger, from deployment
+///         until the service is terminated; termination clears the link and unsets the agent wallet, unbonding does
+///         not involve the bridger, and a redeployment links the deployed multisig again, whether the same one or a new
+///         one.
+///         Multisig binding: a service multisig stays bound to its service (mapMultisigServiceIds) after the service
+///         is terminated and unbonded. The binding is released only when the service is redeployed with a different
+///         multisig; until then the multisig can be redeployed only under the same service.
 contract ServiceManager is GenericManager, OperatorSignedHashes {
     event OperatorWhitelistUpdated(address indexed operatorWhitelist);
     event IdentityRegistryBridgerUpdated(address indexed identityRegistryBridger);
@@ -103,7 +154,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     // Name of a signing domain
     string public constant NAME = "OLAS Service Manager";
     // Version number
-    string public constant VERSION = "1.2.0";
+    string public constant VERSION = "1.3.0";
     // Service Manager proxy address slot
     // keccak256("PROXY_SERVICE_MANAGER") = "0xe39e69948a448ce9239ad71b908b6c5b46225f86ffa735b25a8cd64080315855"
     bytes32 public constant PROXY_SERVICE_MANAGER = 0xe39e69948a448ce9239ad71b908b6c5b46225f86ffa735b25a8cd64080315855;
@@ -275,6 +326,11 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     }
 
     /// @dev Updates a service in a CRUD way.
+    /// @notice Updates clear parameters for agent Ids omitted from the current configuration: they are passed to the
+    ///         registry with zero slots, so no parameters of an omitted agent Id remain to be registered against.
+    ///         This does not automatically clear parameters left by earlier updates, whose agent Ids are no longer in
+    ///         the current configuration; owners can explicitly include those agent Ids with zero slots when updating
+    ///         in PreRegistration.
     /// @param token ERC20 token address for the security deposit, or ETH.
     /// @param configHash IPFS hash pointing to the config metadata.
     /// @param agentIds Canonical agent Ids.
@@ -300,6 +356,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         if (token == address(0)) {
             revert ZeroAddress();
         }
+
+        // Remove the service agent Ids omitted from the new set
+        (agentIds, agentParams) = _addOmittedAgentIds(serviceId, agentIds, agentParams);
 
         uint256 numAgents = agentParams.length;
         if (token == ETH_TOKEN_ADDRESS) {
@@ -456,6 +515,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     }
 
     /// @dev Creates multisig instance controlled by the set of service agent instances and deploys the service.
+    /// @notice Redeployment with a different multisig also clears any authorization retained by the previous multisig
+    ///         from before termination cleanup was introduced, provided it belongs to this service's identity.
     /// @param serviceId Correspondent service Id.
     /// @param multisigImplementation Multisig implementation address.
     /// @param data Data payload for the multisig creation.
@@ -497,10 +558,21 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
             }
         }
 
-        // 8004 Identity Registry workflow: check if current and last multisigs are different
-        if ((identityRegistryBridger != address(0)) && (multisig != lastMultisig)) {
-            // Update corresponding multisig records and unset wallet in 8004 agent Id, if required
-            IIdentityRegistryBridger(identityRegistryBridger).updateAgentWallet(serviceId, lastMultisig, multisig);
+        // 8004 Identity Registry workflow: link the deployed multisig to the service 8004 agent Id, unless it already is.
+        // Termination clears the link, so a redeployment with the same multisig links it again
+        address bridger = identityRegistryBridger;
+        if (bridger != address(0)) {
+            uint256 agentId = IIdentityRegistryBridger(bridger).mapServiceIdAgentIds(serviceId);
+            if (agentId > 0 && IIdentityRegistryBridger(bridger).mapMultisigAgentIds(multisig) != agentId) {
+                // Migration: an earlier termination may have left the previous multisig linked.
+                // Unlink it only if its authorization belongs to this service's identity.
+                address oldMultisig;
+                if (lastMultisig != address(0) && lastMultisig != multisig &&
+                    IIdentityRegistryBridger(bridger).mapMultisigAgentIds(lastMultisig) == agentId) {
+                    oldMultisig = lastMultisig;
+                }
+                IIdentityRegistryBridger(bridger).updateAgentWallet(serviceId, oldMultisig, multisig);
+            }
         }
 
         emit CreateMultisig(multisig);
@@ -550,12 +622,41 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         // Terminate the service with the regular service registry routine
         (success, refund) = IService(serviceRegistry).terminate(msg.sender, serviceId);
 
+        // End the multisig's access to the service 8004 agent Id
+        _unlinkAgentWallet(serviceId);
+
         // If the service is token-based, the actual refund is provided via the serviceRegistryTokenUtility contract
         if (tokenRefund > 0) {
             refund = tokenRefund;
         }
 
         _locked = 1;
+    }
+
+    /// @dev Unlinks the service multisig from the service 8004 agent Id when the service is terminated.
+    /// @notice Cleanup runs after every successful termination, regardless of the starting state. Services with no
+    ///         recorded multisig are skipped. For reactivated services, this also clears a matching identity link
+    ///         retained from an earlier deployment. The link is cleared and the agent wallet unset only
+    ///         if the multisig is linked to this service's agent Id, so a link to another agent Id is never touched. A
+    ///         failure reverts the termination. The multisig binding in mapMultisigServiceIds is kept; the next
+    ///         deployment links the deployed multisig again.
+    /// @param serviceId Service Id.
+    function _unlinkAgentWallet(uint256 serviceId) internal {
+        address bridger = identityRegistryBridger;
+        if (bridger == address(0)) {
+            return;
+        }
+
+        // Skip if the registry records no multisig
+        (, address multisig,,,,,) = IServiceRegistry(serviceRegistry).mapServices(serviceId);
+        if (multisig == address(0)) {
+            return;
+        }
+
+        uint256 agentId = IIdentityRegistryBridger(bridger).mapServiceIdAgentIds(serviceId);
+        if (agentId > 0 && IIdentityRegistryBridger(bridger).mapMultisigAgentIds(multisig) == agentId) {
+            IIdentityRegistryBridger(bridger).updateAgentWallet(serviceId, multisig, address(0));
+        }
     }
 
     /// @dev Unbonds agent instances of the operator from the service.
@@ -593,16 +694,19 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @dev Unbonds agent instances of the operator by the service owner via the operator's pre-signed message hash.
     /// @notice Note that this function accounts for the operator being the EOA, or the contract that has an
     ///         isValidSignature() function that would confirm the message hash was signed by the operator contract.
+    ///         isValidSignature() receives the 65 signature bytes with the operator address in r, so a wallet that
+    ///         reads owner signatures from them, such as Safe, uses the pre-approved hash path; see _verifySignedHash().
     ///         Otherwise, if the message hash has been pre-approved, the corresponding map of hashes is going to
     ///         to verify the signed hash, similar to the Safe contract implementation in v1.3.0:
     ///         https://github.com/safe-global/safe-contracts/blob/186a21a74b327f17fc41217a927dea7064f74604/contracts/GnosisSafe.sol#L240-L304
     ///         Also note that only the service owner is able to call this function on behalf of the operator.
     /// @param operator Operator address that signed the unbond message hash.
     /// @param serviceId Service Id.
+    /// @param deadline Last timestamp at which the signed message can be used.
     /// @param signature Signature byte array associated with operator message hash signature.
     /// @return success True, if the function executed successfully.
     /// @return refund The amount of refund returned to the operator.
-    function unbondWithSignature(address operator, uint256 serviceId, bytes memory signature)
+    function unbondWithSignature(address operator, uint256 serviceId, uint256 deadline, bytes memory signature)
         external
         returns (bool success, uint256 refund)
     {
@@ -611,6 +715,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
             revert ReentrancyGuard();
         }
         _locked = 2;
+
+        // Check the signed message deadline
+        _checkDeadline(deadline);
 
         // Check the service owner
         address serviceOwner = IERC721(serviceRegistry).ownerOf(serviceId);
@@ -627,7 +734,7 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         operatorService |= serviceId << 160;
         uint256 nonce = mapOperatorUnbondNonces[operatorService];
         // Get the unbond message hash
-        bytes32 msgHash = getUnbondHash(operator, serviceOwner, serviceId, nonce);
+        bytes32 msgHash = getUnbondHash(operator, serviceOwner, serviceId, deadline, nonce);
 
         // Verify the signed hash against the operator address
         _verifySignedHash(operator, msgHash, signature);
@@ -655,6 +762,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @dev Registers agent instances of the operator by the service owner via the operator's pre-signed message hash.
     /// @notice Note that this function accounts for the operator being the EOA, or the contract that has an
     ///         isValidSignature() function that would confirm the message hash was signed by the operator contract.
+    ///         isValidSignature() receives the 65 signature bytes with the operator address in r, so a wallet that
+    ///         reads owner signatures from them, such as Safe, uses the pre-approved hash path; see _verifySignedHash().
     ///         Otherwise, if the message hash has been pre-approved, the corresponding map of hashes is going to
     ///         to verify the signed hash, similar to the Safe contract implementation in v1.3.0:
     ///         https://github.com/safe-global/safe-contracts/blob/186a21a74b327f17fc41217a927dea7064f74604/contracts/GnosisSafe.sol#L240-L304
@@ -663,6 +772,10 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     /// @param serviceId Service Id.
     /// @param agentInstances Agent instance addresses.
     /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
+    /// @param bondToken Bond token the operator signed for: the service ERC20 token, or ETH_TOKEN_ADDRESS for a
+    ///        native-token service.
+    /// @param maxBond Maximum total bond the operator signed for, summed over the listed agent instances.
+    /// @param deadline Last timestamp at which the signed message can be used.
     /// @param signature Signature byte array associated with operator message hash signature.
     /// @return success True, if the the function executed successfully.
     function registerAgentsWithSignature(
@@ -670,6 +783,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         uint256 serviceId,
         address[] memory agentInstances,
         uint32[] memory agentIds,
+        address bondToken,
+        uint256 maxBond,
+        uint256 deadline,
         bytes memory signature
     ) external payable returns (bool success) {
         // Reentrancy guard
@@ -678,6 +794,67 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         }
         _locked = 2;
 
+        // Check the signed message deadline
+        _checkDeadline(deadline);
+
+        // Check the service owner and the operator signature, and advance the operator nonce
+        _verifyRegisterAgentsSignature(
+            operator, serviceId, agentInstances, agentIds, bondToken, maxBond, deadline, signature
+        );
+
+        // Check the signed bond terms before any bond is collected
+        _checkBondTerms(serviceId, agentInstances, agentIds, bondToken, maxBond);
+
+        // Record the actual ERC20 bond
+        bool isTokenSecured =
+            IServiceTokenUtility(serviceRegistryTokenUtility).registerAgentsTokenDeposit(operator, serviceId, agentIds);
+
+        // Register agent instances in a main ServiceRegistry contract
+        if (isTokenSecured) {
+            // Get total bond wrapper value
+            uint256 totalBond = agentInstances.length * BOND_WRAPPER;
+            // Check for msg.value
+            if (msg.value != totalBond) {
+                revert IncorrectAgentBondingValue(msg.value, totalBond, serviceId);
+            }
+
+            // If the service Id is based on the ERC20 token, the provided value to the standard registration is 1
+            // multiplied by the number of agent instances
+            success = IService(serviceRegistry).registerAgents{value: totalBond}(
+                operator, serviceId, agentInstances, agentIds
+            );
+        } else {
+            // Otherwise follow the standard msg.value path
+            success = IService(serviceRegistry).registerAgents{value: msg.value}(
+                operator, serviceId, agentInstances, agentIds
+            );
+        }
+
+        emit RegisterAgentsWithSignatureExecuted(operator, serviceId, agentInstances, agentIds);
+
+        _locked = 1;
+    }
+
+    /// @dev Checks the service owner and the operator signature over the register agents message, and advances
+    ///      the operator register agents nonce.
+    /// @param operator Operator address that signed the register agents message hash.
+    /// @param serviceId Service Id.
+    /// @param agentInstances Agent instance addresses.
+    /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
+    /// @param bondToken Signed bond token.
+    /// @param maxBond Signed maximum total bond.
+    /// @param deadline Signed deadline.
+    /// @param signature Signature byte array associated with operator message hash signature.
+    function _verifyRegisterAgentsSignature(
+        address operator,
+        uint256 serviceId,
+        address[] memory agentInstances,
+        uint32[] memory agentIds,
+        address bondToken,
+        uint256 maxBond,
+        uint256 deadline,
+        bytes memory signature
+    ) internal {
         // Check the service owner
         address serviceOwner = IERC721(serviceRegistry).ownerOf(serviceId);
         if (msg.sender != serviceOwner) {
@@ -697,7 +874,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         _checkAgentInstances(agentInstances);
 
         // Get register agents message hash
-        bytes32 msgHash = getRegisterAgentsHash(operator, serviceOwner, serviceId, agentInstances, agentIds, nonce);
+        bytes32 msgHash = getRegisterAgentsHash(
+            operator, serviceOwner, serviceId, agentInstances, agentIds, bondToken, maxBond, deadline, nonce
+        );
 
         // Verify the signed hash against the operator address
         _verifySignedHash(operator, msgHash, signature);
@@ -705,27 +884,126 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         // Update corresponding nonce value
         nonce++;
         mapOperatorRegisterAgentsNonces[operatorService] = nonce;
+    }
 
-        // Record the actual ERC20 bond
-        bool isTokenSecured =
-            IServiceTokenUtility(serviceRegistryTokenUtility).registerAgentsTokenDeposit(operator, serviceId, agentIds);
-
-        // Register agent instances in a main ServiceRegistry contract
-        if (isTokenSecured) {
-            // If the service Id is based on the ERC20 token, the provided value to the standard registration is 1
-            // multiplied by the number of agent instances
-            success = IService(serviceRegistry).registerAgents{value: agentInstances.length * BOND_WRAPPER}(
-                operator, serviceId, agentInstances, agentIds
-            );
-        } else {
-            // Otherwise follow the standard msg.value path
-            success = IService(serviceRegistry).registerAgents{value: msg.value}(
-                operator, serviceId, agentInstances, agentIds
-            );
+    /// @dev Checks the signed bond terms against the bond the registration charges.
+    /// @notice The bond is read per listed agent instance from the same records the registration charges: the token
+    ///         utility agent bond for a token-secured service, the registry agent bond for a native-token service.
+    ///         A repeated agent Id therefore counts once per listed instance.
+    /// @param serviceId Service Id.
+    /// @param agentInstances Agent instance addresses.
+    /// @param agentIds Canonical Ids of the agent correspondent to the agent instance.
+    /// @param bondToken Signed bond token.
+    /// @param maxBond Signed maximum total bond.
+    function _checkBondTerms(
+        uint256 serviceId,
+        address[] memory agentInstances,
+        uint32[] memory agentIds,
+        address bondToken,
+        uint256 maxBond
+    ) internal view {
+        // One agent Id per listed agent instance
+        uint256 numAgentInstances = agentInstances.length;
+        if (numAgentInstances != agentIds.length) {
+            revert WrongArrayLength(numAgentInstances, agentIds.length);
         }
 
-        emit RegisterAgentsWithSignatureExecuted(operator, serviceId, agentInstances, agentIds);
+        // The token utility records no token for a native-token service: externally that is ETH_TOKEN_ADDRESS
+        (address token, ) = IServiceTokenUtility(serviceRegistryTokenUtility).mapServiceIdTokenDeposit(serviceId);
+        bool isTokenSecured = (token != address(0));
+        if (!isTokenSecured) {
+            token = ETH_TOKEN_ADDRESS;
+        }
+        if (bondToken != token) {
+            revert WrongBondToken(bondToken, token);
+        }
 
-        _locked = 1;
+        uint256 totalBond;
+        for (uint256 i = 0; i < numAgentInstances; ++i) {
+            // serviceId occupies first 32 bits, agentId gets the next 32 bits
+            uint256 serviceAgent = serviceId | (uint256(agentIds[i]) << 32);
+            if (isTokenSecured) {
+                totalBond += IServiceTokenUtility(serviceRegistryTokenUtility).mapServiceAndAgentIdAgentBond(serviceAgent);
+            } else {
+                (, uint96 bond) = IServiceRegistry(serviceRegistry).mapServiceAndAgentIdAgentParams(serviceAgent);
+                totalBond += bond;
+            }
+        }
+        if (totalBond > maxBond) {
+            revert BondExceedsMax(totalBond, maxBond);
+        }
+    }
+
+    /// @dev Adds the service agent Ids omitted from a new agent Id set, with zero parameters, so that the registry
+    ///      removes them.
+    /// @notice The provided set is validated first, so that the additions cannot mask an invalid set: it must be
+    ///         non-empty, match agentParams in length and be strictly ascending. The provided entries are kept in their
+    ///         order, including any explicit zero-slot removals; only agent Ids of the current set that are absent
+    ///         from it are inserted, at their sorted position. Linear in the size of both sets.
+    /// @param serviceId Service Id.
+    /// @param agentIds New canonical agent Ids, strictly ascending.
+    /// @param agentParams New agent parameters, one per agent Id.
+    /// @return mergedAgentIds Agent Ids including the omitted ones.
+    /// @return mergedAgentParams Agent parameters including zero parameters for the omitted agent Ids.
+    function _addOmittedAgentIds(
+        uint256 serviceId,
+        uint32[] memory agentIds,
+        IService.AgentParams[] memory agentParams
+    ) internal view returns (uint32[] memory mergedAgentIds, IService.AgentParams[] memory mergedAgentParams) {
+        uint256 numAgentIds = agentIds.length;
+        if (numAgentIds == 0 || numAgentIds != agentParams.length) {
+            revert WrongArrayLength(numAgentIds, agentParams.length);
+        }
+        uint256 lastId;
+        for (uint256 i = 0; i < numAgentIds; ++i) {
+            if (agentIds[i] <= lastId) {
+                revert WrongAgentId(agentIds[i]);
+            }
+            lastId = agentIds[i];
+        }
+
+        // Current agent Ids, strictly ascending as recorded by the registry
+        uint32[] memory currentAgentIds = IServiceRegistry(serviceRegistry).getService(serviceId).agentIds;
+        uint256 numCurrent = currentAgentIds.length;
+
+        // Count the current agent Ids absent from the new set
+        uint256 numOmitted;
+        uint256 j;
+        for (uint256 i = 0; i < numCurrent; ++i) {
+            while (j < numAgentIds && agentIds[j] < currentAgentIds[i]) {
+                ++j;
+            }
+            if (j == numAgentIds || agentIds[j] != currentAgentIds[i]) {
+                ++numOmitted;
+            }
+        }
+        if (numOmitted == 0) {
+            return (agentIds, agentParams);
+        }
+
+        // Merge both sets in ascending order, the omitted agent Ids with zero parameters
+        mergedAgentIds = new uint32[](numAgentIds + numOmitted);
+        mergedAgentParams = new IService.AgentParams[](numAgentIds + numOmitted);
+        uint256 k;
+        j = 0;
+        for (uint256 i = 0; i < numCurrent; ++i) {
+            while (j < numAgentIds && agentIds[j] < currentAgentIds[i]) {
+                mergedAgentIds[k] = agentIds[j];
+                mergedAgentParams[k] = agentParams[j];
+                ++j;
+                ++k;
+            }
+            if (j == numAgentIds || agentIds[j] != currentAgentIds[i]) {
+                // Omitted: zero slots and bond
+                mergedAgentIds[k] = currentAgentIds[i];
+                ++k;
+            }
+        }
+        while (j < numAgentIds) {
+            mergedAgentIds[k] = agentIds[j];
+            mergedAgentParams[k] = agentParams[j];
+            ++j;
+            ++k;
+        }
     }
 }

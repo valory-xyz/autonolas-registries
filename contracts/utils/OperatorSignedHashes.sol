@@ -33,6 +33,11 @@ error HashNotValidated(address operator, bytes32 msgHash, bytes signature);
 /// @param signature Signature bytes associated with the message hash.
 error HashNotApproved(address operator, bytes32 msgHash, bytes signature);
 
+/// @dev Signed message deadline has passed.
+/// @param deadline Signed deadline.
+/// @param timestamp Current block timestamp.
+error SignatureExpired(uint256 deadline, uint256 timestamp);
+
 /// @dev Obtained wrong operator address.
 /// @param provided Provided address.
 /// @param expected Expected address.
@@ -52,10 +57,12 @@ abstract contract OperatorSignedHashes {
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
     // Unbond type hash
     bytes32 public constant UNBOND_TYPE_HASH =
-        keccak256("Unbond(address operator,address serviceOwner,uint256 serviceId,uint256 nonce)");
+        keccak256("Unbond(address operator,address serviceOwner,uint256 serviceId,uint256 deadline,uint256 nonce)");
     // Register agents type hash
-    bytes32 public constant REGISTER_AGENTS_TYPE_HASH =
-        keccak256("RegisterAgents(address operator,address serviceOwner,uint256 serviceId,bytes32 agentsData,uint256 nonce)");
+    bytes32 public constant REGISTER_AGENTS_TYPE_HASH = keccak256(
+        "RegisterAgents(address operator,address serviceOwner,uint256 serviceId,address[] agentInstances,"
+        "uint32[] agentIds,address bondToken,uint256 maxBond,uint256 deadline,uint256 nonce)"
+    );
 
     // Name hash
     bytes32 public immutable nameHash;
@@ -78,6 +85,13 @@ abstract contract OperatorSignedHashes {
     }
 
     /// @dev Verifies provided message hash against its signature.
+    /// @notice Signature bytes are 65 bytes, with the last byte selecting the case:
+    ///         - v = 4, contract operator: r holds the operator contract address. The same 65 bytes are passed to the
+    ///           operator's isValidSignature(), and its answer decides; s is not checked here. A wallet that reads
+    ///           its owners' signatures from these bytes, such as Safe, rejects them and can approve the hash with
+    ///           operatorApproveHash() (v = 5) instead.
+    ///         - v = 5, pre-approved hash: r holds the operator address that called operatorApproveHash().
+    ///         - otherwise, an ECDSA signature of an EOA operator (v of 0 or 1 is adjusted for ledger signatures).
     /// @param operator Operator address.
     /// @param msgHash Message hash.
     /// @param signature Signature bytes associated with the signed message hash.
@@ -138,6 +152,14 @@ abstract contract OperatorSignedHashes {
         }
     }
 
+    /// @dev Checks that a signed message deadline has not passed.
+    /// @param deadline Signed deadline, inclusive.
+    function _checkDeadline(uint256 deadline) internal view {
+        if (block.timestamp > deadline) {
+            revert SignatureExpired(deadline, block.timestamp);
+        }
+    }
+
     /// @dev Approves message hash for the operator address.
     /// @param hash Provided message hash to approve.
     function operatorApproveHash(bytes32 hash) external {
@@ -169,12 +191,14 @@ abstract contract OperatorSignedHashes {
     /// @param operator Operator address.
     /// @param serviceOwner Service owner address.
     /// @param serviceId Service Id.
+    /// @param deadline Last timestamp at which the message can be used.
     /// @param nonce Nonce for the unbond message from the pair of (operator | service Id).
     /// @return Computed message hash.
     function getUnbondHash(
         address operator,
         address serviceOwner,
         uint256 serviceId,
+        uint256 deadline,
         uint256 nonce
     ) public view returns (bytes32)
     {
@@ -188,6 +212,7 @@ abstract contract OperatorSignedHashes {
                         operator,
                         serviceOwner,
                         serviceId,
+                        deadline,
                         nonce
                     )
                 )
@@ -196,11 +221,16 @@ abstract contract OperatorSignedHashes {
     }
 
     /// @dev Gets the register agents message hash for the operator.
+    /// @notice Each array is hashed as EIP-712 prescribes: keccak256 of the concatenated 32-byte encodings of its
+    ///         elements, with no offset or length prefix.
     /// @param operator Operator address.
     /// @param serviceOwner Service owner address.
     /// @param serviceId Service Id.
     /// @param agentInstances Agent instance addresses operator is going to register.
     /// @param agentIds Agent Ids corresponding to each agent instance address.
+    /// @param bondToken Bond token of the service: the ERC20 token, or ETH_TOKEN_ADDRESS for a native-token service.
+    /// @param maxBond Maximum total bond for this registration, summed over the listed agent instances.
+    /// @param deadline Last timestamp at which the message can be used.
     /// @param nonce Nonce for the register agents message from the pair of (operator | service Id).
     /// @return Computed message hash.
     function getRegisterAgentsHash(
@@ -209,25 +239,28 @@ abstract contract OperatorSignedHashes {
         uint256 serviceId,
         address[] memory agentInstances,
         uint32[] memory agentIds,
+        address bondToken,
+        uint256 maxBond,
+        uint256 deadline,
         uint256 nonce
     ) public view returns (bytes32)
     {
-        return keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                _computeDomainSeparator(),
-                keccak256(
-                    abi.encode(
-                        REGISTER_AGENTS_TYPE_HASH,
-                        operator,
-                        serviceOwner,
-                        serviceId,
-                        keccak256(abi.encode(agentInstances, agentIds)),
-                        nonce
-                    )
-                )
+        bytes32 structHash = keccak256(
+            abi.encode(
+                REGISTER_AGENTS_TYPE_HASH,
+                operator,
+                serviceOwner,
+                serviceId,
+                keccak256(abi.encodePacked(agentInstances)),
+                keccak256(abi.encodePacked(agentIds)),
+                bondToken,
+                maxBond,
+                deadline,
+                nonce
             )
         );
+
+        return keccak256(abi.encodePacked("\x19\x01", _computeDomainSeparator(), structHash));
     }
 
     /// @dev Checks if the hash provided by the operator is approved.

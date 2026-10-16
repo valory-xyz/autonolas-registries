@@ -548,3 +548,5 @@ cbf9b49b0643c42d50af9dadbdb7356cc908cb43:test/SafeAndDepositWalletCreatorFork.so
 75ed94aa359e0377bbbfc83ec2fa43265a858261:test/Proposal24ForkL1.t.sol:generic-api-key:36
 264765d07e170793343397ea1eb1fabf523e0622:scripts/deployment/l2/globals_robinhood_mainnet.json:generic-api-key:40
 0c119407fa51399e348c54ffa3bf4d572d8ab97d:scripts/deployment/l2/globals_robinhood_mainnet.json:generic-api-key:30
+50193e258c11f724c080df8d070d817643d0040c:test/ServiceManagerSignedMessagesUpgrade.t.sol:generic-api-key:59
+50193e258c11f724c080df8d070d817643d0040c:test/ServiceManagerContractOperatorUpgrade.t.sol:generic-api-key:144

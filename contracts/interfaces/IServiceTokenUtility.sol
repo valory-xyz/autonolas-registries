@@ -50,4 +50,15 @@ interface IServiceTokenUtility {
     /// @param serviceId Service Id.
     /// @return True if the service Id is token secured.
     function isTokenSecuredService(uint256 serviceId) external view returns (bool);
+
+    /// @dev Gets the service token security deposit.
+    /// @param serviceId Service Id.
+    /// @return token Token address, or zero if the service is ETH-secured.
+    /// @return securityDeposit Security deposit amount.
+    function mapServiceIdTokenDeposit(uint256 serviceId) external view returns (address token, uint96 securityDeposit);
+
+    /// @dev Gets the token bond of an agent instance for a (service Id | agent Id) pair.
+    /// @param serviceAgent Service Id in the first 32 bits, agent Id in the next 32 bits.
+    /// @return bond Token bond per agent instance.
+    function mapServiceAndAgentIdAgentBond(uint256 serviceAgent) external view returns (uint256 bond);
 }
