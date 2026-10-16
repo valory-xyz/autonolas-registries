@@ -515,6 +515,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     }
 
     /// @dev Creates multisig instance controlled by the set of service agent instances and deploys the service.
+    /// @notice Redeployment with a different multisig also clears any authorization retained by the previous multisig
+    ///         from before termination cleanup was introduced, provided it belongs to this service's identity.
     /// @param serviceId Correspondent service Id.
     /// @param multisigImplementation Multisig implementation address.
     /// @param data Data payload for the multisig creation.
@@ -562,8 +564,8 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
         if (bridger != address(0)) {
             uint256 agentId = IIdentityRegistryBridger(bridger).mapServiceIdAgentIds(serviceId);
             if (agentId > 0 && IIdentityRegistryBridger(bridger).mapMultisigAgentIds(multisig) != agentId) {
-                // Link the deployed multisig; unlink a different previous multisig and unset the old wallet
-                // only if that previous multisig remains authorized for this identity
+                // Migration: an earlier termination may have left the previous multisig linked.
+                // Unlink it only if its authorization belongs to this service's identity.
                 address oldMultisig;
                 if (lastMultisig != address(0) && lastMultisig != multisig &&
                     IIdentityRegistryBridger(bridger).mapMultisigAgentIds(lastMultisig) == agentId) {
@@ -632,8 +634,9 @@ contract ServiceManager is GenericManager, OperatorSignedHashes {
     }
 
     /// @dev Unlinks the service multisig from the service 8004 agent Id when the service is terminated.
-    /// @notice Runs after every successful termination, whatever the state the service was terminated from, so a link
-    ///         kept from an earlier deployment is cleared as well. The link is cleared and the agent wallet unset only
+    /// @notice Cleanup runs after every successful termination, regardless of the starting state. Services with no
+    ///         recorded multisig are skipped. For reactivated services, this also clears a matching identity link
+    ///         retained from an earlier deployment. The link is cleared and the agent wallet unset only
     ///         if the multisig is linked to this service's agent Id, so a link to another agent Id is never touched. A
     ///         failure reverts the termination. The multisig binding in mapMultisigServiceIds is kept; the next
     ///         deployment links the deployed multisig again.
