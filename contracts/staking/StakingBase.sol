@@ -240,6 +240,16 @@ abstract contract StakingBase is ERC721TokenReceiver {
         Custom
     }
 
+    // Outcome of reading service activity counters at a checkpoint
+    enum BaselineStatus {
+        // Counters are read and measured against a valid baseline
+        Measured,
+        // Counter read failed: the baseline is missing, and stored counters are kept but not used for scoring
+        ReadFailed,
+        // First valid read after a failure: it only establishes a fresh baseline
+        Recovered
+    }
+
     // Input staking parameters
     struct StakingParams {
         // Metadata staking information
@@ -285,6 +295,9 @@ abstract contract StakingBase is ERC721TokenReceiver {
     event ServiceInactivityWarning(uint256 epoch, uint256 indexed serviceId, uint256 serviceInactivity);
     event ServicesEvicted(uint256 indexed epoch, uint256[] serviceIds, address[] owners, address[] multisigs,
         uint256[] serviceInactivity);
+    event ServicesRebaselined(uint256 indexed epoch);
+    event ServiceBaselineMissing(uint256 indexed epoch, uint256 indexed serviceId);
+    event ServiceBaselineRecovered(uint256 indexed epoch, uint256 indexed serviceId);
     event Deposit(address indexed sender, uint256 amount, uint256 balance, uint256 availableRewards);
     event Withdraw(address indexed receiver, uint256 amount);
 
@@ -361,6 +374,12 @@ abstract contract StakingBase is ERC721TokenReceiver {
     uint256[] public setServiceIds;
     // Reentrancy lock
     uint256 internal _locked = 1;
+    // Re-baseline flag: set when an empty reward reserve is refilled
+    // The next checkpoint only re-records service counters and the checkpoint timestamp, so activity during
+    // the unfunded interval is neither rewarded nor counted as inactivity
+    bool public rebaselinePending;
+    // Mapping of serviceId => missing activity baseline flag: set when a counter read fails
+    mapping (uint256 => bool) public mapServiceIdBaselineMissing;
 
     /// @dev StakingBase initialization.
     /// @param _stakingParams Service staking parameters.
@@ -479,18 +498,15 @@ abstract contract StakingBase is ERC721TokenReceiver {
     /// @param amount Amount to withdraw.
     function _transfer(address to, uint256 amount) internal virtual;
 
-    /// @dev Checks the ratio pass based on external activity checker implementation.
+    /// @dev Reads current service multisig nonces from the external activity checker.
+    /// @notice A failed or oversized call, or a non-canonical uint256[] encoding, is a failed read. A canonically
+    ///         encoded empty array is a valid read: the counter format is the activity checker's responsibility.
     /// @param multisig Multisig address.
-    /// @param lastNonces Last checked service multisig nonces.
-    /// @param ts Time difference between current and last timestamps.
-    /// @return ratioPass True, if the defined nonce ratio passes the check.
-    /// @return currentNonces Current multisig nonces.
-    function _checkRatioPass(
-        address multisig,
-        uint256[] memory lastNonces,
-        uint256 ts
-    ) internal view returns (bool ratioPass, uint256[] memory currentNonces) {
-        // Get current service multisig nonce
+    /// @return validRead True, if the nonces are read successfully.
+    /// @return currentNonces Current multisig nonces; empty when the read fails.
+    function _getMultisigNonces(address multisig) internal view returns (bool validRead,
+        uint256[] memory currentNonces)
+    {
         // This is a low level call since it must never revert
         bytes memory activityData = abi.encodeCall(IActivityChecker.getMultisigNonces, multisig);
         (bool success, bytes memory returnData) = _activityStaticcall(activityData, MAX_ACTIVITY_CHECKER_RETURN);
@@ -498,24 +514,32 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Parse the nonces without reverting: a malformed response is treated as a failed call, not decoded
         // with abi.decode, which would revert and take checkpoint() down with it
         if (success) {
-            (bool validNonces, uint256[] memory nonces) = _decodeUintArray(returnData);
-            if (validNonces) {
-                currentNonces = nonces;
+            (validRead, currentNonces) = _decodeUintArray(returnData);
+        }
+    }
 
-                // Get the ratio pass activity check
-                activityData = abi.encodeCall(IActivityChecker.isRatioPass, (currentNonces, lastNonces, ts));
-                (success, returnData) = _activityStaticcall(activityData, 32);
+    /// @dev Checks the ratio pass based on external activity checker implementation.
+    /// @param currentNonces Current multisig nonces.
+    /// @param lastNonces Last checked service multisig nonces.
+    /// @param ts Time difference between current and last timestamps.
+    /// @return ratioPass True, if the defined nonce ratio passes the check.
+    function _checkRatioPass(
+        uint256[] memory currentNonces,
+        uint256[] memory lastNonces,
+        uint256 ts
+    ) internal view returns (bool ratioPass) {
+        // Get the ratio pass activity check
+        bytes memory activityData = abi.encodeCall(IActivityChecker.isRatioPass, (currentNonces, lastNonces, ts));
+        (bool success, bytes memory returnData) = _activityStaticcall(activityData, 32);
 
-                // The return data must be exactly a word, read as a clean bool without reverting on a
-                // non-canonical value (anything other than 1 is a fail, so the service scores inactive)
-                if (success && returnData.length == 32) {
-                    uint256 boolWord;
-                    assembly {
-                        boolWord := mload(add(returnData, 0x20))
-                    }
-                    ratioPass = (boolWord == 1);
-                }
+        // The return data must be exactly a word, read as a clean bool without reverting on a
+        // non-canonical value (anything other than 1 is a fail, so the service scores inactive)
+        if (success && returnData.length == 32) {
+            uint256 boolWord;
+            assembly {
+                boolWord := mload(add(returnData, 0x20))
             }
+            ratioPass = (boolWord == 1);
         }
     }
 
@@ -675,6 +699,52 @@ abstract contract StakingBase is ERC721TokenReceiver {
         emit RewardClaimed(epochCounter, serviceId, msg.sender, multisig, sInfo.nonces, receivers, amounts);
     }
 
+    /// @dev Measures staked service activity since its last checkpoint.
+    /// @param serviceId Service Id.
+    /// @param tsCheckpointLast Last checkpoint timestamp.
+    /// @return status Service counter read outcome.
+    /// @return currentNonces Current multisig nonces; empty when the read fails.
+    /// @return ts Time elapsed since the service last checkpoint.
+    /// @return ratioPass True, if the service is measured and passes the liveness ratio check.
+    function _measureService(uint256 serviceId, uint256 tsCheckpointLast) internal view returns (
+        BaselineStatus status,
+        uint256[] memory currentNonces,
+        uint256 ts,
+        bool ratioPass
+    ) {
+        // Get the service info
+        ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+
+        // Calculate the liveness nonce ratio
+        // Get the last service checkpoint: staking start time or the global checkpoint timestamp
+        uint256 serviceCheckpoint = tsCheckpointLast;
+        ts = sInfo.tsStart;
+        // Adjust the service checkpoint time if the service was staking less than the current staking period
+        if (ts > serviceCheckpoint) {
+            serviceCheckpoint = ts;
+        }
+
+        // Calculate the liveness ratio in 1e18 value
+        // This subtraction is always positive or zero, as the last checkpoint is at most block.timestamp
+        ts = block.timestamp - serviceCheckpoint;
+
+        // Get current service multisig nonces
+        bool validRead;
+        (validRead, currentNonces) = _getMultisigNonces(sInfo.multisig);
+
+        if (!validRead) {
+            // A failed read earns nothing and counts as inactivity; stored counters are kept but not scored
+            status = BaselineStatus.ReadFailed;
+        } else if (mapServiceIdBaselineMissing[serviceId]) {
+            // The first valid read after a failure only establishes a fresh baseline: stored counters are not
+            // used for scoring, so the interval earns nothing
+            status = BaselineStatus.Recovered;
+        } else {
+            // A failed ratio check alone does not invalidate counters that were read successfully
+            ratioPass = _checkRatioPass(currentNonces, sInfo.nonces, ts);
+        }
+    }
+
     /// @dev Calculates staking rewards for all services at current timestamp.
     /// @param lastAvailableRewards Available amount of rewards.
     /// @param numServices Number of services eligible for the reward that passed the liveness check.
@@ -684,6 +754,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     /// @param serviceIds All the staking service Ids.
     /// @param serviceNonces Current service nonces.
     /// @param serviceInactivity Service inactivity records.
+    /// @param serviceStatuses Service counter read outcomes.
     function _calculateStakingRewards() internal view returns (
         uint256 lastAvailableRewards,
         uint256 numServices,
@@ -692,7 +763,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
         uint256[] memory eligibleServiceRewards,
         uint256[] memory serviceIds,
         uint256[][] memory serviceNonces,
-        uint256[] memory serviceInactivity
+        uint256[] memory serviceInactivity,
+        BaselineStatus[] memory serviceStatuses
     ) {
         // Check the last checkpoint timestamp and the liveness period, also check for available rewards to be not zero
         uint256 tsCheckpointLast = tsCheckpoint;
@@ -702,37 +774,26 @@ abstract contract StakingBase is ERC721TokenReceiver {
         uint256 size = setServiceIds.length;
 
         // Carry out rewards calculation logic
-        if (size > 0 && block.timestamp - tsCheckpointLast >= livenessPeriod && lastAvailableRewards > 0) {
+        // No rewards are calculated while a re-baseline is pending: the next checkpoint only records fresh baselines
+        if (size > 0 && block.timestamp - tsCheckpointLast >= livenessPeriod && lastAvailableRewards > 0 &&
+            !rebaselinePending) {
             // Get necessary arrays
             serviceIds = new uint256[](size);
             eligibleServiceIds = new uint256[](size);
             eligibleServiceRewards = new uint256[](size);
             serviceNonces = new uint256[][](size);
             serviceInactivity = new uint256[](size);
+            serviceStatuses = new BaselineStatus[](size);
 
             // Calculate each staked service reward eligibility
             for (uint256 i = 0; i < size; ++i) {
                 // Get current service Id
                 serviceIds[i] = setServiceIds[i];
 
-                // Get the service info
-                ServiceInfo storage sInfo = mapServiceInfo[serviceIds[i]];
-
-                // Calculate the liveness nonce ratio
-                // Get the last service checkpoint: staking start time or the global checkpoint timestamp
-                uint256 serviceCheckpoint = tsCheckpointLast;
-                uint256 ts = sInfo.tsStart;
-                // Adjust the service checkpoint time if the service was staking less than the current staking period
-                if (ts > serviceCheckpoint) {
-                    serviceCheckpoint = ts;
-                }
-
-                // Calculate the liveness ratio in 1e18 value
-                // This subtraction is always positive or zero, as the last checkpoint is at most block.timestamp
-                ts = block.timestamp - serviceCheckpoint;
-
+                // Measure the service activity since its last checkpoint
+                uint256 ts;
                 bool ratioPass;
-                (ratioPass, serviceNonces[i]) = _checkRatioPass(sInfo.multisig, sInfo.nonces, ts);
+                (serviceStatuses[i], serviceNonces[i], ts, ratioPass) = _measureService(serviceIds[i], tsCheckpointLast);
 
                 // Record the reward for the service if it has provided enough transactions
                 if (ratioPass) {
@@ -741,7 +802,9 @@ abstract contract StakingBase is ERC721TokenReceiver {
                     totalRewards += eligibleServiceRewards[numServices];
                     eligibleServiceIds[numServices] = serviceIds[i];
                     ++numServices;
-                } else {
+                } else if (serviceStatuses[i] != BaselineStatus.Recovered) {
+                    // A failed ratio check or a failed counter read counts as inactivity
+                    // A recovery read only establishes a fresh baseline and leaves the inactivity unchanged
                     serviceInactivity[i] = ts;
                 }
             }
@@ -940,6 +1003,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
         sInfo.nonces = nonces;
         sInfo.tsStart = block.timestamp;
+        // Staking records a fresh baseline
+        delete mapServiceIdBaselineMissing[serviceId];
 
         // Set reward distribution info: rewardDistributionType and customRewardsDistributor address, if required
         // rewardDistributionType takes first 8 bits
@@ -1014,6 +1079,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
         // Clear all the data about the unstaked service
         // Delete the service info struct
         delete mapServiceInfo[serviceId];
+        // Delete the missing baseline flag
+        delete mapServiceIdBaselineMissing[serviceId];
 
         // Update the set of staked service Ids
         // If the index was not found, the service was evicted and is not part of staked services set
@@ -1032,9 +1099,10 @@ abstract contract StakingBase is ERC721TokenReceiver {
             // Check if the reward is enforced to be returned to availableRewards
             // Note that if available rewards were zero right after the checkpoint, it is fine to force unstake the
             // service and not wait until the minimum staking time period, as the reward is not taken from the contract
+            // The returned reward is already held by the contract, so it is not added to the recorded balance;
+            // if it refills an empty reserve, the next checkpoint re-baselines
             if (enforced) {
-                lastAvailableRewards += reward;
-                availableRewards = lastAvailableRewards;
+                lastAvailableRewards = _addAvailableRewards(reward);
             } else {
                 // Get reward receivers and amounts based on the distribution type
                 (address[] memory receivers, uint256[] memory amounts) =
@@ -1079,6 +1147,66 @@ abstract contract StakingBase is ERC721TokenReceiver {
         balance = updatedBalance;
     }
 
+    /// @dev Adds an amount to available rewards.
+    /// @notice Every addition to available rewards goes through this function. Refilling an empty reserve with a
+    ///         non-zero amount sets the re-baseline flag; zero additions and top-ups of a funded reserve do not.
+    ///         It makes no activity checker calls and does not loop over services, so funding stays O(1).
+    /// @param amount Amount to add.
+    /// @return newAvailableRewards Updated available rewards.
+    function _addAvailableRewards(uint256 amount) internal returns (uint256 newAvailableRewards) {
+        uint256 lastAvailableRewards = availableRewards;
+
+        // Refill of an empty reserve: services were not measured while it was unfunded
+        if (amount > 0 && lastAvailableRewards == 0) {
+            rebaselinePending = true;
+        }
+
+        newAvailableRewards = lastAvailableRewards + amount;
+        availableRewards = newAvailableRewards;
+    }
+
+    /// @dev Re-baselines staked services after an empty reward reserve was refilled.
+    /// @notice Re-records each service's counters and the checkpoint timestamp, without waiting for the liveness
+    ///         period. It pays nothing, evicts no one, and leaves earned rewards and accumulated inactivity unchanged.
+    ///         A failed counter read marks the service baseline missing without adding inactivity, and keeps its
+    ///         stored counters; a valid read clears an existing mark.
+    /// @return serviceIds Staking service Ids.
+    function _rebaseline() internal returns (uint256[] memory serviceIds) {
+        serviceIds = getServiceIds();
+        uint256 eCounter = epochCounter;
+
+        for (uint256 i = 0; i < serviceIds.length; ++i) {
+            uint256 serviceId = serviceIds[i];
+            ServiceInfo storage sInfo = mapServiceInfo[serviceId];
+
+            (bool validRead, uint256[] memory nonces) = _getMultisigNonces(sInfo.multisig);
+            if (validRead) {
+                // Record a fresh baseline
+                sInfo.nonces = nonces;
+                if (mapServiceIdBaselineMissing[serviceId]) {
+                    mapServiceIdBaselineMissing[serviceId] = false;
+                    emit ServiceBaselineRecovered(eCounter, serviceId);
+                }
+            } else if (!mapServiceIdBaselineMissing[serviceId]) {
+                mapServiceIdBaselineMissing[serviceId] = true;
+                emit ServiceBaselineMissing(eCounter, serviceId);
+            }
+        }
+
+        // Record the actual epoch length
+        uint256 epochLength = block.timestamp - tsCheckpoint;
+        // Next calculations start from this point of time
+        tsCheckpoint = block.timestamp;
+        rebaselinePending = false;
+
+        // Increase the epoch counter
+        epochCounter = eCounter + 1;
+
+        // The empty checkpoint is marked as a re-baseline, so it is not mistaken for an epoch with no eligible services
+        emit ServicesRebaselined(eCounter);
+        emit Checkpoint(eCounter, availableRewards, new uint256[](0), new uint256[](0), epochLength);
+    }
+
     /// @dev Checkpoint to allocate rewards up until a current time.
     /// @notice Internal implementation. Callers that are external entry points must set the reentrancy lock themselves;
     ///         the internal staking flows (_stake, _unstake, _claim) rely on their own external-level guard.
@@ -1092,11 +1220,18 @@ abstract contract StakingBase is ERC721TokenReceiver {
         uint256[] memory,
         uint256[] memory evictServiceIds
     ) {
+        // After a refill of an empty reserve, the first checkpoint only re-baselines, without waiting for the
+        // liveness period: no rewards are allocated and no services are evicted
+        if (rebaselinePending) {
+            uint256[] memory empty;
+            return (_rebaseline(), empty, empty, empty);
+        }
+
         // Calculate staking rewards
         (uint256 lastAvailableRewards, uint256 numServices, uint256 totalRewards,
             uint256[] memory eligibleServiceIds, uint256[] memory eligibleServiceRewards,
             uint256[] memory serviceIds, uint256[][] memory serviceNonces,
-            uint256[] memory serviceInactivity) = _calculateStakingRewards();
+            uint256[] memory serviceInactivity, BaselineStatus[] memory serviceStatuses) = _calculateStakingRewards();
 
         // Get arrays for eligible service Ids and rewards of exact size
         uint256[] memory finalEligibleServiceIds;
@@ -1165,8 +1300,23 @@ abstract contract StakingBase is ERC721TokenReceiver {
             for (uint256 i = 0; i < serviceIds.length; ++i) {
                 // Get the current service Id
                 curServiceId = serviceIds[i];
-                // Record service nonces
-                mapServiceInfo[curServiceId].nonces = serviceNonces[i];
+                if (serviceStatuses[i] == BaselineStatus.ReadFailed) {
+                    // Keep stored counters and mark the baseline missing, once per failure episode
+                    if (!mapServiceIdBaselineMissing[curServiceId]) {
+                        mapServiceIdBaselineMissing[curServiceId] = true;
+                        emit ServiceBaselineMissing(eCounter, curServiceId);
+                    }
+                } else {
+                    // Record service nonces
+                    mapServiceInfo[curServiceId].nonces = serviceNonces[i];
+
+                    // A recovery read only records the fresh baseline: inactivity is neither added nor reset
+                    if (serviceStatuses[i] == BaselineStatus.Recovered) {
+                        mapServiceIdBaselineMissing[curServiceId] = false;
+                        emit ServiceBaselineRecovered(eCounter, curServiceId);
+                        continue;
+                    }
+                }
 
                 // Increase service inactivity if it is greater than zero
                 if (serviceInactivity[i] > 0) {
@@ -1182,8 +1332,8 @@ abstract contract StakingBase is ERC721TokenReceiver {
                     } else {
                         emit ServiceInactivityWarning(eCounter, curServiceId, serviceInactivity[i]);
                     }
-                } else {
-                    // Otherwise, set it back to zero
+                } else if (serviceStatuses[i] == BaselineStatus.Measured) {
+                    // Otherwise, a measured service sets it back to zero; a failed read never resets it
                     mapServiceInfo[curServiceId].inactivity = 0;
                 }
             }
@@ -1339,7 +1489,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
     function calculateStakingLastReward(uint256 serviceId) public view returns (uint256 reward) {
         // Calculate overall staking rewards
         (uint256 lastAvailableRewards, uint256 numServices, uint256 totalRewards, uint256[] memory eligibleServiceIds,
-            uint256[] memory eligibleServiceRewards, , , ) = _calculateStakingRewards();
+            uint256[] memory eligibleServiceRewards, , , , ) = _calculateStakingRewards();
 
         // If there are eligible services, proceed with staking calculation and update rewards for the service Id
         for (uint256 i = 0; i < numServices; ++i) {

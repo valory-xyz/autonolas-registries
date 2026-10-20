@@ -41,11 +41,11 @@ contract StakingNativeToken is StakingBase {
 
         // Add to the contract and available rewards balances
         uint256 newBalance = balance + msg.value;
-        uint256 newAvailableRewards = availableRewards + msg.value;
 
         // Record the new actual balance and available rewards
+        // Refilling an empty reserve sets the re-baseline flag; no activity checker calls are made
         balance = newBalance;
-        availableRewards = newAvailableRewards;
+        uint256 newAvailableRewards = _addAvailableRewards(msg.value);
 
         emit Deposit(msg.sender, msg.value, newBalance, newAvailableRewards);
 
