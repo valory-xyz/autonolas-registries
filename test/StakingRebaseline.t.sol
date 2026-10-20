@@ -1089,4 +1089,90 @@ contract StakingRebaselineTest is Test {
         }
         assertEq(staking.calculateStakingLastReward(1), 0);
     }
+
+    function test_NextCheckpointTimestampPendingRefillIsImmediate() external {
+        _stakeAndDrain();
+        uint256 recordedTimestamp = staking.tsCheckpoint();
+        uint256 epochBefore = staking.epochCounter();
+        vm.warp(block.timestamp + 1 hours);
+        _fund(LARGE_FUND);
+
+        assertTrue(staking.rebaselinePending());
+        assertLt(block.timestamp, recordedTimestamp + livenessPeriod);
+        assertEq(staking.getNextRewardCheckpointTimestamp(), block.timestamp);
+        // This view reports readiness; it neither executes nor timestamps the pending re-baseline.
+        vm.warp(block.timestamp + 15 minutes);
+        assertEq(staking.getNextRewardCheckpointTimestamp(), block.timestamp);
+        assertEq(staking.tsCheckpoint(), recordedTimestamp);
+        assertEq(staking.epochCounter(), epochBefore);
+        assertEq(staking.availableRewards(), LARGE_FUND);
+        assertTrue(staking.rebaselinePending());
+    }
+
+    function test_NextCheckpointTimestampAfterRebaselineRestoresNormalBoundary() external {
+        _stakeAndDrain();
+        uint256 accrued = _reward(1);
+        uint256 inactivityBefore = _inactivity(1);
+        vm.warp(block.timestamp + 1 hours);
+        _fund(LARGE_FUND);
+        assertEq(staking.getNextRewardCheckpointTimestamp(), block.timestamp);
+        _actAll();
+        uint256 epochBefore = staking.epochCounter();
+        staking.checkpoint();
+        uint256 baselineTimestamp = block.timestamp;
+
+        _assertRebaselined(epochBefore);
+        assertEq(staking.getNextRewardCheckpointTimestamp(), baselineTimestamp + livenessPeriod);
+        assertEq(_reward(1), accrued);
+        assertEq(_inactivity(1), inactivityBefore);
+        assertEq(staking.availableRewards(), LARGE_FUND);
+        assertEq(staking.calculateStakingLastReward(1), 0);
+
+        vm.warp(baselineTimestamp + livenessPeriod - 1);
+        _actAll();
+        staking.checkpoint();
+        assertEq(staking.epochCounter(), epochBefore + 1);
+        assertEq(staking.tsCheckpoint(), baselineTimestamp);
+        assertEq(staking.getNextRewardCheckpointTimestamp(), baselineTimestamp + livenessPeriod);
+        assertEq(_reward(1), accrued);
+
+        // The next full measurement interval can allocate rewards; the re-baseline itself did not.
+        vm.warp(baselineTimestamp + livenessPeriod);
+        staking.checkpoint();
+        assertEq(staking.epochCounter(), epochBefore + 2);
+        assertEq(staking.tsCheckpoint(), block.timestamp);
+        assertEq(staking.getNextRewardCheckpointTimestamp(), block.timestamp + livenessPeriod);
+        assertEq(_reward(1), accrued + rewardsPerSecond * livenessPeriod);
+    }
+
+    function test_NextCheckpointTimestampWithoutPendingPreservesOriginalFormula() external {
+        _stakeFunded();
+        uint256 expected = staking.tsCheckpoint() + livenessPeriod;
+        vm.warp(block.timestamp + livenessPeriod / 2);
+        assertFalse(staking.rebaselinePending());
+        assertEq(staking.getNextRewardCheckpointTimestamp(), expected);
+        // A funded top-up does not change the baseline or its normal scheduling boundary.
+        _fund(1 ether);
+        assertFalse(staking.rebaselinePending());
+        assertEq(staking.getNextRewardCheckpointTimestamp(), expected);
+        vm.warp(expected + 1);
+        assertEq(staking.getNextRewardCheckpointTimestamp(), expected);
+    }
+
+    function test_NextCheckpointTimestampInitialDepositAndFirstStake() external {
+        uint256 originalTimestamp = staking.tsCheckpoint();
+        vm.warp(block.timestamp + 1 hours);
+        _fund(LARGE_FUND);
+        assertEq(staking.getServiceIds().length, 0);
+        assertTrue(staking.rebaselinePending());
+        assertEq(staking.getNextRewardCheckpointTimestamp(), block.timestamp);
+        assertEq(staking.tsCheckpoint(), originalTimestamp);
+
+        _stake(1);
+        assertFalse(staking.rebaselinePending());
+        assertEq(staking.tsCheckpoint(), block.timestamp);
+        assertEq(staking.getNextRewardCheckpointTimestamp(), block.timestamp + livenessPeriod);
+        assertEq(_reward(1), 0);
+        assertEq(staking.availableRewards(), LARGE_FUND);
+    }
 }

@@ -1548,10 +1548,22 @@ abstract contract StakingBase is ERC721TokenReceiver {
         }
     }
 
-    /// @dev Gets the next reward checkpoint timestamp.
-    /// @return tsNext Next reward checkpoint timestamp.
+    /// @dev Gets the timestamp used to schedule checkpoint processing.
+    /// @notice Despite the historical function name, this is not a promise that a checkpoint will pay rewards.
+    ///         While rebaselinePending is true, returns the current block timestamp: a checkpoint can establish
+    ///         fresh baselines immediately, without allocating rewards or changing accumulated inactivity.
+    ///         Otherwise returns tsCheckpoint + livenessPeriod, the normal measurement boundary, which may be
+    ///         in the past. Reward allocation still depends on available funding and service activity eligibility.
+    ///         Read tsCheckpoint() for the last recorded checkpoint time; subtracting livenessPeriod from this
+    ///         result does not recover that time while re-baselining is pending.
+    /// @return tsNext Current block timestamp if re-baselining is pending; otherwise the normal measurement boundary.
     function getNextRewardCheckpointTimestamp() external view returns (uint256 tsNext) {
-        // Last checkpoint timestamp plus the liveness period
+        // "Reward" is the legacy name: pending re-baselining is due now but does not allocate rewards.
+        if (rebaselinePending) {
+            return block.timestamp;
+        }
+
+        // Preserve the normal scheduling boundary; reaching it alone does not guarantee a reward payment.
         tsNext = tsCheckpoint + livenessPeriod;
     }
 
