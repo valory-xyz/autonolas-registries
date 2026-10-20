@@ -317,6 +317,7 @@ contract StakingRebaselineTest is Test {
 
     function test_NativeRefillOfEmptyReserveSetsFlag() external {
         assertFalse(staking.rebaselinePending());
+        vm.warp(block.timestamp + 1);
         _fund(1 ether);
         assertTrue(staking.rebaselinePending());
         assertEq(staking.balance(), 1 ether);
@@ -328,7 +329,8 @@ contract StakingRebaselineTest is Test {
         _fund(0);
         assertFalse(staking.rebaselinePending());
 
-        // Refill, then clear the flag with a checkpoint
+        // Refill after a timestamp gap, then clear the flag with a checkpoint
+        vm.warp(block.timestamp + 1);
         _fund(1 ether);
         staking.checkpoint();
         assertFalse(staking.rebaselinePending());
@@ -348,7 +350,8 @@ contract StakingRebaselineTest is Test {
         stakingToken.deposit(0);
         assertFalse(stakingToken.rebaselinePending());
 
-        // A refill of an empty reserve does
+        // A refill of an empty reserve after a timestamp gap does
+        vm.warp(block.timestamp + 1);
         stakingToken.deposit(1 ether);
         assertTrue(stakingToken.rebaselinePending());
         assertEq(stakingToken.balance(), 1 ether);
@@ -363,6 +366,7 @@ contract StakingRebaselineTest is Test {
 
     function test_ForcedUnstakeReturnRefillsEmptyReserveAndSetsFlag() external {
         _stakeAndDrain();
+        vm.warp(block.timestamp + 1);
         uint256 reward = _reward(1);
         assertGt(reward, 0);
         uint256 balanceBefore = staking.balance();
@@ -600,6 +604,7 @@ contract StakingRebaselineTest is Test {
     }
 
     function test_ServicesRebaselinedOnceOnEmptyInstance() external {
+        vm.warp(block.timestamp + 1);
         _fund(1 ether);
         vm.expectEmit(true, false, false, true, address(staking));
         emit StakingBase.ServicesRebaselined(0);
@@ -1223,5 +1228,237 @@ contract StakingRebaselineTest is Test {
             assertEq(_reward(2), 2 * failure * rewardPerInterval);
             assertEq(_reward(3), 2 * failure * rewardPerInterval);
         }
+    }
+
+    // A draining checkpoint and refill at the same timestamp already have a fresh starting point.
+    function test_SameCallForcedUnstakeDrainAndRecycleKeepsFreshBaseline() external {
+        _fund(SMALL_FUND);
+        _stakeAll();
+        vm.warp(block.timestamp + livenessPeriod);
+        _actAll();
+        uint256 epochBefore = staking.epochCounter();
+        uint256 balanceBefore = staking.balance();
+        vm.recordLogs();
+        vm.prank(deployer);
+        staking.forcedUnstake(1);
+        assertEq(staking.epochCounter(), epochBefore + 1);
+        assertEq(staking.tsCheckpoint(), block.timestamp);
+        assertGt(staking.availableRewards(), 0);
+        assertFalse(staking.rebaselinePending());
+        assertEq(staking.balance(), balanceBefore);
+        assertEq(_countLogs(vm.getRecordedLogs(), REBASELINED_TOPIC), 0);
+        assertEq(_nonces(2)[0], 1);
+        assertEq(_nonces(2)[1], 1);
+
+        // Top up for a full interval: forfeited rewards alone cannot fund both survivors for a day.
+        _fund(LARGE_FUND);
+        uint256 rewardBefore = _reward(2);
+        uint256 reward3Before = _reward(3);
+        vm.warp(block.timestamp + livenessPeriod);
+        // No new activity for service 2: counters from before the drain must not be scored twice.
+        _act(3);
+        vm.recordLogs();
+        staking.checkpoint();
+        assertEq(_countLogs(vm.getRecordedLogs(), REBASELINED_TOPIC), 0);
+        assertEq(_reward(2), rewardBefore);
+        assertEq(_inactivity(2), livenessPeriod);
+        assertEq(_reward(3), reward3Before + rewardsPerSecond * livenessPeriod);
+    }
+
+    function test_SameTimestampDepositAfterDrainRewardsOnlyNewActivity() external {
+        _stakeAndDrain();
+        uint256 epochBefore = staking.epochCounter();
+        uint256 rewardBefore = _reward(1);
+        uint256 reward2Before = _reward(2);
+        uint256 reward3Before = _reward(3);
+        _fund(LARGE_FUND);
+        assertFalse(staking.rebaselinePending());
+        assertEq(staking.epochCounter(), epochBefore);
+        assertEq(_nonces(1)[0], 1);
+        assertEq(_nonces(1)[1], 1);
+        vm.warp(block.timestamp + livenessPeriod);
+        _act(2);
+        _act(3);
+        vm.recordLogs();
+        staking.checkpoint();
+        assertEq(_countLogs(vm.getRecordedLogs(), REBASELINED_TOPIC), 0);
+        assertEq(_reward(1), rewardBefore);
+        assertEq(_inactivity(1), livenessPeriod);
+        assertEq(_reward(2), reward2Before + rewardsPerSecond * livenessPeriod);
+        assertEq(_reward(3), reward3Before + rewardsPerSecond * livenessPeriod);
+    }
+
+    function test_LaterTimestampRefillStillExcludesUnfundedActivity() external {
+        _stakeAndDrain();
+        uint256 rewardBefore = _reward(1);
+        uint256 reward2Before = _reward(2);
+        vm.warp(block.timestamp + 1);
+        _actAll();
+        _fund(LARGE_FUND);
+        assertTrue(staking.rebaselinePending());
+        uint256 epochBefore = staking.epochCounter();
+        staking.checkpoint();
+        _assertRebaselined(epochBefore);
+        assertEq(_nonces(1)[0], 2);
+        assertEq(_reward(1), rewardBefore);
+        vm.warp(block.timestamp + livenessPeriod);
+        // Only service 2 acts after the fresh baseline. Gap activity cannot earn rewards.
+        _act(2);
+        staking.checkpoint();
+        assertEq(_reward(1), rewardBefore);
+        assertEq(_inactivity(1), livenessPeriod);
+        assertEq(_reward(2), reward2Before + rewardsPerSecond * livenessPeriod);
+    }
+
+    function test_SameTimestampRefillPreservesMissingBaselineRecovery() external {
+        _fund(SMALL_FUND);
+        _stakeAll();
+        checker.setMode(_multisig(1), MockCounterActivityChecker.Mode.RevertRead);
+        vm.warp(block.timestamp + livenessPeriod);
+        _actAll();
+        staking.checkpoint();
+        assertEq(staking.availableRewards(), 0);
+        assertTrue(staking.mapServiceIdBaselineMissing(1));
+        assertEq(_nonces(1)[0], 0);
+        assertEq(_inactivity(1), livenessPeriod);
+        _fund(LARGE_FUND);
+        assertFalse(staking.rebaselinePending());
+        assertTrue(staking.mapServiceIdBaselineMissing(1));
+        checker.setMode(_multisig(1), MockCounterActivityChecker.Mode.Normal);
+        vm.warp(block.timestamp + livenessPeriod);
+        _actAll();
+        vm.recordLogs();
+        staking.checkpoint();
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        assertEq(_countLogs(logs, REBASELINED_TOPIC), 0);
+        assertEq(_countLogs(logs, BASELINE_RECOVERED_TOPIC), 1);
+        assertFalse(staking.mapServiceIdBaselineMissing(1));
+        assertEq(_nonces(1)[0], 2);
+        assertEq(_reward(1), 0);
+        assertEq(_inactivity(1), livenessPeriod);
+        assertGt(_reward(2), SMALL_FUND);
+        vm.warp(block.timestamp + livenessPeriod);
+        _actAll();
+        staking.checkpoint();
+        assertEq(_reward(1), rewardsPerSecond * livenessPeriod);
+        assertEq(_inactivity(1), 0);
+    }
+
+    function test_TopUpDoesNotClearAlreadyPendingRebaseline() external {
+        _stakeAndDrain();
+        vm.warp(block.timestamp + 1);
+        _fund(1 ether);
+        assertTrue(staking.rebaselinePending());
+        _fund(0);
+        _fund(1 ether);
+        assertTrue(staking.rebaselinePending());
+        uint256 epochBefore = staking.epochCounter();
+        vm.recordLogs();
+        staking.checkpoint();
+        assertEq(_countLogs(vm.getRecordedLogs(), REBASELINED_TOPIC), 1);
+        _assertRebaselined(epochBefore);
+    }
+
+    function test_SameTimestampInitializationFundingAndStakeNeedNoRebaseline() external {
+        assertEq(staking.tsCheckpoint(), block.timestamp);
+        _act(1);
+        _fund(LARGE_FUND);
+        assertFalse(staking.rebaselinePending());
+        _stake(1);
+        assertEq(staking.epochCounter(), 0);
+        assertEq(_nonces(1)[0], 1);
+        vm.warp(block.timestamp + livenessPeriod);
+        staking.checkpoint();
+        assertEq(_reward(1), 0);
+        assertEq(_inactivity(1), livenessPeriod);
+    }
+
+    function test_RebaselineThenSameTimestampRecycleDoesNotScheduleAnother() external {
+        _stakeAndDrain();
+        vm.warp(block.timestamp + staking.minStakingDuration() + 1);
+        // Recycle on a later timestamp schedules a baseline refresh for remaining services.
+        vm.prank(deployer);
+        staking.forcedUnstake(1);
+        assertTrue(staking.rebaselinePending());
+        staking.checkpoint();
+        uint256 epochBefore = staking.epochCounter();
+        assertEq(staking.tsCheckpoint(), block.timestamp);
+        // A second forced unstake recycles into a funded reserve and cannot request another refresh.
+        vm.prank(deployer);
+        staking.forcedUnstake(2);
+        assertFalse(staking.rebaselinePending());
+        assertEq(staking.epochCounter(), epochBefore);
+        _fund(LARGE_FUND);
+        uint256 rewardBefore = _reward(3);
+        vm.warp(block.timestamp + livenessPeriod);
+        _act(3);
+        staking.checkpoint();
+        assertEq(_reward(3), rewardBefore + rewardsPerSecond * livenessPeriod);
+    }
+
+    function test_NoopCheckpointBeforeLivenessPeriodStillSchedulesRefillBaseline() external {
+        _stakeAndDrain();
+        uint256 timestampBefore = staking.tsCheckpoint();
+        uint256 epochBefore = staking.epochCounter();
+        uint256[] memory previous = _nonces(2);
+        uint256 rewardBefore = _reward(2);
+        uint256 recycled = _reward(1);
+        uint256 balanceBefore = staking.balance();
+        vm.warp(block.timestamp + livenessPeriod / 2);
+        assertLt(block.timestamp - timestampBefore, livenessPeriod);
+        _actAll();
+        vm.recordLogs();
+        vm.prank(deployer);
+        staking.forcedUnstake(1);
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        // The inner checkpoint no-ops: neither time nor counters become fresh merely by calling it.
+        assertEq(_countLogs(logs, CHECKPOINT_TOPIC), 0);
+        assertEq(_countLogs(logs, REBASELINED_TOPIC), 0);
+        assertEq(staking.tsCheckpoint(), timestampBefore);
+        assertEq(staking.epochCounter(), epochBefore);
+        assertEq(_nonces(2), previous);
+        assertEq(staking.availableRewards(), recycled);
+        assertEq(staking.balance(), balanceBefore);
+        assertTrue(staking.rebaselinePending());
+
+        _fund(LARGE_FUND);
+        assertTrue(staking.rebaselinePending());
+        staking.checkpoint();
+        _assertRebaselined(epochBefore);
+        assertEq(_nonces(2)[0], 2);
+        assertEq(_reward(2), rewardBefore);
+        assertEq(_inactivity(2), 0);
+        vm.warp(block.timestamp + livenessPeriod);
+        _act(3);
+        staking.checkpoint();
+        // The activity during the unfunded gap cannot earn rewards after recycling.
+        assertEq(_reward(2), rewardBefore);
+        assertEq(_inactivity(2), livenessPeriod);
+        assertEq(_reward(3), rewardBefore + rewardsPerSecond * livenessPeriod);
+    }
+
+    function test_TokenSameTimestampDepositAfterDrainKeepsFreshBaseline() external {
+        (StakingToken tokenStaking, uint256[2] memory ids) = _tokenLifecycleSetup();
+        vm.warp(block.timestamp + livenessPeriod);
+        _act(ids[0]);
+        _act(ids[1]);
+        tokenStaking.checkpoint();
+        assertEq(tokenStaking.availableRewards(), 0);
+        assertEq(tokenStaking.tsCheckpoint(), block.timestamp);
+        uint256 reward0Before = tokenStaking.getServiceInfo(ids[0]).reward;
+        uint256 reward1Before = tokenStaking.getServiceInfo(ids[1]).reward;
+        tokenStaking.deposit(LARGE_FUND);
+        assertFalse(tokenStaking.rebaselinePending());
+        assertEq(tokenStaking.balance(), SMALL_FUND + LARGE_FUND);
+        assertEq(token.balanceOf(address(tokenStaking)), SMALL_FUND + LARGE_FUND);
+        vm.warp(block.timestamp + livenessPeriod);
+        _act(ids[1]);
+        vm.recordLogs();
+        tokenStaking.checkpoint();
+        assertEq(_countLogs(vm.getRecordedLogs(), REBASELINED_TOPIC), 0);
+        assertEq(tokenStaking.getServiceInfo(ids[0]).reward, reward0Before);
+        assertEq(tokenStaking.getServiceInfo(ids[0]).inactivity, livenessPeriod);
+        assertEq(tokenStaking.getServiceInfo(ids[1]).reward,
+            reward1Before + rewardsPerSecond * livenessPeriod);
     }
 }

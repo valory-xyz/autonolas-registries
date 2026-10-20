@@ -1100,7 +1100,7 @@ abstract contract StakingBase is ERC721TokenReceiver {
             // Note that if available rewards were zero right after the checkpoint, it is fine to force unstake the
             // service and not wait until the minimum staking time period, as the reward is not taken from the contract
             // The returned reward is already held by the contract, so it is not added to the recorded balance;
-            // if it refills an empty reserve, the next checkpoint re-baselines
+            // if it refills an empty reserve after a timestamp gap, the next checkpoint re-baselines
             if (enforced) {
                 lastAvailableRewards = _addAvailableRewards(reward);
             } else {
@@ -1149,15 +1149,20 @@ abstract contract StakingBase is ERC721TokenReceiver {
 
     /// @dev Adds an amount to available rewards.
     /// @notice Every addition to available rewards goes through this function. Refilling an empty reserve with a
-    ///         non-zero amount sets the re-baseline flag; zero additions and top-ups of a funded reserve do not.
+    ///         non-zero amount sets the re-baseline flag only if the last checkpoint timestamp is older than now.
+    ///         A checkpoint or initialization at this timestamp already provides a measurement starting point;
+    ///         failed reads remain protected by their missing-baseline markers. Same-timestamp refills, zero additions
+    ///         and funded top-ups do not set the flag, and no addition clears an already-pending re-baseline.
     ///         It makes no activity checker calls and does not loop over services, so funding stays O(1).
     /// @param amount Amount to add.
     /// @return newAvailableRewards Updated available rewards.
     function _addAvailableRewards(uint256 amount) internal returns (uint256 newAvailableRewards) {
         uint256 lastAvailableRewards = availableRewards;
 
-        // Refill of an empty reserve: services were not measured while it was unfunded
-        if (amount > 0 && lastAvailableRewards == 0) {
+        // Re-baseline only after a timestamp gap. A same-timestamp checkpoint has already refreshed counters
+        // (or marked failed reads missing), so another refresh would discard a newly funded interval.
+        // A no-op checkpoint does not update tsCheckpoint and therefore cannot bypass this protection.
+        if (amount > 0 && lastAvailableRewards == 0 && tsCheckpoint < block.timestamp) {
             rebaselinePending = true;
         }
 

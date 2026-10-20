@@ -607,8 +607,8 @@ actions could be prevented by ensuring at least wei levels of tokens within the 
 contracts, which is easy to do considering reward deposits are permissionless.
 
 **Fix scope.** Fixed in source in [PR #339](https://github.com/valory-xyz/autonolas-registries/pull/339) for new instances: the first checkpoint after an empty-reserve
-refill establishes a fresh baseline without rewarding the preceding interval. Existing immutable instances
-require migration.
+refill establishes a fresh baseline without rewarding the preceding interval, unless a checkpoint or initialization
+already established the measurement starting point at the refill timestamp. Existing immutable instances require migration.
 
 ### 21. `calculateStakingLastReward` rounding dust
 
@@ -1099,7 +1099,8 @@ look inconsistent rather than merely sparse.
 refilled, without distributing rewards or changing accumulated inactivity.
 
 **Fix scope.** Fixed in source in [PR #339](https://github.com/valory-xyz/autonolas-registries/pull/339) for new instances: the first checkpoint after refill performs
-this re-baseline. Existing immutable instances require migration.
+this re-baseline unless a checkpoint or initialization already established the measurement starting point at the
+refill timestamp. Existing immutable instances require migration.
 
 ### 34. `RecoveryModule.create` accepts a Safe that has no recovery module enabled
 
