@@ -947,4 +947,146 @@ contract StakingRebaselineTest is Test {
         staking.checkpoint();
         _assertRebaselined(epochBefore);
     }
+
+    // ERC20 funding with real token-secured services, including reward settlement.
+    function _tokenLifecycleSetup() internal returns (StakingToken tokenStaking, uint256[2] memory ids) {
+        tokenStaking = new StakingToken();
+        tokenStaking.initialize(stakingParams, address(serviceRegistryTokenUtility), address(token));
+        token.mint(address(this), LARGE_FUND + SMALL_FUND);
+        token.approve(address(tokenStaking), type(uint256).max);
+        for (uint256 i = 0; i < 2; ++i) {
+            address account = i == 0 ? deployer : operator;
+            token.mint(account, 100 ether);
+            vm.prank(account);
+            token.approve(address(serviceRegistryTokenUtility), type(uint256).max);
+        }
+
+        IService.AgentParams[] memory params = new IService.AgentParams[](1);
+        params[0] = IService.AgentParams({slots: 1, bond: regBond});
+        address[] memory instances = new address[](1);
+        for (uint256 i = 0; i < 2; ++i) {
+            ids[i] = serviceManager.create(deployer, address(token), unitHash, agentIds, params, threshold);
+            vm.prank(deployer);
+            serviceManager.activateRegistration{value: 1}(ids[i]);
+            instances[0] = users[i + 5];
+            vm.prank(operator);
+            serviceManager.registerAgents{value: 1}(ids[i], instances, agentIds);
+            vm.prank(deployer);
+            serviceManager.deploy(ids[i], address(gnosisSafeMultisig), payload);
+        }
+        tokenStaking.deposit(SMALL_FUND);
+        for (uint256 i = 0; i < 2; ++i) {
+            vm.startPrank(deployer);
+            serviceRegistry.approve(address(tokenStaking), ids[i]);
+            tokenStaking.stake(ids[i]);
+            vm.stopPrank();
+        }
+    }
+
+    function _assertTokenClaim(StakingToken tokenStaking, uint256 serviceId, uint256 reward) internal {
+        uint256 ownerBefore = token.balanceOf(deployer);
+        uint256 operatorBefore = token.balanceOf(operator);
+        uint256 heldBefore = token.balanceOf(address(tokenStaking));
+        uint256 balanceBefore = tokenStaking.balance();
+        uint256 availableBefore = tokenStaking.availableRewards();
+        vm.prank(deployer);
+        assertEq(tokenStaking.claim(serviceId), reward);
+        assertEq(tokenStaking.getServiceInfo(serviceId).reward, 0);
+        assertEq(token.balanceOf(operator), operatorBefore + reward / 2);
+        assertEq(token.balanceOf(deployer), ownerBefore + reward - reward / 2);
+        assertEq(token.balanceOf(address(tokenStaking)), heldBefore - reward);
+        assertEq(tokenStaking.balance(), balanceBefore - reward);
+        assertEq(tokenStaking.availableRewards(), availableBefore);
+    }
+
+    function test_TokenLifecycleRefillFailureRecoveryAndClaim() external {
+        (StakingToken tokenStaking, uint256[2] memory ids) = _tokenLifecycleSetup();
+        assertEq(serviceRegistry.ownerOf(ids[0]), address(tokenStaking));
+        assertEq(serviceRegistry.ownerOf(ids[1]), address(tokenStaking));
+        assertFalse(tokenStaking.rebaselinePending());
+
+        uint256[] memory previous = tokenStaking.getServiceInfo(ids[0]).nonces;
+        checker.setMode(_multisig(ids[0]), MockCounterActivityChecker.Mode.RevertRead);
+        vm.warp(block.timestamp + livenessPeriod);
+        _act(ids[1]);
+        tokenStaking.checkpoint();
+        assertTrue(tokenStaking.mapServiceIdBaselineMissing(ids[0]));
+        assertEq(tokenStaking.getServiceInfo(ids[0]).nonces, previous);
+        assertEq(tokenStaking.getServiceInfo(ids[0]).inactivity, livenessPeriod);
+        assertEq(tokenStaking.getServiceInfo(ids[0]).reward, 0);
+        assertEq(tokenStaking.getServiceInfo(ids[1]).reward, SMALL_FUND);
+        assertEq(tokenStaking.availableRewards(), 0);
+
+        vm.warp(block.timestamp + 5 days);
+        checker.setMode(_multisig(ids[0]), MockCounterActivityChecker.Mode.Normal);
+        checker.addCounters(_multisig(ids[0]), 5, 5);
+        _act(ids[1]);
+        tokenStaking.deposit(LARGE_FUND);
+        assertTrue(tokenStaking.rebaselinePending());
+        assertEq(token.balanceOf(address(tokenStaking)), SMALL_FUND + LARGE_FUND);
+        assertEq(tokenStaking.balance(), SMALL_FUND + LARGE_FUND);
+        uint256 epochBefore = tokenStaking.epochCounter();
+        vm.expectEmit(true, true, false, true, address(tokenStaking));
+        emit StakingBase.ServiceBaselineRecovered(epochBefore, ids[0]);
+        tokenStaking.checkpoint();
+        assertFalse(tokenStaking.rebaselinePending());
+        assertFalse(tokenStaking.mapServiceIdBaselineMissing(ids[0]));
+        assertEq(tokenStaking.epochCounter(), epochBefore + 1);
+        assertEq(tokenStaking.tsCheckpoint(), block.timestamp);
+        assertEq(tokenStaking.getServiceInfo(ids[0]).nonces[0], 5);
+        assertEq(tokenStaking.getServiceInfo(ids[0]).nonces[1], 5);
+        assertEq(tokenStaking.getServiceInfo(ids[0]).reward, 0);
+        assertEq(tokenStaking.getServiceInfo(ids[0]).inactivity, livenessPeriod);
+        assertEq(tokenStaking.getServiceInfo(ids[1]).reward, SMALL_FUND);
+        assertEq(tokenStaking.getServiceInfo(ids[1]).inactivity, 0);
+        assertEq(tokenStaking.availableRewards(), LARGE_FUND);
+
+        vm.warp(block.timestamp + livenessPeriod);
+        _act(ids[0]);
+        _act(ids[1]);
+        tokenStaking.checkpoint();
+        uint256 reward = rewardsPerSecond * livenessPeriod;
+        assertEq(tokenStaking.getServiceInfo(ids[0]).reward, reward);
+        assertEq(tokenStaking.getServiceInfo(ids[0]).inactivity, 0);
+        assertEq(tokenStaking.getServiceInfo(ids[1]).reward, SMALL_FUND + reward);
+        assertEq(tokenStaking.availableRewards(), LARGE_FUND - 2 * reward);
+        _assertTokenClaim(tokenStaking, ids[0], reward);
+        _assertTokenClaim(tokenStaking, ids[1], SMALL_FUND + reward);
+        assertEq(token.balanceOf(address(tokenStaking)), tokenStaking.balance());
+        assertEq(tokenStaking.balance(), tokenStaking.availableRewards());
+    }
+
+    function test_PlainClaimWhileRebaselinePendingDoesNotCheckpoint() external {
+        uint256 epochBefore = _drainAndRefill();
+        uint256 timestampBefore = staking.tsCheckpoint();
+        uint256 reward = _reward(1);
+        uint256 balanceBefore = staking.balance();
+        uint256 ownerBefore = deployer.balance;
+        uint256 operatorBefore = operator.balance;
+        assertGt(reward, 0);
+        vm.recordLogs();
+        vm.prank(deployer);
+        assertEq(staking.claim(1), reward);
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        assertEq(_countLogs(logs, CHECKPOINT_TOPIC), 0);
+        assertEq(_countLogs(logs, REBASELINED_TOPIC), 0);
+        assertEq(_countLogs(logs, BASELINE_MISSING_TOPIC), 0);
+        assertEq(_countLogs(logs, BASELINE_RECOVERED_TOPIC), 0);
+        assertTrue(staking.rebaselinePending());
+        assertEq(staking.epochCounter(), epochBefore);
+        assertEq(staking.tsCheckpoint(), timestampBefore);
+        assertEq(staking.availableRewards(), LARGE_FUND);
+        assertEq(_reward(1), 0);
+        assertEq(staking.balance(), balanceBefore - reward);
+        assertEq(deployer.balance, ownerBefore + reward - reward / 2);
+        assertEq(operator.balance, operatorBefore + reward / 2);
+        assertEq(serviceRegistry.ownerOf(1), address(staking));
+        for (uint256 i = 1; i <= NUM_SERVICES; ++i) {
+            assertFalse(staking.mapServiceIdBaselineMissing(i));
+            assertEq(_inactivity(i), 0);
+            assertEq(_nonces(i)[0], 1);
+            assertEq(_nonces(i)[1], 1);
+        }
+        assertEq(staking.calculateStakingLastReward(1), 0);
+    }
 }
