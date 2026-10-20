@@ -1213,4 +1213,5 @@ successful read only to establish a fresh baseline.
 
 **Fix scope.** Fixed in source in [PR #339](https://github.com/valory-xyz/autonolas-registries/pull/339) for new instances. Persistent failed reads still count as
 inactivity during normal funded checkpoints; the fix prevents baseline loss and the additional inactivity
-penalty on recovery. Existing immutable instances require migration.
+penalty on recovery. Recovery reads neither add nor reset accumulated inactivity; subsequent failed reads
+continue to increase it. Existing immutable instances require migration.

@@ -1175,4 +1175,53 @@ contract StakingRebaselineTest is Test {
         assertEq(_reward(1), 0);
         assertEq(staking.availableRewards(), LARGE_FUND);
     }
+
+    function test_AlternatingReadFailuresAndRecoveriesAccumulateUntilEviction() external {
+        _stakeFunded();
+        uint256 rewardPerInterval = rewardsPerSecond * livenessPeriod;
+        uint256 failureLimit = staking.maxInactivityDuration() / livenessPeriod + 1;
+        for (uint256 failure = 1; failure <= failureLimit; ++failure) {
+            uint256[] memory previous = _nonces(1);
+            checker.setMode(_multisig(1), MockCounterActivityChecker.Mode.RevertRead);
+            vm.warp(block.timestamp + livenessPeriod);
+            _actAll();
+            vm.recordLogs();
+            staking.checkpoint();
+            Vm.Log[] memory failedLogs = vm.getRecordedLogs();
+            assertTrue(staking.mapServiceIdBaselineMissing(1));
+            assertEq(_nonces(1), previous);
+            assertEq(_inactivity(1), failure * livenessPeriod);
+            assertEq(_reward(1), 0);
+            assertEq(_countLogs(failedLogs, BASELINE_MISSING_TOPIC), 1);
+            assertEq(_countLogs(failedLogs, BASELINE_RECOVERED_TOPIC), 0);
+            assertEq(_reward(2), (2 * failure - 1) * rewardPerInterval);
+            assertEq(_reward(3), (2 * failure - 1) * rewardPerInterval);
+
+            if (failure == failureLimit) {
+                assertGt(_inactivity(1), staking.maxInactivityDuration());
+                assertEq(uint8(staking.getStakingState(1)), uint8(StakingBase.StakingState.Evicted));
+                assertEq(_countLogs(failedLogs, EVICTED_TOPIC), 1);
+                break;
+            }
+            assertEq(uint8(staking.getStakingState(1)), uint8(StakingBase.StakingState.Staked));
+            assertEq(_countLogs(failedLogs, EVICTED_TOPIC), 0);
+
+            checker.setMode(_multisig(1), MockCounterActivityChecker.Mode.Normal);
+            vm.warp(block.timestamp + livenessPeriod);
+            _actAll();
+            vm.recordLogs();
+            staking.checkpoint();
+            Vm.Log[] memory recoveredLogs = vm.getRecordedLogs();
+            assertFalse(staking.mapServiceIdBaselineMissing(1));
+            assertEq(_nonces(1)[0], checker.counters(_multisig(1), 0));
+            assertEq(_nonces(1)[1], checker.counters(_multisig(1), 1));
+            assertEq(_inactivity(1), failure * livenessPeriod);
+            assertEq(_reward(1), 0);
+            assertEq(_countLogs(recoveredLogs, BASELINE_RECOVERED_TOPIC), 1);
+            assertEq(_countLogs(recoveredLogs, BASELINE_MISSING_TOPIC), 0);
+            assertEq(_countLogs(recoveredLogs, EVICTED_TOPIC), 0);
+            assertEq(_reward(2), 2 * failure * rewardPerInterval);
+            assertEq(_reward(3), 2 * failure * rewardPerInterval);
+        }
+    }
 }
