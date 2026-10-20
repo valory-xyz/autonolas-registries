@@ -40,6 +40,7 @@
     - [34. `RecoveryModule.create` accepts a Safe that has no recovery module enabled](#34-recoverymodulecreate-accepts-a-safe-that-has-no-recovery-module-enabled)
     - [35. Service multisig creation accepts a caller-supplied fallback handler](#35-service-multisig-creation-accepts-a-caller-supplied-fallback-handler)
     - [36. Agent Ids on the L2 service registry are signalling values, not credentials](#36-agent-ids-on-the-l2-service-registry-are-signalling-values-not-credentials)
+    - [37. Failed activity-counter read replaces a service's saved baseline](#37-failed-activity-counter-read-replaces-a-services-saved-baseline)
 
 ## Involved contracts and level of the bugs
 
@@ -1185,3 +1186,21 @@ sufficient to satisfy that check — the check confirms a declaration, not an id
 *which* agents participate should gate on something verifiable on the chain it runs on — the multisig proxy
 codehash, the activity checker, or an explicit allowlist — and should not treat an L2 agent Id as evidence
 of the mainnet agent it names.
+
+### 37. Failed activity-counter read replaces a service's saved baseline
+
+**Severity**: Low
+**Source**: internal review
+
+`StakingBase` reads each service's activity counters during a funded checkpoint. If the counter read
+fails, the current counters remain an empty array, which is then stored over the service's previous
+baseline. A subsequent checkpoint therefore has no usable baseline for measuring that service's activity.
+
+A failed read can cause the affected service to be scored inactive. Repeated failures can accumulate
+inactivity and eventually trigger eviction when the configured inactivity limit is exceeded. Even when reads
+recover, the first successful read can still be scored inactive because the saved baseline is empty.
+Previously accrued rewards remain claimable.
+
+**Mitigation.** Preserve stored counters after a failed read, mark the baseline missing, and use the first
+successful read only to establish a fresh baseline. This change protects new staking instances; existing
+immutable instances require migration.
