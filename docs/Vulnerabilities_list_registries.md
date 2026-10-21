@@ -40,6 +40,7 @@
     - [34. `RecoveryModule.create` accepts a Safe that has no recovery module enabled](#34-recoverymodulecreate-accepts-a-safe-that-has-no-recovery-module-enabled)
     - [35. Service multisig creation accepts a caller-supplied fallback handler](#35-service-multisig-creation-accepts-a-caller-supplied-fallback-handler)
     - [36. Agent Ids on the L2 service registry are signalling values, not credentials](#36-agent-ids-on-the-l2-service-registry-are-signalling-values-not-credentials)
+    - [37. Failed activity-counter read replaces a service's saved baseline](#37-failed-activity-counter-read-replaces-a-services-saved-baseline)
 
 ## Involved contracts and level of the bugs
 
@@ -605,6 +606,10 @@ maintains staking rewards, and if cancelled, no such situation is possible. Also
 actions could be prevented by ensuring at least wei levels of tokens within the staking
 contracts, which is easy to do considering reward deposits are permissionless.
 
+**Fix scope.** Fixed in source in [PR #339](https://github.com/valory-xyz/autonolas-registries/pull/339) for new instances: the first checkpoint after an empty-reserve
+refill establishes a fresh baseline without rewarding the preceding interval, unless a checkpoint or initialization
+already established the measurement starting point at the refill timestamp. Existing immutable instances require migration.
+
 ### 21. `calculateStakingLastReward` rounding dust
 
 **Severity**: Informative
@@ -1090,11 +1095,12 @@ The effect is sharper for activity checkers that compare two counters. `MechActi
 requires `diffRequestsCounts <= diffNonces`, so a stale baseline can also make an ordinary batched delivery
 look inconsistent rather than merely sparse.
 
-**Mitigation.** Advance `tsCheckpoint` and refresh the nonce baselines even when `availableRewards` is
-zero, paying nothing — the liveness clock should stay honest whenever an instance is unfunded, however that
-state arose. Re-baselining on `deposit()` addresses the same problem more narrowly. Until either lands,
-operators funding an instance after a gap should expect the first checkpoint to under-report activity and
-should not read a single post-refill eviction as evidence of inactivity.
+**Mitigation.** Establish fresh counter baselines and a new measurement timestamp after an empty reserve is
+refilled, without distributing rewards or changing accumulated inactivity.
+
+**Fix scope.** Fixed in source in [PR #339](https://github.com/valory-xyz/autonolas-registries/pull/339) for new instances: the first checkpoint after refill performs
+this re-baseline unless a checkpoint or initialization already established the measurement starting point at the
+refill timestamp. Existing immutable instances require migration.
 
 ### 34. `RecoveryModule.create` accepts a Safe that has no recovery module enabled
 
@@ -1185,3 +1191,28 @@ sufficient to satisfy that check — the check confirms a declaration, not an id
 *which* agents participate should gate on something verifiable on the chain it runs on — the multisig proxy
 codehash, the activity checker, or an explicit allowlist — and should not treat an L2 agent Id as evidence
 of the mainnet agent it names.
+
+### 37. Failed activity-counter read replaces a service's saved baseline
+
+**Severity**: Low
+**Source**: internal review
+
+`StakingBase` reads each service's activity counters during a funded checkpoint. If the counter read
+fails, the current counters remain an empty array, which is then stored over the service's previous
+baseline. A subsequent checkpoint therefore has no usable baseline for measuring that service's activity.
+
+A failed read can cause the affected service to be scored inactive. Repeated failures can accumulate
+inactivity and eventually trigger eviction when the configured inactivity limit is exceeded. Even when reads
+recover, the first successful read can still be scored inactive because the saved baseline is empty.
+Previously accrued rewards remain claimable.
+
+No third-party trigger was demonstrated in the investigated scope; this does not establish the absence of
+every possible trigger.
+
+**Mitigation.** Preserve stored counters after a failed read, mark the baseline missing, and use the first
+successful read only to establish a fresh baseline.
+
+**Fix scope.** Fixed in source in [PR #339](https://github.com/valory-xyz/autonolas-registries/pull/339) for new instances. Persistent failed reads still count as
+inactivity during normal funded checkpoints; the fix prevents baseline loss and the additional inactivity
+penalty on recovery. Recovery reads neither add nor reset accumulated inactivity; subsequent failed reads
+continue to increase it. Existing immutable instances require migration.

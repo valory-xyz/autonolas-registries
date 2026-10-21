@@ -1548,6 +1548,12 @@ describe("Staking", function () {
                 const txHashData = await safeContracts.buildContractCall(multisig, "getThreshold", [], nonce, 0, 0);
                 const signMessageData = await safeContracts.safeSignMessage(agentInstances[i], multisig, txHashData, 0);
                 await safeContracts.executeTx(multisig, txHashData, [signMessageData], 0);
+
+                // The first stake re-baselines the refilled reserve, so let the liveness period pass for the next
+                // checkpoint to distribute the whole balance
+                if (i == 0) {
+                    await helpers.time.increase(livenessPeriod);
+                }
             }
 
             // Restore a previous state of blockchain

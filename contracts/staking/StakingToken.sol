@@ -115,11 +115,11 @@ contract StakingToken is StakingBase {
 
         // Add to the contract and available rewards balances
         uint256 newBalance = balance + amount;
-        uint256 newAvailableRewards = availableRewards + amount;
 
         // Record the new actual balance and available rewards
+        // Refilling an empty reserve after a timestamp gap sets the re-baseline flag; no checker calls are made
         balance = newBalance;
-        availableRewards = newAvailableRewards;
+        uint256 newAvailableRewards = _addAvailableRewards(amount);
 
         // Add to the overall balance
         SafeTransferLib.safeTransferFrom(stakingToken, msg.sender, address(this), amount);
