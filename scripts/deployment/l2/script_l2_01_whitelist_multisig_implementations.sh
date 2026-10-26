@@ -28,7 +28,6 @@ serviceRegistryAddress=$(jq -r '.serviceRegistryAddress' $globals)
 safeMultisigWithRecoveryModuleAddress=$(jq -r '.safeMultisigWithRecoveryModuleAddress' $globals)
 recoveryModuleAddress=$(jq -r '.recoveryModuleAddress' $globals)
 gnosisSafeMultisigImplementationAddress=$(jq -r '.gnosisSafeMultisigImplementationAddress' $globals)
-gnosisSafeSameAddressMultisigImplementationAddress=$(jq -r '.gnosisSafeSameAddressMultisigImplementationAddress' $globals)
 
 # Check for Alchemy keys
 if [[ "$networkURL" == *"alchemy.com"* ]]; then
@@ -80,24 +79,14 @@ if ! echo "$statusLine" | grep -qE "^status[[:space:]]+1[[:space:]]"; then
   exit 1
 fi
 
-# The two Gnosis Safe multisig implementations. These were previously whitelisted only by the hardhat
-# deploy_07_10_change_managers_and_permissions.js, so a chain brought up via the shell route alone ended up
-# with them deployed but not permitted, and ServiceRegistry.deploy() would revert UnauthorizedMultisig for
-# any service trying to use them.
+# The Gnosis Safe multisig implementation. It was previously whitelisted only by the hardhat
+# deploy_07_09_change_managers_and_permissions.js, so a chain brought up via the shell route alone ended up
+# with it deployed but not permitted, and ServiceRegistry.deploy() would revert UnauthorizedMultisig for
+# any service trying to use it.
+# The deprecated GnosisSafeSameAddressMultisig / PolySafeSameAddressMultisig adapters are deliberately not
+# whitelisted here. See "Manual permission review" in docs/deployment.md.
 echo "${green}Whitelist GnosisSafeMultisig${reset}"
 castArgs="$serviceRegistryAddress changeMultisigPermission(address,bool) $gnosisSafeMultisigImplementationAddress true"
-echo $castArgs
-castCmd="$castSendHeader $castArgs"
-result=$($castCmd)
-statusLine=$(echo "$result" | grep -E "^status[[:space:]]+[0-9]")
-echo "$statusLine"
-if ! echo "$statusLine" | grep -qE "^status[[:space:]]+1[[:space:]]"; then
-  echo "${red}!!! changeMultisigPermission transaction did not succeed${reset}"
-  exit 1
-fi
-
-echo "${green}Whitelist GnosisSafeSameAddressMultisig${reset}"
-castArgs="$serviceRegistryAddress changeMultisigPermission(address,bool) $gnosisSafeSameAddressMultisigImplementationAddress true"
 echo $castArgs
 castCmd="$castSendHeader $castArgs"
 result=$($castCmd)

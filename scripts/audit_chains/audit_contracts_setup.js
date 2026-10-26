@@ -287,6 +287,51 @@ async function checkAgentRegistry(chainId, provider, globalsInstance, configCont
     customExpect(componentRegistry, globalsInstance["componentRegistryAddress"], log + ", function: componentRegistry()");
 }
 
+// Deprecated same-address adapters: contract name in the configuration, address key in the globals file
+const DEPRECATED_ADAPTERS = [
+    { name: "GnosisSafeSameAddressMultisig", globalsKey: "gnosisSafeSameAddressMultisigImplementationAddress" },
+    { name: "PolySafeSameAddressMultisig", globalsKey: "polySafeSameAddressMultisigAddress" }
+];
+
+// Deprecated adapters are expected to be disabled in the registry.
+// New deployments do not deploy them, so an adapter that is not configured on a chain is reported
+// explicitly instead of being dereferenced. This is an audit report only, not a deployment gate.
+async function checkDeprecatedAdapterPermissions(serviceRegistry, globalsInstance, configContracts, log) {
+    for (const adapter of DEPRECATED_ADAPTERS) {
+        const candidates = [globalsInstance[adapter.globalsKey]];
+        for (const configContract of configContracts) {
+            if (configContract["name"] === adapter.name) {
+                candidates.push(configContract["address"]);
+            }
+        }
+
+        const seen = new Set();
+        for (const candidate of candidates) {
+            if (!candidate) {
+                continue;
+            }
+            if (!ethers.utils.isAddress(candidate)) {
+                console.log(log + ", WARN: invalid " + adapter.name + " address in configuration: " + candidate
+                    + " - not audited.");
+                continue;
+            }
+            const address = norm(candidate);
+            if (seen.has(address)) {
+                continue;
+            }
+            seen.add(address);
+
+            const res = await serviceRegistry.mapMultisigs(address);
+            customExpect(res, false, log + ", function: mapMultisigs(" + adapter.name + ": " + address + ")");
+        }
+
+        if (seen.size === 0) {
+            console.log(log + ", " + adapter.name + ": not configured on this chain - permission not checked."
+                + " Expected where it was never deployed.");
+        }
+    }
+}
+
 // Check service registry: chain Id, provider, parsed globals, configuration contracts, contract name
 async function checkServiceRegistry(chainId, provider, globalsInstance, configContracts, contractName, log) {
     // Check the bytecode
@@ -334,8 +379,10 @@ async function checkServiceRegistry(chainId, provider, globalsInstance, configCo
     // Check enabled multisig implementations
     let res = await serviceRegistry.mapMultisigs(globalsInstance["gnosisSafeMultisigImplementationAddress"]);
     customExpect(res, true, log + ", function: mapMultisigs(safeMultisig)");
-    res = await serviceRegistry.mapMultisigs(globalsInstance["gnosisSafeSameAddressMultisigImplementationAddress"]);
-    customExpect(res, true, log + ", function: mapMultisigs(safeSameAddressMultisig)");
+
+    // Deprecated same-address adapters must not be whitelisted
+    await checkDeprecatedAdapterPermissions(serviceRegistry, globalsInstance, configContracts, log);
+
     res = await serviceRegistry.mapMultisigs(globalsInstance["recoveryModuleAddress"]);
     customExpect(res, true, log + ", function: mapMultisigs(recoveryModule)");
     res = await serviceRegistry.mapMultisigs(globalsInstance["safeMultisigWithRecoveryModuleAddress"]);
@@ -532,6 +579,12 @@ async function checkGnosisSafeSameAddressMultisig(chainId, provider, globalsInst
 
     // Get the contract instance
     const gnosisSafeSameAddressMultisig = await findContractInstance(provider, configContracts, contractName);
+
+    if (!gnosisSafeSameAddressMultisig) {
+        console.log(log + ", " + contractName + ": not configured on this chain - not audited."
+            + " Expected where it was never deployed.");
+        return;
+    }
 
     log += ", address: " + gnosisSafeSameAddressMultisig.address;
     // Check default data length

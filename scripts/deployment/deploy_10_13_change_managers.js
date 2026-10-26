@@ -18,7 +18,6 @@ async function main() {
     const registriesManagerAddress = parsedData.registriesManagerAddress;
     const serviceManagerProxyAddress = parsedData.serviceManagerProxyAddress;
     const gnosisSafeMultisigImplementationAddress = parsedData.gnosisSafeMultisigImplementationAddress;
-    const gnosisSafeSameAddressMultisigImplementationAddress = parsedData.gnosisSafeSameAddressMultisigImplementationAddress;
     let EOA;
 
     const provider = await ethers.providers.getDefaultProvider(providerName);
@@ -72,15 +71,8 @@ async function main() {
     console.log("Transaction:", result.hash);
 
     // 13. EOA to whitelist GnosisSafeMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeMultisig)`;
-    console.log("9. You are signing the following transaction: serviceRegistry.connect(EOA).changeMultisigPermission()");
+    console.log("13. You are signing the following transaction: serviceRegistry.connect(EOA).changeMultisigPermission()");
     result = await serviceRegistry.connect(EOA).changeMultisigPermission(gnosisSafeMultisigImplementationAddress, true);
-    // Transaction details
-    console.log("Contract address:", serviceRegistryAddress);
-    console.log("Transaction:", result.hash);
-
-    // 14. EOA to whitelist GnosisSafeSameAddressMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeSameAddressMultisig)`;
-    console.log("10. You are signing the following transaction: serviceRegistry.connect(EOA).changeMultisigPermission()");
-    result = await serviceRegistry.connect(EOA).changeMultisigPermission(gnosisSafeSameAddressMultisigImplementationAddress, true);
     // Transaction details
     console.log("Contract address:", serviceRegistryAddress);
     console.log("Transaction:", result.hash);
