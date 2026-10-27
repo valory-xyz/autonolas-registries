@@ -16,7 +16,6 @@ async function main() {
     const serviceRegistryTokenUtilityAddress = parsedData.serviceRegistryTokenUtilityAddress;
     const serviceManagerProxyAddress = parsedData.serviceManagerProxyAddress;
     const gnosisSafeMultisigImplementationAddress = parsedData.gnosisSafeMultisigImplementationAddress;
-    const gnosisSafeSameAddressMultisigImplementationAddress = parsedData.gnosisSafeSameAddressMultisigImplementationAddress;
 
     let networkURL = parsedData.networkURL;
     if (providerName === "polygon") {
@@ -70,13 +69,6 @@ async function main() {
     // 9. EOA to whitelist GnosisSafeMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeMultisig)`;
     console.log("9. You are signing the following transaction: serviceRegistry.connect(EOA).changeMultisigPermission()");
     result = await serviceRegistry.connect(EOA).changeMultisigPermission(gnosisSafeMultisigImplementationAddress, true, { gasPrice });
-    // Transaction details
-    console.log("Contract address:", serviceRegistryAddress);
-    console.log("Transaction:", result.hash);
-
-    // 10. EOA to whitelist GnosisSafeSameAddressMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeSameAddressMultisig)`;
-    console.log("10. You are signing the following transaction: serviceRegistry.connect(EOA).changeMultisigPermission()");
-    result = await serviceRegistry.connect(EOA).changeMultisigPermission(gnosisSafeSameAddressMultisigImplementationAddress, true, { gasPrice });
     // Transaction details
     console.log("Contract address:", serviceRegistryAddress);
     console.log("Transaction:", result.hash);

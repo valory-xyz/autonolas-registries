@@ -83,11 +83,13 @@ The implementation of such multisig is provided here:
 - [GnosisSafeSameAddressMultisig](./contracts/multisigs/GnosisSafeSameAddressMultisig.sol)
 
 > **Deprecated.** `GnosisSafeSameAddressMultisig` (and its Polygon counterpart
-> `PolySafeSameAddressMultisig`) are **no longer whitelisted on any supported chain** —
-> `mapMultisigs` returns `false` for them on Ethereum, Gnosis, Polygon, Base, Optimism, Arbitrum,
-> Celo and Mode, so `deploy()` reverts `UnauthorizedMultisig` if either is passed. The contracts
-> remain deployed and their sources are retained here as the record of that deployed bytecode, but
-> they must not be used for new service deployments. Use
+> `PolySafeSameAddressMultisig`) are not deployed or whitelisted by the deployment scripts, and
+> `deploy()` reverts `UnauthorizedMultisig` for any implementation whose `mapMultisigs` value is `false`.
+> The scripts do not change the permission of adapters that are already deployed, so the on-chain
+> state must be reviewed manually per chain (see "Manual permission review" in
+> [docs/deployment.md](./docs/deployment.md)). The contracts remain deployed and their sources are
+> retained here as the record of that deployed bytecode, but they must not be used for new service
+> deployments. Use
 > [SafeMultisigWithRecoveryModule](./contracts/multisigs/SafeMultisigWithRecoveryModule.sol) or
 > [RecoveryModule](./contracts/multisigs/RecoveryModule.sol) instead.
 >
