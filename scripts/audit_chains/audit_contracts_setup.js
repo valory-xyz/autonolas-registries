@@ -326,8 +326,9 @@ async function checkDeprecatedAdapterPermissions(serviceRegistry, globalsInstanc
         }
 
         if (seen.size === 0) {
-            console.log(log + ", " + adapter.name + ": not configured on this chain - permission not checked."
-                + " Expected where it was never deployed.");
+            // A present-but-invalid address (WARN above) or a hole in both globals and configuration is
+            // not evidence that the adapter was never deployed; every in-scope chain configures it.
+            warnNotConfigured(log, adapter.name);
         }
     }
 }
@@ -581,8 +582,7 @@ async function checkGnosisSafeSameAddressMultisig(chainId, provider, globalsInst
     const gnosisSafeSameAddressMultisig = await findContractInstance(provider, configContracts, contractName);
 
     if (!gnosisSafeSameAddressMultisig) {
-        console.log(log + ", " + contractName + ": not configured on this chain - not audited."
-            + " Expected where it was never deployed.");
+        warnNotConfigured(log, contractName);
         return;
     }
 

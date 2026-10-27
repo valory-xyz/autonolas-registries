@@ -5,11 +5,11 @@
 3. EOA to deploy ServiceRegistryTokenUtility;
 4. EOA to deploy ServiceManagerToken pointed to ServiceRegistry, ServiceRegistryTokenUtility and OperatorWhitelist;
 5. EOA to deploy GnosisSafeMultisig;
-6. Removed: the deprecated GnosisSafeSameAddressMultisig is no longer deployed;
+6. Skipped (no script): the deprecated GnosisSafeSameAddressMultisig is no longer deployed;
 7. EOA to change the manager of ServiceRegistry to ServiceManagerToken calling `changeManager(ServiceManagerToken)`;
 8. EOA to change the manager of ServiceRegistryTokenUtility to ServiceManagerToken calling `changeManager(ServiceManagerToken)`;
 9. EOA to whitelist GnosisSafeMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeMultisig)`;
-10. Removed: the deprecated GnosisSafeSameAddressMultisig is no longer whitelisted;
+10. Skipped (no script): the deprecated GnosisSafeSameAddressMultisig is no longer whitelisted;
 11. EOA to change the drainer of ServiceRegistry to BridgeMediator calling `changeDrainer(BridgeMediator)`;
 12. EOA to change the drainer of ServiceRegistryTokenUtility to BridgeMediator calling `changeDrainer(BridgeMediator)`;
 13. EOA to transfer ownership rights of ServiceRegistry to BridgeMediator calling `changeOwner(BridgeMediator)`;

@@ -71,7 +71,7 @@ async function main() {
     console.log("Transaction:", result.hash);
 
     // 13. EOA to whitelist GnosisSafeMultisig in ServiceRegistry via `changeMultisigPermission(GnosisSafeMultisig)`;
-    console.log("13. You are signing the following transaction: serviceRegistry.connect(EOA).changeMultisigPermission()");
+    console.log("9. You are signing the following transaction: serviceRegistry.connect(EOA).changeMultisigPermission()");
     result = await serviceRegistry.connect(EOA).changeMultisigPermission(gnosisSafeMultisigImplementationAddress, true);
     // Transaction details
     console.log("Contract address:", serviceRegistryAddress);
