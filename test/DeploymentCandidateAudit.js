@@ -140,6 +140,24 @@ describe("Deployment candidate audit", function () {
             .to.be.rejectedWith("AUDIT FAILED: 5 checks: runtime hash, gnosisSafe(), gnosisSafeProxyFactory(), new wrapper permission, previous wrapper permission");
     });
 
+    it("audits an uninitialized StakingToken implementation without programme bindings", async function () {
+        const staking = await (await ethers.getContractFactory("StakingToken")).deploy();
+        const artifact = await artifacts.readArtifact("StakingToken");
+        await audit({ chainId: globals.chainId, stakingTokenAddress: staking.address }, "StakingToken", artifact);
+    });
+
+    it("rejects StakingNativeToken even though it reports the same version", async function () {
+        const staking = await (await ethers.getContractFactory("StakingNativeToken")).deploy();
+        expect(await staking.VERSION()).to.equal("0.4.0");
+        await expect(audit({ chainId: globals.chainId, stakingTokenAddress: staking.address }, "StakingToken",
+            await artifacts.readArtifact("StakingToken"))).to.be.rejectedWith("runtime hash");
+    });
+
+    it("reports both code and VERSION mismatches for StakingToken", async function () {
+        await expect(audit({ chainId: globals.chainId, stakingTokenAddress: manager.address }, "StakingToken",
+            await artifacts.readArtifact("StakingToken"))).to.be.rejectedWith("AUDIT FAILED: 2 checks: runtime hash, VERSION()");
+    });
+
     it("accepts the Forge artifact bytecode shape", async function () {
         await audit(globals, "GnosisSafeMultisig", { ...wrapperArtifact, bytecode: { object: wrapperArtifact.bytecode } });
     });
@@ -152,7 +170,8 @@ describe("Deployment explorer verification", function () {
     const path = require("path");
     const { spawnSync } = require("child_process");
     for (const script of ["scripts/deployment/deploy_07_service_manager.sh",
-        "scripts/deployment/l2/deploy_04_service_manager.sh", "scripts/deployment/l2/deploy_06a_gnosis_safe_multisig.sh"]) {
+        "scripts/deployment/l2/deploy_04_service_manager.sh", "scripts/deployment/l2/deploy_06a_gnosis_safe_multisig.sh",
+        "scripts/deployment/l2/deploy_16_service_staking_token.sh"]) {
         it(script + " waits for verification and propagates either explorer failure", function () {
             const dir = fs.mkdtempSync(path.join(os.tmpdir(), "registry-verification-"));
             try {

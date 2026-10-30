@@ -23,7 +23,7 @@
   "agent8004BaseURI": "https://marketplace.olas.network/erc8004/robinhood-chain/ai-agents/",
   "minStakingDepositLimit": "10000000000000000000000",
   "timeForEmissionsLimit": "2592000",
-  "numServicesLimit": "100",
+  "numServicesLimit": "44",
   "apyLimit": "3000000000000000000",
   "serviceRegistryAddress": "0xE3607b00E75f6405248323A9417ff6b39B244b50",
   "operatorWhitelistAddress": "0x3C1fF68f5aa342D296d4DEe4Bb1cACCA912D95fE",

@@ -740,12 +740,13 @@ async function checkPolySafeCreatorWithRecoveryModule(chainId, provider, globals
 
 
 // Audit a newly deployed candidate independently of the still-active contracts in configuration.json.
-// These two constructors depend only on their arguments and compile-time constants. Simulating their
+// These constructors depend only on their arguments and compile-time constants. Simulating their
 // creation with eth_call returns the exact runtime, including immutables, without sending a transaction.
 async function checkDeploymentCandidate(provider, globals, contractName, artifact, activated = false, previousWrapper) {
     const bindings = {
         ServiceManager: ["serviceManagerAddress", ["serviceRegistryAddress", "serviceRegistryTokenUtilityAddress"]],
-        GnosisSafeMultisig: ["gnosisSafeMultisigImplementationAddress", ["gnosisSafeAddress", "gnosisSafeProxyFactoryAddress"]]
+        GnosisSafeMultisig: ["gnosisSafeMultisigImplementationAddress", ["gnosisSafeAddress", "gnosisSafeProxyFactoryAddress"]],
+        StakingToken: ["stakingTokenAddress", []]
     };
     if (!bindings[contractName]) {
         throw new Error("Unsupported candidate: " + contractName);
@@ -793,8 +794,11 @@ async function checkDeploymentCandidate(provider, globals, contractName, artifac
         expect(ethers.utils.keccak256(observedCode)).to.equal(ethers.utils.keccak256(expectedCode));
     });
     const candidate = new ethers.Contract(address, artifact.abi, provider);
-    const getters = contractName === "ServiceManager"
-        ? ["serviceRegistry", "serviceRegistryTokenUtility"] : ["gnosisSafe", "gnosisSafeProxyFactory"];
+    const getters = {
+        ServiceManager: ["serviceRegistry", "serviceRegistryTokenUtility"],
+        GnosisSafeMultisig: ["gnosisSafe", "gnosisSafeProxyFactory"],
+        StakingToken: []
+    }[contractName];
     for (let i = 0; i < getters.length; i++) {
         await check(getters[i] + "()", async () => {
             expect(norm(await candidate[getters[i]]({ blockTag }))).to.equal(args[i]);
@@ -814,6 +818,10 @@ async function checkDeploymentCandidate(provider, globals, contractName, artifac
         });
         await check("proxy VERSION()", async () => {
             expect(await proxy.VERSION({ blockTag })).to.equal("1.3.0");
+        });
+    } else if (contractName === "StakingToken") {
+        await check("VERSION()", async () => {
+            expect(await candidate.VERSION({ blockTag })).to.equal("0.4.0");
         });
     } else if (activated) {
         const registry = new ethers.Contract(globals.serviceRegistryAddress,
@@ -840,7 +848,7 @@ async function auditCandidateFromArguments() {
     const value = flag => args[args.indexOf(flag) + 1];
     if (!["--candidate", "--globals", "--artifact"].every(flag => args.includes(flag) && value(flag) && !value(flag).startsWith("--"))
         || !process.env.AUDIT_RPC_URL) {
-        throw new Error("Required: --candidate <ServiceManager|GnosisSafeMultisig> --globals <file> --artifact <file> and AUDIT_RPC_URL");
+        throw new Error("Required: --candidate <ServiceManager|GnosisSafeMultisig|StakingToken> --globals <file> --artifact <file> and AUDIT_RPC_URL");
     }
     await checkDeploymentCandidate(new ethers.providers.JsonRpcProvider(process.env.AUDIT_RPC_URL),
         JSON.parse(fs.readFileSync(value("--globals"), "utf8")), value("--candidate"),
