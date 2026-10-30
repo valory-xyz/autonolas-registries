@@ -1,4 +1,10 @@
 # Deployment of the light protocol contracts
+
+For ServiceManager and Safe-wrapper replacements on existing deployments, follow the shared
+[replacement deployment and audit procedure](deployment.md#servicemanager-and-safe-wrapper-replacements),
+including L2 scripts, expected pre-governance mismatches and checks after bridge execution.
+The original deployment sequence below is not the replacement flow.
+
 ## Steps for deploying original contracts.
 1. EOA to deploy ServiceRegistry;
 2. EOA to deploy OperatorWhitelist;

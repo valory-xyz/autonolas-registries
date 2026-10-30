@@ -222,6 +222,10 @@ The static audit checks all the deployed contracts on-chain info correctness and
 node scripts/audit_chains/audit_contracts_setup.js
 ```
 
+For ServiceManager and Safe-wrapper replacements, follow the
+[deployment and audit procedure](docs/deployment.md#servicemanager-and-safe-wrapper-replacements),
+including commands, expected pre-governance mismatches and post-governance checks.
+
 ## Deployed Protocol
 The list of contract addresses for different chains and their full contract configuration can be found [here](./docs/configuration.json).
 
