@@ -739,6 +739,123 @@ async function checkPolySafeCreatorWithRecoveryModule(chainId, provider, globals
 }
 
 
+// Audit a newly deployed candidate independently of the still-active contracts in configuration.json.
+// These constructors depend only on their arguments and compile-time constants. Simulating their
+// creation with eth_call returns the exact runtime, including immutables, without sending a transaction.
+async function checkDeploymentCandidate(provider, globals, contractName, artifact, activated = false, previousWrapper) {
+    const bindings = {
+        ServiceManager: ["serviceManagerAddress", ["serviceRegistryAddress", "serviceRegistryTokenUtilityAddress"]],
+        GnosisSafeMultisig: ["gnosisSafeMultisigImplementationAddress", ["gnosisSafeAddress", "gnosisSafeProxyFactoryAddress"]],
+        StakingToken: ["stakingTokenAddress", []]
+    };
+    if (!bindings[contractName]) {
+        throw new Error("Unsupported candidate: " + contractName);
+    }
+    const [addressKey, argumentKeys] = bindings[contractName];
+    const address = norm(globals[addressKey]);
+    const args = argumentKeys.map(key => norm(globals[key]));
+    if (!address || address === ethers.constants.AddressZero || args.some(arg => !arg || arg === ethers.constants.AddressZero)) {
+        throw new Error("Candidate address and constructor bindings must be nonzero addresses");
+    }
+    let proxyAddress;
+    if (contractName === "ServiceManager") {
+        if (!ethers.utils.isAddress(globals.serviceManagerProxyAddress)
+            || norm(globals.serviceManagerProxyAddress) === ethers.constants.AddressZero) {
+            throw new Error("serviceManagerProxyAddress must be a nonzero address");
+        }
+        proxyAddress = norm(globals.serviceManagerProxyAddress);
+    }
+    const network = await provider.getNetwork();
+    expect(network.chainId, "RPC chainId versus globals.chainId").to.equal(Number(globals.chainId));
+    const blockTag = await provider.getBlockNumber();
+    const tag = "ChainId: " + network.chainId + ", block: " + blockTag + ", candidate: " + contractName + " " + address;
+    console.log(tag);
+    const failures = [];
+    async function check(label, readAndCompare) {
+        try {
+            await readAndCompare();
+        } catch (error) {
+            failures.push(label);
+            const detail = error.name === "AssertionError"
+                ? "expected=" + error.expected + ", observed=" + error.actual
+                : "check unavailable (" + (error.code || error.name) + ")";
+            console.error(tag + ", FAIL: " + label + ": " + detail);
+        }
+    }
+    await check("runtime hash", async () => {
+        const bytecode = typeof artifact.bytecode === "string" ? artifact.bytecode : artifact.bytecode.object;
+        const factory = new ethers.ContractFactory(artifact.abi, bytecode);
+        const expectedCode = await provider.call(factory.getDeployTransaction(...args), blockTag);
+        if (expectedCode === "0x") {
+            throw new Error("Candidate creation simulation returned empty runtime code");
+        }
+        const observedCode = await provider.getCode(address, blockTag);
+        console.log("Reviewed runtime hash: " + ethers.utils.keccak256(expectedCode));
+        expect(ethers.utils.keccak256(observedCode)).to.equal(ethers.utils.keccak256(expectedCode));
+    });
+    const candidate = new ethers.Contract(address, artifact.abi, provider);
+    const getters = {
+        ServiceManager: ["serviceRegistry", "serviceRegistryTokenUtility"],
+        GnosisSafeMultisig: ["gnosisSafe", "gnosisSafeProxyFactory"],
+        StakingToken: []
+    }[contractName];
+    for (let i = 0; i < getters.length; i++) {
+        await check(getters[i] + "()", async () => {
+            expect(norm(await candidate[getters[i]]({ blockTag }))).to.equal(args[i]);
+        });
+    }
+    if (contractName === "ServiceManager") {
+        await check("VERSION()", async () => {
+            expect(await candidate.VERSION({ blockTag })).to.equal("1.3.0");
+        });
+        const proxy = new ethers.Contract(proxyAddress,
+            ["function getImplementation() view returns (address)", "function VERSION() view returns (string)"], provider);
+        await check("proxy implementation", async () => {
+            const implementation = norm(await proxy.getImplementation({ blockTag }));
+            console.log("Expected implementation: " + address);
+            console.log("Actual implementation: " + implementation);
+            expect(implementation).to.equal(address);
+        });
+        await check("proxy VERSION()", async () => {
+            expect(await proxy.VERSION({ blockTag })).to.equal("1.3.0");
+        });
+    } else if (contractName === "StakingToken") {
+        await check("VERSION()", async () => {
+            expect(await candidate.VERSION({ blockTag })).to.equal("0.4.0");
+        });
+    } else if (activated) {
+        const registry = new ethers.Contract(globals.serviceRegistryAddress,
+            ["function mapMultisigs(address) view returns (bool)"], provider);
+        await check("new wrapper permission", async () => {
+            expect(await registry.mapMultisigs(address, { blockTag })).to.equal(true);
+        });
+        await check("previous wrapper permission (--previous-wrapper)", async () => {
+            const old = norm(previousWrapper);
+            if (!old || old === ethers.constants.AddressZero || old === address) {
+                throw new Error("Supply a distinct, nonzero --previous-wrapper address for the post-activation audit");
+            }
+            expect(await registry.mapMultisigs(old, { blockTag })).to.equal(false);
+        });
+    }
+    if (failures.length) {
+        throw new Error("AUDIT FAILED: " + failures.length + " checks: " + failures.join(", "));
+    }
+    console.log("PASS: all requested candidate and state checks");
+}
+
+async function auditCandidateFromArguments() {
+    const args = process.argv.slice(2);
+    const value = flag => args[args.indexOf(flag) + 1];
+    if (!["--candidate", "--globals", "--artifact"].every(flag => args.includes(flag) && value(flag) && !value(flag).startsWith("--"))
+        || !process.env.AUDIT_RPC_URL) {
+        throw new Error("Required: --candidate <ServiceManager|GnosisSafeMultisig|StakingToken> --globals <file> --artifact <file> and AUDIT_RPC_URL");
+    }
+    await checkDeploymentCandidate(new ethers.providers.JsonRpcProvider(process.env.AUDIT_RPC_URL),
+        JSON.parse(fs.readFileSync(value("--globals"), "utf8")), value("--candidate"),
+        JSON.parse(fs.readFileSync(value("--artifact"), "utf8")), args.includes("--activated"),
+        args.includes("--previous-wrapper") ? value("--previous-wrapper") : undefined);
+}
+
 async function main() {
     // Check for the API keys
     if (!process.env.ALCHEMY_API_KEY_MAINNET || !process.env.ALCHEMY_API_KEY_MATIC) {
@@ -892,15 +1009,19 @@ async function main() {
     // ################################# /VERIFY CONTRACTS SETUP #################################
 }
 
-main()
-    .then(() => {
-        if (bytecodeMismatchFound) {
-            console.error("AUDIT FAILED: at least one on-chain bytecode length mismatch (Tier 1) — see FAIL lines above.");
+if (require.main === module) {
+    (process.argv.includes("--candidate") ? auditCandidateFromArguments() : main())
+        .then(() => {
+            if (bytecodeMismatchFound) {
+                console.error("AUDIT FAILED: at least one on-chain bytecode length mismatch (Tier 1) — see FAIL lines above.");
+                process.exit(1);
+            }
+            process.exit(0);
+        })
+        .catch((error) => {
+            console.error(error);
             process.exit(1);
-        }
-        process.exit(0);
-    })
-    .catch((error) => {
-        console.error(error);
-        process.exit(1);
-    });
+        });
+}
+
+module.exports = { checkDeploymentCandidate };

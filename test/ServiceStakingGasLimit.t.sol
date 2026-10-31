@@ -84,6 +84,11 @@ contract BaseSetup is Test {
     // Number of agent instances in the service
     uint256 internal numAgentInstances = 1;
 
+    function _activityCheckerAddress() internal virtual returns (address) {
+        stakingActivityChecker = new StakingActivityChecker(livenessRatio);
+        return address(stakingActivityChecker);
+    }
+
     function setUp() public virtual {
         agentIds = new uint32[](1);
         agentIds[0] = 1;
@@ -145,13 +150,13 @@ contract BaseSetup is Test {
         stakingFactory = new StakingFactory(address(0));
 
         // Deploy service staking activity checker
-        stakingActivityChecker = new StakingActivityChecker(livenessRatio);
+        address checkerAddress = _activityCheckerAddress();
 
         // Deploy service staking native token and arbitrary ERC20 token
         StakingBase.StakingParams memory stakingParams = StakingBase.StakingParams(
             bytes32(uint256(uint160(address(msg.sender)))), maxNumServices, rewardsPerSecond, minStakingDeposit,
             minNumStakingPeriods, maxNumInactivityPeriods, livenessPeriod, timeForEmissions, numAgentInstances,
-            emptyArray, 0, bytes32(0), multisigProxyHash, address(serviceRegistry), address(stakingActivityChecker));
+            emptyArray, 0, bytes32(0), multisigProxyHash, address(serviceRegistry), checkerAddress);
         stakingNativeTokenImplementation = new StakingNativeToken();
         stakingTokenImplementation = new StakingToken();
 
@@ -281,5 +286,136 @@ contract StakingGasLimit is BaseSetup {
 
         // Call the checkpoint
         stakingNativeToken.checkpoint();
+    }
+}
+// Synthetic checker for bounding checkpoint cost, not a production checker implementation.
+contract CheckpointGasChecker {
+    uint256 public nonce;
+    uint256 public count = 4;
+    bool public failRead;
+    bool public failRatio;
+
+    function configure(uint256 value, uint256 size, bool readFailure, bool ratioFailure) external {
+        nonce = value;
+        count = size;
+        failRead = readFailure;
+        failRatio = ratioFailure;
+    }
+
+    function _consumeAllowance() private view {
+        // Checkpoint calls receive 100k gas. Leave enough to encode the return value. Uncapped stake()
+        // reads spend a bounded 97k instead of consuming the enclosing transaction's entire allowance.
+        uint256 remaining = gasleft();
+        uint256 floor = remaining > 100_000 ? remaining - 97_000 : 1_500;
+        assembly {
+            for {} gt(gas(), floor) {} {}
+        }
+    }
+
+    function getMultisigNonces(address) external view returns (uint256[] memory values) {
+        if (failRead) {
+            assembly { invalid() }
+        }
+        values = new uint256[](count);
+        for (uint256 i; i < values.length; ++i) {
+            values[i] = nonce;
+        }
+        _consumeAllowance();
+    }
+
+    function isRatioPass(uint256[] calldata, uint256[] calldata, uint256) external view returns (bool) {
+        if (failRatio) {
+            assembly { invalid() }
+        }
+        _consumeAllowance();
+        return true;
+    }
+}
+
+// Run with --isolate: every external call must use a fresh transaction context (cold storage).
+// CHECKPOINT_GAS_BUDGET is the full transaction budget, including 21,064 intrinsic gas for checkpoint().
+contract StakingTokenCheckpointGas is BaseSetup {
+    CheckpointGasChecker internal checker;
+    uint256 internal gasBudget;
+    uint256 internal constant CHECKPOINT_INTRINSIC_GAS = 21_064;
+
+    function _activityCheckerAddress() internal override returns (address) {
+        checker = new CheckpointGasChecker();
+        return address(checker);
+    }
+
+    function setUp() public override {
+        numServices = vm.envOr("CHECKPOINT_SERVICE_COUNT", uint256(44));
+        maxNumServices = numServices;
+        gasBudget = vm.envOr("CHECKPOINT_GAS_BUDGET", uint256(15_000_000));
+        super.setUp();
+        token.approve(address(stakingToken), initialMint);
+        stakingToken.deposit(initialMint);
+        for (uint256 i = numServices + 1; i <= 2 * numServices; ++i) {
+            vm.startPrank(deployer);
+            serviceRegistry.approve(address(stakingToken), i);
+            stakingToken.stake(i);
+            vm.stopPrank();
+        }
+    }
+
+    function _measure(string memory label) internal returns (uint256 numEligible) {
+        // Run the reviewed bytecode under the selected execution rules without recompiling it.
+        vm.setEvmVersion(vm.envOr("CHECKPOINT_EVM_VERSION", string("prague")));
+        uint256 epoch = stakingToken.epochCounter();
+        vm.warp(block.timestamp + livenessPeriod + 1);
+        (, uint256[] memory eligible, , ) = stakingToken.checkpoint{gas: gasBudget - CHECKPOINT_INTRINSIC_GAS}();
+        // In --isolate mode gasTotalUsed already includes intrinsic gas.
+        uint256 measured = vm.lastCallGas().gasTotalUsed;
+        console.log(label, measured);
+        assertLe(measured, gasBudget, "checkpoint transaction budget exceeded");
+        assertEq(stakingToken.epochCounter(), epoch + 1, "checkpoint did not execute");
+        return eligible.length;
+    }
+
+    function testFirstRewardAndSteadyState() public {
+        checker.configure(1, 4, false, false);
+        assertEq(_measure("first reward / zero-to-nonzero counters"), numServices);
+        assertGt(stakingToken.getServiceInfo(numServices + 1).reward, 0);
+        checker.configure(2, 4, false, false);
+        assertEq(_measure("steady rewards"), numServices);
+    }
+
+    function testReadFailureAndRecovery() public {
+        checker.configure(0, 4, true, false);
+        _measure("first read failure");
+        assertTrue(stakingToken.mapServiceIdBaselineMissing(numServices + 1));
+        _measure("repeated read failure");
+        checker.configure(1, 4, false, false);
+        assertEq(_measure("baseline recovery"), 0);
+        for (uint256 i = numServices + 1; i <= 2 * numServices; ++i) {
+            assertFalse(stakingToken.mapServiceIdBaselineMissing(i));
+        }
+        assertEq(stakingToken.getServiceInfo(numServices + 1).reward, 0);
+    }
+
+    function testRatioFailureAndEviction() public {
+        checker.configure(1, 4, false, true);
+        _measure("first ratio failure");
+        _measure("repeated ratio failure");
+        _measure("ratio failure eviction");
+        assertEq(stakingToken.getServiceIds().length, 0);
+    }
+
+    function testRebaselineAfterRefill() public {
+        // Reach an empty reserve through normal reward allocation, then refill after a timestamp gap.
+        uint256 emptyAfter = initialMint / (numServices * rewardsPerSecond) + 1;
+        vm.warp(block.timestamp + emptyAfter);
+        checker.configure(1, 4, false, false);
+        assertEq(_measure("reserve exhaustion"), numServices);
+        assertEq(stakingToken.availableRewards(), 0);
+        vm.warp(block.timestamp + 1);
+        token.mint(address(this), initialMint);
+        token.approve(address(stakingToken), initialMint);
+        stakingToken.deposit(initialMint);
+        assertTrue(stakingToken.rebaselinePending());
+        checker.configure(2, 4, false, false);
+        assertEq(_measure("refill re-baseline"), 0);
+        assertFalse(stakingToken.rebaselinePending());
     }
 }

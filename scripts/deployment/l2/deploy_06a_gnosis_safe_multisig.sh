@@ -77,12 +77,12 @@ if [ "$contractVerification" == "true" ]; then
   echo "Verification contract params: $contractParams"
 
   echo "Verifying contract on Etherscan..."
-  forge verify-contract --chain-id "$chainId" --etherscan-api-key "$ETHERSCAN_API_KEY" $contractParams
+  forge verify-contract --watch --chain-id "$chainId" --etherscan-api-key "$ETHERSCAN_API_KEY" $contractParams || exit 1
 
   blockscoutURL=$(jq -r '.blockscoutURL' $globals)
   if [ "$blockscoutURL" != "null" ]; then
     echo "Verifying contract on Blockscout..."
-    forge verify-contract --verifier blockscout --verifier-url "$blockscoutURL/api" $contractParams
+    forge verify-contract --watch --verifier blockscout --verifier-url "$blockscoutURL/api" $contractParams || exit 1
   fi
 fi
 

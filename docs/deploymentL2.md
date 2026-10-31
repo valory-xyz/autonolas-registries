@@ -1,4 +1,60 @@
 # Deployment of the light protocol contracts
+
+For ServiceManager and Safe-wrapper replacements on existing deployments, follow the shared
+[replacement deployment and audit procedure](deployment.md#servicemanager-and-safe-wrapper-replacements),
+including L2 scripts, expected pre-governance mismatches and checks after bridge execution.
+The original deployment sequence below is not the replacement flow.
+
+## StakingToken implementation
+
+This deploys an implementation; programme creation and migration are separate. Reuse the existing
+factory and verifier. Select and validate the verifier limits before deployment;
+keep the other limits unchanged unless governance explicitly changes them.
+
+1. Select `scripts/deployment/l2/globals_<chain>_mainnet.json` (`eth_mainnet` for Ethereum); confirm
+   `chainId`, RPC and verification settings. Build the reviewed revision with `forge build`.
+2. Run `bash scripts/deployment/l2/deploy_16_service_staking_token.sh <chain>_mainnet` with
+   `contractVerification` enabled. It takes no constructor arguments, writes `stakingTokenAddress`,
+   and waits for explorer verification. Retry failed verification against that address, without redeploying.
+3. Set `AUDIT_RPC_URL` and audit the deployed code and version; Ethereum example:
+
+   ```bash
+   node scripts/audit_chains/audit_contracts_setup.js --candidate StakingToken \
+     --globals scripts/deployment/l2/globals_eth_mainnet.json --artifact out/StakingToken.sol/StakingToken.json
+   ```
+
+   The candidate must match the reviewed build and report `VERSION() == "0.4.0"`. Programme bindings
+   are set when creating instances, so they are not checked on the uninitialized implementation.
+4. Governance applies the validated limits before enabling the implementation, or first in the same
+   atomic batch; then enables the new token implementation and disables the selected superseded token
+   implementations in `setImplementationsStatuses`. Do not include the native-token implementation in
+   this replacement. The existing JavaScript helper 20 sends transactions directly and includes both
+   types; its call is not the governance payload for this procedure.
+5. Rerun the candidate audit and existing state audit. Read the verifier's individual implementation
+   permissions and all four limits against the approved values; the existing state audit does not check
+   individual implementation permissions. Prepare programme-specific checker, consumer and migration
+   readiness separately before launching new programmes.
+
+For checkpoint gas validation, reuse `test/ServiceStakingGasLimit.t.sol` with Foundry v1.7.1,
+Solidity 0.8.30 and the repository build settings:
+
+```bash
+CHECKPOINT_SERVICE_COUNT=44 CHECKPOINT_GAS_BUDGET=15000000 \
+  forge test --isolate --match-contract StakingTokenCheckpointGas -vv
+```
+
+`--isolate` is required for cold transaction state. Set `CHECKPOINT_EVM_VERSION=prague` or `osaka`
+to execute the same reviewed bytecode under either rule set without changing compilation.
+The budget includes intrinsic gas and bounds the
+call through the real staking proxy. The synthetic checker returns four counters and consumes nearly
+the full per-call allowance; tests cover first/steady rewards, failed reads/recovery, failed ratios/eviction
+and refill re-baselining. Defaults are 44 services and a 15,000,000-gas budget, leaving more than 10%
+below the [EIP-7825 transaction cap](https://eips.ethereum.org/EIPS/eip-7825). A 50-service comparison
+at 16,777,216 gas fails the first-reward and reserve-exhaustion cases. Change the environment
+variables to compare counts or diagnose with a higher budget; a diagnostic budget is not a deployment
+approval. Validate each destination chain's transaction limit, execution rules and required margin before
+selecting a service limit. Passing these synthetic scenarios does not validate every programme checker.
+
 ## Steps for deploying original contracts.
 1. EOA to deploy ServiceRegistry;
 2. EOA to deploy OperatorWhitelist;
