@@ -550,3 +550,12 @@ cbf9b49b0643c42d50af9dadbdb7356cc908cb43:test/SafeAndDepositWalletCreatorFork.so
 0c119407fa51399e348c54ffa3bf4d572d8ab97d:scripts/deployment/l2/globals_robinhood_mainnet.json:generic-api-key:30
 50193e258c11f724c080df8d070d817643d0040c:test/ServiceManagerSignedMessagesUpgrade.t.sol:generic-api-key:59
 50193e258c11f724c080df8d070d817643d0040c:test/ServiceManagerContractOperatorUpgrade.t.sol:generic-api-key:144
+3113531844c216bf64c5e84ceb13208b041e7755:scripts/deployment/l2/globals_arbitrum_mainnet.json:generic-api-key:29
+3113531844c216bf64c5e84ceb13208b041e7755:scripts/deployment/l2/globals_base_mainnet.json:generic-api-key:28
+3113531844c216bf64c5e84ceb13208b041e7755:scripts/deployment/l2/globals_celo_mainnet.json:generic-api-key:30
+3113531844c216bf64c5e84ceb13208b041e7755:scripts/deployment/l2/globals_eth_mainnet.json:generic-api-key:16
+3113531844c216bf64c5e84ceb13208b041e7755:scripts/deployment/l2/globals_gnosis_mainnet.json:generic-api-key:31
+3113531844c216bf64c5e84ceb13208b041e7755:scripts/deployment/l2/globals_mode_mainnet.json:generic-api-key:28
+3113531844c216bf64c5e84ceb13208b041e7755:scripts/deployment/l2/globals_optimism_mainnet.json:generic-api-key:28
+3113531844c216bf64c5e84ceb13208b041e7755:scripts/deployment/l2/globals_polygon_mainnet.json:generic-api-key:30
+3113531844c216bf64c5e84ceb13208b041e7755:scripts/deployment/l2/globals_robinhood_mainnet.json:generic-api-key:40
